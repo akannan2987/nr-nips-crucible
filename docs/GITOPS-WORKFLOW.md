@@ -221,15 +221,27 @@ git status
 git diff --cached --summary | grep -i mode
 ```
 
-The mode check should show only `create mode 100644` lines for genuinely new files.
+Read the mode output like this:
+
+| Line | Meaning | Action |
+|------|---------|--------|
+| `create mode 100644 <file>` | New regular file (docs, templates, data) | ✅ normal |
+| `create mode 100755 <file>` | New **executable script** (`./name.sh`) | ✅ normal and required |
+| `mode change 100755 => 100644` | An existing file **lost** its executable bit | ⚠️ fix before committing |
+
+Only the last one is a problem. `create mode` lines just record a new file's type -
+`100755` is correct for anything you run as `./something.sh`, `100644` for
+everything else.
 
 > ⚠️ If you see `mode change 100755 => 100644`, a file lost its executable bit in
-> transit. Restore it instead of committing the change - this keeps the content
-> change while fixing the permission:
+> transit (this happens when files are copied or downloaded rather than cloned).
+> Restore it instead of committing the change - this keeps the content change while
+> fixing the permission:
 > ```bash
 > chmod +x <the files>
 > git add <the files>
 > ```
+> Then re-run the mode check; the `mode change` line should be gone.
 
 ### Step 8 - Commit and push to the private repo (all three branches)
 

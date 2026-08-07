@@ -33,6 +33,9 @@ cd nr-nips-crucible
 > `nestle-it/nr-nips-crucible` (SSH form:
 > `git@github.com:nestle-it/nr-nips-crucible.git`). Certificates, databases,
 > and internal data are excluded from both via `.gitignore`.
+> How changes move between them — and the `./check-public-safe.sh` gate to run
+> before every public push — is documented in
+> **[docs/GITOPS-WORKFLOW.md](docs/GITOPS-WORKFLOW.md)**.
 
 The setup script will:
 1. Copy SSL certificates from the Nestlé certificate store (when available)
@@ -556,6 +559,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 | Document | Description |
 |----------|-------------|
+| **[GitOps Workflow](docs/GITOPS-WORKFLOW.md)** | How changes flow between the public and private repos, and the pre-push safety gate |
 | **[macOS Install & Run](docs/INSTALL-MACOS.md)** | Install, run (HTTP/HTTPS), and verify on macOS — uses the **public** repo |
 | **[macOS Uninstall](docs/UNINSTALL-MACOS.md)** | Clean removal from macOS, including manual cleanup and verification |
 | **[RHEL8 Install & Run](docs/INSTALL-RHEL8.md)** | Install, run (HTTPS), auto-start, and verify on the RHEL8 VM — uses the **private** repo |

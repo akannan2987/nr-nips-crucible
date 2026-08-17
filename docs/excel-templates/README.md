@@ -38,9 +38,10 @@ The samples template is also downloadable from the running app:
 4. Save as `.xlsx` (or `.csv` for chemicals).
 5. In the app, open the module → **Upload** → select your file → review → import.
 
-**Import order matters:** Samples, Screening, and Toxicology all reference a
-`chemical_id`. Import chemicals first — rows referencing an unknown chemical
-are rejected with `"Chemical not found"`.
+**Import order matters:** Screening and Toxicology reference a `chemical_id`.
+Import chemicals first — rows referencing an unknown chemical are rejected
+with `"Chemical not found"`. Samples carry no chemical column; link them to
+chemicals in the app after import.
 
 ---
 
@@ -211,5 +212,5 @@ cd backend && .venv/bin/pytest
 
 ---
 
-**Last Updated:** August 6, 2026
+**Last Updated:** August 7, 2026
 **Template Version:** 2.1 (synthetic example data)

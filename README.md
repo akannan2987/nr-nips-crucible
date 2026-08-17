@@ -55,6 +55,7 @@ Access the application:
 
 - **This README** — overview, quick start, and the fastest path to a running app.
 - **Platform guides** — the per-platform install/run and uninstall walk-throughs: [macOS Install](docs/INSTALL-MACOS.md) · [macOS Uninstall](docs/UNINSTALL-MACOS.md) · [RHEL8 Install](docs/INSTALL-RHEL8.md) · [RHEL8 Uninstall](docs/UNINSTALL-RHEL8.md). Start here for a fresh machine.
+- **[GitOps Workflow](docs/GITOPS-WORKFLOW.md)** — how a change travels: Mac authoring → `./check-public-safe.sh` → public repo (3 branches) → VM mirror → private repo → production.
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** — the **deep operational reference**: all runbooks, SSL/TLS rotation, PostgreSQL, systemd/Quadlet, backups, maintenance, and troubleshooting.
 
 | I want to… | Command | Detailed guide |
@@ -77,6 +78,29 @@ Access the application:
 | Extra prod steps | none | open firewall port + systemd auto-start |
 | Deploy guide | [macOS Install](docs/INSTALL-MACOS.md) | [RHEL8 Install](docs/INSTALL-RHEL8.md) |
 | Uninstall guide | [macOS Uninstall](docs/UNINSTALL-MACOS.md) | [RHEL8 Uninstall](docs/UNINSTALL-RHEL8.md) (+ firewall rule) |
+
+### 🔁 The project lifecycle — end to end
+
+Every stage of working on this project, in order. Each stage links to the doc
+that owns the details; the one-liners are reminders, not substitutes.
+
+| # | Stage | Where | One-liner | Full guide |
+|---|-------|-------|-----------|------------|
+| 0 | **Understand the two repos** | — | public = Mac authoring · private = VM deploys; content flows public → private only | [GitOps §1](docs/GITOPS-WORKFLOW.md#1-the-two-repositories) |
+| 1 | **One-time setup** (folders + remotes) | Mac + VM | clone the right repo into the right folder | [GitOps §2](docs/GITOPS-WORKFLOW.md#2-one-time-setup) |
+| 2 | **Install & run** | Mac / VM | `./setup-after-clone-py.sh` | [macOS](docs/INSTALL-MACOS.md) / [RHEL8](docs/INSTALL-RHEL8.md) |
+| 3 | **Develop + test** | ▶ Mac | edit → `cd backend && .venv/bin/pytest` → `./container-py.sh rebuild` | [GitOps Flow A step 1](docs/GITOPS-WORKFLOW.md#4-flow-a---a-change-from-start-to-finish) |
+| 4 | **Security gate** | ▶ Mac | `./check-public-safe.sh` → must print `✓ SAFE TO PUSH` | [GitOps §3 rules](docs/GITOPS-WORKFLOW.md#3-golden-rules) |
+| 5 | **Publish to public repo** | ▶ Mac | `git push origin develop develop:beta develop:master` | [GitOps Flow A steps 3–5](docs/GITOPS-WORKFLOW.md#4-flow-a---a-change-from-start-to-finish) |
+| 6 | **Mirror public → private** | ▶ VM `~/crucible-mirror` | `git fetch public && git checkout public/develop -- .` → commit → push | [GitOps Flow A steps 6–9](docs/GITOPS-WORKFLOW.md#4-flow-a---a-change-from-start-to-finish) |
+| 7 | **Deploy to production** | ▶ VM prod folder | `./container-py.sh backup` → `git pull` → `./container-py.sh rebuild` | [RHEL8 §6 Day-2 ops](docs/INSTALL-RHEL8.md#6-day-2-operations) |
+| 8 | **Verify the deployment** | Mac / VM | checklist V1–V7 (Mac) / V1–V9 (VM) | [macOS §4](docs/INSTALL-MACOS.md#4-verification-checklist) / [RHEL8 §5](docs/INSTALL-RHEL8.md#5-verification-checklist) |
+| 9 | **Confirm repo sync** | ▶ VM mirror | `git diff --stat public/develop develop` → only private-only files | [GitOps §6](docs/GITOPS-WORKFLOW.md#6-checking-the-two-repos-are-in-sync) |
+| 10 | **Routine ops** | VM (+ Mac) | backups, health monitoring, cert-expiry cron | [DEPLOYMENT → Maintenance](DEPLOYMENT.md#maintenance-and-operational-tasks) |
+| 11 | **Uninstall** (when needed) | Mac / VM | `./uninstall.sh --dry-run` first, always | [macOS](docs/UNINSTALL-MACOS.md) / [RHEL8](docs/UNINSTALL-RHEL8.md) |
+
+A fix discovered **on the VM** travels back as a patch (never a push):
+[GitOps Flow B](docs/GITOPS-WORKFLOW.md#5-flow-b---a-fix-discovered-on-the-vm).
 
 ---
 
@@ -218,7 +242,7 @@ curl --noproxy '*' -sk https://localhost:49160/api/stats   # or http:// on an HT
 # then: systemd auto-start and cutover checklist (DEPLOYMENT.md)
 ```
 
-App URL: `http://<vm-hostname>:49160`. Firewall notes
+App URL: `https://<vm-hostname>:49160` (or `http://` on an HTTP deploy). Firewall notes
 (firewalld vs plain iptables vs none): DEPLOYMENT.md.
 
 ### Container commands
@@ -517,6 +541,9 @@ user unit and Quadlet), and the project directory.
 
 - **HTTPS/TLS**: All production traffic encrypted with official Nestlé certificates
 - **Git Safety**: SSL certificates, private keys, and database files excluded via `.gitignore`
+- **Pre-push gate**: `./check-public-safe.sh` must print `✓ SAFE TO PUSH` before every
+  public push — it verifies no secret paths are tracked, only sanitized templates ship,
+  and no internal identifiers appear in tracked content
 - **File Permissions**: Private key restricted to `chmod 600`
 - **Error Handling**: No sensitive data exposed in error responses
 
@@ -527,11 +554,12 @@ The repository ships a comprehensive `.gitignore`. Highlights:
 ```
 certs/ *.key *.crt   # SSL certificates and private keys (all formats)
 data/  backups/ *.db # SQLite database and backups
-.env / .env.*        # environment files and secrets
+.env / .env.*        # environment files and secrets (incl. the VM's .env.local)
 node_modules/        # dependencies (installed per machine)
 client/dist/         # build output
 backend/.venv/       # Python virtualenv
-docs/excel-templates/…  # real-data workbooks (must be replaced by sanitized templates)
+docs/excel-templates/…  # only sanitized *_template.* files tracked; any other workbook stays local
+crucible-costar-prompt.md  # local working notes (never published)
 ```
 
 Keep a backup of real certificates **outside** the repository (e.g.
@@ -551,7 +579,10 @@ deletes `certs/`.
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-> 📋 **Before pushing to `develop`**: Follow the [Pre-Push Checklist](CONTRIBUTING.md#pre-push-checklist-before-pushing-to-develop) to ensure no sensitive files are committed and the build passes.
+> 📋 **Before pushing**: run `./check-public-safe.sh` (must print `✓ SAFE TO PUSH`),
+> follow the [Pre-Push Checklist](CONTRIBUTING.md#pre-push-checklist-before-pushing-to-develop),
+> then push all three branches and mirror to the private repo per the
+> [GitOps Workflow](docs/GITOPS-WORKFLOW.md).
 
 ---
 
@@ -589,7 +620,9 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ## 📄 License
 
-MIT License - See LICENSE file for details
+Intended license: MIT. A `LICENSE` file has not yet been added — pending the
+repository owner's decision (note this code originates from an internal
+project; confirm licensing before adding the file).
 
 ---
 
@@ -597,8 +630,8 @@ MIT License - See LICENSE file for details
 
 **NIHS Team** - Nestle Institute of Health Sciences
 
-For support, contact: [support@example.com]
+For support, contact: `<maintainer-email>`
 
 ---
 
-**Last Updated:** August 6, 2026
+**Last Updated:** August 7, 2026

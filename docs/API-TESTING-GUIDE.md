@@ -129,7 +129,7 @@ That would require a new backend route (e.g., `/api/chemicals/lookup/:cas`), whi
 
 | Problem | Solution |
 |---|---|
-| `curl` works but `node` doesn't | Add `NODE_TLS_REJECT_UNAUTHORIZED=0` before the command |
+| `curl` works but Python `requests` fails with an SSL error | Corporate TLS interception — point `requests` at the corporate CA bundle: `export REQUESTS_CA_BUNDLE=/path/to/corporate-ca.pem` |
 | No response / timeout | Check if you're behind a proxy; try `export https_proxy=http://your-proxy:port` |
 | 404 from PubChem | The compound name/CAS wasn't found — check spelling |
 
@@ -282,7 +282,7 @@ curl -s "http://localhost:49160/api/chemicals?search=vanillin" | python3 -m json
 
 ## Summary of what we tested
 
-On **May 13, 2026**, we ran `docs/api-demo.js` and confirmed:
+On **May 13, 2026**, we ran the demo script (then `docs/api-demo.js`; since ported to `docs/api-demo.py`) and confirmed:
 
 | Query | Result |
 |---|---|

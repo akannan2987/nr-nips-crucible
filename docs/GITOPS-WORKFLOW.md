@@ -281,7 +281,9 @@ curl --noproxy '*' -s https://localhost:49160/api/stats
 git diff --stat public/develop develop
 ```
 
-Expect **only** the private-only real-data workbooks (see
+Expect **only** the private-only files: the 6 real-data workbooks under
+`docs/excel-templates/` and the old `crucible-costar-prompt.md` the private repo
+kept from its earlier history (see
 [section 6](#6-checking-the-two-repos-are-in-sync)).
 
 ---
@@ -310,8 +312,8 @@ rm fix.patch
 Then run **Flow A from Step 1**. The fix is now authored on the Mac and travels the
 normal one-way route - no exceptions to the rules.
 
-The same `git bundle` / `scp` trick works in the other direction if the VM cannot
-reach the public repo at all:
+A similar scp-based route (this time with `git bundle`) covers the opposite
+problem - the VM cannot reach the public repo at all:
 
 ```bash
 # ▶ MAC
@@ -321,9 +323,13 @@ scp ~/crucible-develop.bundle <your-user>@<vm-hostname>:~/
 
 ```bash
 # ▶ VM — ~/crucible-mirror   (use the bundle instead of the public remote)
-git remote add public ~/crucible-develop.bundle    # first time only
+git remote add public ~/crucible-develop.bundle     # if "public" was never added
+# ...or, if §2.2 already added "public" pointing at GitHub:
+git remote set-url public ~/crucible-develop.bundle
 git fetch public
 git checkout public/develop -- .
+# To point it back at GitHub later:
+# git remote set-url public https://github.com/akannan2987/nr-nips-crucible.git
 ```
 
 ---
@@ -337,14 +343,16 @@ git fetch origin && git fetch public
 git diff --stat public/develop develop
 ```
 
-**Expected:** only the private-only files - the real-data workbooks under
-`docs/excel-templates/`. That difference is correct and permanent.
+**Expected:** only the private-only files - the 6 real-data workbooks under
+`docs/excel-templates/` and the old `crucible-costar-prompt.md` retained from
+the private repo's earlier history. That difference is correct and permanent.
 
 **Anything else = drift.** Re-run Flow A steps 6-8 to bring them back in line.
 
 As a plain file list:
 
 ```bash
+# ▶ VM — ~/crucible-mirror
 git diff --name-status public/develop develop
 ```
 
@@ -377,4 +385,4 @@ the authoring folder.
 [macOS install](INSTALL-MACOS.md) · [RHEL8 install](INSTALL-RHEL8.md) ·
 [Deployment reference](../DEPLOYMENT.md)
 
-**Last Updated:** August 6, 2026
+**Last Updated:** August 7, 2026

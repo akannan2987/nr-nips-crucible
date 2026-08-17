@@ -35,13 +35,21 @@ for p in certs data backups .env .env.local crucible-costar-prompt.md \
         fail=1
     fi
 done
+# Extension sweep: catches a sensitive file force-added (git add -f) at ANY
+# path — mirrors the .gitignore extension lists.
+ext=$(git ls-files | grep -iE '\.(key|pem|crt|cer|csr|p12|pfx|jks|der|db|sqlite3?|dump|bak)$')
+if [ -n "$ext" ]; then
+    echo -e "   ${RED}✗ sensitive file extension(s) tracked:${NC}"
+    echo "$ext" | sed 's/^/       /'
+    fail=1
+fi
 [ $fail -eq 0 ] && echo -e "   ${GREEN}✓ none tracked${NC}"
 
 # ── 2. Only sanitized templates under docs/excel-templates/ ─────────
 echo ""
 echo "2. Upload templates"
 extra=$(git ls-files -- docs/excel-templates \
-        | grep -vE '(_template\.(csv|xlsx|sdf)|Upload_Sample_Template\.xlsx|README\.md|generate_templates\.py)$')
+        | grep -vE '/(chemicals_template\.(csv|xlsx|sdf)|screening_template\.xlsx|toxicology_template\.xlsx|Upload_Sample_Template\.xlsx|README\.md|generate_templates\.py)$')
 if [ -n "$extra" ]; then
     echo -e "   ${RED}✗ non-template file(s) tracked — real data must not be published:${NC}"
     echo "$extra" | sed 's/^/       /'
@@ -56,7 +64,7 @@ fi
 echo ""
 echo "3. Internal identifiers in tracked content"
 hits=$(git grep -inE 'nr-ubp|rdkannanab|gpfs|PIPM|NQAC' -- \
-       ':!check-public-safe.sh' ':!docs/GITOPS-WORKFLOW.md' 2>/dev/null)
+       ':!check-public-safe.sh' 2>/dev/null)
 if [ -n "$hits" ]; then
     echo -e "   ${RED}✗ found — redact before pushing:${NC}"
     echo "$hits" | cut -c1-120 | sed 's/^/       /'
@@ -70,7 +78,7 @@ fi
 echo ""
 echo "4. Org attribution (informational — accepted exceptions)"
 org=$(git grep -inE 'nihs|nestle\.com' -- \
-      ':!check-public-safe.sh' ':!docs/GITOPS-WORKFLOW.md' 2>/dev/null | cut -c1-100)
+      ':!check-public-safe.sh' 2>/dev/null | cut -c1-100)
 if [ -n "$org" ]; then
     echo "$org" | sed 's/^/       /'
     echo -e "   ${YELLOW}– review these are intended attribution, not new leaks${NC}"

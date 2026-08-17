@@ -126,10 +126,14 @@ Because the legacy Node stack has been removed, rollback is no longer a
 backend switch — it is a **redeploy of a previous version**:
 
 ```bash
-# Roll the code back to a known-good tag/commit and rebuild
-git checkout v2.0-pre-legacy-removal      # or any earlier tag/commit
+# Roll the code back to an earlier known-good commit and rebuild
+git log --oneline          # pick the known-good commit
+git checkout <commit>
 ./container-py.sh rebuild
 ```
+
+(The repo currently has no release tags, so pick the commit from `git log`;
+tagging known-good releases is a natural follow-up.)
 
 For **data** recovery (as opposed to code), restore a database backup instead
 of changing code:

@@ -61,6 +61,8 @@ cd client && VITE_API_PROXY_TARGET=http://localhost:8000 npm run dev
 | `CLIENT_DIST` | `<repo>/client/dist` | Built React app served as static files |
 | `USE_HTTPS` | `false` | `true` + cert files present → uvicorn serves TLS directly (falls back to HTTP with a warning if certs are missing) |
 | `SSL_CERT_PATH` / `SSL_KEY_PATH` | `/app/certs/server.crt` / `.key` | Certificate/key locations |
+| `DOCS_DIR` | `<repo>/docs` | Docs directory (served for the `/architecture` page) |
+| `SAMPLE_TEMPLATE_PATH` | `<DOCS_DIR>/excel-templates/samples/Upload_Sample_Template.xlsx` | The SLIMS sample upload template served by `GET /api/samples/template/download` |
 
 ## Layout
 

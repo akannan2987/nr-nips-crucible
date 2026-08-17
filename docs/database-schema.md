@@ -154,6 +154,8 @@ Stores chemical compound information.
 | `storage_conditions` | string | No | Storage requirements | `"Store at 2-8°C"` |
 | `description` | string | No | Additional notes | `"Stimulant compound"` |
 | `metadata` | object | No | Catch-all for every `> <FIELD_NAME>` SDF property not promoted above (incl. EPA / Nestlé regulatory fields like `EU FCM substance code`, `Present in PLASTIC`, `ADI/TDI (mg/kg bw /day)`, `US 21 CFR REGNum`, `Nestle policy (St-80.008 ...)`) | `{ "EU FCM substance code": "...", ... }` |
+| `created_at` | string (ISO 8601) | Yes | Creation timestamp | `"2026-02-08T10:30:00.000Z"` |
+| `updated_at` | string (ISO 8601) | Yes | Last update timestamp | `"2026-02-08T15:45:00.000Z"` |
 
 **`structural` sub-schema** (auto-derived by SDF parser):
 
@@ -171,8 +173,6 @@ Stores chemical compound information.
 | `radicalCount` | number | Atoms flagged as radicals |
 | `sGroupCount` | number | Total S-Groups |
 | `sGroupTypes` | string[] | Distinct S-Group type codes (e.g. `["SRU"]`) |
-| `created_at` | string (ISO 8601) | Yes | Creation timestamp | `"2026-02-08T10:30:00.000Z"` |
-| `updated_at` | string (ISO 8601) | Yes | Last update timestamp | `"2026-02-08T15:45:00.000Z"` |
 
 **Constraints:**
 - `chemical_id` must be unique
@@ -295,17 +295,25 @@ Stores screening assay results linked to chemicals.
 | `chemical_id` | string | Yes | Reference to chemical | `"CHEM-001"` |
 | `assay_name` | string | Yes | Name of assay | `"Cytotoxicity (MTT)"` |
 | `assay_type` | string | No | Type/category | `"Cell Viability"` |
+| `target` | string | No | Assay target | `"Mitochondrial activity"` |
 | `result` | string | No | Qualitative result | `"Positive"`, `"Negative"` |
-| `ic50` | number | No | IC50 value | `10.5` |
-| `ec50` | number | No | EC50 value | `8.3` |
-| `unit` | string | No | Concentration unit | `"μM"`, `"nM"` |
-| `cell_line` | string | No | Cell line used | `"HeLa"`, `"MCF-7"` |
-| `assay_date` | string (ISO 8601) | No | Date performed | `"2026-02-01"` |
+| `result_value` | number | No | Quantitative result value | `10.5` |
+| `result_unit` | string | No | Unit of `result_value` | `"% viability"` |
+| `concentration` | number | No | Test concentration | `50` |
+| `concentration_unit` | string | No | Concentration unit | `"μM"`, `"nM"` |
+| `timepoint` | string | No | Measurement timepoint | `"24h"` |
+| `replicate` | number | No | Replicate number | `2` |
+| `plate_id` | string | No | Plate identifier | `"P123"` |
+| `well_position` | string | No | Well position on plate | `"B07"` |
+| `experiment_date` | string (ISO 8601) | No | Date performed | `"2026-02-01"` |
 | `operator` | string | No | Person who ran assay | `"John Doe"` |
 | `notes` | string | No | Additional notes | `"Repeat needed"` |
-| `metadata` | object | No | Additional data | `{ "plate_id": "P123" }` |
+| `metadata` | object | No | Additional data (Excel upload stores the raw row here) | `{ "Assay_Name": "..." }` |
 | `created_at` | string (ISO 8601) | Yes | Creation timestamp | `"2026-02-08T10:00:00.000Z"` |
 | `updated_at` | string (ISO 8601) | Yes | Update timestamp | `"2026-02-08T10:00:00.000Z"` |
+
+These are the columns of the shipped `screening_template.xlsx` (uploads are
+XLSX-only; `Title_Case` column headers are accepted as aliases).
 
 **Constraints:**
 - `chemical_id` must reference existing chemical
@@ -319,18 +327,20 @@ Stores screening assay results linked to chemicals.
   "chemical_id": "CHEM-001",
   "assay_name": "Cytotoxicity (MTT)",
   "assay_type": "Cell Viability",
+  "target": "Mitochondrial activity",
   "result": "Positive",
-  "ic50": 10.5,
-  "ec50": null,
-  "unit": "μM",
-  "cell_line": "HeLa",
-  "assay_date": "2026-02-01",
+  "result_value": 10.5,
+  "result_unit": "% viability",
+  "concentration": 50,
+  "concentration_unit": "μM",
+  "timepoint": "24h",
+  "replicate": 1,
+  "plate_id": "P123",
+  "well_position": "B07",
+  "experiment_date": "2026-02-01",
   "operator": "Jane Smith",
   "notes": "Reproducible results",
-  "metadata": {
-    "plate_id": "P123",
-    "experiment_id": "EXP-2024-045"
-  },
+  "metadata": null,
   "created_at": "2026-02-08T10:00:00.000Z",
   "updated_at": "2026-02-08T10:00:00.000Z"
 }
@@ -353,19 +363,28 @@ Stores toxicology study data linked to chemicals.
 | `study_type` | string | Yes | Type of study | `"Acute Toxicity"` |
 | `species` | string | No | Test species | `"Rat"`, `"Mouse"` |
 | `strain` | string | No | Animal strain | `"Sprague-Dawley"` |
-| `route` | string | No | Administration route | `"Oral"`, `"Dermal"`, `"Inhalation"` |
-| `ld50` | number | No | LD50 value | `192` |
-| `ld50_unit` | string | No | LD50 unit | `"mg/kg"` |
+| `sex` | string | No | Animal sex | `"Male"`, `"Female"` |
+| `route_of_administration` | string | No | Administration route | `"Oral"`, `"Dermal"`, `"Inhalation"` |
+| `duration` | number | No | Study duration | `14` |
+| `duration_unit` | string | No | Duration unit | `"days"` |
+| `dose` | number | No | Administered dose | `100` |
+| `dose_unit` | string | No | Dose unit | `"mg/kg"` |
+| `endpoint` | string | No | Measured endpoint | `"Body weight change"` |
+| `endpoint_value` | number | No | Endpoint value | `-2.5` |
+| `endpoint_unit` | string | No | Endpoint unit | `"%"` |
 | `noael` | number | No | NOAEL value | `10` |
-| `noael_unit` | string | No | NOAEL unit | `"mg/kg/day"` |
-| `duration` | string | No | Study duration | `"14 days"`, `"90 days"` |
+| `loael` | number | No | LOAEL value | `50` |
+| `ld50` | number | No | LD50 value | `192` |
+| `study_reference` | string | No | Study report/reference | `"TOX-2025-192"` |
 | `study_date` | string (ISO 8601) | No | Study completion date | `"2025-12-15"` |
-| `lab` | string | No | Testing laboratory | `"ToxLab Inc."` |
-| `glp_compliant` | boolean | No | GLP compliance | `true` |
-| `findings` | string | No | Key findings | `"No adverse effects"` |
-| `metadata` | object | No | Additional data | `{}` |
+| `source` | string | No | Data source | `"ToxLab International"` |
+| `notes` | string | No | Additional notes | `"No adverse effects"` |
+| `metadata` | object | No | Additional data (Excel upload stores the raw row here) | `{}` |
 | `created_at` | string (ISO 8601) | Yes | Creation timestamp | `"2026-02-08T10:00:00.000Z"` |
 | `updated_at` | string (ISO 8601) | Yes | Update timestamp | `"2026-02-08T10:00:00.000Z"` |
+
+These are the columns of the shipped `toxicology_template.xlsx` (uploads are
+XLSX-only; `Title_Case` column headers are accepted as aliases).
 
 **Constraints:**
 - `chemical_id` must reference existing chemical
@@ -380,20 +399,23 @@ Stores toxicology study data linked to chemicals.
   "study_type": "Acute Oral Toxicity",
   "species": "Rat",
   "strain": "Sprague-Dawley",
-  "route": "Oral",
-  "ld50": 192,
-  "ld50_unit": "mg/kg",
+  "sex": "Male",
+  "route_of_administration": "Oral",
+  "duration": 14,
+  "duration_unit": "days",
+  "dose": 100,
+  "dose_unit": "mg/kg",
+  "endpoint": "Mortality",
+  "endpoint_value": 0,
+  "endpoint_unit": "%",
   "noael": null,
-  "noael_unit": null,
-  "duration": "14 days",
+  "loael": null,
+  "ld50": 192,
+  "study_reference": "TOX-2025-192",
   "study_date": "2025-12-15",
-  "lab": "ToxLab International",
-  "glp_compliant": true,
-  "findings": "No mortality observed at 100 mg/kg",
-  "metadata": {
-    "study_id": "TOX-2025-192",
-    "sponsor": "NIHS"
-  },
+  "source": "ToxLab International",
+  "notes": "No mortality observed at 100 mg/kg",
+  "metadata": null,
   "created_at": "2026-02-08T10:00:00.000Z",
   "updated_at": "2026-02-08T10:00:00.000Z"
 }
@@ -410,25 +432,35 @@ Stores toxicology study data linked to chemicals.
 │   Chemicals     │
 │  (no hard cap)  │
 │  chemical_id*   │
-└────┬────────────┘
+└────┬───────┬────┘
+     │       │
+     │       │ N:M (chemical_ids[], app-managed)
+     │       │
+     │       ▼
+     │  ┌────────────────┐
+     │  │    Samples     │
+     │  │   (no cap)     │
+     │  │ chemical_ids[] │
+     │  └────────────────┘
      │
      │ 1:N
-     │
-     ├──────────────────┬──────────────────┐
-     │                  │                  │
-     ▼                  ▼                  ▼
-┌─────────────┐  ┌─────────────┐  ┌──────────────┐
-│   Samples   │  │  Screening  │  │ Toxicology   │
-│  (no cap)   │  │  (Unlimited)│  │ (Unlimited)  │
-│ chemical_id │  │ chemical_id │  │ chemical_id  │
-└─────────────┘  └─────────────┘  └──────────────┘
+     ├──────────────────┐
+     │                  │
+     ▼                  ▼
+┌─────────────┐  ┌──────────────┐
+│  Screening  │  │ Toxicology   │
+│ (Unlimited) │  │ (Unlimited)  │
+│ chemical_id │  │ chemical_id  │
+└─────────────┘  └──────────────┘
 ```
 
 ### Relationship Rules
 
-1. **Chemicals → Samples**: One-to-Many
-   - A chemical can have multiple samples
-   - A sample belongs to one chemical
+1. **Chemicals ↔ Samples**: Many-to-Many (app-managed)
+   - A sample links to 0..n chemicals via its `chemical_ids` array
+     (set in the app — via `PUT /api/samples/{id}/chemicals`; the SLIMS
+     export has no chemical-reference column)
+   - A chemical can be linked from multiple samples
    - Deleting a chemical does NOT cascade delete samples (currently)
 
 2. **Chemicals → Screening**: One-to-Many
@@ -445,14 +477,14 @@ Stores toxicology study data linked to chemicals.
 
 ### Primary Keys
 
-- **chemicals**: `chemical_id` (unique)
-- **samples**: `sample_id` (unique)
+- **chemicals**: `id` (UUID) — `chemical_id` is the unique business key
+- **samples**: `id` (UUID) — `sample_id` is the unique business key
 - **screening**: `id` (UUID)
 - **toxicology**: `id` (UUID)
 
 ### Foreign Keys
 
-- `samples.chemical_id` → `chemicals.chemical_id`
+- `samples.chemical_ids[]` (each element) → `chemicals.chemical_id`
 - `screening.chemical_id` → `chemicals.chemical_id`
 - `toxicology.chemical_id` → `chemicals.chemical_id`
 
@@ -496,12 +528,14 @@ Stores toxicology study data linked to chemicals.
   "samples": [
     {
       "id": "uuid-101",
-      "sample_id": "SAMPLE-001",
-      "name": "Caffeine Stock Solution",
-      "chemical_id": "CHEM-001",
-      "quantity": 100,
-      "unit": "mg",
-      "storage_location": "Freezer A1",
+      "sample_id": "SMPL00001",
+      "name": "Ulterion 529HS coated on Alu",
+      "identification": "Ulterion 529HS coated on Alu",
+      "content_type": "Packaging",
+      "material_type": "Polymer",
+      "status": "available",
+      "chemical_ids": ["CHEM-001"],
+      "metadata": { "cntn_fk_location": "K29" },
       "created_at": "2026-02-08T11:00:00.000Z",
       "updated_at": "2026-02-08T11:00:00.000Z"
     }
@@ -512,8 +546,10 @@ Stores toxicology study data linked to chemicals.
       "chemical_id": "CHEM-001",
       "assay_name": "Cytotoxicity",
       "result": "Positive",
-      "ic50": 10.5,
-      "unit": "μM",
+      "result_value": 10.5,
+      "result_unit": "% viability",
+      "concentration": 50,
+      "concentration_unit": "μM",
       "created_at": "2026-02-08T12:00:00.000Z",
       "updated_at": "2026-02-08T12:00:00.000Z"
     }
@@ -524,9 +560,9 @@ Stores toxicology study data linked to chemicals.
       "chemical_id": "CHEM-001",
       "study_type": "Acute Toxicity",
       "species": "Rat",
-      "route": "Oral",
+      "route_of_administration": "Oral",
       "ld50": 192,
-      "ld50_unit": "mg/kg",
+      "dose_unit": "mg/kg",
       "created_at": "2026-02-08T13:00:00.000Z",
       "updated_at": "2026-02-08T13:00:00.000Z"
     }
@@ -540,60 +576,62 @@ Stores toxicology study data linked to chemicals.
 
 ### Common Queries
 
-**Get all chemicals:**
-```javascript
-db.get('chemicals').value()
+All routers go through the document verbs in `backend/app/store.py`
+(SQLAlchemy underneath); cross-record filtering happens in Python over the
+`doc` dicts:
+
+**Get all chemicals (insertion order):**
+```python
+all_docs(db, Chemical)
 ```
 
-**Find chemical by ID:**
-```javascript
-db.get('chemicals').find({ chemical_id: 'CHEM-001' }).value()
+**Find chemical by business key:**
+```python
+row = find_row(db, Chemical, "chemical_id", "CHEM-001")  # row.doc is the record
 ```
 
 **Search chemicals:**
-```javascript
-db.get('chemicals')
-  .filter(c => c.name.toLowerCase().includes(search))
-  .value()
+```python
+[c for c in all_docs(db, Chemical)
+ if search in (c.get("name") or "").lower()]
 ```
 
 **Get screening by chemical:**
-```javascript
-db.get('screening')
-  .filter({ chemical_id: 'CHEM-001' })
-  .value()
+```python
+[s for s in all_docs(db, Screening) if s.get("chemical_id") == "CHEM-001"]
+```
+
+Equivalent ad-hoc SQL against the `doc` column (SQLite shown):
+
+```sql
+SELECT doc FROM chemicals WHERE chemical_id = 'CHEM-001';
+SELECT doc FROM screening WHERE chemical_id = 'CHEM-001' ORDER BY seq;
 ```
 
 ---
 
 ## Migration Considerations
 
-### Moving to SQL Database
+### Column normalisation (future)
 
-When scaling beyond 15K chemicals, consider:
+The database is already SQL — SQLite by default, with **PostgreSQL supported
+today** via `DATABASE_URL` (see [PostgreSQL support](#postgresql-support)).
+The remaining step is **column normalisation**: promoting hot `doc` fields
+(name, CAS number, dates) into real, indexed columns via Alembic migrations,
+without touching the API layer. For example:
 
-**PostgreSQL Schema:**
 ```sql
-CREATE TABLE chemicals (
-  id UUID PRIMARY KEY,
-  chemical_id VARCHAR(255) UNIQUE NOT NULL,
-  nestle_id VARCHAR(255),
-  name VARCHAR(500) NOT NULL,
-  cas_number VARCHAR(50),
-  molecular_formula VARCHAR(255),
-  molecular_weight DECIMAL(10,2),
-  -- ... other fields
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
+ALTER TABLE chemicals ADD COLUMN name VARCHAR(500);
+ALTER TABLE chemicals ADD COLUMN cas_number VARCHAR(50);
+-- backfill from doc, then:
 CREATE INDEX idx_chemicals_name ON chemicals(name);
 CREATE INDEX idx_chemicals_cas ON chemicals(cas_number);
-
--- Similar tables for samples, screening, toxicology
 ```
+
+Each promotion is an `alembic revision` plus a backfill; `doc` stays the
+single source of truth, so API responses are unaffected.
 
 ---
 
-**Last Updated:** February 12, 2026  
+**Last Updated:** August 7, 2026  
 **Schema Version:** 2.0

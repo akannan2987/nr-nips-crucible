@@ -365,9 +365,13 @@ Stage 1: docker.io/library/node:18-alpine
 
 Stage 2: docker.io/library/python:3.12-slim
     → pip install -r backend/requirements.txt   (RDKit et al. as wheels)
-    → copy backend/app, backend/scripts, docs, client/dist
-    → HEALTHCHECK: GET http://127.0.0.1:$PORT/api/stats
-    → CMD python -m app.main   (uvicorn on 0.0.0.0:$PORT, default 49160)
+    → copy backend/app, backend/scripts, backend/alembic, docs, client/dist
+    → HEALTHCHECK: python backend/scripts/healthcheck.py
+      (probes /api/stats — tries HTTP then HTTPS, so the same image is
+      healthy in both modes)
+    → CMD sh backend/scripts/entrypoint.sh
+      (db_bootstrap.py: alembic upgrade head → uvicorn on 0.0.0.0:$PORT,
+      default 49160)
 ```
 
 The final image contains **no Node.js** — Node exists only in the build stage.
@@ -603,5 +607,5 @@ An interactive visual architecture diagram is served at `/architecture`:
 
 ---
 
-**Last Updated:** July 29, 2026
+**Last Updated:** August 7, 2026
 **Version:** 2.0

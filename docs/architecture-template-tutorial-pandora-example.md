@@ -113,7 +113,8 @@ SECURITY:
   plain HTTP also supported inside the network
 - CORS open (same as the v1 API) — revisit with SSO
 - Server-side validation (duplicate IDs, required references)
-- File upload limit: 100MB
+- File uploads: no app-enforced size limit (the legacy 100MB Express cap
+  no longer applies)
 - Git ignores: certs/, *.db, .env, *.key, *.crt, *.pem
 
 DEPLOYMENT:
@@ -125,9 +126,10 @@ DEPLOYMENT:
 - Boot persistence on RHEL8: systemd user unit / Quadlet (see MIGRATION.md)
 
 CAPACITY:
-- ~50,000 chemicals / samples / screening / toxicology records
-- 50–100 concurrent users
-- 100MB max file upload
+- Reference scale: ~15,000 chemicals / ~1,000 samples (the dashboard gauge
+  targets — CHEMICALS_MAX / SAMPLES_MAX in backend/app/config.py)
+- Screening / toxicology records: no fixed target (scale with chemicals)
+- 10–50 concurrent users
 ```
 
 ---
@@ -164,11 +166,11 @@ describes the current Python/FastAPI architecture, pointing to MIGRATION.md
 - Subtitle: "Architecture of Chemical & Sample Management System — from the user's browser, across the network, into the container, and down to the database."
 - Pill badges (flex-wrap gap-2 mt-6): 🌐 Web App, ⚛️ React + Vite, 🐍 Python + FastAPI, 🗄️ SQLite + SQLAlchemy, 🧬 RDKit, 📦 Podman / Docker
 - Right column: glass rounded-2xl p-5 card with "At a glance" header and stats:
-  - 🧬 Chemicals capacity — ~50,000
-  - 🧫 Samples capacity — ~50,000
-  - 🔬 Screening records — ~50,000
-  - ☣️ Toxicology records — ~50,000
-  - 👥 Concurrent users — 50 – 100
+  - 🧬 Chemicals capacity — ~15,000
+  - 🧫 Samples capacity — ~1,000
+  - 🔬 Screening records — no fixed target
+  - ☣️ Toxicology records — no fixed target
+  - 👥 Concurrent users — 10 – 50
   - 🚪 Hosted on port — 49160
 
 **Sticky nav bar** (top-0 z-30 backdrop-blur-md bg-slate-950/70 border-y border-slate-800):
@@ -260,7 +262,7 @@ SQLite→React (response, green) — same coordinates as the original template.
 - react: "⚛️ React SPA — The face of Pandora" / SPA built with React 18 + Vite; fetches data with Axios; re-renders only what changed.
 - express (HTML id kept stable across rewrites): "🐍 FastAPI backend — The traffic controller" / Python 3.12 + FastAPI served by uvicorn; reproduces the original v1 REST contract; validates with Pydantic; parses Excel/SDF with openpyxl & RDKit; talks to the DB through SQLAlchemy; serves the React app and /docs.
 - db: "🗄️ SQLite — The single-file database" / crucible.db accessed via SQLAlchemy 2; four tables, each storing the full record verbatim in a JSON doc column + indexed lookup columns (hybrid document pattern); upgradeable to PostgreSQL by changing DATABASE_URL.
-- pubchem: "🌐 PubChem API — External chemical database" / free NIH database; backend can call it to auto-fill formula, MW, SMILES, InChIKey.
+- pubchem: "🌐 PubChem API — External chemical database" / free NIH database; backend could call it (proposed — not implemented) to auto-fill formula, MW, SMILES, InChIKey.
 
 **4 step-explainer cards** (①②③④) using the default labels/descs above, each
 clickable with an expanded panel: step 3's expansion should mention Pydantic
@@ -429,7 +431,8 @@ In `docs/architecture-interactive.html`, fill the last 3 tabs:
 - Cards: transport status (HTTPS in-process via uvicorn with Nestlé certs —
   ./container-py.sh start-ssl; plain HTTP also supported; see DEPLOYMENT.md) ·
   input validation (server-side, Pydantic kept lenient to preserve the
-  contract) · upload limits (100MB) · git hygiene (certs/, *.db, keys ignored)
+  contract) · upload limits (no app-enforced cap — flag as a future hardening
+  item) · git hygiene (certs/, *.db, keys ignored)
   · CORS (open, revisit with SSO) · Planned (dashed border): SSO, RBAC, rate
   limiting, audit logging.
 

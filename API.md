@@ -137,14 +137,16 @@ No rate limiting is currently enforced.
 
 | Limit | Value | Purpose |
 |-------|-------|---------|
-| JSON body | 50 MB | Maximum size for JSON payloads (POST/PUT requests) |
-| File upload | 100 MB | Maximum size for Excel/SDF file uploads |
+| JSON body | No app-level limit† | JSON payloads (POST/PUT requests) are not size-capped by the backend |
+| File upload | No app-level limit† | Excel/SDF uploads are not size-capped by the backend |
 | Max chemicals | No hard limit* | Not capped by the API; optimized for 15,000+ records |
 | Max samples | No hard limit* | Not capped by the API; optimized for 1,000+ records |
 | Max screening | No hard limit* | Linked to chemicals; not capped |
 | Max toxicology | No hard limit* | Linked to chemicals; not capped |
 
-> \* No collection is capped by the API — all are bounded only by the single JSON file's read/write performance and available memory/disk. The 15,000 / 1,000 figures are recommended-scale references used for the dashboard gauge, **not** enforced limits.
+> † The FastAPI backend enforces no application-level request-size limit. The practical bound is available memory — uploaded files are read fully into memory while parsing.
+>
+> \* No collection is capped by the API — all are bounded only by SQLite read/write performance and available memory/disk. The 15,000 / 1,000 figures are recommended-scale references used for the dashboard gauge, **not** enforced limits.
 
 ### Non-API Routes
 
@@ -243,6 +245,18 @@ Get real-time statistics for all modules.
 ```bash
 curl http://localhost:49160/api/stats
 ```
+
+---
+
+### Other Statistics Endpoints
+
+| Method & Endpoint | Description |
+|-------------------|-------------|
+| `GET /stats/recent?limit=10` | Merged newest-first activity feed across all modules — `[{type, id, name, created_at}]` (screening/toxicology entries also carry `chemical_id`) |
+| `GET /stats/chemicals-summary?limit=20` | Chemicals with per-record `screening_count` / `toxicology_count` |
+| `GET /stats/sample-types` | Sample distribution — `[{type, count}]` |
+| `GET /stats/assay-types` | Screening assay distribution — `[{assay, count}]` |
+| `GET /stats/study-types` | Toxicology study distribution — `[{study, count}]` |
 
 ---
 
@@ -490,7 +504,12 @@ Bulk upload chemicals via Excel file.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `file` | file | Excel file (.xlsx, .xls, .csv) |
+| `file` | file | Excel or CSV file (.xlsx, .csv, .tsv) |
+
+> **Note:** Legacy `.xls` files are **not** supported — re-save them as `.xlsx` first.
+> Ready-to-fill templates ship in
+> [`docs/excel-templates/chemicals/`](docs/excel-templates/chemicals/)
+> (`chemicals_template.xlsx` and `chemicals_template.csv`).
 
 **Excel Format:**
 
@@ -505,16 +524,17 @@ Bulk upload chemicals via Excel file.
   "message": "Successfully processed 25 chemicals (20 new, 5 updated)",
   "inserted": 20,
   "updated": 5,
-  "total": 25,
-  "errors": []
+  "total": 25
 }
 ```
+
+> The `errors` key (a list of `{row, error}` objects) appears only when some rows failed to import.
 
 **cURL Example:**
 
 ```bash
 curl -X POST http://localhost:49160/api/chemicals/upload/excel \
-  -F "file=@chemicals.xlsx"
+  -F "file=@chemicals_template.xlsx"
 ```
 
 ---
@@ -608,8 +628,8 @@ Every other `> <FIELD_NAME>` block is preserved verbatim in `metadata`, includin
 **cURL Example:**
 
 ```bash
-curl -X POST https://localhost:49160/api/chemicals/upload/sdf \
-  -F "file=@chemicals.sdf"
+curl -X POST http://localhost:49160/api/chemicals/upload/sdf \
+  -F "file=@chemicals_template.sdf"
 ```
 
 ---
@@ -871,11 +891,78 @@ Unknown chemical IDs are reported in `unknownChemicalIds` but not rejected.
 
 ---
 
+### Get / Update / Delete a Sample
+
+Samples are addressed by their `sample_id` (the SLIMS barcode).
+
+| Method & Endpoint | Description |
+|-------------------|-------------|
+| `GET /samples/:id` | One sample record |
+| `PUT /samples/:id` | Merge arbitrary JSON fields into the sample |
+| `DELETE /samples/:id` | Delete the sample |
+
+```bash
+curl http://localhost:49160/api/samples/SMPL00001
+curl -X PUT http://localhost:49160/api/samples/SMPL00001 \
+  -H "Content-Type: application/json" -d '{"status": "depleted"}'
+curl -X DELETE http://localhost:49160/api/samples/SMPL00001
+```
+
+---
+
+### Bulk Delete Samples
+
+**Endpoint:** `POST /samples/bulk/delete`
+
+**Request Body:**
+
+```json
+{ "sample_ids": ["SMPL00001", "SMPL00002"] }
+```
+
+**Response:**
+
+```json
+{
+  "message": "Successfully deleted 2 samples",
+  "deleted": 2,
+  "requested": 2
+}
+```
+
+---
+
+### Clear All Samples
+
+**⚠️ DANGER:** Delete all samples from the database.
+
+**Endpoint:** `DELETE /samples/all/clear`
+
+**Response:**
+
+```json
+{
+  "message": "Successfully deleted all 10 samples",
+  "deleted": 10
+}
+```
+
+---
+
 ## Screening
+
+Screening records are always linked to an existing chemical (`chemical_id`).
+Record fields: `chemical_id`, `assay_name`, `assay_type`, `target`, `result`,
+`result_value`, `result_unit`, `concentration`, `concentration_unit`,
+`timepoint`, `replicate`, `plate_id`, `well_position`, `experiment_date`,
+`operator`, `notes`, plus a free-form `metadata` object — the same columns as
+the shipped
+[`screening_template.xlsx`](docs/excel-templates/screening/screening_template.xlsx).
 
 ### List Screening Records
 
-Get paginated list of screening data.
+Get paginated list of screening data. Each record in the list is enriched with
+`chemical_name` (looked up from the chemicals collection).
 
 **Endpoint:** `GET /screening`
 
@@ -885,11 +972,14 @@ Get paginated list of screening data.
 |-----------|------|-------------|
 | `page` | integer | Page number |
 | `limit` | integer | Items per page |
+| `search` | string | Search in assay name, chemical ID, or result |
 | `chemical_id` | string | Filter by chemical ID |
 
 ---
 
 ### Get Screening by Chemical
+
+Raw records for one chemical (no `chemical_name` enrichment).
 
 **Endpoint:** `GET /screening/chemical/:chemical_id`
 
@@ -901,10 +991,23 @@ Get paginated list of screening data.
     "id": "uuid",
     "chemical_id": "CHEM-001",
     "assay_name": "Cytotoxicity",
+    "assay_type": "Cell viability",
+    "target": "HepG2",
     "result": "Positive",
-    "ic50": 10.5,
-    "unit": "μM",
-    "created_at": "2026-02-08T10:00:00.000Z"
+    "result_value": 10.5,
+    "result_unit": "μM",
+    "concentration": 50,
+    "concentration_unit": "μM",
+    "timepoint": "24h",
+    "replicate": 1,
+    "plate_id": "PLATE-01",
+    "well_position": "B4",
+    "experiment_date": "2026-02-01",
+    "operator": "J. Doe",
+    "notes": null,
+    "metadata": null,
+    "created_at": "2026-02-08T10:00:00.000Z",
+    "updated_at": "2026-02-08T10:00:00.000Z"
   }
 ]
 ```
@@ -912,6 +1015,9 @@ Get paginated list of screening data.
 ---
 
 ### Add Screening Record
+
+The `chemical_id` must reference an existing chemical (otherwise `400`).
+Keys outside the field list above are silently dropped.
 
 **Endpoint:** `POST /screening`
 
@@ -921,25 +1027,111 @@ Get paginated list of screening data.
 {
   "chemical_id": "CHEM-001",
   "assay_name": "Cytotoxicity",
+  "assay_type": "Cell viability",
+  "target": "HepG2",
   "result": "Positive",
-  "ic50": 10.5,
-  "unit": "μM"
+  "result_value": 10.5,
+  "result_unit": "μM",
+  "concentration": 50,
+  "concentration_unit": "μM",
+  "timepoint": "24h",
+  "replicate": 1,
+  "plate_id": "PLATE-01",
+  "well_position": "B4",
+  "experiment_date": "2026-02-01",
+  "operator": "J. Doe",
+  "notes": "Optional free text"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "message": "Screening data added successfully",
+  "id": "uuid"
 }
 ```
 
 ---
 
+### Upload Screening Records (Excel)
+
+Bulk upload screening records via Excel. Use the shipped
+[`screening_template.xlsx`](docs/excel-templates/screening/screening_template.xlsx)
+(`.xlsx` only). Column headers are the field names above, accepted in
+`snake_case` or `Title_Case` (`chemical_id` / `Chemical_ID`, `assay_name` /
+`Assay_Name`, …). Rows whose `chemical_id` does not match an existing chemical
+are skipped and reported in `errors`; every raw row is preserved in the
+record's `metadata`.
+
+**Endpoint:** `POST /screening/upload/excel`
+
+**Content-Type:** `multipart/form-data` (field: `file`)
+
+**Response:**
+
+```json
+{
+  "message": "Successfully uploaded 2 screening records",
+  "inserted": 2
+}
+```
+
+> The `errors` key (a list of `{row, error}` objects) appears only when rows failed.
+
+**cURL Example:**
+
+```bash
+curl -X POST http://localhost:49160/api/screening/upload/excel \
+  -F "file=@screening_template.xlsx"
+```
+
+---
+
+### Get / Update / Delete a Screening Record
+
+Records are addressed by their `id` (UUID, returned on create).
+
+| Method & Endpoint | Description |
+|-------------------|-------------|
+| `GET /screening/:id` | One record, enriched with `chemical_name` |
+| `PUT /screening/:id` | Merge arbitrary JSON fields into the record |
+| `DELETE /screening/:id` | Delete the record |
+
+---
+
 ## Toxicology
+
+Toxicology records are always linked to an existing chemical (`chemical_id`).
+Record fields: `chemical_id`, `study_type`, `species`, `strain`, `sex`,
+`route_of_administration`, `duration`, `duration_unit`, `dose`, `dose_unit`,
+`endpoint`, `endpoint_value`, `endpoint_unit`, `noael`, `loael`, `ld50`,
+`study_reference`, `study_date`, `source`, `notes`, plus a free-form
+`metadata` object — the same columns as the shipped
+[`toxicology_template.xlsx`](docs/excel-templates/toxicology/toxicology_template.xlsx).
 
 ### List Toxicology Records
 
-Get paginated list of toxicology data.
+Get paginated list of toxicology data. Each record in the list is enriched
+with `chemical_name`.
 
 **Endpoint:** `GET /toxicology`
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `page` | integer | Page number |
+| `limit` | integer | Items per page |
+| `search` | string | Search in study type, chemical ID, endpoint, or species |
+| `chemical_id` | string | Filter by chemical ID |
 
 ---
 
 ### Get Toxicology by Chemical
+
+Raw records for one chemical (no `chemical_name` enrichment).
 
 **Endpoint:** `GET /toxicology/chemical/:chemical_id`
 
@@ -952,10 +1144,26 @@ Get paginated list of toxicology data.
     "chemical_id": "CHEM-001",
     "study_type": "Acute Toxicity",
     "species": "Rat",
-    "route": "Oral",
+    "strain": "Wistar",
+    "sex": "M",
+    "route_of_administration": "Oral",
+    "duration": 14,
+    "duration_unit": "days",
+    "dose": 200,
+    "dose_unit": "mg/kg",
+    "endpoint": "Mortality",
+    "endpoint_value": 192,
+    "endpoint_unit": "mg/kg",
+    "noael": 50,
+    "loael": 100,
     "ld50": 192,
-    "unit": "mg/kg",
-    "created_at": "2026-02-08T10:00:00.000Z"
+    "study_reference": "OECD TG 423",
+    "study_date": "2025-11-15",
+    "source": "Internal study",
+    "notes": null,
+    "metadata": null,
+    "created_at": "2026-02-08T10:00:00.000Z",
+    "updated_at": "2026-02-08T10:00:00.000Z"
   }
 ]
 ```
@@ -963,6 +1171,9 @@ Get paginated list of toxicology data.
 ---
 
 ### Add Toxicology Record
+
+The `chemical_id` must reference an existing chemical (otherwise `400`).
+Keys outside the field list above (e.g. `route`, `unit`) are silently dropped.
 
 **Endpoint:** `POST /toxicology`
 
@@ -973,11 +1184,74 @@ Get paginated list of toxicology data.
   "chemical_id": "CHEM-001",
   "study_type": "Acute Toxicity",
   "species": "Rat",
-  "route": "Oral",
+  "strain": "Wistar",
+  "sex": "M",
+  "route_of_administration": "Oral",
+  "dose": 200,
+  "dose_unit": "mg/kg",
+  "endpoint": "Mortality",
+  "endpoint_value": 192,
+  "endpoint_unit": "mg/kg",
   "ld50": 192,
-  "unit": "mg/kg"
+  "study_reference": "OECD TG 423",
+  "study_date": "2025-11-15",
+  "source": "Internal study"
 }
 ```
+
+**Response (201):**
+
+```json
+{
+  "message": "Toxicology data added successfully",
+  "id": "uuid"
+}
+```
+
+---
+
+### Upload Toxicology Records (Excel)
+
+Bulk upload toxicology records via Excel. Use the shipped
+[`toxicology_template.xlsx`](docs/excel-templates/toxicology/toxicology_template.xlsx)
+(`.xlsx` only). Column headers are the field names above, accepted in
+`snake_case` or `Title_Case` (`Chemical_ID`, `Study_Type`, `NOAEL`, `LD50`, …).
+Rows whose `chemical_id` does not match an existing chemical are skipped and
+reported in `errors`; every raw row is preserved in the record's `metadata`.
+
+**Endpoint:** `POST /toxicology/upload/excel`
+
+**Content-Type:** `multipart/form-data` (field: `file`)
+
+**Response:**
+
+```json
+{
+  "message": "Successfully uploaded 2 toxicology records",
+  "inserted": 2
+}
+```
+
+> The `errors` key (a list of `{row, error}` objects) appears only when rows failed.
+
+**cURL Example:**
+
+```bash
+curl -X POST http://localhost:49160/api/toxicology/upload/excel \
+  -F "file=@toxicology_template.xlsx"
+```
+
+---
+
+### Get / Update / Delete a Toxicology Record
+
+Records are addressed by their `id` (UUID, returned on create).
+
+| Method & Endpoint | Description |
+|-------------------|-------------|
+| `GET /toxicology/:id` | One record, enriched with `chemical_name` |
+| `PUT /toxicology/:id` | Merge arbitrary JSON fields into the record |
+| `DELETE /toxicology/:id` | Delete the record |
 
 ---
 
@@ -1188,7 +1462,7 @@ requests.post(f'{API_BASE}/chemicals/bulk/update',
               json={'chemical_ids': ['CHEM-003'], 'updates': {'supplier': 'Merck'}})
 
 # File uploads use files= (multipart), NOT json=
-with open('chemicals.xlsx', 'rb') as f:
+with open('chemicals_template.xlsx', 'rb') as f:
     response = requests.post(f'{API_BASE}/chemicals/upload/excel', files={'file': f})
     print(response.json())   # {'message': 'Successfully processed ...', 'inserted': ..., 'updated': ...}
 ```
@@ -1227,7 +1501,7 @@ curl -X POST "$API_BASE/chemicals" \
 
 # Upload Excel
 curl -X POST "$API_BASE/chemicals/upload/excel" \
-  -F "file=@chemicals.xlsx"
+  -F "file=@chemicals_template.xlsx"
 
 # Bulk operations
 curl -X POST "$API_BASE/chemicals/bulk/delete" \
@@ -1237,23 +1511,22 @@ curl -X POST "$API_BASE/chemicals/bulk/delete" \
 
 ---
 
-## Postman Collection
+## Interactive API Explorer (OpenAPI)
 
-Import the Postman collection for easy API testing:
+The backend serves an auto-generated OpenAPI console — no Postman collection is needed:
 
-1. Download: [Pandora-Toolbox-API.postman_collection.json](docs/Pandora-Toolbox-API.postman_collection.json)
-2. Import into Postman
-3. Set base URL variable: `http://localhost:49160/api`
+- **Swagger UI:** `http://localhost:49160/docs` — browse and try every endpoint interactively
+- **Raw schema:** `http://localhost:49160/openapi.json` — importable into Postman, Insomnia, etc.
 
 ---
 
 ## Support
 
 For API support or feature requests:
-- Email: support@example.com
-- GitHub Issues: [Create an issue](https://github.com/nestle-it/nr-nips-crucible/issues)
+- Email: `<maintainer-email>`
+- GitHub Issues: [Create an issue](https://github.com/nestle-it/nr-nips-crucible/issues) *(requires access to the private `nestle-it` org)*
 
 ---
 
-**Last Updated:** February 12, 2026  
+**Last Updated:** August 7, 2026  
 **API Version:** 2.0

@@ -16,7 +16,12 @@ Thank you for your interest in contributing to Crucible! This document provides 
 - [Pull Request Process](#pull-request-process)
 - [Testing](#testing)
 - [Documentation](#documentation)
+- [File Structure](#file-structure)
+- [Common Tasks](#common-tasks)
 - [Development Cleanup](#development-cleanup)
+- [Getting Help](#getting-help)
+- [Recognition](#recognition)
+- [License](#license)
 
 ---
 
@@ -53,16 +58,24 @@ We are committed to providing a welcoming and inspiring community for all. Pleas
 - Podman or Docker (for container testing)
 - Basic knowledge of React and FastAPI
 
-### Fork and Clone
+### Clone the Public Repo
+
+Crucible uses a **dual-repo model** (see [docs/GITOPS-WORKFLOW.md](docs/GITOPS-WORKFLOW.md) §2.1):
+the private `nestle-it` repo is the deploy-only source of truth, and the public
+`akannan2987` repo is the sanitized mirror where all changes are authored. The
+Mac authoring folder clones **only the public repo** — the private repo is
+**never** added as a remote on the Mac, so the folder cannot accidentally push
+to it. Content reaches the private repo via the VM mirror folder
+(GITOPS-WORKFLOW.md Flow A steps 6-8).
 
 ```bash
-# Fork the repository on GitHub
-# Clone your fork
-git clone https://github.com/YOUR_USERNAME/nr-nips-crucible.git
+# Clone the PUBLIC repo — this is the Mac authoring folder
+git clone https://github.com/akannan2987/nr-nips-crucible.git
 cd nr-nips-crucible
+git switch develop
 
-# Add upstream remote
-git remote add upstream https://github.com/nestle-it/nr-nips-crucible.git
+# Confirm: origin must be the PUBLIC repo, and nothing else
+git remote -v
 ```
 
 ### Install Dependencies
@@ -92,9 +105,9 @@ cd client && VITE_API_PROXY_TARGET=http://localhost:8000 npm run dev
 ### 1. Create a Branch
 
 ```bash
-# Update main branch
-git checkout main
-git pull upstream main
+# Update develop (the integration branch)
+git switch develop
+git pull --ff-only origin develop
 
 # Create feature branch
 git checkout -b feature/your-feature-name
@@ -154,9 +167,27 @@ Then create a Pull Request on GitHub.
 
 > ⚠️ **IMPORTANT**: The `develop` branch is the shared integration branch. Follow this checklist **every time** before pushing to avoid breaking the deployment or leaking sensitive files.
 
-### 🔒 Step 1: Verify No Sensitive Files Are Staged
+### 🛡️ Step 1: Run the Public-Safety Gate
+
+`origin` is the **public** repo, so every push is a public push.
+[docs/GITOPS-WORKFLOW.md](docs/GITOPS-WORKFLOW.md) Golden Rule 4 mandates the
+gate script before every one:
+
+```bash
+./check-public-safe.sh
+# ✅ Must print "✓ SAFE TO PUSH". Do NOT push if it fails —
+#    fix what it lists and re-run.
+```
+
+The script checks tracked secret paths, the template allowlist, and greps for
+internal identifiers — it supersedes the manual checks in Steps 2 and 6 below,
+which are kept as optional deep-dives.
+
+### 🔒 Step 2: Verify No Sensitive Files Are Staged (optional deep-dive)
 
 SSL certificates, private keys, and database files must **never** be committed.
+`check-public-safe.sh` already covers this; run these by hand if you want to
+inspect the staged list yourself.
 
 ```bash
 # Check what's staged for commit
@@ -172,7 +203,7 @@ git diff --cached --name-only | grep -iE '\.(key|crt|pem|cer|p12|pfx)$|certs/|da
 # git reset HEAD <file>
 ```
 
-### 🧪 Step 2: Test the Application Locally
+### 🧪 Step 3: Test the Application Locally
 
 ```bash
 # Option A: Quick dev test
@@ -199,7 +230,7 @@ podman logs --tail 20 crucible-py
 ./container-py.sh stop
 ```
 
-### 📋 Step 3: Verify the Build Succeeds
+### 📋 Step 4: Verify the Build Succeeds
 
 ```bash
 # Build the production frontend
@@ -211,7 +242,7 @@ cd client && npm run build
 # ✅ Should show "Image built successfully"
 ```
 
-### 🔍 Step 4: Review Your Changes
+### 🔍 Step 5: Review Your Changes
 
 ```bash
 # See what files changed
@@ -230,7 +261,9 @@ git --no-pager diff --cached
 - Commented-out code blocks
 - Temporary test files
 
-### ✅ Step 5: Verify .gitignore Is Intact
+### ✅ Step 6: Verify .gitignore Is Intact (optional deep-dive)
+
+`check-public-safe.sh` (Step 1) also covers this; run manually if in doubt.
 
 ```bash
 # Ensure .gitignore still protects sensitive files
@@ -238,11 +271,11 @@ cat .gitignore | grep -E 'certs|key|crt|pem|data'
 # ✅ Should show: certs/, *.key, *.crt, *.pem, data/
 
 # Verify no tracked files should be ignored
-git ls-files -i --exclude-standard
+git ls-files -i -c --exclude-standard
 # ✅ Should return NOTHING
 ```
 
-### 📝 Step 6: Follow Commit Message Conventions
+### 📝 Step 7: Follow Commit Message Conventions
 
 ```bash
 # Use conventional commit format
@@ -259,33 +292,44 @@ Includes mol_block extraction and validation.
 Closes #42"
 ```
 
-### 🚀 Step 7: Push to Develop
+### 🚀 Step 8: Push to the Public Repo
+
+`origin` on the Mac is the **public** repo. A push promotes `develop`, `beta`,
+and `master` together by fast-forward (see
+[Promoting Changes Across Branches](#promoting-changes-across-branches)):
 
 ```bash
+# Re-run the safety gate right before pushing
+./check-public-safe.sh                   # must print "✓ SAFE TO PUSH"
+
 # Pull latest changes from develop first (avoid conflicts)
-git pull origin develop
+git pull --ff-only origin develop
 
-# If there are merge conflicts, resolve them and test again (Steps 2-3)
+# If there are conflicts, resolve them and test again (Steps 3-4)
 
-# Push your changes
-git push origin develop
+# Push develop and fast-forward beta + master to the same commit
+git push origin develop develop:beta develop:master
 ```
 
-### 📌 Step 8: Post-Push Verification
+The change is now on the **public** repo only. To carry it into the private
+repo, continue with [docs/GITOPS-WORKFLOW.md](docs/GITOPS-WORKFLOW.md)
+**Flow A steps 6-11** (mirror public → private on the VM, then deploy).
+
+### 📌 Step 9: Deploy and Verify on the VM
+
+Production pulls from the **private** repo, so a `git pull` there is a no-op
+until the mirror steps (GITOPS-WORKFLOW.md Flow A steps 6-9) have copied your
+change into it. Once they have, deploy from the production folder exactly as in
+Flow A step 10 (folder layout and access: [docs/GITOPS-WORKFLOW.md](docs/GITOPS-WORKFLOW.md) §2.3
+and [docs/INSTALL-RHEL8.md](docs/INSTALL-RHEL8.md)):
 
 ```bash
-# SSH into the server and verify the deployment
-ssh <your-user>@<vm-hostname>
-
-cd /path/to/crucible
-git pull origin develop
-
-# Rebuild and restart
-./container-py.sh rebuild
-./container-py.sh start-ssl
-
-# Verify it's working
-curl --noproxy '*' -k -s https://localhost:49160/api/stats
+# ▶ VM — production folder
+./container-py.sh backup                        # always back up first
+cp -r data ~/data-backup-$(date +%Y%m%d)
+git pull
+./container-py.sh rebuild                       # preserves HTTP/HTTPS mode
+curl --noproxy '*' -s https://localhost:49160/api/stats
 
 # Check application in browser
 # https://<vm-hostname>:49160
@@ -295,6 +339,7 @@ curl --noproxy '*' -k -s https://localhost:49160/api/stats
 
 | Check | Command | Expected |
 |-------|---------|----------|
+| Safety gate passes | `./check-public-safe.sh` | `✓ SAFE TO PUSH` |
 | No certs/keys staged | `git diff --cached --name-only \| grep -iE '\.(key\|crt\|pem)'` | Empty output |
 | No data files staged | `git diff --cached --name-only \| grep 'data/'` | Empty output |
 | Backend tests pass | `cd backend && .venv/bin/pytest` | All green |
@@ -569,7 +614,7 @@ Closes #123"
 - [ ] Documentation is updated
 - [ ] Commit messages follow conventions
 - [ ] No console.log or debugging code
-- [ ] No merge conflicts with main
+- [ ] No merge conflicts with develop
 
 ### PR Title
 
@@ -613,7 +658,7 @@ Refs #456
 1. Automated checks must pass
 2. At least one approval from maintainers
 3. No unresolved discussions
-4. Up-to-date with main branch
+4. Up-to-date with develop branch
 
 ---
 
@@ -729,11 +774,14 @@ Root:
 ├── container-py.sh    # Container management — Python stack (podman/docker)
 ├── monitor.sh        # Health monitoring script
 ├── setup-after-clone-py.sh  # Post-clone setup with SSL certs
+├── setup-ssl.sh      # SSL certificate setup helper
+├── cert-expiry-check.sh  # Certificate expiry check
+├── check-public-safe.sh  # Pre-push safety gate (see docs/GITOPS-WORKFLOW.md)
 ├── uninstall.sh      # Uninstall & cleanup script
 ├── .gitignore        # Protects certs, data, keys
 ├── DEPLOYMENT.md     # Deployment runbooks, SSL, systemd
 ├── MIGRATION.md      # Migration history + learning map
-└── docs/             # Documentation
+└── docs/             # Documentation (incl. GITOPS-WORKFLOW.md, install/uninstall runbooks)
 ```
 
 ### Security Notes for Contributors
@@ -815,23 +863,21 @@ rm -rf certs/ data/
 ./uninstall.sh --full
 ```
 
-See the [Uninstall & Cleanup guide](DEPLOYMENT.md#uninstall--cleanup) in the Deployment documentation for complete details.
+See the [Uninstall and reinstall guide](DEPLOYMENT.md#uninstall-and-reinstall) in the Deployment documentation for complete details.
 
 ---
 
 ## Getting Help
 
-- **Questions**: Open a GitHub Discussion
+- **Questions**: Email <maintainer-email>
 - **Bugs**: Create an Issue with details
-- **Security**: Email security@example.com
-- **Slack**: Join #crucible channel
+- **Security**: Email <maintainer-email> — do not report security problems in a public Issue
 
 ---
 
 ## Recognition
 
 Contributors will be recognized in:
-- CONTRIBUTORS.md file
 - Release notes
 - Project README
 
@@ -839,7 +885,8 @@ Contributors will be recognized in:
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree that your contributions will be licensed under the
+project's license (LICENSE file not yet added — pending owner decision).
 
 ---
 

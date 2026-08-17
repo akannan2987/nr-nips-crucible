@@ -212,7 +212,7 @@ curl --noproxy '*' -s  https://localhost:49160/api/stats    # HTTPS mode (no -k 
 podman exec crucible-py python /app/backend/scripts/healthcheck.py && echo healthy
 
 # V3. UI loads (from the VM)
-curl --noproxy '*' -sk https://localhost:49160/ | grep -o '<title>[^<]*</title>'
+curl --noproxy '*' -s https://localhost:49160/ | grep -o '<title>[^<]*</title>'
 
 # V4. Logs are clean (Ctrl-C to detach)
 ./container-py.sh logs

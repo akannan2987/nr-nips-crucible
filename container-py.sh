@@ -20,6 +20,21 @@ DATA_DIR="$(pwd)/data"
 BACKUP_DIR="${BACKUP_DIR:-$(pwd)/backups}"
 CERTS_DIR="$(pwd)/certs"
 
+# ── Site defaults from .env.local (untracked, gitignored) ───────────
+# A machine can declare its standing configuration here so plain
+# `start`/`rebuild` do the right thing — e.g. the HTTPS production VM sets:
+#   USE_HTTPS=true
+# Environment variables always override .env.local. Same mechanism as
+# setup-after-clone-py.sh (which reads CERT_SOURCE/CERT_HOSTNAME from it).
+if [ -f "$(pwd)/.env.local" ]; then
+    _env_use_https="${USE_HTTPS:-}"
+    _env_use_postgres="${USE_POSTGRES:-}"
+    # shellcheck disable=SC1091
+    . "$(pwd)/.env.local"
+    USE_HTTPS="${_env_use_https:-${USE_HTTPS:-}}"
+    USE_POSTGRES="${_env_use_postgres:-${USE_POSTGRES:-}}"
+fi
+
 # ── PostgreSQL (optional) ───────────────────────────────────────────
 # SQLite (data/crucible.db) is the DEFAULT and needs nothing extra. Set
 # USE_POSTGRES=true to run the app against a managed Postgres container:
@@ -245,9 +260,14 @@ restart_container() {
 rebuild() {
     build_image
     check_podman_machine
-    # Preserve the protocol mode across the rebuild: an HTTPS deployment
-    # (start-ssl) must come back as HTTPS, not silently drop to HTTP.
-    local was_https="false"
+    # Choose the protocol mode for the recreated container. HTTPS wins when
+    # EITHER source says so:
+    #   1. the existing container runs HTTPS (preserve-mode: a live HTTPS
+    #      deployment must never silently drop to HTTP), or
+    #   2. USE_HTTPS=true from the environment or .env.local (so a fresh
+    #      machine with no container yet — e.g. right after an uninstall —
+    #      still comes up HTTPS).
+    local was_https="${USE_HTTPS:-false}"
     if $RUNTIME inspect ${CONTAINER_NAME} --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null \
         | grep -q '^USE_HTTPS=true$'; then
         was_https="true"
@@ -503,7 +523,15 @@ db_shell() {
 # Main script
 case "$1" in
     build)    build_image ;;
-    start)    start_container ;;
+    start)
+        # USE_HTTPS=true (env or .env.local) makes plain `start` an HTTPS
+        # start — the standing config for the production VM.
+        if [ "${USE_HTTPS:-false}" = "true" ]; then
+            start_container_ssl
+        else
+            start_container
+        fi
+        ;;
     start-ssl) start_container_ssl ;;
     stop)     stop_container ;;
     restart)  restart_container ;;

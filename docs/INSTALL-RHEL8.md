@@ -108,12 +108,22 @@ environment variables override it):
 cat > .env.local <<'EOF'
 CERT_SOURCE=<cert-store-path>
 CERT_HOSTNAME=<vm-hostname>
+USE_HTTPS=true
 EOF
-# CERT_HOSTNAME is optional — it defaults to `hostname -f`, which on the VM
-# already resolves to the right FQDN. The store must contain
-# <vm-hostname>.cer and <vm-hostname>.key.
+# CERT_SOURCE / CERT_HOSTNAME → where setup-after-clone-py.sh copies certs
+#   from (CERT_HOSTNAME is optional — defaults to `hostname -f`, which on the
+#   VM already resolves to the right FQDN; the store must contain
+#   <vm-hostname>.cer and <vm-hostname>.key).
+# USE_HTTPS=true → makes plain `./container-py.sh start` and `rebuild` come up
+#   HTTPS even when no container exists yet (fresh install, or right after an
+#   uninstall). Without it, `rebuild` can only preserve the mode of an
+#   EXISTING container — from scratch it would default to HTTP.
 ./setup-after-clone-py.sh
 ```
+
+**Treat `.env.local` as a VM prerequisite.** It is untracked (gitignored),
+survives `git pull`, and is the one piece a fresh clone or full uninstall
+cannot restore — recreate it before anything else.
 
 Manual placement (what the script does internally):
 

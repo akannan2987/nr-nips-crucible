@@ -120,6 +120,12 @@ podman rm crucible-py        # or: docker rm crucible-py
 > via `.gitignore`. Keep a backup of real certs outside the repository
 > (e.g. `~/.crucible/certs/` with `chmod 600` on the key).
 
+> 💡 On the Mac, HTTP is the sensible default and nothing extra is needed. If
+> you want this machine to *always* start HTTPS (like the production VM does),
+> create an untracked `.env.local` containing `USE_HTTPS=true` — then plain
+> `start`/`rebuild` come up HTTPS automatically. See
+> [INSTALL-RHEL8.md §3](INSTALL-RHEL8.md#3-https-with-corporate-certificates).
+
 ---
 
 ## 4. Verification checklist

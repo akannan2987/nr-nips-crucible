@@ -81,10 +81,17 @@ file next to `setup-after-clone-py.sh` (environment variables override it):
 ```
 CERT_SOURCE=<cert-store-path>
 CERT_HOSTNAME=<vm-hostname>   # optional; defaults to `hostname -f`
+USE_HTTPS=true                # makes plain `start`/`rebuild` come up HTTPS
 ```
 
 Required files in the store: `<vm-hostname>.cer` (→ `certs/server.crt`) and
 `<vm-hostname>.key` (→ `certs/server.key`).
+
+`container-py.sh` also reads `.env.local`: with `USE_HTTPS=true` set there,
+plain `./container-py.sh start` and `rebuild` start in HTTPS mode even when no
+container exists yet (fresh install, post-uninstall) — without it, `rebuild`
+can only preserve the mode of an existing container and defaults to HTTP from
+scratch. Environment variables always override `.env.local`.
 
 ---
 
@@ -406,7 +413,7 @@ browsers will show a security warning.
 | `PORT` | `49160` | HTTP/HTTPS port the app binds (inside the container) |
 | `CRUCIBLE_PORT` | *(unset)* | Port override for `container-py.sh` (a generic `PORT` in the shell is ignored) |
 | `HOST_BIND` | `127.0.0.1` (macOS) / `0.0.0.0` (Linux) | Published-port interface |
-| `USE_HTTPS` | `false` | `true` + cert files present → uvicorn serves TLS |
+| `USE_HTTPS` | `false` | `true` + cert files present → uvicorn serves TLS. Set it in the VM's `.env.local` so `start`/`rebuild` default to HTTPS |
 | `SSL_CERT_PATH` | `/app/certs/server.crt` | TLS certificate path (in-container) |
 | `SSL_KEY_PATH` | `/app/certs/server.key` | TLS private-key path (in-container) |
 | `DATABASE_URL` | `sqlite:///<repo>/data/crucible.db` | SQLAlchemy connection string. PostgreSQL: `postgresql+psycopg://user:pass@host/crucible` |
@@ -998,7 +1005,7 @@ cd nr-nips-crucible  # (or: cd into your existing checkout and run `git pull`)
 #    deleted it with the project directory) so the setup script can find the
 #    corporate cert store — or export CERT_SOURCE/CERT_HOSTNAME as
 #    environment variables instead.
-printf 'CERT_SOURCE=<cert-store-path>\nCERT_HOSTNAME=<vm-hostname>\n' > .env.local
+printf 'CERT_SOURCE=<cert-store-path>\nCERT_HOSTNAME=<vm-hostname>\nUSE_HTTPS=true\n' > .env.local
 
 # 3. Build + start + verify (+ optional monitoring cron) in one step
 ./setup-after-clone-py.sh

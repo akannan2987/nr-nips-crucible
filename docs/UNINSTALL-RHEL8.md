@@ -128,6 +128,14 @@ ls ~/crucible-backups/                            # final data backup, if you ra
 # Fresh clone of the PRIVATE repo (RHEL8 VM)
 git clone https://github.com/nestle-it/nr-nips-crucible.git
 cd nr-nips-crucible
+
+# Recreate .env.local FIRST — a full uninstall deleted it, and without it the
+# app comes up HTTP with no certificates (see INSTALL-RHEL8.md §3):
+cat > .env.local <<'EOF'
+CERT_SOURCE=<cert-store-path>
+USE_HTTPS=true
+EOF
+
 ./setup-after-clone-py.sh
 
 # Restore data if you kept a backup

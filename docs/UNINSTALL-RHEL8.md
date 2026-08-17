@@ -21,15 +21,23 @@ Companion documents: [RHEL8 Install & Run](INSTALL-RHEL8.md) ·
 
 ## 1. Before you start
 
-This is a **production** machine — take a final data backup off the VM first:
+This is a **production** machine — take a final data backup and copy it to
+**another machine you trust** (e.g. your Mac) first, so the data survives even
+if the VM itself is later wiped or decommissioned:
 
 ```bash
+# 1. On the VM: take a consistent snapshot
 ./container-py.sh backup                      # → backups/crucible-<stamp>.db
-scp backups/crucible-<stamp>.db user@safe-machine:~/   # copy it OFF the VM
+
+# 2. From your OTHER machine (e.g. your Mac), pull the backup off the VM:
+scp <your-user>@<vm-hostname>:/path/to/crucible/backups/crucible-<stamp>.db ~/
 ```
 
-(`--full` also takes an automatic last backup to
-`~/crucible-backups/crucible-final-<stamp>.db`, but that stays on the VM.)
+Note: `--full` also takes an automatic last backup to
+`~/crucible-backups/crucible-final-<stamp>.db` before deleting `data/` — a
+safety net so a full uninstall can never destroy data irreversibly. But that
+copy lives **on the VM itself**; it does not replace the off-machine copy
+above.
 
 ---
 
@@ -60,37 +68,32 @@ What each mode removes:
 | Removed | `--partial` | `--full` |
 |---|---|---|
 | `crucible-py` container + image (and dangling images) | ✅ | ✅ |
-| `monitor.sh` cron line + `/tmp/crucible-monitor.log` | ✅ | ✅ |
+| All crucible cron entries (`monitor.sh`, `cert-expiry-check.sh`, nightly backup) | ✅ | ✅ |
+| Their logs (`/tmp/crucible-monitor.log`, `~/crucible-cert.log`, `~/crucible-backup.log`) | ✅ | ✅ |
 | `certs/` directory | ✅ | ✅ |
 | `client/node_modules`, `client/dist`, `backend/.venv`, Python caches | ✅ | ✅ |
+| Base images (`python:3.12-slim`, `node:18-alpine`) | ❌ kept | ✅ (re-downloaded on next build) |
 | systemd user unit + Quadlet file (with `daemon-reload`) | ❌ | ✅ |
 | `data/` (SQLite DB) and `backups/` | ❌ kept | ✅ (after a final safety backup to `~/crucible-backups/`) |
 | The whole project directory | ❌ kept | ✅ (separate "Are you absolutely sure?" confirmation) |
 
-> ⚠️ `--partial` removes **more than its `--help` text claims**: besides the
-> container/image/cron/logs it also deletes `certs/` and the dependency
-> artifacts. Source code and `data/` are kept. Certs can be re-copied from the
-> corporate store afterwards via `./setup-after-clone-py.sh`.
+> 💡 Certs can be re-copied from the corporate store afterwards via
+> `./setup-after-clone-py.sh` (needs `.env.local` — see
+> [INSTALL-RHEL8.md §3](INSTALL-RHEL8.md#3-https-with-corporate-certificates)).
 
 ---
 
 ## 4. Manual cleanup the script does not do
 
-`uninstall.sh` only targets the `crucible-py` container/image and `monitor.sh`
-cron lines. Depending on what you set up, also run:
+`uninstall.sh` handles the container, images, cron entries, logs, and rootless
+systemd units. What remains manual:
 
 ```bash
-# PostgreSQL artifacts (only if you ever used USE_POSTGRES=true)
+# PostgreSQL artifacts (only if you ever used USE_POSTGRES=true — kept manual
+# because removing the crucible-pgdata volume deletes PostgreSQL DATA)
 podman rm -f crucible-db
 podman volume rm crucible-pgdata
 podman network rm crucible-net
-
-# Base images are deliberately left behind
-podman image prune -a
-
-# Manually-added cron lines survive (cert expiry, nightly backup)
-crontab -l | grep -v 'cert-expiry-check.sh' | grep -v 'container-py.sh backup' | crontab -
-rm -f ~/crucible-cert.log ~/crucible-backup.log
 
 # Firewall rule (whichever case applied at install time)
 sudo firewall-cmd --permanent --remove-port=49160/tcp && sudo firewall-cmd --reload
@@ -109,7 +112,8 @@ podman ps -a | grep crucible                      # → no output
 podman images | grep crucible                     # → no output
 podman volume ls | grep crucible                  # → no output
 podman network ls | grep crucible                 # → no output
-crontab -l | grep -i crucible                     # → no output (also: grep monitor.sh)
+crontab -l | grep -iE 'crucible|monitor.sh|cert-expiry' # → no output
+ls ~/crucible-cert.log ~/crucible-backup.log 2>/dev/null # → no output
 systemctl --user list-units | grep crucible       # → no output
 ss -tlnp | grep 49160                             # → no output
 sudo firewall-cmd --list-ports 2>/dev/null        # → 49160/tcp gone (if firewalld)
@@ -135,4 +139,4 @@ auto-start, and monitoring re-setup).
 
 ---
 
-**Last Updated:** August 6, 2026
+**Last Updated:** August 8, 2026

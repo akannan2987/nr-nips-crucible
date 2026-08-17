@@ -147,6 +147,12 @@ crontab -e   # add the weekly check (Mondays 08:00):
 # 0 8 * * 1 cd /path/to/crucible && ./cert-expiry-check.sh >> ~/crucible-cert.log 2>&1
 ```
 
+> ⚠️ The cron line's `cd` must point at the **production checkout** — the one
+> whose `certs/` holds the live certificate. Pointing it at another clone
+> (e.g. the `~/crucible-mirror` folder, which has no `certs/`) makes the check
+> report "no cert present = OK" every week while never inspecting the real
+> certificate.
+
 Certificate rotation (renewal or reissue): see
 [DEPLOYMENT.md → Maintenance](../DEPLOYMENT.md#maintenance-and-operational-tasks).
 Shortcut — **remove the old pair first** (the setup script keeps existing

@@ -9,8 +9,15 @@ set -euo pipefail
 # ── Configuration ────────────────────────────────────────────
 IMAGES="crucible-py"
 CONTAINERS="crucible-py"
+# Base images pulled by the multi-stage build; removed by --full (offered in
+# interactive). Rootless podman/docker images are per-user, so this cannot
+# affect other users of a shared machine.
+BASE_IMAGES="python:3.12-slim node:18-alpine"
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
-MONITOR_LOGS="/tmp/crucible-monitor.log"
+# Every cron entry the project's docs/scripts may have installed.
+CRON_PATTERNS='monitor\.sh|cert-expiry-check\.sh|container-py\.sh backup'
+# Every log file those cron entries write.
+CRON_LOGS="/tmp/crucible-monitor.log ${HOME}/crucible-cert.log ${HOME}/crucible-backup.log"
 
 # Runtime detection (same convention as container*.sh)
 if [ -n "${CONTAINER_RUNTIME:-}" ]; then RUNTIME="$CONTAINER_RUNTIME"
@@ -54,8 +61,12 @@ show_help() {
     echo "Usage: $0 [option]"
     echo ""
     echo "Options:"
-    echo "  --partial     Remove container, image, cron, logs (keep source & data)"
-    echo "  --full        Remove everything including data and source code"
+    echo "  --partial     Remove container, image, cron jobs + logs, certs/,"
+    echo "                node_modules/dist/.venv (keep source, data & base images)"
+    echo "  --full        Remove everything: the above plus base images"
+    echo "                (python:3.12-slim, node:18-alpine), data/ (after a"
+    echo "                safety backup to ~/crucible-backups), backups/,"
+    echo "                systemd units, and the project directory"
     echo "  --interactive Guided step-by-step cleanup (default)"
     echo "  --dry-run     Show what would be removed without deleting anything"
     echo "  --help        Show this help message"
@@ -118,26 +129,44 @@ remove_image() {
         $RUNTIME image prune -f >/dev/null 2>&1
         success "Pruned ${dangling} dangling image(s)"
     fi
-    info "Base images (python:3.12-slim, node:18-alpine) are left in place;"
-    info "remove with '$RUNTIME image prune -a' if you want them gone too."
+}
+
+remove_base_images() {
+    echo ""
+    echo -e "${BOLD}Step 3b: Remove Base Images${NC}"
+    local img found=0
+    for img in ${BASE_IMAGES}; do
+        if $RUNTIME image inspect "${img}" >/dev/null 2>&1; then
+            if $RUNTIME rmi "${img}" >/dev/null 2>&1; then
+                success "Base image '${img}' removed"
+            else
+                warn "Could not remove '${img}' — another container may still use it"
+            fi
+            found=1
+        fi
+    done
+    [ "$found" -eq 0 ] && { info "No base images present"; skip; }
+    info "They are re-downloaded automatically on the next ./container-py.sh build"
 }
 
 remove_cron() {
     echo ""
-    echo -e "${BOLD}Step 4: Remove Health Monitoring Cron Job${NC}"
-    if crontab -l 2>/dev/null | grep -q 'monitor.sh'; then
-        crontab -l 2>/dev/null | grep -v 'monitor.sh' | crontab -
-        success "Monitoring cron job removed"
+    echo -e "${BOLD}Step 4: Remove Cron Jobs & Their Logs${NC}"
+    # Covers every entry the project installs or documents: the */5 health
+    # monitor, the weekly cert-expiry check, and the nightly backup job.
+    if crontab -l 2>/dev/null | grep -qE "${CRON_PATTERNS}"; then
+        { crontab -l 2>/dev/null | grep -vE "${CRON_PATTERNS}" || true; } | crontab -
+        success "Cron job(s) removed (monitor.sh / cert-expiry-check.sh / backup)"
     else
-        info "No monitoring cron job found"
+        info "No crucible cron jobs found"
         skip
     fi
 
     local log
-    for log in ${MONITOR_LOGS}; do
+    for log in ${CRON_LOGS}; do
         if [ -f "${log}" ]; then
             rm -f "${log}"
-            success "Monitor log removed (${log})"
+            success "Log removed (${log})"
         fi
     done
 }
@@ -327,20 +356,32 @@ dry_run() {
         fi
     done
 
-    # Cron
-    if crontab -l 2>/dev/null | grep -q 'monitor.sh'; then
-        echo -e "  ${RED}✗${NC} Cron job: monitor.sh entry"
+    # Base images (removed by --full only)
+    local bimg
+    for bimg in ${BASE_IMAGES}; do
+        if $RUNTIME image inspect "${bimg}" >/dev/null 2>&1; then
+            echo -e "  ${RED}✗${NC} Base image (--full only): ${bimg}"
+        else
+            echo -e "  ${GREEN}✓${NC} Base image ${bimg}: (not present)"
+        fi
+    done
+
+    # Cron entries (monitor / cert-expiry / backup)
+    local cron_hits
+    cron_hits=$(crontab -l 2>/dev/null | grep -cE "${CRON_PATTERNS}" || true)
+    if [ "${cron_hits}" -gt 0 ]; then
+        echo -e "  ${RED}✗${NC} Cron job(s): ${cron_hits} crucible entr(y/ies) (monitor / cert-expiry / backup)"
     else
-        echo -e "  ${GREEN}✓${NC} Cron job: (none found)"
+        echo -e "  ${GREEN}✓${NC} Cron jobs: (none found)"
     fi
 
-    # Monitor logs
+    # Cron logs
     local log
-    for log in ${MONITOR_LOGS}; do
+    for log in ${CRON_LOGS}; do
         if [ -f "${log}" ]; then
-            echo -e "  ${RED}✗${NC} Monitor log: ${log}"
+            echo -e "  ${RED}✗${NC} Log: ${log}"
         else
-            echo -e "  ${GREEN}✓${NC} Monitor log ${log}: (not found)"
+            echo -e "  ${GREEN}✓${NC} Log ${log}: (not found)"
         fi
     done
 
@@ -430,7 +471,7 @@ run_partial() {
     remove_node_modules
     show_summary
 
-    echo "Source code and data are preserved."
+    echo "Source code, data, and base images are preserved."
     echo "To redeploy later: ./setup-after-clone-py.sh"
     echo ""
 }
@@ -453,6 +494,7 @@ run_full() {
     stop_container
     remove_container
     remove_image
+    remove_base_images
     remove_cron
     remove_certs
     backup_data
@@ -477,8 +519,13 @@ run_interactive() {
         remove_image
     fi
 
+    # Step 3b: Base images
+    if confirm "Remove base images (python:3.12-slim, node:18-alpine)? Re-downloaded on next build"; then
+        remove_base_images
+    fi
+
     # Step 4: Cron
-    if confirm "Remove health monitoring cron job?"; then
+    if confirm "Remove crucible cron jobs (monitor / cert-expiry / backup) and their logs?"; then
         remove_cron
     fi
 

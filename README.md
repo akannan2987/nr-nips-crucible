@@ -513,11 +513,12 @@ docker, macOS or RHEL8):
 ./uninstall.sh --dry-run
 ```
 
-The script removes: the `crucible-py` container and image, the monitoring cron
-job and logs, SSL certs, application data (`crucible.db`, with a final safety
-backup to `~/crucible-backups`), local `backups/`, `client/node_modules` +
+The script removes: the `crucible-py` container and image, all crucible cron
+jobs (monitor, cert-expiry, nightly backup) and their logs, SSL certs,
+application data (`crucible.db`, with a final safety backup to
+`~/crucible-backups`), local `backups/`, `client/node_modules` +
 `client/dist`, `backend/.venv` + Python caches, systemd services (rootless
-user unit and Quadlet), and the project directory.
+user unit and Quadlet), base images (`--full` only), and the project directory.
 
 **To reinstall / redeploy** (same command on macOS and the RHEL8 VM):
 

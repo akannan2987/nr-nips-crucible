@@ -778,13 +778,16 @@ Modes:
 ./uninstall.sh               # interactive: choose step by step
 ```
 
-It removes: the `crucible-py` container + image, the monitoring cron entry and
-`/tmp/crucible-monitor.log`, `data/crucible.db` (backed up to
-`~/crucible-backups` before deletion in full mode), the local `backups/`
-directory, `backend/.venv` and Python caches, and the rootless systemd /
-Quadlet units (with a reminder to `sudo loginctl disable-linger $USER`). Base
-images (`python:3.12-slim`, `node:18-alpine`) are left in place — prune
-manually if wanted.
+It removes: the `crucible-py` container + image, **all** crucible cron entries
+(`monitor.sh`, `cert-expiry-check.sh`, the nightly backup job) and their logs
+(`/tmp/crucible-monitor.log`, `~/crucible-cert.log`, `~/crucible-backup.log`),
+`certs/`, `data/crucible.db` (backed up to `~/crucible-backups` before deletion
+in full mode), the local `backups/` directory, `client/node_modules` +
+`client/dist`, `backend/.venv` and Python caches, and the rootless systemd /
+Quadlet units (with a reminder to `sudo loginctl disable-linger $USER`).
+`--full` additionally removes the base images (`python:3.12-slim`,
+`node:18-alpine`) — they re-download on the next build; `--partial` keeps them
+for a faster reinstall.
 
 On the RHEL8 VM, remember the firewall rule if one was added
 (`sudo iptables -D INPUT -p tcp --dport 49160 -j ACCEPT`, or the firewalld
@@ -847,17 +850,17 @@ podman images | grep crucible
 podman image prune -f
 ```
 
-#### Step 4: Remove Health Monitoring Cron Job
+#### Step 4: Remove Cron Jobs & Their Logs
 
 ```bash
 # View current cron jobs
 crontab -l
 
-# Remove the pandora monitor entry
-crontab -l | grep -v 'monitor.sh' | crontab -
+# Remove ALL crucible entries in one go (monitor, cert-expiry, nightly backup)
+crontab -l | grep -vE 'monitor\.sh|cert-expiry-check\.sh|container-py\.sh backup' | crontab -
 
-# Remove the crucible backup monitor entry
-crontab -l | grep -v 'container-py.sh backup' | crontab -
+# Remove their log files
+rm -f /tmp/crucible-monitor.log ~/crucible-cert.log ~/crucible-backup.log
 
 # Verify removal
 crontab -l | grep crucible-py
@@ -952,9 +955,9 @@ The following table lists everything that gets created during installation and w
 | Data | `./data/` (bind mount) | `rm -rf data/` |
 | PostgreSQL (only if `USE_POSTGRES=true`) | `crucible-db` container, `crucible-pgdata` volume, `crucible-net` network | `podman rm -f crucible-db && podman volume rm crucible-pgdata && podman network rm crucible-net` |
 | SSL certificates | `./certs/` | `rm -rf certs/` |
-| Cron job monitor | User crontab | `crontab -l \| grep -v 'monitor.sh' \| crontab -` |
-| Cron job backup | User crontab | `crontab -l \| grep -v 'container-py.sh backup' \| crontab -` |
-| Monitor log | `/tmp/crucible-monitor.log` | `rm -f /tmp/crucible-monitor.log` |
+| Cron jobs (monitor, cert-expiry, backup) | User crontab | `crontab -l \| grep -vE 'monitor\.sh\|cert-expiry-check\.sh\|container-py\.sh backup' \| crontab -` |
+| Cron logs | `/tmp/crucible-monitor.log`, `~/crucible-cert.log`, `~/crucible-backup.log` | `rm -f /tmp/crucible-monitor.log ~/crucible-cert.log ~/crucible-backup.log` |
+| Base images (`--full` only) | `python:3.12-slim`, `node:18-alpine` | `podman rmi python:3.12-slim node:18-alpine` (re-downloaded on next build) |
 | node_modules | `client/node_modules/` | `rm -rf client/node_modules/` |
 | Build output | `client/dist/` | `rm -rf client/dist/` |
 | Python venv | `backend/.venv/` | `rm -rf backend/.venv/` |
@@ -970,14 +973,13 @@ If you want to stop running the application but keep the repository for future u
 # Automated (recommended)
 ./uninstall.sh --partial
 
-# Or manually:
+# Or manually (matches what --partial does — data/ is KEPT):
 ./container-py.sh clean
-crontab -l | grep -v 'monitor.sh' | crontab -
-crontab -l | grep -v 'container-py.sh backup' | crontab -
-rm -f /tmp/crucible-monitor.log
-rm -rf certs/ data/
+crontab -l | grep -vE 'monitor\.sh|cert-expiry-check\.sh|container-py\.sh backup' | crontab -
+rm -f /tmp/crucible-monitor.log ~/crucible-cert.log ~/crucible-backup.log
+rm -rf certs/ client/node_modules client/dist backend/.venv
 
-# The source code remains intact and can be re-deployed with:
+# The source code and data remain intact; re-deploy with:
 # ./setup-after-clone-py.sh
 ```
 

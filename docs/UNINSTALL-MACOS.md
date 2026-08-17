@@ -40,15 +40,13 @@ What each mode removes:
 | Removed | `--partial` | `--full` |
 |---|---|---|
 | `crucible-py` container + image (and dangling images) | ✅ | ✅ |
-| `monitor.sh` cron line + `/tmp/crucible-monitor.log` | ✅ | ✅ |
+| All crucible cron entries (`monitor.sh`, `cert-expiry-check.sh`, nightly backup) | ✅ | ✅ |
+| Their logs (`/tmp/crucible-monitor.log`, `~/crucible-cert.log`, `~/crucible-backup.log`) | ✅ | ✅ |
 | `certs/` directory | ✅ | ✅ |
 | `client/node_modules`, `client/dist`, `backend/.venv`, Python caches | ✅ | ✅ |
+| Base images (`python:3.12-slim`, `node:18-alpine`) | ❌ kept | ✅ (re-downloaded on next build) |
 | `data/` (SQLite DB) and `backups/` | ❌ kept | ✅ (after a final safety backup to `~/crucible-backups/crucible-final-<stamp>.db`) |
 | The whole project directory | ❌ kept | ✅ (separate "Are you absolutely sure?" confirmation) |
-
-> ⚠️ `--partial` removes **more than its `--help` text claims**: besides the
-> container/image/cron/logs it also deletes `certs/` and the dependency
-> artifacts (`node_modules`, `dist`, `.venv`). Source code and `data/` are kept.
 
 > 💡 Keep a copy of real certificates **outside** the repo
 > (e.g. `~/.crucible/certs/`) — `certs/` is deleted by both `--partial` and
@@ -58,22 +56,15 @@ What each mode removes:
 
 ## 3. Manual cleanup the script does not do
 
-`uninstall.sh` only targets the `crucible-py` container and image, and only
-strips cron lines matching `monitor.sh`. If you used the optional extras:
+`uninstall.sh` handles the container, images, cron entries, and logs. What
+remains manual:
 
 ```bash
-# PostgreSQL artifacts (only if you ever used USE_POSTGRES=true)
+# PostgreSQL artifacts (only if you ever used USE_POSTGRES=true — kept manual
+# because removing the crucible-pgdata volume deletes PostgreSQL DATA)
 podman rm -f crucible-db
 podman volume rm crucible-pgdata
 podman network rm crucible-net
-
-# Base images are deliberately left behind
-podman image prune -a          # removes python:3.12-slim, node:18-alpine, etc.
-
-# Manually-added cron lines survive (cert expiry, nightly backup)
-crontab -l                     # inspect
-crontab -l | grep -v 'cert-expiry-check.sh' | grep -v 'container-py.sh backup' | crontab -
-rm -f ~/crucible-cert.log ~/crucible-backup.log
 
 # Podman VM / runtime itself (only if you want it fully gone)
 podman machine stop && podman machine rm
@@ -92,7 +83,8 @@ There is no launchd integration and no firewall/systemd configuration on macOS
 ```bash
 podman ps -a | grep crucible     # → no output
 podman images | grep crucible    # → no output
-crontab -l | grep -i crucible    # → no output (also check: grep monitor.sh)
+crontab -l | grep -iE 'crucible|monitor.sh|cert-expiry' # → no output
+ls ~/crucible-cert.log ~/crucible-backup.log 2>/dev/null # → no output
 lsof -i :49160                   # → no output
 ls ~/crucible-backups/           # final data backup, if you ran --full
 ```
@@ -115,4 +107,4 @@ Full instructions: [INSTALL-MACOS.md](INSTALL-MACOS.md).
 
 ---
 
-**Last Updated:** August 6, 2026
+**Last Updated:** August 8, 2026

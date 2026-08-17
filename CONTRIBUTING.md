@@ -829,7 +829,8 @@ After you're done developing or before switching to a different project, clean u
 Use the `uninstall.sh` script:
 
 ```bash
-# Partial cleanup — removes container, image, cron, logs, keeps source code
+# Partial cleanup — removes container, image, all crucible cron jobs + logs,
+# certs/, and dependency artifacts; keeps source code, data, and base images
 ./uninstall.sh --partial
 
 # Preview what would be removed first
@@ -846,14 +847,14 @@ If you prefer to run steps individually:
 # Stop and remove container + image
 ./container-py.sh clean
 
-# Remove monitoring cron job
-crontab -l | grep -v 'monitor.sh' | crontab -
-rm -f /tmp/crucible-monitor.log
+# Remove ALL crucible cron jobs (monitor, cert-expiry, nightly backup) + logs
+crontab -l | grep -vE 'monitor\.sh|cert-expiry-check\.sh|container-py\.sh backup' | crontab -
+rm -f /tmp/crucible-monitor.log ~/crucible-cert.log ~/crucible-backup.log
 
 # Free disk space
 rm -rf client/node_modules/ backend/.venv/
 rm -rf client/dist/
-rm -rf certs/ data/
+rm -rf certs/ data/   # ⚠️ deletes your local database — back up data/ first if you care about it
 ```
 
 ### Full Uninstall

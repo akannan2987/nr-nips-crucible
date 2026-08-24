@@ -120,7 +120,39 @@ This is the running deployment; it almost certainly already exists.
 # ▶ VM
 cd ~/work/Pandora_toolbox/nr-nips-crucible     # adjust to your actual path
 git remote -v                                  # must show ONLY the private repo
+git branch --show-current                      # should be: master
 ```
+
+**Production tracks `master`.** All three branches are pushed to the same commit,
+so today they are identical and the choice costs nothing — but `master`
+conventionally means "what is live", it tells anyone who lands in this folder
+which checkout they are in, and it leaves room to test on `develop` later
+without a routine `git pull` dragging unblessed work into production.
+
+```bash
+# ▶ VM — production folder: switch once, then this is the update command forever
+git switch master
+git pull --ff-only origin master
+
+# Keep only master in this folder — a local develop here has no job, and its
+# presence invites doubt about which branch is actually deployed:
+git branch -d develop        # -d refuses if there is unmerged work
+```
+
+That deletes only the **local pointer**. `origin/develop` on the server is
+untouched, and `git switch develop` would recreate it from the remote if you
+ever needed it. The gain is clarity rather than protection: `git branch` in the
+production folder then prints exactly one line, and that line answers "what is
+deployed here?" without anyone having to think about it.
+
+`--ff-only` guarantees a clean fast-forward or an outright refusal — never a
+surprise merge on the production machine.
+
+> **Does a `git pull` need a rebuild?** Only if it changed something the running
+> app executes. Rebuild when `backend/`, `client/`, `backend/requirements.txt`,
+> or `backend/Dockerfile` changed. For documentation and helper-script changes,
+> `git pull` alone is enough — a rebuild would take production down for no
+> benefit. `git log --stat -1` after pulling shows you which it was.
 
 If you ever need to recreate it, clone the private repo and follow
 [INSTALL-RHEL8.md](INSTALL-RHEL8.md). Do **not** add a `public` remote here.

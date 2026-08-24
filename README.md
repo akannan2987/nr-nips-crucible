@@ -28,13 +28,8 @@ git clone https://github.com/nestle-it/nr-nips-crucible.git
 
 cd nr-nips-crucible
 
-# One command does everything (certs if available, build, start,
-# verify, optional monitoring cron) — on macOS AND the RHEL8 VM:
+# One command does everything — on macOS AND the RHEL8 VM:
 ./setup-after-clone-py.sh
-
-# Or the individual steps:
-./container-py.sh build      # build (auto-detects podman or docker)
-./container-py.sh start      # run on http://localhost:49160
 ```
 
 > **Two repositories, one codebase:** macOS development tracks the public
@@ -46,19 +41,13 @@ cd nr-nips-crucible
 > before every public push — is documented in
 > **[docs/GITOPS-WORKFLOW.md](docs/GITOPS-WORKFLOW.md)**.
 
-The setup script will:
-1. Copy SSL certificates from the Nestlé certificate store (when available)
-2. Verify certificate/key pair integrity
-3. Build the container image
-4. Start the application (HTTPS when certs exist, else HTTP)
-5. Verify the API answers
-6. Optionally configure health monitoring
-
-Full runbooks (macOS Docker/Podman, RHEL8 Podman): **[DEPLOYMENT.md](DEPLOYMENT.md)**
-
-Access the application:
-- **Production (HTTPS):** `https://<vm-hostname>:49160`
-- **Development:** `http://localhost:3000` (frontend dev server) + `http://localhost:49160` (API)
+That one command copies and verifies SSL certificates (when a certificate store
+exists), builds the image, starts the app (HTTPS when certs exist, else HTTP),
+polls the API until it answers, and optionally installs the monitoring cron
+(`SETUP_MONITOR=n` to skip the prompt). Every step, its expected output, and
+every likely mistake: **[macOS Install](docs/INSTALL-MACOS.md)** ·
+**[RHEL8 Install](docs/INSTALL-RHEL8.md)**; deep runbooks in
+**[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
 ### Which guide should I follow?
 
@@ -154,35 +143,25 @@ A fix discovered **on the VM** travels back as a patch (never a push):
 
 ## 📦 Installation
 
-### Prerequisites
+**Prerequisites:** Podman or Docker (the containerized deployment needs nothing
+else) plus OpenSSL for certificate verification; production HTTPS additionally
+needs access to the corporate certificate store, and bare-metal development
+wants Python 3.12+ and Node.js 18+ / npm 8+.
 
-- Podman or Docker (for containerized deployment — covers everything else)
-- For bare-metal development only:
-  - Python 3.12+ (backend)
-  - Node.js 18+ and npm 8+ (to build the React client)
-- OpenSSL (for certificate verification)
-- Access to Nestlé certificate store (for HTTPS in production)
-
-### Install Dependencies (bare-metal development)
-
-```bash
-# From the project root directory:
-
-# Python backend
-cd backend
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-
-# React client (for the dev server / production build)
-cd ../client
-npm install
-```
+The install itself is one command — `./setup-after-clone-py.sh` — documented
+step by step, for a reader with no prior container experience, in
+**[macOS Install → §1 Prerequisites](docs/INSTALL-MACOS.md#1-prerequisites)**
+and **[RHEL8 Install → §1 Prerequisites](docs/INSTALL-RHEL8.md#1-prerequisites-one-time-vm-setup)**.
 
 ---
 
 ## 🛠️ Development
 
-### Local Development (Hot Reload)
+Bare-metal setup (Python venv + dependencies) is in
+**[backend/README.md → Quickstart](backend/README.md#quickstart-macos)**; the
+React client additionally needs `cd client && npm install` once.
+
+**Hot reload — two terminals** (frontend on `http://localhost:3000`, API on `http://localhost:8000`):
 
 ```bash
 # Terminal 1 — FastAPI with auto-reload on a side port
@@ -192,42 +171,33 @@ cd backend && .venv/bin/uvicorn app.main:app --reload --port 8000
 cd client && VITE_API_PROXY_TARGET=http://localhost:8000 npm run dev
 ```
 
-This starts:
-- Frontend dev server: `http://localhost:3000`
-- Backend API server: `http://localhost:8000`
-
-### Build for Production
+**Bare-metal production build** (serves API + built client on `http://localhost:49160`):
 
 ```bash
-# Build the React frontend (output: client/dist)
-cd client && npm run build
-
-# Start the production server on port 49160 (serves API + built client)
+cd client && npm run build                                  # → client/dist
 cd ../backend && PORT=49160 .venv/bin/python -m app.main
 ```
 
-Production app runs at: `http://localhost:49160`
+Module layout, every environment variable, and the generated FastAPI `/docs`
+page: **[backend/README.md](backend/README.md)**.
 
 ---
 
 ## 🧪 Testing
-
-### Python backend
 
 ```bash
 cd backend
 .venv/bin/pytest                     # contract-parity tests + unit tests
 ```
 
-The suite locks the **v1 API contract** (response keys, messages, status
-codes) plus SDF/Excel parsing behaviour, so the backend can be refactored
-safely. See [backend/README.md](backend/README.md) for details.
-
-Tests cover:
-- **API parity**: Statistics, Chemicals CRUD + duplicate rejection, Samples CRUD, Screening (chemical linkage + filter), Toxicology, capacity limits, pagination quirks
-- **SDF parsing**: V2000/V3000 parsing, V3000 line continuations, S-Groups (SRU/MUL/COP/MIX/SUP), polymer & mixture detection, stereochemistry, formal charges, catch-all metadata, Tier 1 named fields (`dtxsid`, `preferred_name`, `monoisotopic_mass`, `ms_ready_smiles`, `synonyms`)
-- **Samples parsing**: SLIMS 3-row header detection, field renames (`Barcode`→`sample_id`, etc.), European date normalisation (`DD/MM/YYYY`→ISO), metadata preservation, `chemical_ids` linkage defaults
-- **Static serving**: architecture page + SPA fallback
+The suite locks the **v1 API contract** (response keys, messages, status codes)
+so the backend can be refactored safely, and covers API parity for every module
+(CRUD, duplicate rejection, pagination quirks, capacity limits), SDF parsing
+(V2000/V3000 incl. line continuations, S-Groups, polymer/mixture detection,
+stereochemistry, formal charges, Tier 1 named fields), SLIMS sample parsing
+(3-row header, field renames, European date normalisation), and static/SPA
+serving. 📚 **[backend/README.md](backend/README.md)** ·
+**[Architecture → Testing](docs/architecture.md#testing)**
 
 ---
 
@@ -238,21 +208,9 @@ Both scripts auto-detect **podman or docker** (override with
 Port override: `CRUCIBLE_PORT=<n>` (a generic `PORT` env var is ignored to
 avoid clashes on shared machines).
 
-### Deploy on the RHEL8 VM (production) — field-tested sequence
-
-```bash
-# On the VM (full runbook with troubleshooting: DEPLOYMENT.md)
-cd /path/to/crucible
-cp -r data ~/data-backup-$(date +%Y%m%d)  # back up production data
-git pull
-./container-py.sh rebuild                 # rebuild + restart on 0.0.0.0:49160
-                                          # (preserves HTTP/HTTPS mode)
-curl --noproxy '*' -sk https://localhost:49160/api/stats   # or http:// on an HTTP deploy
-# then: systemd auto-start and cutover checklist (DEPLOYMENT.md)
-```
-
-App URL: `https://<vm-hostname>:49160` (or `http://` on an HTTP deploy). Firewall notes
-(firewalld vs plain iptables vs none): DEPLOYMENT.md.
+Deploying and updating on the RHEL8 VM (the field-tested backup → `git pull` →
+`rebuild` → verify sequence, plus firewall, SELinux and systemd auto-start):
+**[RHEL8 Install → §6 Day-2 operations](docs/INSTALL-RHEL8.md#6-day-2-operations)**.
 
 ### Container commands
 
@@ -285,9 +243,9 @@ USE_POSTGRES=true ./container-py.sh start   # run the app against PostgreSQL
 ./container-py.sh restore backups/crucible-<stamp>.db   # stop → swap db → restart
 ```
 
-Backs up `data/crucible.db` using SQLite's online-backup API (never a torn
-copy). Details, VM cron schedule, and machine-to-machine transfer:
-**[DEPLOYMENT.md](DEPLOYMENT.md)**.
+Safe while running (SQLite's online-backup API — never plain-`cp` a live
+database). Retention, the VM's nightly cron, and machine-to-machine transfer:
+**[DEPLOYMENT.md → Backup and restore](DEPLOYMENT.md#backup-and-restore)**.
 
 📚 **[View Full Deployment Guide →](DEPLOYMENT.md)**
 
@@ -295,38 +253,19 @@ copy). Details, VM cron schedule, and machine-to-machine transfer:
 
 ## 🔒 HTTPS / SSL Configuration
 
-The app serves **HTTPS with official Nestlé SSL certificates** from the
-`certs/` directory via `./container-py.sh start-ssl` (uvicorn TLS — see
-[DEPLOYMENT.md](DEPLOYMENT.md)). Note: HTTPS is transport encryption; user
-*authentication* (SSO login) is still a planned enhancement.
+TLS is served **in-process by uvicorn** from the `certs/` directory
+(`server.crt` / `server.key`, plus `ca.crt` from `Nestle_Root_CA.cer` where the
+root is needed) — via `./container-py.sh start-ssl`, or automatically when
+`USE_HTTPS=true`. Certs are runtime-mounted read-only, never baked into the
+image. This is transport encryption only; user *authentication* (SSO) remains a
+planned enhancement.
 
-### Certificate Source
-
-Certificates are sourced from the corporate certificate store on the VM.
-The store's actual path is site-specific and is **not** committed — configure
-it once on the VM in an untracked `.env.local` file next to
-`setup-after-clone-py.sh` (see [docs/INSTALL-RHEL8.md](docs/INSTALL-RHEL8.md#3-https-with-corporate-certificates)):
-
-```
-CERT_SOURCE=<cert-store-path>
-CERT_HOSTNAME=<vm-hostname>   # optional; defaults to `hostname -f`
-```
-
-### Certificate Files (in `certs/` directory - NOT committed to git)
-
-| File | Source | Purpose |
-|------|--------|---------|
-| `server.crt` | `<vm-hostname>.cer` | Server certificate |
-| `server.key` | `<vm-hostname>.key` | Private key |
-| `ca.crt` | `Nestle_Root_CA.cer` | CA root certificate |
-
-### Verify Certificate/Key Pair
-
-```bash
-# Both commands must output the same MD5 hash
-openssl x509 -noout -modulus -in certs/server.crt | openssl md5
-openssl rsa -noout -modulus -in certs/server.key | openssl md5
-```
+On the VM, certificates come from the corporate store, whose site-specific path
+is set once in an untracked `.env.local` (`CERT_SOURCE`, optional
+`CERT_HOSTNAME`) — **[RHEL8 §3](docs/INSTALL-RHEL8.md#3-https-with-corporate-certificates)**.
+Self-signed dev certs on a Mac (`./setup-ssl.sh`) — **[macOS §3](docs/INSTALL-MACOS.md#3-enable-https)**.
+Rotation, expiry monitoring, and the cert/key modulus check —
+**[DEPLOYMENT.md](DEPLOYMENT.md#ssltls-certificate-setup)**.
 
 > ⚠️ **Security**: SSL certificates and private keys are excluded from git via `.gitignore`. Never commit these files.
 
@@ -360,7 +299,7 @@ Quick reference of available endpoints:
 **Samples, Screening, Toxicology:**
 - Similar CRUD endpoints available for each module
 
-📚 **[View Full API Documentation →](API.md)**
+📚 **[View Full API Documentation →](API.md)** · **[Copy-paste recipes →](docs/API-COOKBOOK.md)** · **[Worked curl/Python examples →](docs/API-TESTING-GUIDE.md)**
 
 ---
 
@@ -400,148 +339,60 @@ head on startup; local dev and tests create the tables automatically.
 
 ## 📊 Health Monitoring
 
-Automated health monitoring checks the application every 5 minutes and auto-restarts if unresponsive.
-
-### Setup Monitoring
-
-```bash
-# Supported install path — writes the correct cron line for the platform
-# (on RHEL8 the line REQUIRES a USER=…/XDG_RUNTIME_DIR=… prefix for rootless
-# podman; see docs/INSTALL-RHEL8.md §4 — don't hand-write a simplified line):
-SETUP_MONITOR=y ./setup-after-clone-py.sh
-
-# Or run a health check manually
-./monitor.sh
-```
-
-### Monitor Logs
+A cron job runs `monitor.sh` every 5 minutes: it GETs `/api/stats`, restarts the
+`crucible-py` container on a non-200 answer, and logs to
+`/tmp/crucible-monitor.log`. The container also carries its own HEALTHCHECK.
 
 ```bash
-# View monitoring log
-tail -f /tmp/crucible-monitor.log
-
-# Check cron job
-crontab -l | grep monitor.sh
+SETUP_MONITOR=y ./setup-after-clone-py.sh   # supported install path
+./monitor.sh                                # run one check by hand
 ```
 
-### Certificate Expiry
-
-For HTTPS deployments, check how long the TLS certificate stays valid
-(cron-friendly; warns at 30 days by default):
-
-```bash
-./cert-expiry-check.sh                 # check certs/server.crt
-WARN_DAYS=60 ./cert-expiry-check.sh    # warn earlier
-```
-
-Weekly cron example and details: **[DEPLOYMENT.md → Health monitoring](DEPLOYMENT.md#health-monitoring)**.
-
-### Stability Features
-
-- **Container health check**: Docker/Podman HEALTHCHECK against `/api/stats` every 30 seconds, with auto-restart via `monitor.sh` cron
-- **Schema management**: in the container, **Alembic** brings the schema to head on startup (`AUTO_INIT_DB=false`); local dev and tests create tables automatically (`Base.metadata.create_all`)
-- **Graceful errors**: API returns `{"error": ...}` JSON; no sensitive data in error responses
+Never hand-write a simplified cron line — on RHEL8 it **requires** a
+`USER=…`/`XDG_RUNTIME_DIR=…` prefix for rootless podman:
+**[RHEL8 §4.3](docs/INSTALL-RHEL8.md#43-health-monitoring)**. Separately,
+`./cert-expiry-check.sh` warns when the certificate is within `WARN_DAYS`
+(default 30) of expiring — weekly cron example and the rest in
+**[DEPLOYMENT.md → Health monitoring](DEPLOYMENT.md#health-monitoring)**.
 
 ---
 
 ## 🔧 Troubleshooting
 
-### Port Already in Use
+| Symptom | First thing to try |
+|---|---|
+| Port 49160 already in use | `lsof -i :49160` to find the holder; `fuser -k 49160/tcp` to free it |
+| App unreachable / container misbehaving | `./container-py.sh status`, then `./container-py.sh logs` — the real error is in the last ~20 lines |
+| TLS handshake fails after `start-ssl` | cert and key are from different pairs — compare the modulus MD5 hashes, then `./setup-after-clone-py.sh` |
+| Reachable on the VM but not from a workstation | host firewall — open port 49160 for the case that applies (firewalld / plain iptables / none) |
+| Database looks wrong and you want a clean slate | `rm -f data/crucible.db` — re-created empty on the next start |
 
-```bash
-# Check what's using port 49160
-lsof -i :49160
-
-# Kill the process
-fuser -k 49160/tcp
-```
-
-### Container Issues
-
-```bash
-# View logs
-./container-py.sh logs
-
-# Restart container with HTTPS
-./container-py.sh stop && ./container-py.sh start-ssl
-```
-
-### SSL Certificate Mismatch
-
-```bash
-# Verify certificate and key match
-CERT_HASH=$(openssl x509 -noout -modulus -in certs/server.crt | openssl md5)
-KEY_HASH=$(openssl rsa -noout -modulus -in certs/server.key | openssl md5)
-
-echo "Cert: $CERT_HASH"
-echo "Key:  $KEY_HASH"
-
-# If they don't match, re-run setup:
-./setup-after-clone-py.sh
-```
-
-### Application Unreachable
-
-```bash
-# Run health check
-./monitor.sh
-
-# Check container status
-./container-py.sh status
-
-# Full restart with HTTPS
-./container-py.sh stop
-./container-py.sh start-ssl
-```
-
-### Database Reset
-
-```bash
-# Delete the SQLite file — re-created empty on next start
-rm -f data/crucible.db
-```
+Beginner-oriented walkthroughs of the actual error messages (cause and named
+fix for each): **[macOS Install → Troubleshooting](docs/INSTALL-MACOS.md#troubleshooting)**
+and **[RHEL8 Install → §7 RHEL8-specific gotchas](docs/INSTALL-RHEL8.md#7-rhel8-specific-gotchas)**.
+The deep symptom/cause/fix table — SELinux, rootless port binding, proxy-broken
+healthchecks, systemd — is **[DEPLOYMENT.md → Troubleshooting](DEPLOYMENT.md#troubleshooting)**.
 
 ---
 
 ## 🧹 Uninstall & Reinstall
 
-A dedicated `uninstall.sh` script handles all cleanup operations (podman or
-docker, macOS or RHEL8):
+One `uninstall.sh` script covers both platforms and both runtimes:
 
-```bash
-# Interactive mode — choose what to remove step by step
-./uninstall.sh
+- `./uninstall.sh --dry-run` — preview exactly what would go. **Run this first, always.**
+- `./uninstall.sh` — interactive; choose what to remove step by step
+- `./uninstall.sh --partial` — runtime artifacts only; source and `data/` kept
+- `./uninstall.sh --full` — everything, including data and the project directory
 
-# Partial cleanup — remove runtime artifacts, keep source & data
-./uninstall.sh --partial
+> ⚠️ `--full` deletes the database, taking a final safety backup to
+> `~/crucible-backups/crucible-final-<stamp>.db` first — restore it with
+> `./container-py.sh restore <path>`. Reinstalling is the same
+> `./setup-after-clone-py.sh` as a first install.
 
-# Full uninstall — remove everything including data & source code
-./uninstall.sh --full
-
-# Preview what would be removed (no changes made)
-./uninstall.sh --dry-run
-```
-
-The script removes: the `crucible-py` container and image, all crucible cron
-jobs (monitor, cert-expiry, nightly backup) and their logs, SSL certs,
-application data (`crucible.db`, with a final safety backup to
-`~/crucible-backups`), local `backups/`, `client/node_modules` +
-`client/dist`, `backend/.venv` + Python caches, systemd services (rootless
-user unit and Quadlet), base images (`--full` only), and the project directory.
-
-**To reinstall / redeploy** (same command on macOS and the RHEL8 VM):
-
-```bash
-# from a fresh clone, or an existing checkout after `git pull`
-./setup-after-clone-py.sh
-
-# restore data if you kept a backup:
-./container-py.sh restore ~/crucible-backups/crucible-final-<stamp>.db
-```
-
-📚 Platform guides: **[macOS Uninstall →](docs/UNINSTALL-MACOS.md)** ·
-**[RHEL8 Uninstall →](docs/UNINSTALL-RHEL8.md)** ·
-**[Full uninstall + reinstall runbook →](DEPLOYMENT.md#uninstall-and-reinstall)**
+📚 What each mode removes, what it deliberately leaves behind, and how to
+verify: **[macOS Uninstall →](docs/UNINSTALL-MACOS.md)** ·
+**[RHEL8 Uninstall →](docs/UNINSTALL-RHEL8.md)** (adds firewall, systemd,
+lingering) · **[Reinstall runbook →](DEPLOYMENT.md#uninstall-and-reinstall)**
 
 ---
 
@@ -553,7 +404,8 @@ user unit and Quadlet), base images (`--full` only), and the project directory.
 - **Git Safety**: SSL certificates, private keys, and database files excluded via `.gitignore`
 - **Pre-push gate**: `./check-public-safe.sh` must print `✓ SAFE TO PUSH` before every
   public push — it verifies no secret paths are tracked, only sanitized templates ship,
-  and no internal identifiers appear in tracked content
+  and no internal identifiers appear in tracked content. Where it sits in the
+  public→private flow: **[docs/GITOPS-WORKFLOW.md](docs/GITOPS-WORKFLOW.md)**
 - **File Permissions**: Private key restricted to `chmod 600`
 - **Error Handling**: No sensitive data exposed in error responses
 
@@ -660,4 +512,4 @@ For support, contact: `<maintainer-email>`
 
 ---
 
-**Last Updated:** August 7, 2026
+**Last Updated:** August 24, 2026

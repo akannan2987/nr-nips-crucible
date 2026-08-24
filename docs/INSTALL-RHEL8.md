@@ -56,6 +56,13 @@ documents: [RHEL8 Uninstall](UNINSTALL-RHEL8.md) ·
 > mean you should read each section before running it, and take the backup in
 > section 6 seriously.
 
+> **Where do all the packages go?** Nowhere on your computer. Python, FastAPI,
+> RDKit and the rest live *inside* the container image, not in your system
+> folders — which is why this project needs no virtual environment, and why an
+> uninstall can remove every trace. If that raises questions, the glossary
+> answers them in one place:
+> **[Why this project has no virtual environment](GLOSSARY.md#the-container-words)**.
+
 ## Table of Contents
 
 - [Before anything: what are we actually installing?](#before-anything-what-are-we-actually-installing)

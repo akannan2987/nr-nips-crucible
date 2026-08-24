@@ -2,8 +2,17 @@
 
 # Deployment Guide — Crucible: Pandora Toolbox Enhancement (v2.0)
 
-Operational runbooks for deploying the Crucible **Python/FastAPI** backend on
-macOS (development) and the RHEL8 VM (production).
+Operational **reference** for the Crucible **Python/FastAPI** backend on macOS
+(development) and the RHEL8 VM (production).
+
+> **Step-by-step walkthroughs live in the platform guides.** Install:
+> [docs/INSTALL-MACOS.md](docs/INSTALL-MACOS.md) ·
+> [docs/INSTALL-RHEL8.md](docs/INSTALL-RHEL8.md). Uninstall:
+> [docs/UNINSTALL-MACOS.md](docs/UNINSTALL-MACOS.md) ·
+> [docs/UNINSTALL-RHEL8.md](docs/UNINSTALL-RHEL8.md). **This document is the
+> reference** — architecture, environment variables, database, backups,
+> maintenance, troubleshooting — and the canonical home for material the guides
+> link back to (the Quadlet unit, the env table, the cron lines).
 
 The container scripts are runtime-agnostic — they auto-detect **podman or
 docker** (override with `CONTAINER_RUNTIME=docker|podman`). Nothing is
@@ -109,8 +118,8 @@ git pull
 # Rebuild the image and (re)start on the new port
 ./container-py.sh rebuild
 
-# Open the new port and close the old one (firewalld case — see Runbook C
-# for the plain-iptables and no-firewall cases).
+# Open the new port and close the old one (firewalld case — see
+# docs/INSTALL-RHEL8.md §1.4 for the plain-iptables and no-firewall cases).
 sudo firewall-cmd --permanent --add-port=49160/tcp
 sudo firewall-cmd --permanent --remove-port=5942/tcp   # ok if "not enabled"
 sudo firewall-cmd --reload
@@ -139,174 +148,78 @@ One command does everything (certs when available, build, start, verify,
 optional monitoring cron) — on macOS **and** the RHEL8 VM:
 
 ```bash
-git clone https://github.com/nestle-it/nr-nips-crucible.git
-cd nr-nips-crucible
 ./setup-after-clone-py.sh
 ```
+
+Non-interactive: `SETUP_MONITOR=y ./setup-after-clone-py.sh` (or `n`).
 
 > **Private repo:** `nestle-it/nr-nips-crucible` needs authentication — clone
 > over HTTPS with a Personal Access Token, or use an SSH key
 > (`git@github.com:nestle-it/nr-nips-crucible.git`). The scripts are unaffected
 > by which remote or clone method you use.
 
-It will:
-
-1. Copy SSL certificates from the Nestlé certificate store (when available; skipped gracefully on macOS)
-2. Verify certificate/key pair integrity (MD5 modulus match)
-3. Build the `crucible-py` image
-4. Start the container (HTTPS when certs exist, else HTTP)
-5. Verify the API answers
-6. Optionally install the health-monitoring cron job
-
-Non-interactive: `SETUP_MONITOR=y ./setup-after-clone-py.sh` (or `n`).
+Guided walkthroughs, with expected output at every step:
+[docs/INSTALL-MACOS.md](docs/INSTALL-MACOS.md) ·
+[docs/INSTALL-RHEL8.md](docs/INSTALL-RHEL8.md).
 
 ---
 
 ## Runbook A — macOS (Docker)
 
-**Prerequisites:** Docker Desktop installed and **running**.
+Full walkthrough: [docs/INSTALL-MACOS.md](docs/INSTALL-MACOS.md) (Docker
+Desktop is Option B in its §1).
+
+Docker-specific detail the guide does not spell out: when podman **and** docker
+are both installed the scripts prefer podman, so force Docker explicitly with
+`CONTAINER_RUNTIME=docker`:
 
 ```bash
-# 1. Clone (first time) or update
-git clone https://github.com/nestle-it/nr-nips-crucible.git && cd nr-nips-crucible   # first time
-git pull                                                               # update
-
-# 2. Build (force docker even if podman is also installed)
-CONTAINER_RUNTIME=docker ./container-py.sh build
-
-# 3. Start (publishes 127.0.0.1:49160 on macOS)
-CONTAINER_RUNTIME=docker ./container-py.sh start
-
-# 4. Verify
-curl -s http://localhost:49160/api/stats          # → JSON with counts
-open http://localhost:49160                        # full UI in the browser
-
-# 5. Logs / status / stop / update
-CONTAINER_RUNTIME=docker ./container-py.sh logs      # Ctrl-C to detach
-CONTAINER_RUNTIME=docker ./container-py.sh status
-CONTAINER_RUNTIME=docker ./container-py.sh stop
-git pull && CONTAINER_RUNTIME=docker ./container-py.sh rebuild
+export CONTAINER_RUNTIME=docker      # once per shell, instead of prefixing every command
+./container-py.sh build
+./container-py.sh start
 ```
-
-Tip: `export CONTAINER_RUNTIME=docker` once per shell instead of prefixing
-every command. Without it the script prefers podman when both are installed.
 
 ---
 
 ## Runbook B — macOS (Podman)
 
-**Prerequisites:** Podman ≥ 5. Podman on macOS = a thin client plus a Linux
-VM (`podman machine`). **The VM does not auto-start on login** — the script
-checks and tells you; the command is:
+Full walkthrough: [docs/INSTALL-MACOS.md](docs/INSTALL-MACOS.md) — including
+`podman machine start` (the VM does **not** auto-start on login) and the build
+OOM fix (`podman machine stop && podman machine set --memory 4096 && podman machine start`).
+
+Architecture detail not covered there: images build for the podman VM's
+architecture. Check it with `podman machine ssh uname -m`. On Apple Silicon,
+for an explicit amd64 image use:
 
 ```bash
-podman machine start        # ~15 s; 'podman machine list' shows state
+PLATFORM=linux/amd64 ./container-py.sh build     # slower, emulated
 ```
 
-Worth knowing:
-
-- The VM is rootless — ports below 1024 cannot be bound (49160 is fine).
-- Default VM RAM is 2 GiB. The image build (npm build + pip install of
-  RDKit/pandas) fits, but if a build is OOM-killed (exit 137), grow it once:
-  `podman machine stop && podman machine set --memory 4096 && podman machine start`
-- Apple Silicon: images build for the VM's architecture. Check with
-  `podman machine ssh uname -m`. For an explicit amd64 image use
-  `PLATFORM=linux/amd64 ./container-py.sh build` (slower, emulated). The
-  `rdkit` wheel is published for macOS arm64 and linux x86_64/aarch64, so no
-  compiler is needed either way.
-
-```bash
-git clone https://github.com/nestle-it/nr-nips-crucible.git && cd nr-nips-crucible
-podman machine start 2>/dev/null || true
-./container-py.sh build      # podman auto-detected; --format docker applied automatically
-./container-py.sh start
-curl -s http://localhost:49160/api/stats
-open http://localhost:49160
-```
+The `rdkit` wheel is published for macOS arm64 and linux x86_64/aarch64, so no
+compiler is needed either way. The VM is rootless — ports below 1024 cannot be
+bound (49160 is fine).
 
 ---
 
 ## Runbook C — RHEL8 VM (Podman)
 
-Target: `<vm-hostname>`, rootless podman, port 49160.
+Full walkthrough: [docs/INSTALL-RHEL8.md](docs/INSTALL-RHEL8.md). It covers
+packages (§1.1), rootless subuid/subgid (§1.2), lingering (§1.3), the firewall
+three-case diagnosis — firewalld / plain iptables / no host firewall (§1.4),
+the one-shot and manual install paths (§2), HTTPS with corporate certificates
+(§3), auto-start and monitoring (§4), and a verification checklist (§5).
+
+Target: `<vm-hostname>`, rootless podman, port 49160. The condensed command
+set, once the prerequisites in §1 are done:
 
 ```bash
-# 0. Prerequisites (once): git + podman (RHEL8 AppStream)
-sudo dnf install -y git podman
-podman --version           # any 4.x/5.x is fine
-
-# 1. Clone (first time) or update
-git clone https://github.com/nestle-it/nr-nips-crucible.git && cd nr-nips-crucible   # first time
-cd /path/to/crucible && git pull                                       # update
-chmod +x container-py.sh                                               # first time only
-
-# (Shortcut: ./setup-after-clone-py.sh does the build, start, verify and the
-#  monitoring cron in one command, plus the SSL-cert copy. The manual steps
-#  below remain for understanding and troubleshooting.)
-
-# 2. Build the image (native linux/amd64 build)
 ./container-py.sh build
-
-# 3. Open the firewall port (once) — check what firewall exists first.
-rpm -q firewalld iptables-services       # what is installed?
-sudo iptables -L INPUT -n | head          # empty chains + policy ACCEPT = no host firewall
-
-#   Case A — firewalld installed:
-sudo firewall-cmd --permanent --add-port=49160/tcp
-sudo firewall-cmd --permanent --remove-port=5942/tcp   # ok if "not enabled"
-sudo firewall-cmd --reload
-sudo firewall-cmd --list-ports                          # verify 49160/tcp
-
-#   Case B — plain iptables with real rules:
-sudo iptables -I INPUT -p tcp --dport 49160 -j ACCEPT
-sudo service iptables save                # persists only with iptables-services
-
-#   Case C — no host firewall at all (common on internal VMs): nothing to do.
-
-# 4. Start (publishes 0.0.0.0:49160 on Linux automatically).
-#    A generic PORT variable in your shell is ignored; override with CRUCIBLE_PORT=<n>.
-./container-py.sh start
-
-# 5. Verify
+./container-py.sh start                                   # publishes 0.0.0.0:49160 on Linux
 curl --noproxy '*' -s http://localhost:49160/api/stats    # JSON counts
 curl --noproxy '*' -s http://localhost:49160/ | grep -o '<title>[^<]*</title>'
-# From your workstation: http://<vm-hostname>:49160
-
-# 6. Logs / status / stop / update
-./container-py.sh logs
-./container-py.sh status
-./container-py.sh stop
+./container-py.sh logs | status | stop
 git pull && ./container-py.sh rebuild
 ```
-
-### Enable HTTPS (optional)
-
-The backend serves TLS in-process (uvicorn) from the `certs/` directory:
-
-```bash
-# One-time: put certificates in certs/
-./setup-after-clone-py.sh     # copies the Nestlé-signed certs from the corporate cert store (VM)
-# or, for a self-signed dev cert:  ./setup-ssl.sh
-
-# Start in TLS mode (recreates the container with certs mounted read-only)
-./container-py.sh start-ssl
-
-# Verify (-k only needed for self-signed certs)
-curl --noproxy '*' -sk https://localhost:49160/api/stats
-```
-
-The app is then at `https://<vm-hostname>:49160`. Notes:
-
-- HTTPS *replaces* HTTP on the port — plain `http://` requests are refused.
-  Switch back with `./container-py.sh stop && podman rm crucible-py && ./container-py.sh start`.
-- The container healthcheck probes HTTP then HTTPS, so it stays `healthy` in either mode.
-- If `monitor.sh` runs in cron, point it at TLS:
-  `CONTAINER_NAME=crucible-py API_URL=https://localhost:49160/api/stats ./monitor.sh`
-- For the Quadlet unit, add `Environment=USE_HTTPS=true` and
-  `Volume=%h/crucible/certs:/app/certs:Z,ro` (plus `SSL_CERT_PATH` /
-  `SSL_KEY_PATH` if your file names differ).
-- Missing/unreadable certificates never take the app down — it logs a warning
-  and falls back to HTTP.
 
 ---
 
@@ -314,22 +227,19 @@ The app is then at `https://<vm-hostname>:49160`. Notes:
 
 Certificates are **never committed to git** and must be set up per deployment.
 
-### Automatic (recommended)
+**Initial setup** (copying from the corporate store, self-signed dev certs,
+`start-ssl`, switching back to HTTP) is walked through in
+[docs/INSTALL-RHEL8.md](docs/INSTALL-RHEL8.md) §3 and
+[docs/INSTALL-MACOS.md](docs/INSTALL-MACOS.md) §3. In short:
+`./setup-after-clone-py.sh` (corporate certs) or `./setup-ssl.sh` (self-signed,
+365-day validity, development only), then `./container-py.sh start-ssl`.
 
-```bash
-./setup-after-clone-py.sh
-```
+Two behaviours worth knowing anywhere certificates are involved:
 
-### Manual
-
-```bash
-mkdir -p certs
-CERT_SOURCE="<cert-store-path>"
-cp "$CERT_SOURCE/<vm-hostname>.cer" certs/server.crt
-cp "$CERT_SOURCE/<vm-hostname>.key" certs/server.key
-chmod 600 certs/server.key
-chmod 644 certs/server.crt
-```
+- The container healthcheck probes HTTP **then** HTTPS, so the same image stays
+  `healthy` in either mode.
+- Missing or unreadable certificates never take the app down — it logs a
+  warning and falls back to HTTP.
 
 ### Verify the certificate/key pair
 
@@ -396,15 +306,6 @@ crontab -e
 ```
 
 When it warns, follow "Rotating / replacing the certificate" above.
-
-### Self-signed (development only)
-
-```bash
-./setup-ssl.sh
-```
-
-Generates a self-signed certificate for this host with 365-day validity;
-browsers will show a security warning.
 
 ---
 
@@ -548,13 +449,18 @@ it automatically on the next start.
 
 ## Health monitoring
 
-`setup-after-clone-py.sh` installs a cron job automatically. Manual install /
-check:
+`setup-after-clone-py.sh` installs a cron job automatically — the guided setup
+is [docs/INSTALL-RHEL8.md](docs/INSTALL-RHEL8.md) §4. The canonical crontab
+entry (**one line**; use `https://` after `start-ssl`) is:
+
+```bash
+*/5 * * * * cd /path/to/crucible && USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u) CONTAINER_NAME=crucible-py API_URL=http://localhost:49160/api/stats ./monitor.sh
+```
+
+Manual install / check:
 
 ```bash
 crontab -l | grep monitor.sh          # is it installed, and for which container?
-# correct entry (use https:// after start-ssl):
-# */5 * * * * cd /path/to/crucible && USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u) CONTAINER_NAME=crucible-py API_URL=http://localhost:49160/api/stats ./monitor.sh
 tail -5 /tmp/crucible-monitor.log     # what has it been doing?
 ```
 
@@ -564,6 +470,10 @@ container also has a built-in `HEALTHCHECK` (every 30 s) that probes
 `/api/stats` (see [backend/scripts/healthcheck.py](backend/scripts/healthcheck.py)).
 
 Run it manually any time: `./monitor.sh`.
+
+> The `USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u)` prefix is required
+> under cron with rootless podman — see the note in
+> [Backup and restore](#backup-and-restore).
 
 ---
 
@@ -606,6 +516,21 @@ EOF
 systemctl --user daemon-reload
 systemctl --user start crucible-py.service
 ```
+
+Option 1 (`podman generate systemd`) is walked through step by step, with
+expected output and the common failure modes, in
+[docs/INSTALL-RHEL8.md](docs/INSTALL-RHEL8.md) §4.2. The Quadlet unit above is
+the canonical copy — that guide links back here for it.
+
+**For an HTTPS deployment**, add to the Quadlet `[Container]` section:
+
+```
+Environment=USE_HTTPS=true
+Volume=%h/crucible/certs:/app/certs:Z,ro
+```
+
+plus `SSL_CERT_PATH` / `SSL_KEY_PATH` if your file names differ from
+`server.crt` / `server.key`.
 
 ---
 
@@ -669,10 +594,35 @@ referenced below — this table is the "when to do it" summary.
 | Task | When | How |
 |---|---|---|
 | **Rotate the TLS cert/key** | On certificate renewal, or **immediately if the key is exposed/compromised** (e.g. it was ever committed to git) | [SSL/TLS certificate setup](#ssltls-certificate-setup) → "Rotating / replacing the certificate": install the new pair, then `./container-py.sh start-ssl` |
-| **Check cert expiry** | Weekly (cron) — catches renewals before they lapse | `./cert-expiry-check.sh` (see [SSL/TLS → Certificate-expiry monitoring](#ssltls-certificate-setup)) |
+| **Check cert expiry** | Weekly (cron) — catches renewals before they lapse | `./cert-expiry-check.sh` (see [SSL/TLS → Certificate-expiry monitoring](#certificate-expiry-monitoring)) |
 | **Automate nightly backups** | Recommended — set up **once** on the RHEL8 VM. The database is not in git, so backups are the safety net | [Backup and restore](#backup-and-restore) → "Scheduled backups on the RHEL8 VM": a `crontab` line |
 | **Copy backups off-machine** | Weekly, and before risky changes | `scp` a recent `backups/crucible-*.db` to another host (see [Backup and restore](#backup-and-restore)) |
+| **Reclaim disk from old images** | Every few rebuilds — each `rebuild` orphans the previous image | `podman image prune -f` (see [Reclaiming disk space](#reclaiming-disk-space) below) |
 | **Purge a secret from git history** | Only **after** rotating a key that had been committed, and only if you also want the old key unrecoverable from history | see [Purging a secret from git history](#purging-a-secret-from-git-history) below |
+
+### Reclaiming disk space
+
+Every `./container-py.sh rebuild` builds a new image and leaves the previous
+one behind without a name — a **dangling image**. They are invisible in normal
+use but each one is the full image size (~555 MB here), so a handful of
+rebuilds can quietly consume several gigabytes.
+
+```bash
+# See what is dangling (untagged leftovers show as <none>)
+podman images
+
+# Reclaim the space — removes ALL dangling images, keeps the tagged ones
+podman image prune -f
+```
+
+`./uninstall.sh` prunes dangling images automatically as part of its image
+step, so this is only needed between uninstalls. It is safe: tagged images
+(`crucible-py:latest`, `python:3.12-slim`, `node:18-alpine`) are never
+touched, and anything removed is rebuilt on the next `build`.
+
+> Note it prunes dangling images for **all** projects on the machine, not just
+> Crucible's. That is normally what you want; on a shared machine, run
+> `podman images` first and check nothing else is relying on an untagged image.
 
 ### Purging a secret from git history
 
@@ -713,13 +663,13 @@ purge as belt-and-suspenders.
 | Symptom | Cause | Fix |
 |---|---|---|
 | Works on the VM, unreachable from workstation | host firewall | firewalld: `sudo firewall-cmd --permanent --add-port=49160/tcp && sudo firewall-cmd --reload` · plain iptables: `sudo iptables -I INPUT -p tcp --dport 49160 -j ACCEPT` (+ `service iptables save`) · if neither is installed and `iptables -L INPUT` is empty, the blocker is the network, not the host |
-| `sudo: firewall-cmd: command not found` | firewalld not installed | do **not** install it (would impose default-deny); diagnose with `rpm -q firewalld iptables-services` and `sudo iptables -L INPUT -n`, then use the iptables or no-firewall path in Runbook C step 3 |
+| `sudo: firewall-cmd: command not found` | firewalld not installed | do **not** install it (would impose default-deny); diagnose with `rpm -q firewalld iptables-services` and `sudo iptables -L INPUT -n`, then use the iptables or no-firewall path in [docs/INSTALL-RHEL8.md](docs/INSTALL-RHEL8.md) §1.4 |
 | Container binds an unexpected port (`rootlessport listen tcp 0.0.0.0:3000: address already in use`) | a `PORT` variable exported in the shell | the scripts **ignore** a generic `PORT` (override only via `CRUCIBLE_PORT=<n>`). If it persists: `git pull`, `podman rm -f crucible-py`, `./container-py.sh start` |
 | `/app/data` empty / `Permission denied` in logs | SELinux blocks the bind-mount | the scripts mount with `:Z`; if you mount manually, always append `:Z` |
 | `bind: permission denied` on a port | rootless podman cannot bind ports < 1024 | use ports ≥ 1024 (49160 is fine) or `sudo sysctl net.ipv4.ip_unprivileged_port_start=<n>` |
 | `address already in use` on 49160 | an old container still mapped | `podman ps -a`, then `podman rm -f <name>` |
 | Image pull prompts "Please select an image" | short image name | already handled — the Dockerfile uses fully-qualified names (`docker.io/library/...`) |
-| Container gone after logout/reboot | rootless containers die with the session | `sudo loginctl enable-linger $USER` + a systemd unit (see above) |
+| Container gone after logout/reboot | rootless containers die with the session | `sudo loginctl enable-linger $USER` + a systemd unit (see [Auto-start on boot](#auto-start-on-boot-systemd)) |
 | Healthcheck `unhealthy` but curl works | image built without `--format docker` (podman OCI drops HEALTHCHECK) | rebuild with `./container-py.sh build` (flag applied automatically) |
 | Healthcheck `unhealthy` while the app serves 200s (especially in HTTPS mode) | the in-container probe was routed through the corporate proxy → `403` (a plain `urllib`/`curl` without `--noproxy` hits the proxy, whose `no_proxy` does not list `127.0.0.1`) | fixed in `backend/scripts/healthcheck.py`, which now bypasses the proxy — rebuild to pick up the fix: `./container-py.sh rebuild` (preserves HTTP/HTTPS mode) |
 | Corporate proxy breaks localhost curl | proxy env vars | use `curl --noproxy '*' ...` (the scripts already do) |
@@ -771,14 +721,12 @@ client/dist/       # build output
 
 ## Uninstall and reinstall
 
-### Uninstall
+Full walkthroughs — what you cannot get back, a dry-run preview, mode-by-mode
+detail, manual leftovers, and a verification checklist — are in
+[docs/UNINSTALL-MACOS.md](docs/UNINSTALL-MACOS.md) and
+[docs/UNINSTALL-RHEL8.md](docs/UNINSTALL-RHEL8.md).
 
-Instructions for partially or completely removing Crucible from the system.
-
-
-> ℹ️ `uninstall.sh` removes the deployment (works with podman or docker, on macOS and RHEL8). 
-
-Modes:
+`./uninstall.sh` removes the deployment (podman or docker, macOS or RHEL8):
 
 ```bash
 ./uninstall.sh --dry-run     # preview everything it would remove (safe)
@@ -787,175 +735,13 @@ Modes:
 ./uninstall.sh               # interactive: choose step by step
 ```
 
-It removes: the `crucible-py` container + image, **all** crucible cron entries
-(`monitor.sh`, `cert-expiry-check.sh`, the nightly backup job) and their logs
-(`/tmp/crucible-monitor.log`, `~/crucible-cert.log`, `~/crucible-backup.log`),
-`certs/`, `data/crucible.db` (backed up to `~/crucible-backups` before deletion
-in full mode), the local `backups/` directory, `client/node_modules` +
-`client/dist`, `backend/.venv` and Python caches, and the rootless systemd /
-Quadlet units (with a reminder to `sudo loginctl disable-linger $USER`).
-`--full` additionally removes the base images (`python:3.12-slim`,
-`node:18-alpine`) — they re-download on the next build; `--partial` keeps them
-for a faster reinstall.
-
 On the RHEL8 VM, remember the firewall rule if one was added
 (`sudo iptables -D INPUT -p tcp --dport 49160 -j ACCEPT`, or the firewalld
 `--remove-port` variant).
 
-#### Using the Uninstall Script (Recommended)
+### Cleanup Summary
 
-The easiest way to clean up is with the `uninstall.sh` script:
-
-```bash
-# Interactive — guided step-by-step cleanup
-./uninstall.sh
-
-# Partial — remove container, image, cron, logs (keep source & data)
-./uninstall.sh --partial
-
-# Full — remove everything including data and source code
-./uninstall.sh --full
-
-# Dry run — preview what would be removed without deleting anything
-./uninstall.sh --dry-run
-```
-
-If you prefer to run the steps manually, follow the guide below.
-
-#### Step 1: Stop the Application
-
-```bash
-cd /path/to/crucible          # wherever the repo is checked out
-
-# Stop the container
-./container-py.sh stop
-
-# Verify it's stopped
-podman ps -a --filter name=crucible-py
-```
-
-#### Step 2: Remove the Container
-
-```bash
-# Remove the stopped container
-podman rm crucible-py
-
-# Verify removal
-podman ps -a --filter name=crucible-py
-# ✅ Should show no results
-```
-
-#### Step 3: Remove the Container Image
-
-```bash
-# Remove the Crucible image
-podman rmi crucible-py:latest
-
-# Verify removal
-podman images | grep crucible
-# ✅ Should show no results
-
-# (Optional) Remove any dangling/orphaned images
-podman image prune -f
-```
-
-#### Step 4: Remove Cron Jobs & Their Logs
-
-```bash
-# View current cron jobs
-crontab -l
-
-# Remove ALL crucible entries in one go (monitor, cert-expiry, nightly backup)
-crontab -l | grep -vE 'monitor\.sh|cert-expiry-check\.sh|container-py\.sh backup' | crontab -
-
-# Remove their log files
-rm -f /tmp/crucible-monitor.log ~/crucible-cert.log ~/crucible-backup.log
-
-# Verify removal
-crontab -l | grep crucible-py
-# ✅ Should show no results
-
-# Remove monitor log file
-rm -f /tmp/crucible-monitor.log
-```
-
-#### Step 5: Remove SSL Certificates
-
-```bash
-# Delete local certificate copies
-rm -rf certs/
-
-# ⚠️ Do NOT delete the source certificates at:
-# <cert-store-path>/
-# Those are shared infrastructure certificates.
-```
-
-#### Step 6: Remove Application Data
-
-> ⚠️ **Warning**: This permanently deletes all uploaded chemicals, samples, screening, and toxicology data.
-
-```bash
-# Delete database (data/ is a bind-mounted directory — the app uses no named volume)
-rm -rf data/
-
-# If you used PostgreSQL (USE_POSTGRES=true):
-podman rm -f crucible-db 2>/dev/null
-podman volume rm crucible-pgdata 2>/dev/null
-podman network rm crucible-net 2>/dev/null
-```
-
-**To back up before deleting:**
-
-```bash
-mkdir -p ~/crucible-backups/
-cp data/crucible.db ~/crucible-backups/crucible-final-$(date +%Y%m%d-%H%M%S).db
-```
-
-#### Step 7: Remove node_modules (Optional)
-
-If you plan to keep the source code but want to free disk space:
-
-```bash
-rm -rf client/node_modules client/dist backend/.venv
-```
-
-Nothing to reinstall for the containerized deployment — dependencies are baked
-into the image (`./container-py.sh build`). For bare-metal development only:
-`cd client && npm install` and
-`cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`.
-
-#### Step 8: Remove the Project Directory (Full Removal)
-
-> ⚠️ **Warning**: This deletes all source code. Make sure you've pushed any changes to git first.
-
-```bash
-cd /path/to/          # parent directory of the checkout
-rm -rf nr-nips-crucible
-```
-
-#### Step 9: Remove systemd Service (If Configured)
-
-If you set up the optional auto-start units (rootless **user** units — see
-[Auto-start on boot](#auto-start-on-boot-systemd)):
-
-```bash
-# Generated unit (podman generate systemd)
-systemctl --user disable --now container-crucible-py.service 2>/dev/null
-rm -f ~/.config/systemd/user/container-crucible-py.service
-
-# Quadlet unit
-systemctl --user stop crucible-py.service 2>/dev/null
-rm -f ~/.config/containers/systemd/crucible-py.container
-
-systemctl --user daemon-reload
-
-# If no other user services should survive logout:
-sudo loginctl disable-linger $USER
-```
-
-#### Cleanup Summary
-
-The following table lists everything that gets created during installation and where to find it:
+Everything installation creates, where it lives, and the command that removes it:
 
 | Component | Location | Cleanup Command |
 |-----------|----------|----------------|
@@ -970,81 +756,36 @@ The following table lists everything that gets created during installation and w
 | node_modules | `client/node_modules/` | `rm -rf client/node_modules/` |
 | Build output | `client/dist/` | `rm -rf client/dist/` |
 | Python venv | `backend/.venv/` | `rm -rf backend/.venv/` |
-| systemd user units | `~/.config/systemd/user/container-crucible-py.service` and `~/.config/containers/systemd/crucible-py.container` | Step 9 above (`systemctl --user` disable/stop + `rm -f` + `daemon-reload`) |
+| systemd user units | `~/.config/systemd/user/container-crucible-py.service` and `~/.config/containers/systemd/crucible-py.container` | `systemctl --user disable --now container-crucible-py.service` · `systemctl --user stop crucible-py.service` · `rm -f` both files · `systemctl --user daemon-reload` · optionally `sudo loginctl disable-linger $USER` |
 | Project source | Full project directory | `rm -rf nr-nips-crucible/` |
 
-
-#### Partial Cleanup (Keep Source Code)
-
-If you want to stop running the application but keep the repository for future use:
-
-```bash
-# Automated (recommended)
-./uninstall.sh --partial
-
-# Or manually (matches what --partial does — data/ is KEPT):
-./container-py.sh clean
-crontab -l | grep -vE 'monitor\.sh|cert-expiry-check\.sh|container-py\.sh backup' | crontab -
-rm -f /tmp/crucible-monitor.log ~/crucible-cert.log ~/crucible-backup.log
-rm -rf certs/ client/node_modules client/dist backend/.venv
-
-# The source code and data remain intact; re-deploy with:
-# ./setup-after-clone-py.sh
-```
+> ⚠️ Never delete the **source** certificates in `<cert-store-path>/` — those
+> are shared infrastructure.
 
 ### Reinstall / redeploy
 
-Reinstalling is the same as a first deploy. The single command below works on
-**both macOS and the RHEL8 VM** — it auto-detects podman/docker and copies
-certs when they are available:
+Reinstalling is the same as a first deploy: `./setup-after-clone-py.sh` on
+either platform. **Recreate the untracked `.env.local` first** on the VM — a
+`--full` uninstall deleted it with the project directory, and without it (or
+the equivalent environment variables) the setup script finds no cert store and
+silently starts in plain HTTP:
 
 ```bash
-# 1. Get the source back if a --full uninstall removed it
-git clone https://github.com/nestle-it/nr-nips-crucible.git
-cd nr-nips-crucible  # (or: cd into your existing checkout and run `git pull`)
-
-# 2. VM with HTTPS: recreate the untracked .env.local (a --full uninstall
-#    deleted it with the project directory) so the setup script can find the
-#    corporate cert store — or export CERT_SOURCE/CERT_HOSTNAME as
-#    environment variables instead.
 printf 'CERT_SOURCE=<cert-store-path>\nCERT_HOSTNAME=<vm-hostname>\nUSE_HTTPS=true\n' > .env.local
-
-# 3. Build + start + verify (+ optional monitoring cron) in one step
 ./setup-after-clone-py.sh
 ```
 
 See [Certificates (for HTTPS)](#certificates-for-https) for the `.env.local`
-format. Without it (or the env vars), the setup script finds no cert store and
-silently starts in plain HTTP.
-
-Prefer the individual steps? They are identical on both platforms:
-
-```bash
-./container-py.sh build
-./container-py.sh start          # HTTP  (or ./container-py.sh start-ssl for HTTPS)
-curl --noproxy '*' -s http://localhost:49160/api/stats   # expect JSON stats
-```
-
-Restore data afterwards if you kept a backup (a `--full` uninstall leaves a
-final copy in `~/crucible-backups`):
+format. Restore data afterwards if you kept a backup (a `--full` uninstall
+leaves a final copy in `~/crucible-backups`):
 
 ```bash
 ./container-py.sh restore ~/crucible-backups/crucible-final-<stamp>.db
 ```
 
-**Platform-specific reminders:**
-
-| | macOS (dev) | RHEL8 VM (production) |
-|---|---|---|
-| Before building | Podman: `podman machine start` · Docker: start Docker Desktop | `sudo dnf install -y git podman` (first time only) |
-| Certificates | usually none → starts in HTTP (see [SSL/TLS](#ssltls-certificate-setup)) | `setup-after-clone-py.sh` copies Nestlé certs from the corporate cert store → HTTPS (needs `.env.local` or `CERT_SOURCE` — see step 2 above) |
-| Firewall | not needed | reopen the port if you removed it (see [Runbook C](#runbook-c--rhel8-vm-podman)) |
-| Auto-start on boot | not needed | re-enable the systemd/Quadlet unit (see [Auto-start on boot](#auto-start-on-boot-systemd)) |
-
-Full first-deploy walkthroughs with troubleshooting: [Runbook A](#runbook-a--macos-docker)
-(macOS Docker), [Runbook B](#runbook-b--macos-podman) (macOS Podman),
-[Runbook C](#runbook-c--rhel8-vm-podman) (RHEL8 Podman).
-
+Other reminders on redeploy: reopen the VM firewall port if you removed it, and
+re-enable the systemd/Quadlet unit (see
+[Auto-start on boot](#auto-start-on-boot-systemd)).
 
 ---
 
@@ -1055,13 +796,6 @@ app instance against the same SQLite file (concurrent writers corrupt it).
 Before any multi-instance setup, switch to PostgreSQL (`USE_POSTGRES=true`,
 see [Database](#database-sqlite-and-postgresql)). Vertical resources
 (`--cpus`, `--memory`) can be set at container creation if ever needed.
-
----
-
-
-### Environment Variables Reference
-
-See [Environment variables](#environment-variables) for the canonical table.
 
 ---
 
@@ -1083,4 +817,4 @@ For deployment issues:
 
 ---
 
-**Last Updated:** August 7, 2026
+**Last Updated:** August 24, 2026

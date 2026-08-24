@@ -106,7 +106,7 @@ remove_container() {
             found=1
         fi
     done
-    [ "$found" -eq 0 ] && { info "No crucible containers exist"; skip; }
+    if [ "$found" -eq 0 ]; then info "No crucible containers exist"; skip; fi
 }
 
 remove_image() {
@@ -115,18 +115,18 @@ remove_image() {
     local name found=0
     for name in ${IMAGES}; do
         if $RUNTIME images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | grep "${name}:latest$" >/dev/null; then
-            $RUNTIME rmi "${name}:latest" 2>/dev/null
+            $RUNTIME rmi "${name}:latest" 2>/dev/null || true
             success "Image '${name}:latest' removed"
             found=1
         fi
     done
-    [ "$found" -eq 0 ] && { info "No crucible images exist"; skip; }
+    if [ "$found" -eq 0 ]; then info "No crucible images exist"; skip; fi
 
     # Prune dangling images
     local dangling
-    dangling=$($RUNTIME images -f "dangling=true" -q 2>/dev/null | wc -l)
+    dangling=$($RUNTIME images -f "dangling=true" -q 2>/dev/null | wc -l | tr -d " ")
     if [ "$dangling" -gt 0 ]; then
-        $RUNTIME image prune -f >/dev/null 2>&1
+        $RUNTIME image prune -f >/dev/null 2>&1 || true
         success "Pruned ${dangling} dangling image(s)"
     fi
 }
@@ -145,7 +145,7 @@ remove_base_images() {
             found=1
         fi
     done
-    [ "$found" -eq 0 ] && { info "No base images present"; skip; }
+    if [ "$found" -eq 0 ]; then info "No base images present"; skip; fi
     info "They are re-downloaded automatically on the next ./container-py.sh build"
 }
 
@@ -199,7 +199,7 @@ backup_data() {
         success "SQLite database backed up to ${backup_dir}/crucible-final-${stamp}.db"
         found=1
     fi
-    [ "$found" -eq 0 ] && info "No database files found to back up"
+    if [ "$found" -eq 0 ]; then info "No database files found to back up"; fi
 }
 
 remove_data() {
@@ -255,7 +255,7 @@ remove_node_modules() {
         freed=1
     fi
 
-    [ "$freed" -eq 0 ] && { info "No dependency or build artifacts found"; skip; }
+    if [ "$freed" -eq 0 ]; then info "No dependency or build artifacts found"; skip; fi
 }
 
 remove_systemd() {
@@ -301,7 +301,7 @@ remove_systemd() {
         found=1
     fi
 
-    [ "$found" -eq 0 ] && { info "No systemd services installed"; skip; }
+    if [ "$found" -eq 0 ]; then info "No systemd services installed"; skip; fi
 }
 
 remove_project() {

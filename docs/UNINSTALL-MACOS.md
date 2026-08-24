@@ -206,6 +206,13 @@ Reading the table, row by row, for anyone new to the vocabulary:
   separately, because it is the one step that leaves you with nothing to run the
   other steps *from*.
 
+> **A reinstall does not bring these back.** `./setup-after-clone-py.sh` rebuilds
+> the container image, which is all the *application* needs. It does not recreate
+> `backend/.venv` (only needed for running tests) or `client/node_modules` (only
+> needed for frontend development) — recreate those by hand if you want them. See
+> [Why this project has no virtual environment](GLOSSARY.md#the-container-words).
+
+
 **You should see:** in interactive mode, a run of `Step 1: Stop Container`
 through `Step 9: Remove Project Directory`, each with a `? … (y/N)` prompt and
 then either `✓` (done) or `↳ Skipped (not found)`. It ends with a

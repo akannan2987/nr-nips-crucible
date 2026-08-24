@@ -22,6 +22,60 @@ find (`Ctrl+F` / `Cmd+F`) to jump to one.
 
 ## The container words
 
+> ### Why this project has no virtual environment
+>
+> If you have met Python before, you have probably been told that every
+> project needs its own **virtual environment** so its packages don't collide
+> with another project's. That advice is right — for software that runs
+> *directly on your computer*. Crucible doesn't.
+>
+> Everything the application needs lives inside the **container image**:
+> its own copy of Python, its own FastAPI, its own RDKit, even its own
+> miniature Linux operating system. None of it is installed on your Mac or on
+> the server. You can prove this on any machine that runs Crucible:
+>
+> ```bash
+> python3 -c "import fastapi"   # ModuleNotFoundError — not on your computer
+> ```
+>
+> …and yet the app runs perfectly, because that library sits inside the image
+> at `/usr/local/lib/python3.12/site-packages/`. That *is* a system directory
+> — but it belongs to the **container's** filesystem, a disposable sandbox,
+> not to your machine. Delete the image and every trace goes with it.
+>
+> So a container is not a weaker form of isolation than a virtual
+> environment. It is a stronger one:
+>
+> | Isolates… | Virtual environment | Container |
+> |---|---|---|
+> | Python packages | yes | yes |
+> | System libraries (the C code RDKit needs) | no — shared with your machine | yes |
+> | The operating system | no | yes |
+> | The filesystem | no — sees your whole disk | yes — sees only what you mount |
+> | Networking and processes | no | yes |
+> | Behaves identically on macOS and RHEL8 | no | yes — the whole point |
+>
+> Adding a virtual environment *inside* a container would be pointless: the
+> container already holds exactly one application, with nothing to collide
+> with.
+>
+> **The one exception.** `backend/.venv` does exist, and it is a real virtual
+> environment — but only for running the app *outside* a container: the test
+> suite (`pytest`) and hot-reload development. It is optional, it lives inside
+> the project folder rather than system-wide, and the app never uses it. An
+> uninstall removes it; a reinstall does **not** bring it back. Recreate it
+> only when you want to run tests:
+>
+> ```bash
+> cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+> ```
+>
+> **What about Node?** The React interface is compiled by Node during the
+> image build, and then that entire build stage is thrown away — the finished
+> image contains no Node at all, only the compiled result. `client/node_modules`
+> appears on your machine only if you install it deliberately for frontend
+> development.
+
 **Container** — a sealed lunchbox for a program. Inside it sits the app
 *and* everything the app needs to run: the right Python version, the right
 libraries, the right folder layout. Because the lunchbox carries its own

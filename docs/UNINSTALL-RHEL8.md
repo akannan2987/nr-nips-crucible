@@ -316,6 +316,13 @@ Reading the table:
   is the one step that cannot be walked back, so it is confirmed on its own
   even in `--full`.
 
+> **A reinstall does not bring these back.** `./setup-after-clone-py.sh` rebuilds
+> the container image, which is all the *application* needs. It does not recreate
+> `backend/.venv` (only needed for running tests) or `client/node_modules` (only
+> needed for frontend development) — recreate those by hand if you want them. See
+> [Why this project has no virtual environment](GLOSSARY.md#the-container-words).
+
+
 **You should see** from `--partial`:
 
 ```

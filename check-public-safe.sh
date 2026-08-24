@@ -27,6 +27,7 @@ echo ""
 # ── 1. Paths that must never be tracked ─────────────────────────────
 echo "1. Secret / runtime paths"
 for p in certs data backups .env .env.local crucible-costar-prompt.md \
+         CLAUDE.md CLAUDE.local.md .claude \
          .claude/settings.local.json backend/.venv client/node_modules; do
     tracked=$(git ls-files -- "$p" 2>/dev/null)
     if [ -n "$tracked" ]; then

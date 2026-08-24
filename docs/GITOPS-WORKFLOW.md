@@ -325,8 +325,7 @@ git diff --stat public/develop develop
 ```
 
 Expect **only** the private-only files: the 6 real-data workbooks under
-`docs/excel-templates/` and the old `crucible-costar-prompt.md` the private repo
-kept from its earlier history (see
+`docs/excel-templates/` (see
 [section 6](#6-checking-the-two-repos-are-in-sync)).
 
 ---
@@ -387,8 +386,13 @@ git diff --stat public/develop develop
 ```
 
 **Expected:** only the private-only files - the 6 real-data workbooks under
-`docs/excel-templates/` and the old `crucible-costar-prompt.md` retained from
-the private repo's earlier history. That difference is correct and permanent.
+`docs/excel-templates/`. That difference is correct and permanent.
+
+> The private repo also tracked a stale `crucible-costar-prompt.md` from its
+> pre-2026-08 history. It was untracked on 2026-08-24 (`git rm --cached`), since
+> the file is gitignored, machine-local working notes, and being
+> tracked-but-ignored is a confusing state. If your sync diff still lists it,
+> your mirror predates that change.
 
 **Anything else = drift.** Re-run Flow A steps 6-8 to bring them back in line.
 

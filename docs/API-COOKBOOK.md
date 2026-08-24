@@ -13,7 +13,7 @@ An **API** — a website built for programs instead of for people. When you open
 By default the server sends JSON as one long unbroken line, which is hard on the eyes. Pipe it through Python's built-in formatter to spread it over indented lines:
 
 ```bash
-curl --noproxy '*' -s http://localhost:49160/api/stats | python3 -m json.tool
+curl --noproxy '*' -sS http://localhost:49160/api/stats | python3 -m json.tool
 ```
 
 Two flags appear in every command here:
@@ -44,7 +44,7 @@ If you load screening before chemicals you will not break anything — you will 
 **How much data is in there right now?**
 
 ```bash
-curl --noproxy '*' -s http://localhost:49160/api/stats | python3 -m json.tool
+curl --noproxy '*' -sS http://localhost:49160/api/stats | python3 -m json.tool
 ```
 
 ```json
@@ -66,7 +66,7 @@ What it means: five chemicals and two samples are loaded, out of ceilings of 15,
 **What chemicals exist, in one glance? (short answer, cheap to run)**
 
 ```bash
-curl --noproxy '*' -s http://localhost:49160/api/chemicals/list/dropdown
+curl --noproxy '*' -sS http://localhost:49160/api/chemicals/list/dropdown
 ```
 
 ```json
@@ -88,7 +88,7 @@ All four uploads work the same way: `-F "file=@<path>"` attaches a file to the r
 **How do I load the chemicals?**
 
 ```bash
-curl --noproxy '*' -s -X POST http://localhost:49160/api/chemicals/upload/excel \
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/chemicals/upload/excel \
   -F "file=@docs/excel-templates/chemicals/chemicals_template.csv"
 ```
 
@@ -109,7 +109,7 @@ What it means: this is an **upsert** — update-or-insert, the database deciding
 **How do I load the samples?**
 
 ```bash
-curl --noproxy '*' -s -X POST http://localhost:49160/api/samples/upload/excel \
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/samples/upload/excel \
   -F "file=@docs/excel-templates/samples/Upload_Sample_Template.xlsx"
 ```
 
@@ -122,7 +122,7 @@ curl --noproxy '*' -s -X POST http://localhost:49160/api/samples/upload/excel \
 **How do I load the screening results? (chemicals must already be loaded)**
 
 ```bash
-curl --noproxy '*' -s -X POST http://localhost:49160/api/screening/upload/excel \
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/screening/upload/excel \
   -F "file=@docs/excel-templates/screening/screening_template.xlsx"
 ```
 
@@ -133,7 +133,7 @@ curl --noproxy '*' -s -X POST http://localhost:49160/api/screening/upload/excel 
 **How do I load the toxicology studies? (same rule — chemicals first)**
 
 ```bash
-curl --noproxy '*' -s -X POST http://localhost:49160/api/toxicology/upload/excel \
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/toxicology/upload/excel \
   -F "file=@docs/excel-templates/toxicology/toxicology_template.xlsx"
 ```
 
@@ -154,7 +154,7 @@ Only the **chemicals** endpoint reads CSV as well as XLSX — and it also has a 
 **What do we know about one particular chemical?**
 
 ```bash
-curl --noproxy '*' -s http://localhost:49160/api/chemicals/CHEM-0001
+curl --noproxy '*' -sS http://localhost:49160/api/chemicals/CHEM-0001
 ```
 
 ```json
@@ -168,7 +168,7 @@ Two things to notice. `null` means "we have no value for this" — it is not zer
 **What screening has been done on this chemical?**
 
 ```bash
-curl --noproxy '*' -s http://localhost:49160/api/screening/chemical/CHEM-0001 | python3 -m json.tool
+curl --noproxy '*' -sS http://localhost:49160/api/screening/chemical/CHEM-0001 | python3 -m json.tool
 ```
 
 ```json
@@ -194,7 +194,7 @@ What it means: the square brackets matter. This endpoint returns a **list**, bec
 **How do I get chemicals a page at a time, instead of all at once?**
 
 ```bash
-curl --noproxy '*' -s "http://localhost:49160/api/chemicals?limit=2&page=1"
+curl --noproxy '*' -sS "http://localhost:49160/api/chemicals?limit=2&page=1"
 ```
 
 ```json
@@ -213,7 +213,7 @@ What it means: the reply has two parts. `data` is the records themselves; `pagin
 **How do I find a chemical when I only remember part of the name?**
 
 ```bash
-curl --noproxy '*' -s "http://localhost:49160/api/chemicals?search=caffeine"
+curl --noproxy '*' -sS "http://localhost:49160/api/chemicals?search=caffeine"
 ```
 
 The reply has the same two-part shape as above, with one item in `data`: the Caffeine record. The search is case-insensitive, which is why lower-case `caffeine` finds the chemical stored as `Caffeine`. Combine it with paging by joining the settings with `&`, still inside quotes: `"...?search=caffeine&limit=10&page=1"`.
@@ -227,7 +227,7 @@ Sample spreadsheets deliberately have no chemical column, so after importing sam
 **How do I attach chemicals to a sample?**
 
 ```bash
-curl --noproxy '*' -s -X PUT http://localhost:49160/api/samples/SMPL00001/chemicals \
+curl --noproxy '*' -sS -X PUT http://localhost:49160/api/samples/SMPL00001/chemicals \
   -H "Content-Type: application/json" \
   -d '{"chemical_ids": ["CHEM-0001", "CHEM-0002"]}'
 ```
@@ -245,7 +245,7 @@ These commands remove data. Read the caveat on each one before running it.
 **How do I delete one chemical?**
 
 ```bash
-curl --noproxy '*' -s -X DELETE http://localhost:49160/api/chemicals/CHEM-0001
+curl --noproxy '*' -sS -X DELETE http://localhost:49160/api/chemicals/CHEM-0001
 ```
 
 `-X DELETE` sets the **method** — the verb of the request, saying what you intend rather than just where you are pointing. `GET` fetches, `POST` creates, `PUT` replaces, `DELETE` removes. Plain `curl` with no `-X` is a `GET`, which is why every look-up recipe above is safe to run at will.
@@ -253,7 +253,7 @@ curl --noproxy '*' -s -X DELETE http://localhost:49160/api/chemicals/CHEM-0001
 **How do I delete a batch of chemicals at once?**
 
 ```bash
-curl --noproxy '*' -s -X POST http://localhost:49160/api/chemicals/bulk/delete \
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/chemicals/bulk/delete \
   -H "Content-Type: application/json" \
   -d '{"chemical_ids": ["CHEM-0001", "CHEM-0002"]}'
 ```
@@ -263,8 +263,8 @@ Samples have the matching `POST /api/samples/bulk/delete`, taking `sample_ids`.
 **How do I empty a table completely? (no confirmation, no undo)**
 
 ```bash
-curl --noproxy '*' -s -X DELETE http://localhost:49160/api/chemicals/all/clear
-curl --noproxy '*' -s -X DELETE http://localhost:49160/api/samples/all/clear
+curl --noproxy '*' -sS -X DELETE http://localhost:49160/api/chemicals/all/clear
+curl --noproxy '*' -sS -X DELETE http://localhost:49160/api/samples/all/clear
 ```
 
 There is no "are you sure?" step — the request *is* the confirmation. Only chemicals and samples offer this. Screening and toxicology have no clear-all: those records must be deleted one at a time by their own record ID (`DELETE /api/screening/<record-id>`), which is a deliberate guardrail around experimental results. Take a backup first; the backup and restore commands are in the [README](../README.md).
@@ -278,7 +278,7 @@ A refusal is usually the system doing its job. Three you are likely to meet:
 **Asking for something that isn't there**
 
 ```bash
-curl --noproxy '*' -s http://localhost:49160/api/chemicals/NOPE-999
+curl --noproxy '*' -sS http://localhost:49160/api/chemicals/NOPE-999
 ```
 
 ```json
@@ -290,7 +290,7 @@ The status code is **404** — the standard web code for "no such thing at this 
 **Sending a CSV to an endpoint that only takes Excel**
 
 ```bash
-curl --noproxy '*' -s -X POST http://localhost:49160/api/screening/upload/excel \
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/screening/upload/excel \
   -F "file=@something.csv"
 ```
 

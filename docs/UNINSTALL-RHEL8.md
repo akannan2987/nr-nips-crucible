@@ -664,7 +664,7 @@ then restore from `~/crucible-<stamp>.db` instead.
 ```
 
 **What it means:** your data is back. Confirm it with
-`curl --noproxy '*' -s https://localhost:49160/api/stats` — the counts should
+`curl --noproxy '*' -sSk https://localhost:49160/api/stats` — the counts should
 match what the app held before the uninstall, not zeros. (`--noproxy '*'` tells
 curl to bypass the corporate proxy, which would otherwise intercept a request
 to your own machine and fail confusingly.)

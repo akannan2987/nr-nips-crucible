@@ -126,7 +126,7 @@ sudo firewall-cmd --reload
 sudo firewall-cmd --list-ports                          # verify 49160/tcp
 
 # Verify
-curl --noproxy '*' -s http://localhost:49160/api/stats   # expect JSON stats
+curl --noproxy '*' -sS http://localhost:49160/api/stats   # expect JSON stats
 ```
 
 Notes:
@@ -215,8 +215,8 @@ set, once the prerequisites in §1 are done:
 ```bash
 ./container-py.sh build
 ./container-py.sh start                                   # publishes 0.0.0.0:49160 on Linux
-curl --noproxy '*' -s http://localhost:49160/api/stats    # JSON counts
-curl --noproxy '*' -s http://localhost:49160/ | grep -o '<title>[^<]*</title>'
+curl --noproxy '*' -sS http://localhost:49160/api/stats    # JSON counts
+curl --noproxy '*' -sS http://localhost:49160/ | grep -o '<title>[^<]*</title>'
 ./container-py.sh logs | status | stop
 git pull && ./container-py.sh rebuild
 ```
@@ -551,7 +551,7 @@ stopped):
   file; that can catch it mid-write and corrupt the backup.
 - Restore keeps the current database as `data/crucible.db.pre-restore` (safety
   net) before swapping. Verify afterwards with
-  `curl --noproxy '*' -s http://localhost:49160/api/stats`.
+  `curl --noproxy '*' -sS http://localhost:49160/api/stats`.
 - Override the destination with `BACKUP_DIR=/path ./container-py.sh backup`.
 
 ### Moving data between machines

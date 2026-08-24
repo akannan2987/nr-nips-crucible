@@ -363,7 +363,7 @@ never baked into the image):
 ```bash
 ./container-py.sh start-ssl
 # ✅ Verify (use -k for self-signed certificates):
-curl --noproxy '*' -sk https://localhost:49160/api/stats
+curl --noproxy '*' -sSk https://localhost:49160/api/stats
 ```
 
 **You should see:** `✓ Container started with HTTPS`, the `https://localhost:49160`
@@ -435,8 +435,8 @@ matches the mode you are in (HTTP or HTTPS); do not run both.
 
 ```bash
 # V1. API answers with stats JSON (must contain "chemicals")
-curl --noproxy '*' -s  http://localhost:49160/api/stats     # HTTP mode
-curl --noproxy '*' -sk https://localhost:49160/api/stats    # HTTPS mode
+curl --noproxy '*' -sS  http://localhost:49160/api/stats     # HTTP mode
+curl --noproxy '*' -sSk https://localhost:49160/api/stats    # HTTPS mode
 ```
 
 **You should see:** a single long line of JSON starting
@@ -652,11 +652,26 @@ them mean you did something wrong.
   → *In plain terms:* OOM = "out of memory"; exit code 137 is how Linux reports
   "I killed this because it ran out of RAM". The fix gives the little Linux
   computer 4 GB instead of its default.
-- **Monitoring cron**: macOS cron can silently drop a first-time install; the
-  setup script re-reads the crontab to confirm it persisted (you may need to
-  grant `cron` Full Disk Access in System Settings).
-  → *In plain terms:* macOS security can quietly block cron. If the setup script
-  says the entry did not persist, it prints the manual command to run.
+- **Monitoring cron on macOS needs Full Disk Access — and usually fails silently
+  without it.** The crontab entry installs fine, but every run dies with
+  `./monitor.sh: Operation not permitted` and mails you the error, because macOS
+  blocks `cron` from touching files under `~/Documents` (and `~/Desktop`,
+  `~/Downloads`) unless you allow it.
+  → *In plain terms:* macOS asks permission before letting background programs
+  read your personal folders. `cron` never asks, so it is refused. Grant it:
+  **System Settings → Privacy & Security → Full Disk Access → +** and add
+  `/usr/sbin/cron`.
+  → **How you would notice:** `You have new mail in /var/mail/<you>` at your
+  shell prompt, and `/tmp/crucible-monitor.log` never appearing. Read the mail
+  with `mail` (`q` to quit) or check with
+  `grep -c "Operation not permitted" /var/mail/$(whoami)`.
+  → **Also check the PATH.** cron runs with `PATH=/usr/bin:/bin`, which does not
+  include podman (`/opt/podman/bin`) or Homebrew. The setup script now writes the
+  runtime's directory into the cron line for you; an older hand-written entry
+  without it cannot find podman and could never restart anything.
+  → **Honestly:** on a development Mac this monitor earns little. It exists for
+  the always-on server. If you would rather not grant `cron` that access, remove
+  the entry (`crontab -e`) and rely on `./container-py.sh status`.
 - The `:Z` suffix on volume mounts is SELinux relabelling for RHEL8 — it is a
   harmless no-op on macOS.
   → *In plain terms:* you may spot `:Z` in the scripts. It is a security setting
@@ -741,6 +756,13 @@ real error is there.
 **`✗ Cron entry did not persist.`** — macOS blocked the crontab write — grant
 `cron` Full Disk Access in System Settings → Privacy & Security, or paste the
 manual command the script prints.
+
+**`You have new mail in /var/mail/<you>`, repeatedly** — a cron job is failing
+and mailing you each time. Read it with `mail` (`q` quits), or just:
+`grep -aE "^Subject:|not permitted" /var/mail/$(whoami) | tail`. If it says
+`./monitor.sh: Operation not permitted`, cron lacks Full Disk Access — see the
+monitoring entry in [§6 gotchas](#6-macos-specific-gotchas). Clear the mailbox
+afterwards with `: > /var/mail/$(whoami)`.
 
 **Browser: "Your connection is not private" / `NET::ERR_CERT_AUTHORITY_INVALID`** —
 your self-signed certificate, behaving exactly as designed — click **Advanced**,

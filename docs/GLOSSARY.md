@@ -241,6 +241,14 @@ key is your signature: anyone holding it can impersonate you. Crucible's
 sits at `certs/server.key` with permissions `600` (readable only by you),
 and the whole `certs/` folder is excluded from version control.
 
+**Subject Alternative Name (SAN)** — the list of hostnames a certificate is
+valid for, written inside the certificate itself. A certificate issued to
+`server.example.com` says so in its SAN, and a client asking for any *other*
+name — including `localhost` — will refuse it with a "name mismatch" error even
+though the certificate is perfectly genuine. That is hostname checking working,
+not a fault. It is why a `localhost` probe against a corporate certificate needs
+`-k`, while asking for the machine's real name validates cleanly.
+
 **Certificate authority (CA)** — the trusted issuer that signs
 certificates, like a passport office. Nestlé runs an internal one, which is
 why the server's certificate is trusted inside the company network.

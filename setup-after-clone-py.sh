@@ -116,7 +116,13 @@ if [[ "$REPLY" =~ ^[Yy]$ ]]; then
     # rootless podman needs USER + XDG_RUNTIME_DIR in cron's minimal env (on a
     # network-mounted home it otherwise resolves its storage to a bad path and
     # fails, so monitor.sh could not restart the container).
-    CRON_LINE="*/5 * * * * cd $(pwd) && USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u) CONTAINER_NAME=crucible-py API_URL=${PROTO}://localhost:49160/api/stats ./monitor.sh"
+    # cron runs with a minimal PATH (/usr/bin:/bin), which on macOS does NOT
+    # include podman (/opt/podman/bin) or Homebrew (/opt/homebrew/bin). Capture
+    # the runtime's directory now and prepend it, or monitor.sh cannot find the
+    # container runtime and could never restart anything.
+    RUNTIME_BIN="$(command -v podman 2>/dev/null || command -v docker 2>/dev/null)"
+    RUNTIME_DIR="$(dirname "${RUNTIME_BIN:-/usr/bin/true}")"
+    CRON_LINE="*/5 * * * * cd $(pwd) && PATH=${RUNTIME_DIR}:/usr/local/bin:/usr/bin:/bin USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u) CONTAINER_NAME=crucible-py API_URL=${PROTO}://localhost:49160/api/stats ./monitor.sh"
     # Replace any previous monitor.sh entry so re-runs don't stack duplicate
     # cron lines.
     { crontab -l 2>/dev/null | grep -v "monitor.sh" || true; printf '%s\n' "$CRON_LINE"; } | crontab -

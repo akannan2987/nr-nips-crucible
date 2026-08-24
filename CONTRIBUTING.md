@@ -333,7 +333,7 @@ and [docs/INSTALL-RHEL8.md](docs/INSTALL-RHEL8.md)):
 cp "$(ls -t backups/crucible-*.db | head -1)" ~/data-backup-$(date +%Y%m%d).db
 git pull
 ./container-py.sh rebuild                       # preserves HTTP/HTTPS mode
-curl --noproxy '*' -s https://localhost:49160/api/stats
+curl --noproxy '*' -sSk https://localhost:49160/api/stats   # -k: the cert names the VM's FQDN, not localhost
 
 # Check application in browser
 # https://<vm-hostname>:49160

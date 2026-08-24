@@ -159,7 +159,7 @@ git pull --ff-only origin develop        # start from the latest
 
 cd backend && .venv/bin/pytest && cd ..  # tests must pass
 ./container-py.sh rebuild                # run it for real
-curl --noproxy '*' -s http://localhost:49160/api/stats
+curl --noproxy '*' -sS http://localhost:49160/api/stats
 ```
 
 ### Step 2 - Safety gate
@@ -275,7 +275,7 @@ cd ~/work/Pandora_toolbox/nr-nips-crucible
 cp "$(ls -t backups/crucible-*.db | head -1)" ~/data-backup-$(date +%Y%m%d).db
 git pull
 ./container-py.sh rebuild                       # preserves HTTP/HTTPS mode
-curl --noproxy '*' -s https://localhost:49160/api/stats
+curl --noproxy '*' -sSk https://localhost:49160/api/stats   # -k: the cert names the VM's FQDN, not localhost
 ```
 
 > **Why not just `cp -r data`?** Because the app is still running. Copying a live

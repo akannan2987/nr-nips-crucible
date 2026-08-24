@@ -703,9 +703,23 @@ legs.
 `pwd` should end in `/nr-nips-crucible`.
 
 ```bash
-# ✅ Verify (Nestlé-signed certs validate without -k):
-curl --noproxy '*' -s https://localhost:49160/api/stats
+# ✅ Full verification — ask for the machine's REAL name, not "localhost".
+#    This validates the certificate chain as a browser would:
+curl --noproxy '*' -sS https://<vm-hostname>:49160/api/stats
+
+# ✅ Quick local probe — needs -k. Not a problem: the certificate is issued
+#    to <vm-hostname>, so asking for "localhost" is a name mismatch by design.
+curl --noproxy '*' -sSk https://localhost:49160/api/stats
 ```
+
+> **Why `localhost` needs `-k` even with a perfectly good certificate.** A
+> certificate lists the names it is valid for (its *Subject Alternative Names*).
+> The corporate one carries exactly one: `<vm-hostname>`. It says nothing about
+> `localhost`, so a client asking for `localhost` is right to object — that is
+> hostname checking doing its job, not a fault. Use the FQDN when you want to
+> prove the certificate is genuinely good; use `-k` when you just want to know
+> the app is alive. Both are shown above because they answer different
+> questions.
 
 `curl` is a browser with no windows — it fetches a URL and prints what comes
 back. `-s` is *silent*: suppress the progress meter, print only the answer.
@@ -739,8 +753,34 @@ a form other programs can read. Getting real **JSON** back is the single
 strongest signal that everything below it works: container, port, TLS,
 certificates, backend, and database, all confirmed by one line.
 
-**If instead:** `curl: (60) SSL certificate problem: self signed certificate` —
-the certificate in `certs/` is not the corporate one. Re-copy from the store.
+**If instead:** `curl: (60) SSL certificate problem: ...` — read the rest of the
+line, because the two variants mean opposite things:
+
+- **`... self signed certificate`** — the certificate in `certs/` really is a
+  self-signed one, not the corporate pair. Re-copy from the store (§3.1).
+- **`... unable to get local issuer certificate`** — the certificate is fine.
+  **Your `curl` does not trust the authority that signed it.** This is a client
+  problem, not a server problem: the app is serving the right certificate, and
+  `./container-py.sh status` (which uses `-k`) will happily return JSON while
+  this command fails.
+
+  The usual cause here is **conda**. If your prompt starts with `(base)` you are
+  inside a conda environment, and conda ships its own `curl` with its own list of
+  trusted authorities — public CAs only, not the corporate one. The system
+  `curl` normally does trust it:
+
+  ```bash
+  which curl                                                        # conda's, or /usr/bin/curl?
+  /usr/bin/curl --noproxy '*' -sS https://<vm-hostname>:49160/api/stats  # system curl, real name
+  curl --noproxy '*' -sS -k https://localhost:49160/api/stats        # or skip verification
+  ```
+
+  Use `/usr/bin/curl` for the honest check. `-k` is acceptable on a localhost
+  probe where you are both the server and the client — it is what
+  `container-py.sh` does internally — but never make it a habit against a remote
+  host: it disables the one check that would catch an impostor. The browser test
+  (V8) is the more meaningful verification anyway, since a corporate workstation
+  trusts the internal CA and will show the padlock without complaint.
 
 **If instead:** `curl: (7) Failed to connect to localhost port 49160` — nothing
 is listening. `./container-py.sh status` and then `./container-py.sh logs`.
@@ -1045,8 +1085,9 @@ far more than a vague sense that something is wrong.
 
 ```bash
 # V1. API answers with stats JSON (must contain "chemicals")
-curl --noproxy '*' -s  http://localhost:49160/api/stats     # HTTP mode
-curl --noproxy '*' -s  https://localhost:49160/api/stats    # HTTPS mode (no -k needed with corporate certs)
+curl --noproxy '*' -sS  http://localhost:49160/api/stats     # HTTP mode
+curl --noproxy '*' -sS  https://<vm-hostname>:49160/api/stats  # HTTPS, full validation
+curl --noproxy '*' -sSk https://localhost:49160/api/stats      # HTTPS via localhost (-k: cert names the FQDN, not localhost)
 ```
 
 Run the line matching the mode you started in. Only one will answer — HTTPS
@@ -1106,7 +1147,7 @@ is running. `./container-py.sh start-ssl`.
 
 ```bash
 # V3. UI loads (from the VM)
-curl --noproxy '*' -s https://localhost:49160/ | grep -o '<title>[^<]*</title>'
+curl --noproxy '*' -sSk https://localhost:49160/ | grep -o '<title>[^<]*</title>'
 ```
 
 V1 proved the backend answers. This proves the **frontend** — the actual web
@@ -1578,7 +1619,7 @@ already — that is how it earned its place on the list.
 
   An honest limitation, documented rather than hidden. If you run on a custom
   port, expect the setup script to end with a verification failure, and confirm
-  by hand with `curl --noproxy '*' -s https://localhost:<your-port>/api/stats`.
+  by hand with `curl --noproxy '*' -sS https://localhost:<your-port>/api/stats`.
 
 - **Cron + rootless podman on a network-mounted home directory**: any cron
   line invoking podman needs the `USER=… XDG_RUNTIME_DIR=…` prefix (see

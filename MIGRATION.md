@@ -1,3 +1,5 @@
+[← README](README.md) · [All docs in order](README.md#the-documentation-in-order) · [Glossary](docs/GLOSSARY.md)
+
 # MIGRATION.md — Crucible (v2.0): Node/Express → Python/FastAPI (history)
 
 This document is a **historical record** of how Crucible moved from its

@@ -1,3 +1,5 @@
+[← README](../../README.md) · [All docs in order](../../README.md#the-documentation-in-order) · [Glossary](../GLOSSARY.md)
+
 # Excel Templates - Crucible: Pandora Toolbox Enhancement (v2.0)
 
 Ready-to-fill upload templates for bulk data import into Crucible.

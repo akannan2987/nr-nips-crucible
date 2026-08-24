@@ -1,3 +1,5 @@
+[← README](../README.md) · [All docs in order](../README.md#the-documentation-in-order) · [Glossary](GLOSSARY.md)
+
 # API Testing Guide - Crucible: Pandora Toolbox Enhancement (v2.0)
 
 ## Quick Start

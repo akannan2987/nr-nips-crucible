@@ -1,3 +1,5 @@
+[← README](README.md) · [All docs in order](README.md#the-documentation-in-order) · [Glossary](docs/GLOSSARY.md)
+
 # Deployment Guide — Crucible: Pandora Toolbox Enhancement (v2.0)
 
 Operational runbooks for deploying the Crucible **Python/FastAPI** backend on

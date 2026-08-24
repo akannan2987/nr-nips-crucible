@@ -1,3 +1,5 @@
+[← README](../README.md) · [All docs in order](../README.md#the-documentation-in-order) · [Glossary](GLOSSARY.md)
+
 # Tutorial Example: Building the Crucible Architecture Page
 
 A concrete, copy-paste-ready walkthrough showing how the interactive

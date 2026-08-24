@@ -1,3 +1,5 @@
+[← README](README.md) · [All docs in order](README.md#the-documentation-in-order) · [Glossary](docs/GLOSSARY.md)
+
 # Contributing to Crucible: Pandora Toolbox Enhancement (v2.0)
 
 Thank you for your interest in contributing to Crucible! This document provides guidelines and instructions for contributing.

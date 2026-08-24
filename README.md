@@ -4,6 +4,15 @@ Chemical and Sample Management System - MVP
 
 A comprehensive web application for managing chemical compounds, samples, screening data, and toxicology information with an integrated Electronic Lab Notebook (ELN). Deployed with **HTTPS/TLS** encryption using official Nestlé SSL certificates.
 
+**[Documentation index](#the-documentation-in-order)** · **[Glossary](docs/GLOSSARY.md)** · **[Release notes](NEWS.md)** · **[API cookbook](docs/API-COOKBOOK.md)**
+
+> **New to any of this?** Every technical term used anywhere in this repository —
+> container, port, certificate, migration, CAS number, SLIMS — is explained in
+> plain words, with everyday comparisons, in **[docs/GLOSSARY.md](docs/GLOSSARY.md)**.
+> If you meet a word that isn't there and isn't obvious, that's a documentation
+> bug worth reporting. You are not expected to arrive already knowing the
+> vocabulary.
+
 ## 🚀 Quick Start
 
 ### Setup after clone
@@ -587,23 +596,39 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ---
 
-## 📝 Documentation
+## The documentation, in order
 
-| Document | Description |
-|----------|-------------|
-| **[GitOps Workflow](docs/GITOPS-WORKFLOW.md)** | How changes flow between the public and private repos, and the pre-push safety gate |
-| **[macOS Install & Run](docs/INSTALL-MACOS.md)** | Install, run (HTTP/HTTPS), and verify on macOS — uses the **public** repo |
-| **[macOS Uninstall](docs/UNINSTALL-MACOS.md)** | Clean removal from macOS, including manual cleanup and verification |
-| **[RHEL8 Install & Run](docs/INSTALL-RHEL8.md)** | Install, run (HTTPS), auto-start, and verify on the RHEL8 VM — uses the **private** repo |
-| **[RHEL8 Uninstall](docs/UNINSTALL-RHEL8.md)** | Clean removal from the RHEL8 VM (systemd, firewall, cron, Postgres artifacts) |
-| **[Deployment Guide](DEPLOYMENT.md)** | Deep reference: runbooks (macOS Docker/Podman, RHEL8 Podman), SSL setup, monitoring, systemd auto-start |
-| **[Backend README](backend/README.md)** | Python backend: quickstart, tests, env vars, vite proxy |
-| **[API Documentation](API.md)** | Complete REST API reference |
-| **[API Testing Guide](docs/API-TESTING-GUIDE.md)** | Worked `curl` examples for exercising the API |
-| **[MIGRATION.md](MIGRATION.md)** | Brief history of the Node→Python migration + learning map |
-| **[Architecture](docs/architecture.md)** | System architecture (Python/FastAPI) |
-| **[Database Schema](docs/database-schema.md)** | Hybrid document pattern (SQLite + optional PostgreSQL/Alembic) |
-| **[Contributing Guidelines](CONTRIBUTING.md)** | How to contribute |
+Every guide, in the order a newcomer should meet them. The install guides
+assume **no prior experience** with containers, terminals, or servers: every
+technical word is explained where it first appears, every command shows the
+output you should get, and likely mistakes get a named fix.
+
+**Start here**
+
+| # | Guide | What it teaches |
+|---|-------|-----------------|
+| 00 | **[Glossary](docs/GLOSSARY.md)** | Every term in the project, in plain words — read it, or keep it open in a tab |
+| 01 | **[macOS Install & Run](docs/INSTALL-MACOS.md)** | From a blank Mac to the app running: containers, ports, HTTPS. Uses the **public** repo |
+| 02 | **[RHEL8 Install & Run](docs/INSTALL-RHEL8.md)** | The production deployment: rootless podman, SELinux, firewall, real certificates, surviving a reboot. Uses the **private** repo |
+| 03 | **[API Cookbook](docs/API-COOKBOOK.md)** | Copy-paste recipes for talking to the app — every answer captured from a live instance |
+| 04 | **[GitOps Workflow](docs/GITOPS-WORKFLOW.md)** | How a change travels from your Mac to the server, and the safety gate that stops secrets escaping |
+| 05 | **[macOS Uninstall](docs/UNINSTALL-MACOS.md)** | Clean removal, starting with what you cannot get back |
+| 06 | **[RHEL8 Uninstall](docs/UNINSTALL-RHEL8.md)** | The same, plus the server-only pieces (systemd, firewall, cron) |
+
+**Reference — look things up as needed**
+
+| Document | What it holds |
+|----------|---------------|
+| **[Deployment Guide](DEPLOYMENT.md)** | The deep operational reference: all runbooks, certificate rotation, PostgreSQL, systemd, troubleshooting |
+| **[API Documentation](API.md)** | Complete REST API reference, endpoint by endpoint |
+| **[API Testing Guide](docs/API-TESTING-GUIDE.md)** | Worked `curl` and Python examples |
+| **[Architecture](docs/architecture.md)** | How the pieces fit together |
+| **[Database Schema](docs/database-schema.md)** | The storage pattern (SQLite + optional PostgreSQL/Alembic) |
+| **[Upload Templates](docs/excel-templates/)** | The spreadsheet formats each module accepts |
+| **[Backend README](backend/README.md)** | Python backend: quickstart, tests, environment variables |
+| **[Contributing Guidelines](CONTRIBUTING.md)** | How to make and publish a change |
+| **[Release notes](NEWS.md)** | What changed in each version, and why |
+| **[MIGRATION.md](MIGRATION.md)** | History of the Node→Python migration |
 
 ---
 

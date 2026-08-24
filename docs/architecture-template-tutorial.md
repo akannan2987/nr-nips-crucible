@@ -1,3 +1,5 @@
+[← README](../README.md) · [All docs in order](../README.md#the-documentation-in-order) · [Glossary](GLOSSARY.md)
+
 # Step-by-Step Tutorial: Build an Interactive Architecture Page
 
 A complete reproducible guide to creating a **Glassmorphic Animated Architecture One-Pager** — a self-contained single HTML file with animated data flow diagrams, clickable components, and tabbed sections — for any tool, application, or data product.

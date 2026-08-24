@@ -1,3 +1,5 @@
+[← README](../README.md) · [All docs in order](../README.md#the-documentation-in-order) · [Glossary](GLOSSARY.md)
+
 # System Architecture - Crucible: Pandora Toolbox Enhancement (v2.0)
 
 Technical architecture and design documentation for the Chemical and Sample

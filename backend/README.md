@@ -1,3 +1,5 @@
+[← README](../README.md) · [All docs in order](../README.md#the-documentation-in-order) · [Glossary](../docs/GLOSSARY.md)
+
 # Crucible Python Backend (FastAPI)
 
 The Crucible backend: FastAPI + SQLAlchemy 2 + Pydantic v2 over SQLite (with

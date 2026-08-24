@@ -1,3 +1,5 @@
+[← README](README.md) · [All docs in order](README.md#the-documentation-in-order) · [Glossary](docs/GLOSSARY.md)
+
 # API Documentation - Crucible: Pandora Toolbox Enhancement (v2.0)
 
 Complete REST API reference for the Chemical and Sample Management System.

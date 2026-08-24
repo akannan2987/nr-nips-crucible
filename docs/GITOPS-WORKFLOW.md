@@ -1,3 +1,5 @@
+[← README](../README.md) · [All docs in order](../README.md#the-documentation-in-order) · [Glossary](GLOSSARY.md)
+
 # GitOps Workflow - Crucible: Pandora Toolbox Enhancement (v2.0)
 
 How to make changes to this project across **two repositories** and **two machines**

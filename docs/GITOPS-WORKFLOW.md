@@ -38,8 +38,14 @@ Three folders, each with a fixed purpose:
 | # | Machine | Folder | `origin` remote | Extra remote | Purpose |
 |---|---------|--------|-----------------|--------------|---------|
 | 1 | Mac | `~/Documents/Work/pandora_toolbox/nr-nips-crucible` | **public** | none | Write and test changes |
-| 2 | VM | `~/crucible-mirror` | **private** | `public` (fetch only) | Copy content public -> private |
+| 2 | VM | `~/work/Pandora_toolbox/crucible-mirror` | **private** | `public` (fetch only) | Copy content public -> private |
 | 3 | VM | `~/work/Pandora_toolbox/nr-nips-crucible` | **private** | none | Run the live application |
+
+> **The paths are the ones this deployment uses**, not a requirement. What
+> matters is that the mirror and the production checkout are two *separate*
+> folders — never the same one. Run `pwd` in each and use what it prints; a
+> command run from the wrong folder is the most common way this workflow goes
+> wrong.
 
 > **One remote per purpose.** The Mac folder has no private credentials, so it
 > *cannot* accidentally push to the private repo. The production folder never
@@ -81,9 +87,9 @@ It is **not** the production folder and never runs the application.
 
 ```bash
 # ▶ VM
-cd ~
+cd ~/work/Pandora_toolbox
 git clone https://github.com/nestle-it/nr-nips-crucible.git crucible-mirror
-cd ~/crucible-mirror
+cd ~/work/Pandora_toolbox/crucible-mirror
 git switch develop
 
 # Add the PUBLIC repo as a second remote named "public".
@@ -235,8 +241,8 @@ git switch develop
 ### Step 6 - Copy the content into the private repo
 
 ```bash
-# ▶ VM — ~/crucible-mirror
-cd ~/crucible-mirror
+# ▶ VM — ~/work/Pandora_toolbox/crucible-mirror
+cd ~/work/Pandora_toolbox/crucible-mirror
 git switch develop
 git fetch origin && git status           # expect "up to date with origin/develop"
 git fetch public                         # pull in your new public commit
@@ -250,7 +256,7 @@ git checkout public/develop -- .         # copy CONTENT (note the trailing "-- .
 ### Step 7 - Review what will be committed
 
 ```bash
-# ▶ VM — ~/crucible-mirror
+# ▶ VM — ~/work/Pandora_toolbox/crucible-mirror
 git status
 git diff --cached --summary | grep -i mode
 ```
@@ -280,7 +286,7 @@ everything else.
 ### Step 8 - Commit and push to the private repo (all three branches)
 
 ```bash
-# ▶ VM — ~/crucible-mirror
+# ▶ VM — ~/work/Pandora_toolbox/crucible-mirror
 git commit -m "<what changed>"
 git push origin develop develop:beta develop:master
 ```
@@ -288,7 +294,7 @@ git push origin develop develop:beta develop:master
 ### Step 9 - Level the mirror's local master
 
 ```bash
-# ▶ VM — ~/crucible-mirror
+# ▶ VM — ~/work/Pandora_toolbox/crucible-mirror
 git switch master
 git pull --ff-only origin master
 git switch develop
@@ -320,7 +326,7 @@ curl --noproxy '*' -sSk https://localhost:49160/api/stats   # -k: the cert names
 ### Step 11 - Confirm
 
 ```bash
-# ▶ VM — ~/crucible-mirror
+# ▶ VM — ~/work/Pandora_toolbox/crucible-mirror
 git diff --stat public/develop develop
 ```
 
@@ -339,7 +345,7 @@ Carry the change back to the Mac as a patch instead:
 
 ```bash
 # ▶ VM — with your fix applied but NOT committed
-cd ~/crucible-mirror
+cd ~/work/Pandora_toolbox/crucible-mirror
 git diff > ~/fix.patch
 ```
 
@@ -364,7 +370,7 @@ scp ~/crucible-develop.bundle <your-user>@<vm-hostname>:~/
 ```
 
 ```bash
-# ▶ VM — ~/crucible-mirror   (use the bundle instead of the public remote)
+# ▶ VM — ~/work/Pandora_toolbox/crucible-mirror   (use the bundle instead of the public remote)
 git remote add public ~/crucible-develop.bundle     # if "public" was never added
 # ...or, if §2.2 already added "public" pointing at GitHub:
 git remote set-url public ~/crucible-develop.bundle
@@ -379,8 +385,8 @@ git checkout public/develop -- .
 ## 6. Checking the two repos are in sync
 
 ```bash
-# ▶ VM — ~/crucible-mirror
-cd ~/crucible-mirror
+# ▶ VM — ~/work/Pandora_toolbox/crucible-mirror
+cd ~/work/Pandora_toolbox/crucible-mirror
 git fetch origin && git fetch public
 git diff --stat public/develop develop
 ```
@@ -399,7 +405,7 @@ git diff --stat public/develop develop
 As a plain file list:
 
 ```bash
-# ▶ VM — ~/crucible-mirror
+# ▶ VM — ~/work/Pandora_toolbox/crucible-mirror
 git diff --name-status public/develop develop
 ```
 
@@ -432,4 +438,4 @@ the authoring folder.
 [macOS install](INSTALL-MACOS.md) · [RHEL8 install](INSTALL-RHEL8.md) ·
 [Deployment reference](../DEPLOYMENT.md)
 
-**Last Updated:** August 7, 2026
+**Last Updated:** August 24, 2026

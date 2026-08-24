@@ -375,6 +375,10 @@ usually wrong.
 ### 4.1 PostgreSQL artifacts
 
 ```bash
+# ESSENTIAL after --full: your shell is standing in the folder that was just
+# deleted, and podman refuses to start from a directory that no longer exists.
+cd ~
+
 # PostgreSQL artifacts (only if you ever used USE_POSTGRES=true — kept manual
 # because removing the crucible-pgdata volume deletes PostgreSQL DATA)
 podman rm -f crucible-db
@@ -456,6 +460,13 @@ the reload applied it to the live one. Two `success` lines, one per command.
 **If instead:** `Warning: NOT_ENABLED: 49160:tcp` — the rule was not there.
 Fine; nothing to remove.
 
+**If instead:** `sudo: firewall-cmd: command not found` — firewalld is not
+installed, so you were **Case C**: there was no host firewall, no rule was ever
+added, and there is nothing here to remove. Skip this section entirely. Confirm
+with `sudo iptables -S INPUT 2>/dev/null | grep 49160`, which should print
+nothing. This is the common answer on an internal VM, and it is why external
+access worked at install time without you configuring anything.
+
 **If instead:** `FirewallD is not running` — you were Case B or Case C at
 install time. Use the iptables line, or nothing.
 
@@ -505,6 +516,7 @@ only the lines mentioning crucible* — so **no output is the good result**.
 Silence here is not a failed command; it is the absence of what you removed.
 
 ```bash
+cd ~                                              # ESSENTIAL — see the note below
 podman ps -a | grep crucible                      # → no output
 podman images | grep crucible                     # → no output
 podman volume ls | grep crucible                  # → no output
@@ -520,16 +532,15 @@ ls ~/crucible-backups/                            # final data backup, if you ra
 > ### Two results that look like failures but aren't
 >
 > **`error getting current working directory: No such file or directory`** —
-> after `--full`, the project folder you were standing in no longer exists, so
-> the shell has nowhere to run commands *from*. Nothing is broken; podman simply
-> refuses to start. **The checks above did not actually run.** Move somewhere
-> that still exists and repeat them:
+> you skipped the `cd ~`. After `--full`, the project folder you were standing
+> in no longer exists, so the shell has nowhere to run commands *from*. Nothing
+> is broken; podman simply refuses to start. **Every `podman` check above did
+> not actually run** — the silence you are looking at is the command failing,
+> not the absence of what you removed. `cd ~` and run the block again.
 >
-> ```bash
-> cd ~
-> podman ps -a | grep crucible
-> podman images | grep crucible
-> ```
+> Note that `pwd` still prints the deleted path and `ls` prints nothing, both
+> without complaint: the shell remembers where it was, so it looks like an empty
+> folder rather than a missing one. That is what makes this easy to miss.
 >
 > **`container-crucible-py.service   not-found failed failed`** — read the first
 > column: `not-found` means systemd cannot find the unit file, i.e. **it was
@@ -600,8 +611,13 @@ the unit file was deleted but systemd still remembers it. Run
 
 ```bash
 # Fresh clone of the PRIVATE repo (RHEL8 VM)
+# The cd is not optional: after --full your shell is still standing in the
+# deleted folder, and it must land in the PRODUCTION folder's parent — not the
+# mirror's. Adjust the path if your layout differs.
+cd ~/work/Pandora_toolbox
 git clone https://github.com/nestle-it/nr-nips-crucible.git
 cd nr-nips-crucible
+pwd                                    # confirm before going further
 ```
 
 **Clone** ([glossary](GLOSSARY.md#the-git-words)) — download a complete copy of
@@ -640,6 +656,24 @@ type the two lines by hand — the result is identical.
 `CERT_HOSTNAME` is absent here because it is optional: left out, the setup
 script uses `hostname -f`, which on this VM already resolves to the right name.
 Add it back if the certificate filenames in the store use a different spelling.
+
+> **If you no longer know your `CERT_SOURCE`.** It is the one value a full
+> uninstall destroys that no clone and no document can give back — `.env.local`
+> is untracked, and every guide writes the path as `<cert-store-path>` on
+> purpose. The certificate *store* itself is untouched by uninstalling (step 5
+> removes only the copies inside the project), so find it again:
+>
+> ```bash
+> sudo find /etc/pki /etc/ssl /opt -name '*.crt' -newermt '2024-01-01' 2>/dev/null | head -20
+> ```
+>
+> Look for the directory holding a `.crt` and a matching `.key` named for this
+> host. Verify before trusting it — `openssl x509 -in <file> -noout -subject -dates`
+> should show your hostname and an expiry still in the future. Failing that, any
+> off-machine backup of the pair works: copy the two files into a directory of
+> your own and point `CERT_SOURCE` at that. **Record the path somewhere outside
+> the project once you have it** — you will need it again after the next
+> `--full`.
 
 **You should see:** nothing. (Silence = success.)
 
@@ -717,7 +751,7 @@ because you now have expectations about what the numbers should say.
 
 ---
 
-**Last Updated:** August 8, 2026
+**Last Updated:** August 24, 2026
 
 ---
 

@@ -13,6 +13,121 @@ A comprehensive web application for managing chemical compounds, samples, screen
 > bug worth reporting. You are not expected to arrive already knowing the
 > vocabulary.
 
+## What is a chemical registry? (start here)
+
+Imagine a toxicologist who needs to know whether a compound has been tested
+before. Somebody screened it two years ago, but the results are in a
+spreadsheet on a laptop that has since been reimaged. The physical sample was
+logged under a different identifier, by a colleague who has changed teams. The
+toxicology study that followed sits in a third file, named after the study
+rather than the compound. Nobody can prove the three describe the same
+substance, so the compound is re-ordered, re-prepared and re-tested — weeks of
+work to learn something the organisation already knew.
+
+A **chemical registry** — one catalogue that gives every compound a single
+identity, and keeps everything ever measured about it attached to that
+identity. Instead of asking *which file has this in it?*, you ask the registry.
+
+Four words that recur throughout this project, in the order the work happens:
+
+- A **chemical** is the substance itself, on paper: a name, a molecular
+  formula, usually a **CAS number** (the internationally agreed identifier for
+  a substance — the same string means the same compound in any lab in the
+  world).
+- A **sample** is a physical quantity of that chemical sitting in a vial: a
+  batch, a concentration, a location, an expiry.
+- **Screening** is the fast, broad first test — run a sample against an assay
+  and record what happened.
+- A **toxicology study** is the slow, careful one that follows: dose levels,
+  endpoints, a **NOAEL** (the highest dose at which nothing harmful was
+  observed).
+
+Every one of these terms, and every technical one below, is defined in plain
+words in the **[Glossary](docs/GLOSSARY.md)**.
+
+---
+
+## The problem this project tackles
+
+**The pain point.** Laboratory data arrives as spreadsheets. Each is correct on
+its own and useless next to the others: the same compound appears under a
+supplier code in one file, a CAS number in another, and a free-typed name in a
+third. Nothing enforces that they refer to the same thing, so the link between
+a compound, the vial it went into, and the result that came out exists only in
+somebody's memory. When that person moves on, the link goes with them.
+
+**Why it matters.** Work gets repeated because nobody can prove it was already
+done. Safety questions take days to answer because answering them means finding
+files rather than querying data. And the answers are unauditable: a number in a
+spreadsheet cannot say where it came from.
+
+**What Crucible is.** A web application that holds all four kinds of record in
+one place, keyed to one chemical identity, uploadable from the spreadsheet and
+structure formats laboratories already produce — and readable back out through
+a REST API so other tools can ask it questions. It runs on one machine, in one
+container, against a single database file. It is deliberately small: this is a
+system of record, not an analysis platform.
+
+---
+
+## How it works
+
+```
+   Your spreadsheet or structure file
+   (.xlsx · .csv · .sdf)
+              │
+              ▼
+   ┌──────────────────────┐   You map your column names to the fields
+   │  Upload (ELN page)   │   Crucible knows. Nothing is renamed on disk.
+   └──────────┬───────────┘
+              ▼
+   ┌──────────────────────┐   openpyxl reads spreadsheets; RDKit reads
+   │  Parse & validate    │   chemical structures. Bad rows are reported,
+   └──────────┬───────────┘   not silently dropped.
+              ▼
+   ┌──────────────────────┐   Every record is stored whole, as JSON, plus a
+   │  Store (SQLite)      │   few indexed columns for finding it again.
+   └──────────┬───────────┘   Your original fields survive verbatim.
+              │
+      ┌───────┴────────┐
+      ▼                ▼
+ ┌─────────┐    ┌─────────────┐
+ │ Browser │    │  REST API   │  Same data, two doors: people use the
+ │ Viewer  │    │  /api/*     │  web pages, programs use the endpoints.
+ │Dashboard│    └─────────────┘
+ └─────────┘
+```
+
+Upload a file, map its columns once, and the records land in the database with
+their original fields intact. **The full record is kept as JSON and treated as
+the source of truth**; the indexed columns beside it exist only to find rows
+quickly. That is the single design decision the rest of the system follows
+from — it is why an upload never has to be reshaped to fit a schema, and why
+adding a field later breaks nothing. The reasoning, and what it costs, is in
+**[Architecture → The one rule](docs/architecture.md#the-one-design-rule-everything-else-follows-from)**.
+
+---
+
+## What the system handles
+
+| Module | What it holds | Accepts | Optimised for | Linked to |
+|---|---|---|---|---|
+| **Chemicals** | The substance: name, CAS number, formula, molecular weight, supplier reference | `.xlsx` · `.csv` · `.sdf` | 15,000+ records | — (the anchor everything else hangs from) |
+| **Samples** | The physical vial: batch, concentration, location, expiry | `.xlsx` (SLIMS three-row header) | 1,000+ records | a chemical |
+| **Screening** | Assay results: the fast, broad first pass | `.xlsx` | — | a chemical |
+| **Toxicology** | Study data: doses, endpoints, NOAEL | `.xlsx` | — | a chemical |
+
+Three ways in and out: the **ELN** upload pages, the **Data Viewer** for search
+and filter, and the **Dashboard**, which refreshes counts every five seconds.
+Everything the browser does, the **[REST API](API.md)** can do too — the web
+pages are simply its first client.
+
+Neither upload limit is a hard cap. They are the volumes the system has been
+exercised at; see [About the data](#about-the-data-honesty-notes) for what that
+does and does not promise.
+
+---
+
 ## 🚀 Quick Start
 
 ### Setup after clone
@@ -44,9 +159,15 @@ cd nr-nips-crucible
 That one command copies and verifies SSL certificates (when a certificate store
 exists), builds the image, starts the app (HTTPS when certs exist, else HTTP),
 polls the API until it answers, and optionally installs the monitoring cron
-(`SETUP_MONITOR=n` to skip the prompt). Every step, its expected output, and
-every likely mistake: **[macOS Install](docs/INSTALL-MACOS.md)** ·
-**[RHEL8 Install](docs/INSTALL-RHEL8.md)**; deep runbooks in
+(`SETUP_MONITOR=n` to skip the prompt).
+
+**The guided path.** If you have not deployed a container before — or you want
+to know what each step is actually doing rather than watch it scroll past —
+follow the platform guide instead of the one-liner. They start from a blank
+machine, explain every term where it first appears, show the output each
+command should produce, and name the likely mistakes:
+**[macOS Install](docs/INSTALL-MACOS.md)** ·
+**[RHEL8 Install](docs/INSTALL-RHEL8.md)**. Deep operational runbooks live in
 **[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
 ### Which guide should I follow?
@@ -428,12 +549,14 @@ Keep a backup of real certificates **outside** the repository (e.g.
 `~/.crucible/certs/` with `chmod 600` on the key) — every uninstall mode
 deletes `certs/`.
 
-### Future Security Enhancements
+### What is not protected
 
-- [ ] SSO Login Integration
-- [ ] Role-based access control
-- [ ] Rate limiting
-- [ ] Audit logging
+Transport is encrypted; **access is not controlled**. There is no login, no
+roles, no rate limiting, and no audit log — anyone who can reach port 49160 can
+read and change everything. That is a known, deliberate state for internal
+trusted-network use. What each of those waits on is set out in the
+[Roadmap](#roadmap), and the practical consequences in
+[About the data](#about-the-data-honesty-notes).
 
 ---
 
@@ -484,15 +607,219 @@ output you should get, and likely mistakes get a named fix.
 
 ---
 
-## 🎯 Future Enhancements
+## Repository map
 
-- [ ] SSO Login Integration
-- [ ] Advanced search and filtering with facets
-- [ ] Data export functionality (Excel, CSV, JSON)
-- [ ] Chemical structure visualization
-- [ ] Batch upload improvements with validation
-- [ ] Audit trail and version history
-- [ ] Advanced analytics and reporting
+```
+nr-nips-crucible/
+├── backend/                    the application
+│   ├── app/
+│   │   ├── main.py             FastAPI app: starts uvicorn, serves the SPA
+│   │   ├── routers/            one thin file per module — chemicals, samples,
+│   │   │                       screening, toxicology, stats
+│   │   ├── store.py            all data access lives here, not in the routers
+│   │   ├── models.py           the four tables (indexed columns + JSON doc)
+│   │   ├── schemas.py          Pydantic shapes — deliberately lenient
+│   │   ├── database.py         engine + get_db session dependency
+│   │   └── utils/              excel.py · samples_excel.py · sdf.py (the parsers)
+│   ├── alembic/                schema migrations; owns the schema in the container
+│   ├── tests/                  47 tests, mostly contract-parity
+│   └── Dockerfile              multi-stage: Node builds the UI, then is discarded
+├── client/                     React SPA
+│   └── src/pages/              Dashboard · <Module>Upload · <Module>View
+├── docs/                       every guide (see the index above)
+│   └── excel-templates/        synthetic upload templates + their generator
+├── container-py.sh             build · start · start-ssl · status · backup · restore
+├── setup-after-clone-py.sh     the one-command install
+├── uninstall.sh                --dry-run · --partial · --full
+├── check-public-safe.sh        the pre-push gate
+├── monitor.sh                  health check, run from cron every 5 minutes
+└── cert-expiry-check.sh        weekly certificate warning
+```
+
+| Path | What it is |
+|---|---|
+| `backend/app/` | Everything the server does. Routers stay thin; logic lives in `store.py` and `utils/`. |
+| `backend/alembic/` | Schema migrations. In the container these run at startup and are the only thing allowed to change the schema. |
+| `client/` | The browser interface. Built into `client/dist` and served by the same Python process — there is no second web server. |
+| `docs/` | The guides. Written for a reader with no prior container experience. |
+| `*.sh` (root) | The operator's toolkit. Same scripts on macOS and RHEL8; they auto-detect podman or docker. |
+
+**Two kinds of "not in Git."** `data/`, `backups/` and `certs/` are absent
+because they are *yours* — your records, your certificates — and must never
+travel to a shared repository. `client/dist/`, `node_modules/` and
+`backend/.venv/` are absent because they are *regenerated*: the build produces
+them, and a repository that carried them would only carry them stale. The
+[Security](#-security) section lists the full set and why each is excluded.
+
+---
+
+## Build log
+
+Where the work has actually got to. Dates are when the change shipped, not when
+it was started.
+
+| Phase | What it covered | When | Status |
+|---|---|---|---|
+| — | **Node/Express → Python/FastAPI** migration, strangler-fig style: the new backend reproduced the old API exactly, verified by parity tests, so the React client never changed. Legacy stack retired. | pre-2.0 | ✅ Complete |
+| — | **PostgreSQL + Alembic** support. Engine-agnostic via `DATABASE_URL`; Alembic owns the schema in the container. SQLite stays the default. | pre-2.0 | ✅ Complete |
+| P.1–P.4 | **Public-repo hygiene.** Certificate backups, a comprehensive `.gitignore`, four platform runbooks with mirrored checklists, redaction of every internal hostname/username/path behind placeholders, and six real-data workbooks replaced by synthetic generated ones. | 2026-08-06 (v2.0.0) | ✅ Complete |
+| — | **Three fixes found by using the docs**: HTTPS surviving a fresh install, a genuinely complete uninstall, and documentation caught up with the code. | 2026-08-17 (v2.0.x) | ✅ Complete |
+| P.5a | **macOS verification.** A full walk of the install guide from a simulated fresh clone, checklist V1–V7. | 2026-08 | ✅ Passed |
+| — | **Documentation rewritten for a newcomer**: the glossary, the API cookbook, release notes, and one home per topic across the guides. | 2026-08-24 (v2.1.0) | ✅ Complete |
+| P.5b | **RHEL8 production verification**, checklist V1–V9. V8 (external browser access) confirmed against the real access log. V9 (surviving a reboot) is the one item still untested. | in progress | 🔄 Open |
+| D | **Schema normalisation** — promote the frequently filtered fields out of JSON into real indexed columns, without changing the API. | next | ⏳ Planned |
+| E | **Authentication** — `/api/*` is currently open to anyone who can reach the port. | after D | ⏳ Planned |
+
+Version-by-version detail, including what each release deliberately did *not*
+fix, is in **[NEWS.md](NEWS.md)**.
+
+---
+
+## Roadmap
+
+Each item says what it waits on. That is the honest part: most of these are not
+hard to build, they are blocked on a decision or on each other.
+
+- **Authentication (SSO or token).** The largest gap. *Waits on:* a decision
+  between corporate SSO/OIDC and a simpler token/header scheme, and a
+  feature flag — internal users currently rely on there being no login, and
+  turning one on without warning would break them mid-week.
+- **Schema normalisation of hot fields.** Filtering and sorting currently reach
+  inside the JSON document. *Waits on:* identifying which fields are genuinely
+  hot, from the client's filters and the query patterns in `store.py`, and
+  agreeing them before any migration is written. Guessing here means a
+  migration that backfills the wrong columns.
+- **Role-based access control.** *Waits on:* authentication. Roles are
+  meaningless without identity.
+- **Audit trail and version history.** *Waits on:* authentication. A log that
+  cannot say *who* is a change log, not an audit trail — and the difference is
+  the entire point.
+- **Rate limiting.** *Waits on:* authentication, for the same reason: without
+  identity the only thing to limit by is IP address, which on a corporate
+  network is often one proxy.
+- **Faceted search and filtering.** *Waits on:* schema normalisation. Counting
+  facets across a JSON column means reading every row.
+- **Data export (Excel, CSV, JSON).** *Waits on:* nothing. Simply not built
+  yet — the API already returns the data, so this is a convenience layer.
+- **Batch upload validation.** Reporting every problem in a file at once
+  instead of stopping at the first. *Waits on:* nothing.
+- **A `LICENSE` file.** *Waits on:* the repository owner's decision. Until one
+  exists, "public on GitHub" still legally means all rights reserved.
+
+2D structure rendering already ships — `MoleculeViewer` draws from the MOL
+block or SMILES on the chemical detail view. It is listed here only because it
+is easy to assume otherwise.
+
+---
+
+## Bumps hit along the way (kept on purpose)
+
+Every one of these was found by actually running the documented procedure on a
+real machine rather than by reading the code. They are recorded because the
+lesson generalises, and because a project that lists no mistakes is a project
+that has not been verified.
+
+**The update command silently downgraded HTTPS to HTTP.** `rebuild` — the exact
+command the update instructions tell you to run — brought the app back on plain
+HTTP. Nothing failed, nothing logged a warning; the padlock just quietly went
+away. *Lesson: a command that "restarts things" must preserve every mode the
+old process was running in, and the ones you forget are the invisible ones.*
+
+**`status` reported nothing at all in TLS mode**, because it probed `http://`
+against an HTTPS listener. The healthcheck was structurally incapable of
+succeeding on the production configuration.
+
+**`start` printed the port you asked for**, not the port actually being served,
+when it reused an existing container. The output was confident and wrong, which
+is worse than no output.
+
+**`.env.local` was ignored on a fresh install.** `USE_HTTPS=true` was only
+honoured if a container already existed to copy the setting from — so the first
+start after an uninstall came up unencrypted, at the moment nobody was
+watching.
+
+**`uninstall.sh` aborted halfway through, reporting success.** Six functions
+ended with `[ "$found" -eq 0 ] && { ...; }`. When something *was* found, that
+expression evaluated false, the function returned non-zero, and `set -e` killed
+the script — so the image was never removed. *Lesson: under `set -e`, never end
+a bash function with a bare `[ ... ] && { ... }`. Use `if ... fi`.*
+
+**A clean uninstall looked like a failed one.** Removing a systemd unit file
+leaves an in-memory record that prints as `not-found failed failed`. Everything
+had worked; the output said otherwise. The script now calls `reset-failed`.
+
+**The docs said `cp -r data/` immediately after taking a proper backup.** A
+plain copy of a live SQLite file can be quietly corrupt — it opens fine and
+fails much later. The guides now copy the snapshot out of `backups/` instead.
+
+**Thirty-five verification commands used `curl -s`.** With `-s`, a failed
+request prints *nothing* — indistinguishable from a successful silent one. Every
+one became `-sS`. *Lesson: in a document that teaches, a command that can fail
+invisibly is worse than no command at all.*
+
+**A weekly certificate check reported "OK" for months without ever looking at a
+certificate.** Its cron line pointed at a second checkout that has no `certs/`
+directory, and "no certificate present" was being treated as "nothing wrong".
+*Lesson: a monitor that cannot fail is not a monitor.*
+
+**The macOS monitoring cron never ran once.** Two independent causes stacked:
+cron's minimal `PATH` excludes the podman install location, and macOS blocks
+cron from reading `~/Documents` without Full Disk Access. Neither produced an
+error anybody saw.
+
+**Verification commands that could not run looked exactly like passing ones.**
+After a full uninstall deletes the project directory, the shell is left standing
+in a folder that no longer exists, and every `podman` command fails with
+`error getting current working directory`. Run as `podman … | grep crucible`,
+that failure prints nothing — which is precisely what the guide says a pass
+looks like. The uninstall guide now starts those blocks with `cd ~`.
+
+---
+
+## About the data (honesty notes)
+
+- **The data is yours, and none of it is here.** No real records ship in this
+  repository. The files in `docs/excel-templates/` are synthetic, generated by
+  a tracked script, and exist to show the column names each endpoint reads.
+- **Uploads are lenient on purpose.** Every field is optional and unknown
+  columns are preserved rather than rejected, so that a spreadsheet never has
+  to be reshaped to be accepted. The cost is real: a mistyped column heading
+  becomes a new field instead of an error. The system records what you gave it.
+- **It does not check your chemistry.** A CAS number is stored, not verified
+  against a registry; a molecular formula is not checked against the structure.
+  RDKit will reject a structure file it cannot parse, and that is the extent of
+  the validation.
+- **`/api/*` has no authentication.** Anyone who can reach the port can read
+  and write everything. This is a deliberate, documented state for internal
+  trusted-network use, not an oversight — and it is the first item on the
+  roadmap.
+- **There is no audit trail.** Records can be edited and deleted, and nothing
+  records who did it or what it was before. Do not use this as evidence of what
+  a value was on a given date.
+- **SQLite takes one writer at a time.** Correct and fast for this workload,
+  which is bulk uploads and many reads. A dozen people uploading simultaneously
+  is not the shape it is built for; PostgreSQL is supported for that case.
+- **The capacity figures are what has been exercised, not a benchmark.**
+  "Optimised for 15,000+" means uploads at that size have been run and behave
+  well. It is not a limit, and it is not a guarantee about your hardware.
+
+---
+
+## Why the documentation is so detailed
+
+Because the person who has to redeploy this at 8am is quite likely to be
+someone who has never used a container, and quite likely to be its author two
+years from now, who has forgotten. Every guide therefore explains each
+technical word where it first appears, shows the output a command should
+produce, and names the likely mistakes instead of assuming they will not
+happen. The glossary carries a standing contract: **a term missing from it is a
+documentation bug.**
+
+That is not thoroughness for its own sake. Every bug in the list above was
+found because someone followed a written procedure literally and it did not
+work. Documentation detailed enough to be followed literally is documentation
+detailed enough to be *tested* — and an instruction nobody can test is just a
+hope.
 
 ---
 

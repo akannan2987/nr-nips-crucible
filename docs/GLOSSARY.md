@@ -499,6 +499,13 @@ were started separately and cannot push to each other. See
 
 ## The lab and chemistry words
 
+**Chemical registry** — one catalogue that gives every compound a single
+identity, so that everything ever measured about it can be attached to that
+identity instead of scattered across separate files. It is what this
+application is: the registry is the point, and the upload pages, viewer and API
+are ways in and out of it. Compare a library catalogue — its value is not the
+cards, it is that every copy of a book resolves to one entry.
+
 **Chemical** — in this app, one compound record: a name, identifiers, and
 structural facts. The anchor everything else links to.
 

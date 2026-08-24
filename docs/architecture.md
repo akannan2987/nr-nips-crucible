@@ -10,8 +10,12 @@ Python/FastAPI backend with a React frontend**.
 
 ## Table of Contents
 
+- [Four words you need first](#four-words-you-need-first)
 - [Overview](#overview)
 - [System Architecture](#system-architecture)
+- [What each box does, and why it exists](#what-each-box-does-and-why-it-exists)
+- [The one design rule everything else follows from](#the-one-design-rule-everything-else-follows-from)
+- [Why not the obvious alternatives](#why-not-the-obvious-alternatives)
 - [Technology Stack](#technology-stack)
 - [Application Layers](#application-layers)
 - [Data Flow](#data-flow)
@@ -27,6 +31,34 @@ Python/FastAPI backend with a React frontend**.
 - [SDF Handling (RDKit)](#sdf-handling-rdkit)
 - [Testing](#testing)
 - [Interactive Architecture Page](#interactive-architecture-page)
+
+---
+
+## Four words you need first
+
+Everything below is built out of four things. If these are already familiar,
+skip to the [Overview](#overview).
+
+- An **API** is a website designed for programs rather than people. When you
+  open a page in a browser you get HTML meant for human eyes; when a program
+  asks the same server for `/api/chemicals` it gets a list of records meant for
+  code. Same machine, same data, two audiences. Ours is a **REST** API, which
+  only means the address identifies the thing (`/api/chemicals/42`) and the
+  verb says what to do with it (`GET` to read, `POST` to create).
+- A **database** here is not a server you connect to. Ours is **SQLite**: the
+  entire database is a single file, `data/crucible.db`. No service to start, no
+  account, no password, no port. Copying that one file copies everything —
+  which is exactly what the backup command does.
+- A **container** is the application plus every library it needs, sealed into
+  one image that runs the same way on a laptop and on the server. It is the
+  reason there is no "works on my machine" step in the install guide, and the
+  reason there is no Python virtual environment for the application: the
+  container *is* the isolation. (`backend/.venv` exists only for running the
+  tests outside it.)
+- An **ORM** — object–relational mapper — lets Python talk to the database in
+  objects instead of hand-written SQL. Ours is **SQLAlchemy**. It also means
+  the same code runs against SQLite and PostgreSQL, because the ORM writes the
+  dialect-specific SQL for each.
 
 ---
 
@@ -86,6 +118,137 @@ page application served by the same process.
 │  └────────────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## What each box does, and why it exists
+
+The diagram says what talks to what. This says why each piece is there at all —
+which is the part that matters when you are deciding whether to change one.
+
+**The React SPA (`client/`).** A **single-page application**: the browser loads
+the interface once and afterwards fetches only data, so filtering a table of
+15,000 chemicals does not reload the page. It exists as a separate source tree
+but *not* as a separate deployment — it is built to static files and handed to
+the backend to serve. Every call it makes uses a **relative** URL (`/api/...`),
+never an absolute one. That single constraint is what lets the same build run
+on `localhost` over HTTP and behind the corporate hostname over HTTPS without
+being rebuilt or reconfigured.
+
+**FastAPI + uvicorn (`backend/app/main.py`).** One process serves both the API
+and the built frontend. There is no nginx, no second web server, no reverse
+proxy to keep in sync — which also means TLS is terminated here, in-process,
+from the mounted `certs/` directory. Fewer moving parts is the whole argument:
+every additional component in that chain is another thing that can be
+misconfigured at 8am.
+
+**The routers (`backend/app/routers/`).** One file per module. They are
+deliberately thin — parse the request, call `store.py`, return the result. When
+a router starts containing logic, that logic belongs in `store.py` instead. The
+reason is testability: the parity tests exercise the API contract, and business
+logic hidden inside a request handler can only be tested through HTTP.
+
+**`store.py`.** All data access, in one place, behind verbs. Nothing else in
+the codebase issues a query. This is what made the Node→Python migration
+survivable and what will make the schema normalisation in Phase D survivable
+too: when every read and write goes through one module, changing *how* data is
+stored touches one file rather than five routers.
+
+**The parsers (`backend/app/utils/`).** `excel.py` and `samples_excel.py` read
+spreadsheets with openpyxl; `sdf.py` reads chemical structures with RDKit. They
+are separate from the routers because laboratory file formats are where the
+genuine complexity lives — a SLIMS export has three header rows, European
+dates, and renamed fields, and an SDF may be V2000 or V3000 with S-Groups and
+line continuations. That complexity deserves its own tested module, not a
+branch inside an upload handler.
+
+**The database (`data/crucible.db`).** One file, four tables. Each row holds
+the complete original record as JSON plus a few indexed columns for finding it.
+See the next section — this is the decision the rest of the system rests on.
+
+**Alembic (`backend/alembic/`).** Migrations are the only thing permitted to
+change the schema in the container; the image ships with `AUTO_INIT_DB=false`
+precisely so the app cannot quietly create tables behind Alembic's back. Local
+development and tests take the shortcut (`create_all()`), because a throwaway
+database has no history worth migrating.
+
+---
+
+## The one design rule everything else follows from
+
+**The `doc` column is the source of truth. Every other column is a derived
+index.**
+
+Each table stores the full record exactly as it arrived, as JSON, in a column
+called `doc`. Beside it sit a handful of real columns — the primary key, the
+business identifier, a timestamp, a sequence number — which exist *only* so the
+database can find and order rows quickly. Responses are built from `doc`.
+
+Three consequences follow, and they are the reason the rule is worth stating
+this plainly:
+
+1. **An upload never has to fit a schema.** Whatever columns your spreadsheet
+   carries are preserved, including the ones this application has never heard
+   of. Nothing is dropped to make a row insertable.
+2. **Adding a field breaks nothing.** There is no migration, no `ALTER TABLE`,
+   and no version of the code that fails on records written by the other
+   version — because the shape of `doc` was never enforced in the first place.
+   The Pydantic schemas are lenient (every field optional, unknown keys kept)
+   for exactly this reason; it is a deliberate choice, not laxity.
+3. **Indexed columns can be added and rebuilt at will.** Since they are
+   derived, promoting a field into a real column is a backfill, not a data
+   migration: read it out of `doc`, write it to the new column, and no record
+   changes meaning. This is precisely what Phase D does, and the reason it can
+   be done without touching the API contract.
+
+The cost is honest and worth knowing: **filtering on a field that has no
+indexed column means reading every row.** That is fine at the current scale and
+is exactly the pressure Phase D relieves. The rule is not that indexes are
+unnecessary — it is that they are *replaceable*, because losing one loses no
+information.
+
+The corollary, and the thing not to break: **never write a value into an
+indexed column that does not also exist in `doc`.** The moment a column carries
+information the document does not, the document stops being the source of
+truth, and every guarantee above quietly stops holding.
+
+---
+
+## Why not the obvious alternatives
+
+**Why not a fully normalised schema?** It is the textbook answer and it would
+be wrong here. The incoming data is genuinely heterogeneous — different
+laboratories, different instruments, and different template versions produce
+different columns for the same concept — so a strict schema would mean either
+rejecting valid data or migrating the schema every time a template changes. The
+hybrid keeps the strictness where it pays (the identifiers you look records up
+by) and stays loose where it does not.
+
+**Why not a document database (MongoDB and friends)?** Because that trades one
+server for another and gives up SQL, and because the parts of this data that
+*are* relational — every sample, screening result and toxicology study points
+at a chemical — are the parts that matter most. SQLite with a JSON column gives
+the document flexibility without giving up joins, transactions, or the ability
+to hand somebody a single file.
+
+**Why is SQLite the default rather than PostgreSQL?** Because the deployment
+target is one internal application on one machine, and SQLite removes an entire
+category of work: no second container, no connection string, no credentials, no
+separate backup strategy. PostgreSQL is fully supported (`DATABASE_URL`, and
+`doc` becomes JSONB) for when concurrency justifies it. The honest limit is
+that **SQLite serialises writers** — many simultaneous uploads are the case to
+switch for, and reads are unaffected.
+
+**Why does the API process serve the frontend?** Because the alternative is a
+second server and a proxy configuration that must agree with it about paths,
+ports and TLS. Serving the built SPA from the same uvicorn process makes
+"relative URLs everywhere" sufficient and removes any possibility of the two
+halves disagreeing about where the API lives.
+
+**Why no virtual environment for the application?** The container is the
+isolation, and having both would mean two places where dependency versions are
+declared and one of them being wrong. `backend/.venv` exists solely to run the
+test suite on a developer machine without building an image first.
 
 ---
 
@@ -609,5 +772,5 @@ An interactive visual architecture diagram is served at `/architecture`:
 
 ---
 
-**Last Updated:** August 7, 2026
+**Last Updated:** August 24, 2026
 **Version:** 2.0

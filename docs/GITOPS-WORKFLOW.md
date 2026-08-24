@@ -269,12 +269,21 @@ At this point **both repositories are in sync on all three branches.**
 ```bash
 # ▶ VM — production folder
 cd ~/work/Pandora_toolbox/nr-nips-crucible
-./container-py.sh backup                        # always back up first
-cp -r data ~/data-backup-$(date +%Y%m%d)
+./container-py.sh backup                        # consistent snapshot → backups/
+# Copy that snapshot OUT of the project folder — backups/ lives inside it
+# and would be destroyed by a --full uninstall:
+cp "$(ls -t backups/crucible-*.db | head -1)" ~/data-backup-$(date +%Y%m%d).db
 git pull
 ./container-py.sh rebuild                       # preserves HTTP/HTTPS mode
 curl --noproxy '*' -s https://localhost:49160/api/stats
 ```
+
+> **Why not just `cp -r data`?** Because the app is still running. Copying a live
+> SQLite file with `cp` can catch it mid-write and produce a file that opens
+> perfectly and is quietly corrupt — the worst kind of broken backup, since you
+> only discover it when you try to restore. `./container-py.sh backup` uses
+> SQLite's online-backup mechanism to take a coherent snapshot while the app
+> keeps serving. Always take the snapshot, then copy *that*.
 
 ### Step 11 - Confirm
 

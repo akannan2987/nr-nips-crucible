@@ -1304,7 +1304,9 @@ occasional change of plan. **Time:** varies; the update sequence takes about
 ```bash
 # Update to a new version (field-tested sequence)
 cd /path/to/crucible
-cp -r data ~/data-backup-$(date +%Y%m%d)      # belt-and-braces before upgrades
+./container-py.sh backup                      # consistent snapshot → backups/
+# Copy it OUT of the project folder (backups/ is inside it):
+cp "$(ls -t backups/crucible-*.db | head -1)" ~/data-backup-$(date +%Y%m%d).db
 git pull
 ./container-py.sh rebuild                     # rebuild + recreate; preserves the
                                               # protocol mode (HTTPS stays HTTPS)

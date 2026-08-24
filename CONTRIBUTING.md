@@ -327,8 +327,10 @@ and [docs/INSTALL-RHEL8.md](docs/INSTALL-RHEL8.md)):
 
 ```bash
 # ▶ VM — production folder
-./container-py.sh backup                        # always back up first
-cp -r data ~/data-backup-$(date +%Y%m%d)
+./container-py.sh backup                        # consistent snapshot → backups/
+# Copy that snapshot OUT of the project folder — backups/ lives inside it
+# and would be destroyed by a --full uninstall:
+cp "$(ls -t backups/crucible-*.db | head -1)" ~/data-backup-$(date +%Y%m%d).db
 git pull
 ./container-py.sh rebuild                       # preserves HTTP/HTTPS mode
 curl --noproxy '*' -s https://localhost:49160/api/stats

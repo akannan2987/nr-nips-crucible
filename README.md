@@ -90,7 +90,7 @@ that owns the details; the one-liners are reminders, not substitutes.
 | 3 | **Develop + test** | ▶ Mac | edit → `cd backend && .venv/bin/pytest` → `./container-py.sh rebuild` | [GitOps Flow A step 1](docs/GITOPS-WORKFLOW.md#4-flow-a---a-change-from-start-to-finish) |
 | 4 | **Security gate** | ▶ Mac | `./check-public-safe.sh` → must print `✓ SAFE TO PUSH` | [GitOps §3 rules](docs/GITOPS-WORKFLOW.md#3-golden-rules) |
 | 5 | **Publish to public repo** | ▶ Mac | `git push origin develop develop:beta develop:master` | [GitOps Flow A steps 3–5](docs/GITOPS-WORKFLOW.md#4-flow-a---a-change-from-start-to-finish) |
-| 6 | **Mirror public → private** | ▶ VM `~/crucible-mirror` | `git fetch public && git checkout public/develop -- .` → commit → push | [GitOps Flow A steps 6–9](docs/GITOPS-WORKFLOW.md#4-flow-a---a-change-from-start-to-finish) |
+| 6 | **Mirror public → private** | ▶ VM `~/work/Pandora_toolbox/crucible-mirror` | `git fetch public && git checkout public/develop -- .` → commit → push | [GitOps Flow A steps 6–9](docs/GITOPS-WORKFLOW.md#4-flow-a---a-change-from-start-to-finish) |
 | 7 | **Deploy to production** | ▶ VM prod folder | `./container-py.sh backup` → `git pull` → `./container-py.sh rebuild` | [RHEL8 §6 Day-2 ops](docs/INSTALL-RHEL8.md#6-day-2-operations) |
 | 8 | **Verify the deployment** | Mac / VM | checklist V1–V7 (Mac) / V1–V9 (VM) | [macOS §4](docs/INSTALL-MACOS.md#4-verification-checklist) / [RHEL8 §5](docs/INSTALL-RHEL8.md#5-verification-checklist) |
 | 9 | **Confirm repo sync** | ▶ VM mirror | `git diff --stat public/develop develop` → only private-only files | [GitOps §6](docs/GITOPS-WORKFLOW.md#6-checking-the-two-repos-are-in-sync) |

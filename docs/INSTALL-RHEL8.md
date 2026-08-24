@@ -870,7 +870,7 @@ save did not happen. Re-run `crontab -e`.
 
 > ⚠️ The cron line's `cd` must point at the **production checkout** — the one
 > whose `certs/` holds the live certificate. Pointing it at another clone
-> (e.g. the `~/crucible-mirror` folder, which has no `certs/`) makes the check
+> (e.g. the `~/work/Pandora_toolbox/crucible-mirror` folder, which has no `certs/`) makes the check
 > report "no cert present = OK" every week while never inspecting the real
 > certificate.
 >
@@ -1637,7 +1637,7 @@ already — that is how it earned its place on the list.
 **See also:** [RHEL8 Uninstall](UNINSTALL-RHEL8.md) ·
 [Full deployment guide](../DEPLOYMENT.md) · [Project README](../README.md)
 
-**Last Updated:** August 6, 2026
+**Last Updated:** August 24, 2026
 
 ---
 

@@ -94,6 +94,12 @@ ehthumbs.db
 
 # --- Local working notes (not for publication) --------------------
 crucible-costar-prompt.md
+# CLAUDE.md is auto-loaded by Claude Code every session. It is a symlink to
+# crucible-costar-prompt.md above, so it carries the same internal notes and
+# must never be published either.
+CLAUDE.md
+CLAUDE.local.md
+.claude/
 
 # --- Upload templates: only the sanitized, synthetic templates are
 #     tracked. Any other workbook dropped in here (a real export used

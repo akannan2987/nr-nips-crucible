@@ -282,6 +282,11 @@ remove_systemd() {
         found=1
     fi
     if [ "$found" -eq 1 ]; then
+        # Removing a unit file leaves systemd holding an in-memory "failed"
+        # record for it, which then shows up forever in `systemctl --user
+        # list-units` as "not-found failed failed". Clear that residue.
+        systemctl --user reset-failed container-crucible-py.service 2>/dev/null || true
+        systemctl --user reset-failed crucible-py.service 2>/dev/null || true
         info "Login lingering was left enabled; disable with: sudo loginctl disable-linger \$USER"
     fi
 

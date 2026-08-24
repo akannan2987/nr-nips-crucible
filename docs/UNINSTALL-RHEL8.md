@@ -517,6 +517,33 @@ sudo firewall-cmd --list-ports 2>/dev/null        # → 49160/tcp gone (if firew
 ls ~/crucible-backups/                            # final data backup, if you ran --full
 ```
 
+> ### Two results that look like failures but aren't
+>
+> **`error getting current working directory: No such file or directory`** —
+> after `--full`, the project folder you were standing in no longer exists, so
+> the shell has nowhere to run commands *from*. Nothing is broken; podman simply
+> refuses to start. **The checks above did not actually run.** Move somewhere
+> that still exists and repeat them:
+>
+> ```bash
+> cd ~
+> podman ps -a | grep crucible
+> podman images | grep crucible
+> ```
+>
+> **`container-crucible-py.service   not-found failed failed`** — read the first
+> column: `not-found` means systemd cannot find the unit file, i.e. **it was
+> deleted successfully**. What lingers is only systemd's in-memory record that
+> the unit failed once. Clear it:
+>
+> ```bash
+> systemctl --user reset-failed container-crucible-py.service
+> systemctl --user list-units --all | grep crucible    # → now genuinely nothing
+> ```
+>
+> `uninstall.sh` now does this for you; older runs left the residue behind.
+
+
 Line by line, what each one is actually asking:
 
 - **`podman ps -a`** — list containers, `-a` meaning *including stopped ones*

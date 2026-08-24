@@ -506,7 +506,7 @@ project; confirm licensing before adding the file).
 
 ## 👥 Authors
 
-**NIHS Team** - Nestle Institute of Health Sciences
+**Abhilash Kannan** - Computational Sciences, Nestle Research
 
 For support, contact: `<maintainer-email>`
 

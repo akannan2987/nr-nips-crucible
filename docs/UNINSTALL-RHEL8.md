@@ -663,7 +663,8 @@ re-open and no row for it here.
 
 A gate, not a task: **do you know the path to your certificate store?**
 
-- **Yes** — carry on to R2.
+- **Yes** — run `ls` on it before moving to R2 and note what the two files are
+  actually called. R3 needs that as well as the path.
 - **No** — recover it *now*. R3 cannot be written without it, and R4 will
   cheerfully start the app on plain HTTP if R3 is wrong. The recovery
   procedure — where to look, how to verify a candidate is the right
@@ -705,6 +706,7 @@ membership and that your Personal Access Token carries `repo` scope.
 # app comes up HTTP with no certificates (see INSTALL-RHEL8.md §3):
 cat > .env.local <<'EOF'
 CERT_SOURCE=<cert-store-path>
+CERT_HOSTNAME=<vm-hostname>
 USE_HTTPS=true
 EOF
 ```
@@ -719,11 +721,28 @@ then run the script.
 The `cat > file <<'EOF' … EOF` shape is a **heredoc**: every line between the
 two `EOF` markers is written into the file verbatim. Finish with `EOF` alone on
 its own line. If that feels fiddly, `vi .env.local` or `nano .env.local` and
-type the two lines by hand — the result is identical.
+type the three lines by hand — the result is identical.
 
-`CERT_HOSTNAME` is absent here because it is optional: left out, the setup
-script uses `hostname -f`, which on this VM already resolves to the right name.
-Add it back if the certificate filenames in the store use a different spelling.
+**`CERT_HOSTNAME` decides which files get copied**, which is why it is worth
+setting explicitly even though it is technically optional. The setup script
+looks in the store for `<CERT_HOSTNAME>.cer` and `<CERT_HOSTNAME>.key`; left
+out, it falls back to `hostname -f`. That fallback is correct on this VM, so
+omitting the line works — but only for as long as the store keeps naming files
+after the FQDN, and a reinstall is a poor moment to be relying on that.
+
+You already have both halves of the answer from R1. Compare them:
+
+```bash
+hostname -f            # what the script would assume
+ls "<cert-store-path>" # what the files are actually called
+```
+
+If the filenames match `hostname -f`, either form works. If they do not, set
+`CERT_HOSTNAME` to the name the **files** use — not the name the certificate
+is issued to, if the two differ. Same three lines as
+[INSTALL-RHEL8 §3.2](INSTALL-RHEL8.md#32-configure-the-certificate-source);
+this is a reinstall of the same machine, so nothing here should differ from the
+original install.
 
 > **If you no longer know your `CERT_SOURCE`.** It is the one value a full
 > uninstall destroys that no clone and no document can give back — `.env.local`

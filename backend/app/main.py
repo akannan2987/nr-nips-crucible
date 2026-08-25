@@ -34,7 +34,7 @@ from .config import (
     USE_HTTPS,
 )
 from .database import init_db
-from .routers import chemicals, samples, screening, stats, toxicology
+from .routers import chemicals, samples, screening, stats, toxicology, query
 
 
 def create_app() -> FastAPI:
@@ -65,6 +65,7 @@ def create_app() -> FastAPI:
     application.include_router(screening.router)
     application.include_router(toxicology.router)
     application.include_router(stats.router)
+    application.include_router(query.router)
 
     # ── Error shape parity ──────────────────────────────────────────
     # The v1 API returned {"error": message}; FastAPI's default is
@@ -109,9 +110,21 @@ def create_app() -> FastAPI:
             # Path-traversal guard: only serve files inside client/dist.
             if candidate.is_file() and str(candidate).startswith(str(CLIENT_DIST.resolve())):
                 return FileResponse(candidate)
+        # The shell must never be cached. Its <script> tag names a
+        # content-hashed bundle, so a stale index.html pins the browser to an
+        # old build no matter how many times the app is rebuilt — the user
+        # keeps seeing yesterday's interface and no amount of reloading helps.
+        # The hashed assets themselves are safe to cache forever.
         index = CLIENT_DIST / "index.html"
         if index.is_file():
-            return FileResponse(index)
+            return FileResponse(
+                index,
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                },
+            )
         raise StarletteHTTPException(
             status_code=404,
             detail="Client build not found — run `npm run build` in client/ first",

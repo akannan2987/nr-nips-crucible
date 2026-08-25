@@ -29,6 +29,29 @@ _connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite"
 
 engine = create_engine(DATABASE_URL, connect_args=_connect_args)
 
+if DATABASE_URL.startswith("sqlite"):
+    # NOTE: WAL is deliberately NOT enabled here.
+    #
+    # Write-Ahead Logging would let readers continue during a write, which is
+    # tempting because a long maintenance job otherwise blocks the API. But the
+    # database file is bind-mounted into a container, and on macOS that mount
+    # crosses a virtual-machine boundary. WAL needs shared memory and real file
+    # locking, neither of which behaves correctly across such a mount: enabling
+    # it produced "database disk image is malformed" from the container while a
+    # process on the host was writing. The file was intact — the container was
+    # simply seeing an inconsistent view — but a database that *reports*
+    # corruption is not one to build on.
+    #
+    # `busy_timeout` gives the safe half of the benefit: a reader that meets a
+    # write waits for it instead of failing immediately.
+    from sqlalchemy import event
+
+    @event.listens_for(engine, "connect")
+    def _sqlite_pragmas(dbapi_connection, _record):  # pragma: no cover - driver hook
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA busy_timeout=15000")
+        cursor.close()
+
 # autoflush=False keeps behaviour predictable for an intermediate reader:
 # nothing hits the database until we explicitly commit().
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)

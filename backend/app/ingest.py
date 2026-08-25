@@ -48,14 +48,16 @@ def _chemical_id_for(cas: Optional[str], name: Optional[str]) -> str:
 def resolve_chemicals(
     db: Session, records: list[dict[str, Any]], tag: str
 ) -> tuple[dict[int, str], int]:
-    """Give every record a `chemical_id`, creating chemicals where needed.
+    """Link each record to a chemical **already registered** in the application.
 
-    Returns `(record index → chemical_id, how many chemicals were created)`.
+    This is step one of two. It matches only against chemicals that already
+    exist — by CAS number first, then by name — and invents nothing. Records
+    whose compound is not registered are left unlinked, and
+    `scripts/link_pubchem.py` then decides whether PubChem identifies them
+    confidently enough to register (step two).
 
-    Matching is by CAS number first and normalised name second, against both
-    the chemicals already in the database and the ones created earlier in this
-    same upload — so a compound appearing 300 times yields one chemical, not
-    300.
+    Returning `(record index -> chemical_id, chemicals created)`; the count is
+    always zero here, and kept so the caller's shape does not change.
     """
     by_cas: dict[str, str] = {}
     by_name: dict[str, str] = {}
@@ -64,48 +66,24 @@ def resolve_chemicals(
         if not chemical_id:
             continue
         if doc.get("cas_number"):
-            by_cas.setdefault(str(doc["cas_number"]), chemical_id)
+            by_cas.setdefault(str(doc["cas_number"]).strip(), chemical_id)
         if doc.get("name"):
             by_name.setdefault(_name_key(doc["name"]), chemical_id)
 
     assignments: dict[int, str] = {}
-    new_docs: list[dict[str, Any]] = []
-
     for index, record in enumerate(records):
-        cas = record.get("cas")
-        name = record.get("compound_name")
-        if not cas and not name:
-            continue  # nothing to identify this row by; left unlinked
+        # `_cas_parsed` holds the well-formed CAS numbers found in the cell;
+        # the visible `cas` column keeps the cell's original text.
+        for cas in record.get("_cas_parsed") or []:
+            if cas in by_cas:
+                assignments[index] = by_cas[cas]
+                break
+        else:
+            name_key = _name_key(record.get("compound_name"))
+            if name_key and name_key in by_name:
+                assignments[index] = by_name[name_key]
 
-        chemical_id = None
-        if cas and cas in by_cas:
-            chemical_id = by_cas[cas]
-        elif not cas and _name_key(name) in by_name:
-            chemical_id = by_name[_name_key(name)]
-
-        if chemical_id is None:
-            chemical_id = _chemical_id_for(cas, name)
-            timestamp = now_iso()
-            new_docs.append(
-                {
-                    "id": str(uuid.uuid4()),
-                    "chemical_id": chemical_id,
-                    "name": name or "Unknown",
-                    "cas_number": cas,
-                    "source": {"tag": tag, "created_by": "screening import"},
-                    "created_at": timestamp,
-                    "updated_at": timestamp,
-                }
-            )
-            if cas:
-                by_cas[cas] = chemical_id
-            if name:
-                by_name.setdefault(_name_key(name), chemical_id)
-
-        assignments[index] = chemical_id
-
-    insert_docs_bulk(db, Chemical, new_docs)
-    return assignments, len(new_docs)
+    return assignments, 0
 
 
 def load_screening(
@@ -125,16 +103,17 @@ def load_screening(
         chemical_id = assignments.get(index)
         if chemical_id is None:
             unlinked += 1
+        # Fields keep the names the source uses. An earlier version mapped
+        # them onto the legacy screening shape — `simulant` into `assay_name`,
+        # `migration_type` into `target` — so that the fixed-column table had
+        # something to show. That made the data unreadable and, worse, untrue:
+        # a simulant is not an assay name. The table is now built from whatever
+        # columns the records actually carry, so nothing needs renaming.
+        record = {k: v for k, v in record.items() if k != "_cas_parsed"}
         docs.append(
             {
                 "id": str(uuid.uuid4()),
                 "chemical_id": chemical_id,
-                # `assay_name` is what the existing list/search endpoints show,
-                # so it is populated from the nearest equivalent this template
-                # has rather than left blank.
-                "assay_name": record.get("simulant") or spec.label,
-                "assay_type": record.get("analysis_type"),
-                "target": record.get("migration_type"),
                 **record,
                 "created_at": timestamp,
                 "updated_at": timestamp,
@@ -145,8 +124,9 @@ def load_screening(
 
     return {
         "message": (
-            f"Imported {inserted} screening records from {spec.label} "
-            f"({chemicals_created} new chemicals created)"
+            f"Imported {inserted} screening records from {spec.label}. "
+            f"{inserted - unlinked} linked to registered chemicals; "
+            f"{unlinked} await identification."
         ),
         "inserted": inserted,
         "template": spec.key,

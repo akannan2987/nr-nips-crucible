@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { MagnifyingGlassIcon, PlusIcon, TrashIcon, EyeIcon, PencilSquareIcon, CheckIcon, XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { getChemicals, deleteChemical, bulkDeleteChemicals, bulkUpdateChemicals, clearAllChemicals } from '../services/api'
@@ -8,7 +8,10 @@ import MoleculeViewer from '../components/MoleculeViewer'
 export default function ChemicalsView() {
   const [chemicals, setChemicals] = useState([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  // Arriving from another page (e.g. a compound in the screening table) carries
+  // the term in the URL, so the list opens already filtered to it.
+  const [searchParams] = useSearchParams()
+  const [search, setSearch] = useState(searchParams.get('search') || '')
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 })
   const [selectedChemical, setSelectedChemical] = useState(null)
   const [detailTab, setDetailTab] = useState('identity')
@@ -319,6 +322,10 @@ export default function ChemicalsView() {
                       className="h-4 w-4 text-pandora-600 rounded border-gray-300 focus:ring-pandora-500"
                     />
                   </th>
+                  {/* The application's own identifier, and the external
+                      DTX_ID from the upload file, are two different things and
+                      now have two different columns. */}
+                  <th>chemical_id</th>
                   <th>DTX_ID</th>
                   <th>Name</th>
                   <th>CAS Number</th>
@@ -356,6 +363,9 @@ export default function ChemicalsView() {
                       />
                     </td>
                     <td className="font-mono text-xs text-blue-700 whitespace-nowrap">{chemical.chemical_id}</td>
+                    <td className="font-mono text-xs text-gray-500 whitespace-nowrap">
+                      {chemical.dtx_id || <span className="text-gray-300">—</span>}
+                    </td>
                     <td className="font-medium max-w-[200px] truncate" title={chemical.name}>{chemical.name}</td>
                     <td className="whitespace-nowrap">{chemical.cas_number || '-'}</td>
                     <td className="text-xs text-gray-500 max-w-[150px] truncate" title={meta['Synonyms / Composition'] || ''}>{meta['Synonyms / Composition'] || '-'}</td>

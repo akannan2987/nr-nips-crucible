@@ -7,6 +7,7 @@ import ChemicalsUpload from './pages/ChemicalsUpload'
 import SamplesView from './pages/SamplesView'
 import SamplesUpload from './pages/SamplesUpload'
 import ScreeningView from './pages/ScreeningView'
+import QueryConsole from './pages/QueryConsole'
 import ScreeningUpload from './pages/ScreeningUpload'
 import ToxicologyView from './pages/ToxicologyView'
 import ToxicologyUpload from './pages/ToxicologyUpload'
@@ -26,6 +27,7 @@ function App() {
           <Route path="samples/upload" element={<SamplesUpload />} />
           {/* Screening */}
           <Route path="screening" element={<ScreeningView />} />
+          <Route path="query" element={<QueryConsole />} />
           <Route path="screening/upload" element={<ScreeningUpload />} />
           {/* Toxicology */}
           <Route path="toxicology" element={<ToxicologyView />} />

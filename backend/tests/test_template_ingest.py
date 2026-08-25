@@ -173,12 +173,15 @@ def test_the_original_row_is_preserved_untouched():
     assert div_zero[0]["raw"]["mg/kg food"] == "#DIV/0!"
 
 
-def test_multi_value_cas_keeps_the_alternatives():
+def test_multi_value_cas_is_shown_exactly_as_the_file_had_it():
+    """No honest way to pick one of two candidates, so both are shown."""
     records, _ = parse_with_spec(cergy_bytes(), CERGY_SCREENING)
-    multi = [r for r in records if r.get("cas_alternatives")]
+    multi = [r for r in records if r.get("cas") and "6386-38-5" in r["cas"]]
     assert len(multi) == 1
-    assert multi[0]["cas"] == "5398-11-8"
-    assert multi[0]["cas_alternatives"] == ["6386-38-5"]
+    assert multi[0]["cas"] == "5398-11-8 6386-38-5"
+    # Both are still available for matching against the registry.
+    assert multi[0]["_cas_parsed"] == ["5398-11-8", "6386-38-5"]
+    assert "cas_alternatives" not in multi[0]
 
 
 def test_duplicates_are_flagged_and_never_dropped():
@@ -194,7 +197,40 @@ def test_duplicates_are_flagged_and_never_dropped():
 # --------------------------------------------------------------------------
 
 
-def test_upload_creates_chemicals_and_screening_records(client):
+def test_identical_rows_and_repeat_measurements_are_told_apart():
+    """Conflating them would let a 'remove duplicates' button delete results."""
+    records, report = parse_with_spec(cergy_bytes(), CERGY_SCREENING)
+    flagged = [r for r in records if r.get("duplicate_group")]
+    assert len(flagged) == 2
+    # Rows 2 and 7 share an identity but differ in every measurement, so they
+    # are repeat measurements, not copies.
+    assert all(r["duplicate_kind"] == "repeat_measurement" for r in flagged)
+    assert report.repeat_measurements == 2
+    assert report.identical_rows == 0
+    assert [r["duplicate_rank"] for r in flagged] == [0, 1]
+
+
+def test_column_headings_are_snake_case_of_the_source_heading():
+    from app.utils.templates import label_for
+
+    assert label_for("lims_id") == "lims"
+    assert label_for("compound_name") == "name"
+    assert label_for("mg_per_kg_food") == "mg_kg_food"
+    assert label_for("migration_temperature_c") == "migration_temperature_c"
+    # A typo in the file is kept: correcting it would make the table harder to
+    # reconcile against the source.
+    assert label_for("additional_information") == "additionnal_information"
+    # Columns we added keep their own name.
+    assert label_for("below_detection_limit") == "below_detection_limit"
+    assert label_for("mg_per_kg_food_note") == "mg_kg_food_original_text"
+
+
+def test_every_record_carries_a_visible_source_tag():
+    records, _ = parse_with_spec(cergy_bytes(), CERGY_SCREENING)
+    assert all(r["source_tag"] == "Cergy_data" for r in records)
+
+
+def test_upload_links_only_to_registered_chemicals(client, seeded_client):
     res = client.post(
         "/api/screening/upload/excel",
         files={"file": ("cergy.csv", io.BytesIO(cergy_bytes()), "text/csv")},
@@ -205,26 +241,46 @@ def test_upload_creates_chemicals_and_screening_records(client):
     assert body["tag"] == "Cergy_data"
     assert body["template"] == "cergy_screening"
     assert body["inserted"] == 5
-    # Testanol, Testanone, Testene, Testadiene — Testanol appears twice.
-    assert body["chemicals_created"] == 4
-
-    chemicals = client.get("/api/chemicals?limit=100").json()["data"]
-    assert {c["chemical_id"] for c in chemicals} >= {"CAS-100-52-7", "CAS-104-76-7"}
+    # Importing never invents a chemical; identification is a separate,
+    # evidence-based step (scripts/link_pubchem.py).
+    assert body["chemicals_created"] == 0
+    # The seeded chemical is caffeine, which this file does not mention, so
+    # every row is left awaiting identification.
+    assert body["records_without_chemical"] == 5
 
     screening = client.get("/api/screening?limit=100").json()["data"]
     assert len(screening) == 5
-    assert all(s["source"]["tag"] == "Cergy_data" for s in screening)
+    assert all(s["source_tag"] == "Cergy_data" for s in screening)
 
 
-def test_reimporting_the_same_file_reuses_chemicals(client):
-    files = {"file": ("cergy.csv", io.BytesIO(cergy_bytes()), "text/csv")}
-    first = client.post("/api/screening/upload/excel", files=files).json()
-    files = {"file": ("cergy.csv", io.BytesIO(cergy_bytes()), "text/csv")}
-    second = client.post("/api/screening/upload/excel", files=files).json()
+def test_rows_link_to_a_chemical_already_registered(client):
+    """A compound the registry already knows is linked on import, by CAS."""
+    client.post(
+        "/api/chemicals",
+        json={"chemical_id": "CHEM-1", "name": "Anything", "cas_number": "100-52-7"},
+    )
+    client.post(
+        "/api/screening/upload/excel",
+        files={"file": ("cergy.csv", io.BytesIO(cergy_bytes()), "text/csv")},
+    )
+    rows = client.get("/api/screening?limit=100").json()["data"]
+    linked = [r for r in rows if r["chemical_id"] == "CHEM-1"]
+    # Testanol carries CAS 100-52-7 and appears twice in the fixture.
+    assert len(linked) == 2
 
-    assert first["chemicals_created"] == 4
-    # Identity is stable across uploads, so the second import creates none.
-    assert second["chemicals_created"] == 0
+
+def test_unique_only_keeps_repeat_measurements(client):
+    """Only exact copies are dropped; differing repeats are real results."""
+    client.post(
+        "/api/screening/upload/excel",
+        files={"file": ("cergy.csv", io.BytesIO(cergy_bytes()), "text/csv")},
+    )
+    everything = client.get("/api/screening?limit=100").json()["pagination"]["total"]
+    unique = client.get("/api/screening?limit=100&unique_only=true").json()["pagination"]["total"]
+    # The fixture's two flagged rows differ in their measurements, so nothing
+    # is removed.
+    assert everything == 5
+    assert unique == 5
 
 
 def test_unrecognised_spreadsheet_still_uses_the_original_path(client, seeded_client):

@@ -21,6 +21,7 @@ worse than leaving it as it is.
 """
 
 import argparse
+import csv
 import os
 import sys
 import time
@@ -75,11 +76,13 @@ def commit(db, attempts: int = 5) -> None:
     db.commit()
 
 
-def _note(handle, collected, name: str, cas: str, reason: str) -> None:
+def _note(writer, collected, name: str, cas: str, reason: str) -> None:
     """Record an unlinked compound, to memory and to the report file at once."""
     collected.append((name, cas, reason))
-    if handle is not None:
-        handle.write(f'"{name}","{cas}","{reason}"\n')
+    if writer is not None:
+        # Newlines inside a cell are legal CSV but make the file awkward to
+        # read with ordinary tools, so they are flattened to spaces.
+        writer.writerow([" ".join(str(name).split()), cas, reason])
 
 
 def main() -> int:
@@ -188,9 +191,15 @@ def _run() -> int:
     # report that only exists on clean completion is exactly the report you do
     # not have when you need it most.
     report_handle = None
+    report_writer = None
     if args.report:
-        report_handle = open(args.report, "w", buffering=1)
-        report_handle.write("compound_name,cas,reason\n")
+        report_handle = open(args.report, "w", newline="", buffering=1)
+        # csv.writer, not string formatting: compound names contain commas
+        # ('Phenol, 2,4-di-tertiobutyl'), quotes and line breaks, and a
+        # hand-built line mangles all three. A report nobody can parse is not a
+        # report.
+        report_writer = csv.writer(report_handle)
+        report_writer.writerow(["compound_name", "cas", "reason"])
 
     linked_rows = confirmed = rejected = no_cas = not_found = 0
     name_unknown = cas_unknown = 0
@@ -206,7 +215,7 @@ def _run() -> int:
             # every other unlinked compound — it is the largest category, and a
             # report that omitted it would understate the work outstanding.
             no_cas += 1
-            _note(report_handle, unlinked_detail, name, "", "no CAS to corroborate the name")
+            _note(report_writer, unlinked_detail, name, "", "no CAS to corroborate the name")
         else:
             by_cas = client.lookup(None, cas)
             # Only the CID matters here — it is compared against the CAS's
@@ -219,19 +228,19 @@ def _run() -> int:
                 # way this laboratory writes it. Counted separately so the cost
                 # of requiring both identifiers stays visible.
                 name_unknown += 1
-                _note(report_handle, unlinked_detail, name, cas, "name not in PubChem")
+                _note(report_writer, unlinked_detail, name, cas, "name not in PubChem")
             elif by_cas is None and by_name is not None:
                 cas_unknown += 1
-                _note(report_handle, unlinked_detail, name, cas, "CAS not in PubChem")
+                _note(report_writer, unlinked_detail, name, cas, "CAS not in PubChem")
             elif by_cas is None and by_name is None:
                 not_found += 1
-                _note(report_handle, unlinked_detail, name, cas, "neither found")
+                _note(report_writer, unlinked_detail, name, cas, "neither found")
             elif by_cas.cid != by_name.cid:
                 # The name and the CAS describe different substances — exactly
                 # the salt/complex case this rule exists to catch.
                 rejected += 1
                 _note(
-                    report_handle,
+                    report_writer,
                     unlinked_detail,
                     name,
                     cas,

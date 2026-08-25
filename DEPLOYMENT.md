@@ -300,9 +300,22 @@ CERT_FILE=/path/to/other.crt ./cert-expiry-check.sh
 Run it weekly from cron (logs to `~/crucible-cert.log`):
 
 ```bash
-crontab -e
-# Mondays 08:00 — warn if the cert expires within 30 days:
-0 8 * * 1 cd /path/to/crucible && ./cert-expiry-check.sh >> ~/crucible-cert.log 2>&1
+# From the production checkout, print the line with real paths substituted:
+echo "0 8 * * 1 CERT_FILE=$(pwd)/certs/server.crt $(pwd)/cert-expiry-check.sh >> ~/crucible-cert.log 2>&1"
+crontab -e     # paste it verbatim — Mondays 08:00, warn within 30 days
+```
+
+**Absolute `CERT_FILE`, and let the `echo` write the line.** Both guard the
+same failure: this check reads `certs/server.crt` relative to its working
+directory, so a `cd` into the wrong clone — or a placeholder path left
+unsubstituted — produces a job that reports nothing wrong forever. `no
+certificate at … — nothing to check` exits 0, so the absence of a certificate
+is indistinguishable from a healthy one to anything watching exit codes.
+
+Verify once, and read the output rather than the status:
+
+```bash
+CERT_FILE="$(pwd)/certs/server.crt" ./cert-expiry-check.sh    # → a real expiry date
 ```
 
 When it warns, follow "Rotating / replacing the certificate" above.
@@ -817,4 +830,4 @@ For deployment issues:
 
 ---
 
-**Last Updated:** August 24, 2026
+**Last Updated:** August 25, 2026

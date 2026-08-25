@@ -176,6 +176,7 @@ class PubChemClient:
         self._cache: dict[str, Optional[PubChemResult]] = {}
         self.requests_made = 0
         self.failures = 0
+        self.throttled = 0
         self.last_error: Optional[str] = None
 
     # -- transport --------------------------------------------------------
@@ -211,6 +212,25 @@ class PubChemClient:
                 if err.code == 404:
                     return None
                 self.last_error = f"HTTP {err.code}"
+                if err.code in (429, 503):
+                    # PubChem throttles rather than queues: 503 means "you are
+                    # asking too fast", and retrying a second later simply
+                    # earns another 503. Back off hard, honouring Retry-After
+                    # when the server sends one, and slow every subsequent
+                    # request so the run recovers instead of burning its
+                    # retries. Without this a throttled run reports compounds
+                    # as "not in PubChem" when the truth is it never asked.
+                    delay = 5.0 * (attempt + 1)
+                    header = err.headers.get("Retry-After") if err.headers else None
+                    if header:
+                        try:
+                            delay = max(delay, float(header))
+                        except ValueError:
+                            pass
+                    self.throttled += 1
+                    self.min_interval = min(self.min_interval * 1.5, 2.0)
+                    time.sleep(delay)
+                    continue
             except Exception as err:  # noqa: BLE001 - see the docstring
                 self.last_error = f"{type(err).__name__}: {err}"
             if attempt < attempts - 1:

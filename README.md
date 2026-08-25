@@ -586,10 +586,11 @@ output you should get, and likely mistakes get a named fix.
 | 01 | **[macOS Install & Run](docs/INSTALL-MACOS.md)** | From a blank Mac to the app running: containers, ports, HTTPS. Uses the **public** repo |
 | 02 | **[RHEL8 Install & Run](docs/INSTALL-RHEL8.md)** | The production deployment: rootless podman, SELinux, firewall, real certificates, surviving a reboot. Uses the **private** repo |
 | 03 | **[API Cookbook](docs/API-COOKBOOK.md)** | Copy-paste recipes for talking to the app — every answer captured from a live instance |
-| 04 | **[Query Cookbook](docs/QUERY-COOKBOOK.md)** | Asking the database questions directly — why queries look unusual here, and recipes that work |
-| 05 | **[GitOps Workflow](docs/GITOPS-WORKFLOW.md)** | How a change travels from your Mac to the server, and the safety gate that stops secrets escaping |
-| 06 | **[macOS Uninstall](docs/UNINSTALL-MACOS.md)** | Clean removal, starting with what you cannot get back |
-| 07 | **[RHEL8 Uninstall](docs/UNINSTALL-RHEL8.md)** | The same, plus the server-only pieces (systemd, firewall, cron) |
+| 04 | **[Chemical Identification](docs/CHEMICAL-IDENTIFICATION.md)** | Why compound names need identifying, when a row links to your registry and when it asks PubChem |
+| 05 | **[Query Cookbook](docs/QUERY-COOKBOOK.md)** | Asking the database questions directly — why queries look unusual here, and recipes that work |
+| 06 | **[GitOps Workflow](docs/GITOPS-WORKFLOW.md)** | How a change travels from your Mac to the server, and the safety gate that stops secrets escaping |
+| 07 | **[macOS Uninstall](docs/UNINSTALL-MACOS.md)** | Clean removal, starting with what you cannot get back |
+| 08 | **[RHEL8 Uninstall](docs/UNINSTALL-RHEL8.md)** | The same, plus the server-only pieces (systemd, firewall, cron) |
 
 **Reference — look things up as needed**
 
@@ -599,6 +600,7 @@ output you should get, and likely mistakes get a named fix.
 | **[API Documentation](API.md)** | Complete REST API reference, endpoint by endpoint |
 | **[API Testing Guide](docs/API-TESTING-GUIDE.md)** | Worked `curl` and Python examples |
 | **[Query Cookbook](docs/QUERY-COOKBOOK.md)** | Read-only SQL against the database, with recipes |
+| **[Chemical Identification](docs/CHEMICAL-IDENTIFICATION.md)** | How compounds are matched to the registry, and to PubChem |
 | **[Architecture](docs/architecture.md)** | How the pieces fit together |
 | **[Database Schema](docs/database-schema.md)** | The storage pattern (SQLite + optional PostgreSQL/Alembic) |
 | **[Upload Templates](docs/excel-templates/)** | The spreadsheet formats each module accepts |

@@ -38,7 +38,6 @@ from app.store import (  # noqa: E402
     all_rows,
     insert_docs_bulk,
     next_chemical_id,
-    replace_doc,
 )
 from app.utils.cleaning import collapse_whitespace, parse_cas_numbers  # noqa: E402
 from app.utils.pubchem import PubChemClient  # noqa: E402
@@ -70,6 +69,7 @@ def main() -> int:
     known = set(cas_to_id.values())
 
     rows = all_rows(db, Screening)
+    resumed = 0
     pending: dict[tuple[str, str], list] = defaultdict(list)
     for row in rows:
         if row.doc.get("chemical_id"):
@@ -81,10 +81,17 @@ def main() -> int:
             # Registered by an earlier run; link without asking PubChem again.
             doc = dict(row.doc)
             doc["chemical_id"] = cas_to_id[cas]
-            replace_doc(db, row, doc)
+            row.doc = doc
+            row.chemical_id = cas_to_id[cas]
+            resumed += 1
             continue
         if name or cas:
             pending[(name, cas)].append(row)
+
+    if resumed:
+        if args.apply:
+            db.commit()
+        print(f"Re-linked {resumed} rows to compounds registered by an earlier run.")
 
     compounds = list(pending.items())
     if args.limit:
@@ -94,6 +101,7 @@ def main() -> int:
     print("Registering only where the name and the CAS agree in PubChem.\n")
 
     linked_rows = confirmed = rejected = no_cas = not_found = 0
+    pending_writes = 0
     new_chemicals: list[dict] = []
     started = time.time()
 
@@ -142,23 +150,32 @@ def main() -> int:
                 for row in members:
                     doc = dict(row.doc)
                     doc["chemical_id"] = chemical_id
-                    # `replace_doc` rather than assigning `row.doc`: the
-                    # indexed `chemical_id` column has to be kept in step with
-                    # the document, and that column is what "screening for this
-                    # chemical" queries. Writing only the document leaves the
-                    # link invisible to every lookup.
-                    replace_doc(db, row, doc)
+                    # Both the document and the indexed column, because that
+                    # column is what "screening for this chemical" queries —
+                    # writing only the document leaves the link invisible.
+                    #
+                    # Set directly rather than through `replace_doc`, which
+                    # commits every call: one commit per row over a 116 MB file
+                    # on a bind mount is minutes of disk flushing for a single
+                    # compound. The batch commit below writes them together.
+                    row.doc = doc
+                    row.chemical_id = chemical_id
                     linked_rows += 1
+                    pending_writes += 1
 
         # Write as we go. A run over several thousand compounds takes more than
         # an hour, and holding it all in one transaction means a single network
         # fault throws the whole thing away — which has already happened once.
-        if args.apply and len(new_chemicals) >= args.batch:
+        # Commit on either counter: a handful of very common compounds can
+        # account for thousands of rows before the chemical count moves.
+        if args.apply and (len(new_chemicals) >= args.batch or pending_writes >= 2000):
             insert_docs_bulk(db, Chemical, new_chemicals)
             db.commit()
             new_chemicals = []
+            pending_writes = 0
 
-        if index % 25 == 0 or index == len(compounds):
+        # Report often: with no output a slow network looks like a hang.
+        if index % 5 == 0 or index == len(compounds):
             rate = index / max(time.time() - started, 1e-6)
             print(
                 f"  {index}/{len(compounds)}  confirmed={confirmed} "
@@ -179,6 +196,12 @@ def main() -> int:
         db.commit()
         print(f"\nApplied: {confirmed} chemicals registered, {linked_rows} rows linked.")
     else:
+        # Genuinely nothing written. An earlier version linked rows through
+        # `replace_doc`, which commits on every call — so the rows were already
+        # on disk by the time this rollback ran, and a "dry run" quietly
+        # modified the database. Changes are now held in the session until the
+        # batch commit above, which only runs under --apply, so this rollback
+        # actually discards them.
         db.rollback()
         print("\nDry run — nothing written. Re-run with --apply.")
     if client.failures:

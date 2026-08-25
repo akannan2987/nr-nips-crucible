@@ -274,9 +274,15 @@ def screening_columns(db: Session = Depends(get_db)) -> dict[str, Any]:
     # a large table. The answer only changes when rows are added or removed, so
     # it is cached against the row count — a new upload or a delete changes the
     # count and the next call recomputes.
+    # Keyed on the chemical count as well as the screening count: identifying
+    # compounds changes how many rows are linked without changing how many rows
+    # exist, so a screening-only key would serve a stale "0 identified" long
+    # after identification had run.
     count = db.scalar(select(func.count()).select_from(Screening)) or 0
+    chem_count = db.scalar(select(func.count()).select_from(Chemical)) or 0
+    key = (count, chem_count)
     cached = _COLUMNS_CACHE.get("payload")
-    if cached is not None and _COLUMNS_CACHE.get("count") == count:
+    if cached is not None and _COLUMNS_CACHE.get("key") == key:
         return cached
 
     docs = all_docs(db, Screening)
@@ -289,10 +295,17 @@ def screening_columns(db: Session = Depends(get_db)) -> dict[str, Any]:
                 filled[name] += 1
 
     tags = sorted({(d.get("source") or {}).get("tag") for d in docs} - {None})
+    # How many rows point at a registered compound. Identification is a
+    # separate step from import, so without this the interface gives no hint
+    # that anything is outstanding — it simply shows plain names and looks
+    # finished.
+    identified = sum(1 for d in docs if d.get("chemical_id"))
 
     payload = {
         "total": len(docs),
         "tags": tags,
+        "identified": identified,
+        "unidentified": len(docs) - identified,
         "columns": [
             {
                 "key": name,
@@ -310,7 +323,7 @@ def screening_columns(db: Session = Depends(get_db)) -> dict[str, Any]:
             for name in order
         ],
     }
-    _COLUMNS_CACHE["count"] = count
+    _COLUMNS_CACHE["key"] = key
     _COLUMNS_CACHE["payload"] = payload
     return payload
 

@@ -61,14 +61,14 @@ export default function ScreeningUpload() {
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFile = e.dataTransfer.files[0]
-      const validExtensions = ['.xlsx', '.xls', '.xlsm']
+      const validExtensions = ['.xlsx', '.xls', '.xlsm', '.csv']
       const fileExt = droppedFile.name.substring(droppedFile.name.lastIndexOf('.')).toLowerCase()
-      
+
       if (validExtensions.includes(fileExt)) {
         setFile(droppedFile)
         setUploadResult(null)
       } else {
-        toast.error('Please upload an Excel file (.xlsx, .xls, .xlsm)')
+        toast.error('Please upload a spreadsheet (.xlsx, .xls, .xlsm, .csv)')
       }
     }
   }, [])
@@ -187,7 +187,7 @@ export default function ScreeningUpload() {
           >
             <input
               type="file"
-              accept=".xlsx,.xls,.xlsm"
+              accept=".xlsx,.xls,.xlsm,.csv"
               onChange={handleFileChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
@@ -253,6 +253,45 @@ export default function ScreeningUpload() {
                     <CheckCircleIcon className="h-5 w-5 mr-2" />
                     <span className="font-medium">{uploadResult.message}</span>
                   </div>
+
+                  {/* Template imports return a report of what was cleaned. It is
+                      shown in full: an import that quietly "fixed" 6,000 cells
+                      without saying so would be worse than one that failed. */}
+                  {uploadResult.report && (
+                    <div className="mt-4 border-t border-green-200 pt-3">
+                      <p className="text-sm font-medium text-gray-700">
+                        Recognised as{' '}
+                        <span className="font-semibold">{uploadResult.report.template}</span>
+                        {' '}· tagged{' '}
+                        <span className="inline-block px-2 py-0.5 rounded bg-purple-100 text-purple-700 text-xs font-medium">
+                          {uploadResult.tag}
+                        </span>
+                        {' '}· read as {uploadResult.report.encoding}
+                      </p>
+                      <dl className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-sm text-gray-600">
+                        {[
+                          ['Rows read', uploadResult.report.rows_read],
+                          ['Records stored', uploadResult.report.records],
+                          ['Chemicals created', uploadResult.chemicals_created],
+                          ['Formula errors → empty', uploadResult.report.formula_errors],
+                          ['Repeated headers dropped', uploadResult.report.header_echoes_dropped],
+                          ['Below detection limit', uploadResult.report.below_limit_values],
+                          ['Duplicate groups flagged', uploadResult.report.duplicate_groups],
+                          ['Missing CAS number', uploadResult.report.missing_cas],
+                          ['Unlinked to a chemical', uploadResult.records_without_chemical],
+                        ].map(([label, value]) => (
+                          <div key={label} className="flex justify-between gap-2">
+                            <dt>{label}</dt>
+                            <dd className="font-medium text-gray-900">{value ?? 0}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                      <p className="mt-2 text-xs text-gray-500">
+                        Nothing was discarded except repeated header rows. Every original
+                        value is kept alongside the cleaned one.
+                      </p>
+                    </div>
+                  )}
                   {uploadResult.errors && uploadResult.errors.length > 0 && (
                     <div className="mt-3">
                       <p className="text-sm text-orange-600 font-medium">Some records had issues:</p>

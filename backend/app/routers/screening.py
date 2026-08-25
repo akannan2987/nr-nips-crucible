@@ -8,10 +8,12 @@ from sqlalchemy.orm import Session
 
 from ..compat import js_or, now_iso, parse_int_or, sort_created_desc, total_pages
 from ..database import get_db
+from ..ingest import load_screening
 from ..models import Chemical, Screening
 from ..schemas import ScreeningIn
 from ..store import all_docs, delete_row, find_row, insert_doc, replace_doc
 from ..utils.excel import sheet_rows_as_dicts
+from ..utils.templates import detect_template, parse_with_spec
 
 router = APIRouter(prefix="/api/screening", tags=["screening"])
 
@@ -115,11 +117,25 @@ def add_screening(body: ScreeningIn, db: Session = Depends(get_db)) -> dict[str,
 async def upload_excel(
     file: Optional[UploadFile] = File(default=None), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
-    """POST /api/screening/upload/excel."""
+    """POST /api/screening/upload/excel.
+
+    Two paths. If the upload matches a known laboratory template (see
+    `utils/templates.py`) it is cleaned and loaded by that template's rules,
+    creating any chemicals it references. Otherwise the original column-mapping
+    behaviour applies unchanged, so existing uploads keep working exactly as
+    before.
+    """
     if file is None:
         raise HTTPException(status_code=400, detail="No file uploaded")
 
-    data = sheet_rows_as_dicts(await file.read())
+    content = await file.read()
+
+    spec = detect_template(content, file.filename or "")
+    if spec is not None:
+        records, report = parse_with_spec(content, spec)
+        return load_screening(db, records, spec, report)
+
+    data = sheet_rows_as_dicts(content)
 
     inserted = 0
     errors: list[dict[str, Any]] = []

@@ -60,6 +60,30 @@ def insert_doc(db: Session, model: Type[Base], doc: dict[str, Any]) -> None:
     db.commit()
 
 
+def insert_docs_bulk(db: Session, model: Type[Base], docs: list[dict[str, Any]]) -> int:
+    """Insert many documents in one transaction; returns how many were added.
+
+    `insert_doc` is fine for a handful of records but issues a `SELECT max(seq)`
+    **and a commit per row** — at 49,000 rows that is 49,000 flushes to disk and
+    takes hours on SQLite. This computes `seq` once, builds every row in memory,
+    and commits a single time.
+
+    Behaviour is otherwise identical to calling `insert_doc` in a loop, so the
+    stored shape (and therefore the API contract) is unchanged.
+    """
+    if not docs:
+        return 0
+    seq = _next_seq(db, model)
+    rows = []
+    for offset, doc in enumerate(docs):
+        row = model(id=doc["id"], seq=seq + offset, doc=doc)
+        _sync_columns(row, doc)
+        rows.append(row)
+    db.add_all(rows)
+    db.commit()
+    return len(rows)
+
+
 def replace_doc(db: Session, row, doc: dict[str, Any]) -> None:
     """Replace a row's document (v1 `.assign(...).write()`).
 

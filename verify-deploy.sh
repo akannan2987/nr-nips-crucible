@@ -18,7 +18,10 @@
 # Usage: ./verify-deploy.sh [base-url] [path-to-crucible.db]
 BASE="${1:-http://localhost:49160}"
 DB="${2:-data/crucible.db}"
-C(){ curl --noproxy '*' -sSk -m 30 "$@"; }
+# Retry transient network faults. A background job writing to the database can
+# briefly reset a connection; without a retry that shows up as a FAIL against a
+# feature that is in fact working, which is worse than no check at all.
+C(){ curl --noproxy '*' -sSk -m 30 --retry 3 --retry-delay 2 --retry-all-errors "$@"; }
 pass=0; fail=0
 ok(){ printf '  \033[0;32m PASS \033[0m %s\n' "$1"; pass=$((pass+1)); }
 no(){ printf '  \033[0;31m FAIL \033[0m %s\n     -> %s\n' "$1" "$2"; fail=$((fail+1)); }

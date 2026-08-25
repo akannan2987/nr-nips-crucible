@@ -53,6 +53,7 @@ export default function ScreeningView() {
   const [visible, setVisible] = useState([])      // column keys, customised view
   const [showPicker, setShowPicker] = useState(false)
   const [showLegend, setShowLegend] = useState(false)
+  const [identity, setIdentity] = useState(null)
   const [duplicates, setDuplicates] = useState('all')
   const [dupSummary, setDupSummary] = useState(null)
   const [showDupHelp, setShowDupHelp] = useState(false)
@@ -74,6 +75,7 @@ export default function ScreeningView() {
       .then(({ data }) => {
         setColumns(data.columns)
         setTags(data.tags || [])
+        setIdentity({ identified: data.identified, unidentified: data.unidentified })
         // Start the customised view with the best-populated columns, so it is
         // useful before the user has chosen anything.
         const ranked = [...data.columns].sort((a, b) => b.filled - a.filled)
@@ -234,6 +236,24 @@ export default function ScreeningView() {
             {activeFilterCount > 0 && ' matching your filters'}
             {effectiveColumns.length > 0 && ` · ${effectiveColumns.length} columns`}
           </p>
+          {/* Identification runs after import, so say plainly how far it has
+              got. Without this the table shows plain compound names and looks
+              finished when in fact nothing has been identified yet. */}
+          {identity && identity.unidentified > 0 && (
+            <p className="text-sm text-gray-500 mt-0.5">
+              <span className="font-medium text-gray-700">
+                {identity.identified.toLocaleString()}
+              </span>{' '}
+              of {(identity.identified + identity.unidentified).toLocaleString()} rows link
+              to a registered compound.
+              {identity.identified === 0 && (
+                <span className="ml-1 text-amber-700">
+                  Identification has not been run on this instance yet — compound names are
+                  shown exactly as the source file recorded them.
+                </span>
+              )}
+            </p>
+          )}
         </div>
         <Link
           to="/screening/upload"

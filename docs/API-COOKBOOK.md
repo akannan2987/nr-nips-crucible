@@ -238,6 +238,104 @@ Two new pieces here. `-d` supplies a **request body** — the data you are sendi
 
 ---
 
+## Screening data: reading it back
+
+Screening records keep whatever columns their source file had, so there is no
+fixed field list to memorise. Ask the application what it holds:
+
+```bash
+# 1. Which columns exist, how well populated each is, and which are ours
+curl --noproxy '*' -sS http://localhost:49160/api/screening/columns | python3 -m json.tool
+```
+
+**You should see** a `columns` array. Each entry carries `label` (the heading
+shown in the table, in snake_case), `source_column` (the heading the uploaded
+file used, or `null`), `derived` (true when this application added the column
+rather than reading it), `type`, and `filled`.
+
+**What it means:** `derived: true` marks a column Crucible calculated —
+`below_detection_limit`, for instance. `docs/GLOSSARY.md` explains each one.
+
+```bash
+# 2. A page of records
+curl --noproxy '*' -sS "http://localhost:49160/api/screening?page=1&limit=25"
+
+# 3. Filter one column — ?f.<column>=<substring>, case-insensitive
+curl --noproxy '*' -sS "http://localhost:49160/api/screening?f.simulant=ethanol&limit=5"
+
+# 4. Combine filters; they are ANDed
+curl --noproxy '*' -sS "http://localhost:49160/api/screening?f.simulant=ethanol&f.category=Rigid&limit=5"
+
+# 5. Free text across every field of every record
+curl --noproxy '*' -sS "http://localhost:49160/api/screening?search=benzaldehyde&limit=5"
+
+# 6. Everything from one data source
+curl --noproxy '*' -sS "http://localhost:49160/api/screening?tag=Cergy_data&limit=5"
+
+# 7. Sort. sort_numeric=true stops 100 sorting before 20
+curl --noproxy '*' -sS "http://localhost:49160/api/screening?sort=mg_per_kg_food&dir=desc&sort_numeric=true&limit=5"
+
+# 8. Everything measured for one compound
+curl --noproxy '*' -sS "http://localhost:49160/api/screening?chemical_id=CHEM-000042&limit=10"
+```
+
+**Note the field names.** Filtering and sorting use the *stored* field name
+(`mg_per_kg_food`), not the heading shown in the table (`mg_kg_food`). The
+`columns` endpoint gives you both: `key` is what you pass, `label` is what is
+displayed.
+
+### Duplicates
+
+```bash
+# How many rows are in each state
+curl --noproxy '*' -sS http://localhost:49160/api/screening/duplicates/summary
+```
+
+**You should see:**
+
+```json
+{"total": 49065, "identical": 1482, "repeat_measurement": 1002,
+ "unique": 47583, "copies_removed_by_unique": 1482}
+```
+
+**What it means:** `identical` rows match another row in every column — the same
+row present twice. `repeat_measurement` rows share a sample, compound and
+conditions but hold *different* values: the substance was measured more than
+once, and both results are real. Select between them with `?duplicates=`:
+
+```bash
+curl --noproxy '*' -sS "http://localhost:49160/api/screening?duplicates=unique&limit=5"     # hide exact copies
+curl --noproxy '*' -sS "http://localhost:49160/api/screening?duplicates=identical&limit=5"  # only exact copies
+curl --noproxy '*' -sS "http://localhost:49160/api/screening?duplicates=repeat&limit=5"     # only repeats
+curl --noproxy '*' -sS "http://localhost:49160/api/screening?duplicates=flagged&limit=5"    # either
+```
+
+`unique` never removes a repeat measurement — doing so would discard a result.
+
+### Downloading a selection
+
+Export takes the same filters as the list, and returns **every** matching row
+rather than one page:
+
+```bash
+# CSV of one compound's results
+curl --noproxy '*' -sS -o benzaldehyde.csv \
+  "http://localhost:49160/api/screening/export?format=csv&f.compound_name=Benzaldehyde"
+
+# Excel, only the columns you name
+curl --noproxy '*' -sS -o migration.xlsx \
+  "http://localhost:49160/api/screening/export?format=xlsx&columns=lims_id,compound_name,cas,mg_per_kg_food"
+
+# The original spreadsheet values, exactly as the file had them
+curl --noproxy '*' -sS -o original.csv \
+  "http://localhost:49160/api/screening/export?format=csv&raw=true&f.lims_id=844423370"
+```
+
+Formats: `csv`, `tsv`, `xlsx`, `json`. `raw=true` gives the untouched source
+row — what you want when reconciling against the original file.
+
+---
+
 ## Cleaning up
 
 These commands remove data. Read the caveat on each one before running it.

@@ -497,6 +497,48 @@ were started separately and cannot push to each other. See
 
 ---
 
+## The columns Crucible adds to imported data
+
+When a laboratory file is imported, its own columns are kept under their own
+headings. Crucible adds a few more, marked **+** in the data table. Each exists
+because cleaning found something that would otherwise have been lost without
+trace. Nothing in your file corresponds to them.
+
+**Derived column** — a column this application calculated, as opposed to one
+that was in the file you uploaded. Like a note written in the margin of a
+document: useful, but not part of the original.
+
+**chemical_id** — the link from a result to a compound in the Chemicals table.
+Created during import, keyed on the CAS number when there is one and on the
+compound's name when there is not. It is how the application knows that a
+result in one file and a result in another concern the same substance.
+
+**cas_alternatives** — the second and later CAS numbers when one cell named
+more than one substance. Analytical chemistry sometimes cannot separate two
+candidates for a single peak, so the cell reads `5398-11-8 / 6386-38-5`. The
+first becomes the CAS number; the rest are kept here rather than discarded.
+
+**below_detection_limit** — `true` when a measurement cell held a sentence such
+as "No compounds found above 0.01 mg/kg" instead of a number. That is a genuine
+result — the sample was clean — and the flag keeps it distinct from a
+measurement that was never taken. Without it, "we looked and found nothing" and
+"we never looked" would be indistinguishable.
+
+**duplicate_group** — a marker shared by rows identical on the fields that
+identify a measurement (sample, compound, simulant, retention index). They may
+be true repeat measurements, or an artefact of several exports having been
+combined into one file. Crucible does not decide which: nothing is removed, and
+the marker only makes them findable.
+
+**`…_note` columns** — the original text of a cell that should have held a
+number but did not. The numeric column beside it is empty for those rows, and
+the note preserves what the file actually said.
+
+**created_at** — when the record was imported. Not when the measurement was
+made; that is the file's own date column.
+
+---
+
 ## The lab and chemistry words
 
 **Chemical registry** — one catalogue that gives every compound a single
@@ -673,4 +715,4 @@ is synthetic.
 that's a gap worth filling — the whole point of this file is that nobody
 should have to already know the vocabulary to follow the documentation.
 
-**Last Updated:** August 24, 2026
+**Last Updated:** August 25, 2026

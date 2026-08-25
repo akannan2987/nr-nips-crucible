@@ -50,6 +50,17 @@ export const SAMPLE_TEMPLATE_URL = `${API_BASE}/samples/template/download`;
 
 // Screening
 export const getScreening = (params) => api.get('/screening', { params });
+export const getScreeningColumns = () => api.get('/screening/columns');
+export const getDuplicatesSummary = () => api.get('/screening/duplicates/summary');
+// Export runs server-side so the download is the whole filtered selection,
+// not just the rows currently on screen. Returns a URL rather than data so the
+// browser downloads it directly instead of buffering 49,000 rows in memory.
+export const screeningExportUrl = (params) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, v]) => v !== '' && v != null)
+  ).toString();
+  return `${API_BASE}/screening/export?${qs}`;
+};
 export const getScreeningRecord = (id) => api.get(`/screening/${id}`);
 export const getScreeningByChemical = (chemicalId) => api.get(`/screening/chemical/${chemicalId}`);
 export const createScreening = (data) => api.post('/screening', data);
@@ -59,6 +70,10 @@ export const uploadScreeningExcel = (formData) =>
   api.post('/screening/upload/excel', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+
+// Query (read-only SQL)
+export const runQuery = (sql, limit) => api.post('/query', { sql, limit });
+export const getQuerySchema = () => api.get('/query/schema');
 
 // Toxicology
 export const getToxicology = (params) => api.get('/toxicology', { params });

@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import csv
 import io
+import json
+import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
@@ -135,6 +137,110 @@ CERGY_SCREENING = TemplateSpec(
 REGISTRY: tuple[TemplateSpec, ...] = (CERGY_SCREENING,)
 
 
+# --------------------------------------------------------------------------
+# Columns this application adds
+# --------------------------------------------------------------------------
+# Every column below is **ours**, not the laboratory's — nothing in the source
+# file corresponds to it. Each one exists because cleaning found something that
+# would otherwise have been silently lost, or because the application needs to
+# link records together.
+#
+# They are described here rather than only in code because a column with no
+# explanation is a column nobody can trust. The table shows these descriptions,
+# and `docs/GLOSSARY.md` repeats them.
+
+DERIVED_COLUMNS: dict[str, str] = {
+    "chemical_id": (
+        "This application's link from a screening result to a compound in the "
+        "Chemicals table. Not from the source file — it is created during "
+        "import, keyed on CAS number where one exists and on the compound name "
+        "otherwise."
+    ),
+    "chemical_name": (
+        "The compound's name as held in the Chemicals table. Shown for "
+        "convenience; the source file's own name is in the compound column."
+    ),
+    "below_detection_limit": (
+        "True when a measurement cell held a sentence such as 'No compounds "
+        "found above 0.01 mg/kg' instead of a number. That is a real result — "
+        "the sample was clean — and this flag keeps it distinguishable from a "
+        "measurement that was never taken."
+    ),
+    "duplicate_group": (
+        "A marker shared by rows that are identical on LIMS number, compound, "
+        "simulant and retention index. They may be genuine repeat measurements "
+        "or an artefact of several exports being combined into one file. "
+        "Nothing was removed; this only makes them findable."
+    ),
+    "created_at": "When this record was imported into the application.",
+}
+
+# Columns ending in this suffix hold the original text of a cell that should
+# have held a number but did not.
+NOTE_SUFFIX = "_note"
+NOTE_DESCRIPTION = (
+    "The original text of the {field} cell, kept because it was not a number "
+    "and would otherwise have been lost. The numeric column beside it is empty "
+    "for these rows."
+)
+
+
+def to_snake_case(text: str) -> str:
+    """`mg/kg food` → `mg_kg_food`, `Migration temperature (°C)` → `migration_temperature_c`.
+
+    Punctuation and spacing become single underscores; the wording itself is
+    left alone, typos included. `additionnal information` stays
+    `additionnal_information`, because silently correcting a heading makes the
+    table harder to reconcile against the file it came from.
+    """
+    cleaned = text.replace("°", " ").replace("\n", " ")
+    cleaned = re.sub(r"[^0-9A-Za-z]+", "_", cleaned)
+    return re.sub(r"_+", "_", cleaned).strip("_").lower()
+
+
+def label_for(canonical: str) -> str:
+    """The heading to show above a column, in snake_case.
+
+    A column from the uploaded file keeps that file's own wording, converted to
+    snake_case. Columns this application added keep their own name, which is
+    already snake_case.
+    """
+    source = source_column_for(canonical)
+    if source:
+        return to_snake_case(source)
+    if canonical.endswith(NOTE_SUFFIX):
+        base = canonical[: -len(NOTE_SUFFIX)]
+        origin = source_column_for(base)
+        return f"{to_snake_case(origin) if origin else base}_original_text"
+    return canonical
+
+
+def source_column_for(canonical: str) -> Optional[str]:
+    """The heading this column had in the source file, if it came from one.
+
+    Returns None for columns this application added, which is what lets the
+    table show a file's own headings and mark everything else as derived.
+    """
+    for spec in REGISTRY:
+        for mapping in (spec.text_fields, spec.number_fields, spec.date_fields):
+            for source, target in mapping.items():
+                if target == canonical:
+                    return source.replace("\n", " ")
+        if spec.cas_field and canonical == "cas":
+            return spec.cas_field
+    return None
+
+
+def describe_column(canonical: str) -> Optional[str]:
+    """A plain-language description of a column this application added."""
+    if canonical in DERIVED_COLUMNS:
+        return DERIVED_COLUMNS[canonical]
+    if canonical.endswith(NOTE_SUFFIX):
+        base = canonical[: -len(NOTE_SUFFIX)]
+        return NOTE_DESCRIPTION.format(field=source_column_for(base) or base)
+    return None
+
+
 def decode_bytes(content: bytes, encodings: tuple[str, ...]) -> tuple[str, str]:
     """Decode using the first encoding that works; return `(text, encoding)`.
 
@@ -199,6 +305,8 @@ class ParseReport:
     records: int = 0
     duplicate_groups: int = 0
     duplicate_rows: int = 0
+    identical_rows: int = 0
+    repeat_measurements: int = 0
     below_limit_values: int = 0
     formula_errors: int = 0
     unparsed_numbers: int = 0
@@ -257,10 +365,13 @@ def parse_with_spec(content: bytes, spec: TemplateSpec) -> tuple[list[dict[str, 
 
         if spec.cas_field:
             cas_list = parse_cas_numbers(row.get(spec.cas_field))
-            record["cas"] = cas_list[0] if cas_list else None
-            # Extra CAS numbers are kept rather than silently dropped: a cell
-            # naming two candidate substances is a real observation.
-            record["cas_alternatives"] = cas_list[1:] or None
+            # The CAS column shows the cell exactly as the file had it. Where a
+            # cell names two candidate substances for one peak there is no
+            # honest way to pick one, so both are shown rather than silently
+            # reduced to the first. The parsed value below is used only for
+            # matching against the chemical registry, and is not a column.
+            record["cas"] = collapse_whitespace(row.get(spec.cas_field)) or None
+            record["_cas_parsed"] = cas_list
             if not cas_list:
                 raw_cas = collapse_whitespace(row.get(spec.cas_field))
                 if raw_cas:
@@ -268,6 +379,9 @@ def parse_with_spec(content: bytes, spec: TemplateSpec) -> tuple[list[dict[str, 
                 else:
                     report.missing_cas += 1
 
+        # A visible column, so the tag is on screen rather than buried inside
+        # the provenance object.
+        record["source_tag"] = spec.tag
         record["source"] = {
             "tag": spec.tag,
             "template": spec.key,
@@ -299,8 +413,24 @@ def _flag_duplicates(
         key = stable_hash(*(record.get(f) or "" for f in spec.identity_fields))
         groups.setdefault(key, []).append(record)
     for key, members in groups.items():
-        if len(members) > 1:
-            report.duplicate_groups += 1
-            report.duplicate_rows += len(members)
-            for member in members:
-                member["duplicate_group"] = key
+        if len(members) <= 1:
+            continue
+        report.duplicate_groups += 1
+        report.duplicate_rows += len(members)
+        # Two very different things share an identity, and conflating them is
+        # dangerous. Rows whose *every* source value matches are true
+        # duplicates — the same row present twice because exports were
+        # combined. Rows that differ in their measurements are repeat
+        # measurements of the same thing, which are real data: removing them
+        # would delete results, not tidy them.
+        signatures = {json.dumps(m.get("raw"), sort_keys=True) for m in members}
+        kind = "identical" if len(signatures) == 1 else "repeat_measurement"
+        if kind == "identical":
+            report.identical_rows += len(members)
+        else:
+            report.repeat_measurements += len(members)
+        for rank, member in enumerate(members):
+            member["duplicate_group"] = key
+            member["duplicate_kind"] = kind
+            # Rank 0 is the row kept when someone asks for unique records only.
+            member["duplicate_rank"] = rank

@@ -23,7 +23,16 @@ from ..compat import (
 from ..database import get_db
 from ..models import Chemical
 from ..schemas import BulkDeleteChemicals, BulkUpdateChemicals, ChemicalIn
-from ..store import all_docs, clear_all, delete_row, find_row, insert_doc, replace_doc
+from ..store import (
+    all_docs,
+    all_rows,
+    clear_all,
+    delete_row,
+    find_row,
+    insert_doc,
+    next_chemical_id,
+    replace_doc,
+)
 from ..utils.excel import parse_csv_rows, sheet_rows_as_dicts
 from ..utils.sdf import map_molecule_to_chemical, parse_sdf
 
@@ -247,8 +256,27 @@ async def upload_excel(
 
     for row in data:
         try:
-            chemical_id = col(row, "DTX_ID", "dtx_id", "Dtx_ID", "chemical_id",
-                              "Chemical_ID", "ID") or f"CHEM-{int(time.time() * 1000)}-{inserted}"
+            # DTX_ID is an identifier from an external system, kept as its own
+            # field. It is NOT the chemical's identity here: a compound with no
+            # DTX_ID must show an empty one rather than an invented value.
+            dtx_id = col(row, "DTX_ID", "dtx_id", "Dtx_ID", "DTXSID", "dtxsid")
+            explicit_id = col(row, "chemical_id", "Chemical_ID")
+
+            # Re-uploading matches on whichever identifier the file carries, so
+            # an upload still updates rather than duplicating.
+            existing = None
+            if explicit_id:
+                existing = find_row(db, Chemical, "chemical_id", explicit_id)
+            if existing is None and dtx_id:
+                existing = next(
+                    (r for r in all_rows(db, Chemical) if r.doc.get("dtx_id") == dtx_id),
+                    None,
+                )
+            chemical_id = (
+                existing.doc["chemical_id"]
+                if existing
+                else (explicit_id or next_chemical_id(db, inserted))
+            )
             nestle_id = col(row, "NESTLE_ID", "Nestle_ID", "nestle_id")
             cas_number = col(row, "CAS_NO", "CAS_Number", "cas_no", "cas_number", "CAS")
             name = col(row, "CHEMICAL_NAME", "Chemical_Name", "chemical_name",
@@ -260,12 +288,12 @@ async def upload_excel(
             supplier_ref = col(row, "Supplier_ref", "SUPPLIER_REF", "supplier_ref",
                                "Supplier", "supplier")
 
-            existing = find_row(db, Chemical, "chemical_id", chemical_id)
             old = existing.doc if existing else None
 
             chemical = {
                 "id": old["id"] if old else str(uuid.uuid4()),
                 "chemical_id": chemical_id,
+                "dtx_id": dtx_id,
                 "nestle_id": nestle_id,
                 "name": name,
                 "cas_number": str(cas_number) if cas_number else None,

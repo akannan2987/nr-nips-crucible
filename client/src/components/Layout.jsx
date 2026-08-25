@@ -10,6 +10,7 @@ import {
   ChartBarIcon,
   ExclamationTriangleIcon,
   CubeIcon,
+  CommandLineIcon,
 } from '@heroicons/react/24/outline'
 
 const navigation = [
@@ -38,6 +39,7 @@ const navigation = [
       { name: 'Upload Screening (ELN)', href: '/screening/upload', icon: DocumentPlusIcon },
     ],
   },
+  { name: 'Query', href: '/query', icon: CommandLineIcon },
   {
     name: 'Toxicology',
     icon: ExclamationTriangleIcon,
@@ -247,7 +249,7 @@ export default function Layout() {
             <div className="text-xs text-gray-500 text-center">
               Chemical & Sample Management System
               <br />
-              <span className="text-gray-400">© 2024 NIHS</span>
+              <span className="text-gray-400">© 2026 Computational Sciences - NIPS</span>
             </div>
           </div>
         </div>

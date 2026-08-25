@@ -498,6 +498,16 @@ it only if you are handing the account back or you know nothing else needs it.
 Confirm with `loginctl show-user $USER | grep Linger`, which should print
 `Linger=no`.
 
+> ⚠️ **If you disable it here, you must re-enable it when you reinstall.**
+> `sudo loginctl enable-linger $USER` — it is step
+> [R6](#r6-re-enable-lingering). This is easy to lose, because lingering is set
+> up in a section of the install guide called *"Prerequisites (one-time VM
+> setup)"*, which a reinstaller reasonably treats as already done. It is not
+> done any more: you undid it right here. The consequence surfaces late and
+> looks unrelated — the systemd unit enables without complaint, reports
+> `active (running)`, and then the app does not come back after the next
+> reboot.
+
 **If instead:** `Failed to disable linger: Interactive authentication required.`
 — you dropped the `sudo`.
 
@@ -609,6 +619,62 @@ the unit file was deleted but systemd still remembers it. Run
 
 **Time:** ~15 minutes, plus the image build.
 
+Nine steps, in order. R1–R5 are written out below; R6–R9 are short steps whose
+detail is owned by the install guide, linked per row. Work down the list — the
+order matters in three places, noted where it does.
+
+| # | Step | Detail |
+|---|---|---|
+| **R1** | Find your `CERT_SOURCE` — the one value nothing can restore | [below](#r1-find-your-cert_source) |
+| **R2** | Clone the private repo into the **production** folder | [below](#r2-clone) |
+| **R3** | Create `.env.local` — **before** any script runs | [below](#r3-recreate-envlocal-first) |
+| **R4** | `./setup-after-clone-py.sh` | [below](#r4-install) |
+| **R5** | Restore the database from your backup | [below](#r5-restore-your-data) |
+| **R6** | **Re-enable lingering** — section 4.3 turned it off | [INSTALL §1.3](INSTALL-RHEL8.md#13-lingering) |
+| **R7** | Re-create the systemd user unit | [INSTALL §4.2](INSTALL-RHEL8.md#42-generate-and-enable-the-unit) |
+| **R8** | Re-create **both** cron jobs — health monitor *and* cert-expiry | [INSTALL §4.3](INSTALL-RHEL8.md#43-health-monitoring) · [§3.4](INSTALL-RHEL8.md#34-switching-modes-and-keeping-an-eye-on-expiry) |
+| **R9** | Walk the V1–V9 checklist, ending with a real reboot | [INSTALL §5](INSTALL-RHEL8.md#5-verification-checklist) |
+
+> ### The two steps people miss
+>
+> **R6 and R8**, and both fail quietly.
+>
+> **Lingering** lives in the install guide's section 1, titled *"Prerequisites
+> (one-time VM setup)"* — which a reinstaller sensibly skips as already done.
+> It is not done: section 4.3 of *this* guide switched it off. Skip R6 and the
+> systemd unit in R7 will enable cleanly, report `active (running)`, and then
+> fail to come back after the next reboot. That is precisely what V9 tests, and
+> it is the last thing you find out.
+>
+> **Two cron jobs were removed, not one.** The health monitor is re-created for
+> you by R4's prompt; the weekly certificate-expiry check is not, and it lives
+> in a different section of the install guide (§3.4, not §4). Miss it and the
+> certificate expires one day with no warning having been issued.
+>
+> Neither produces an error. Both leave you with an app that works today.
+
+**The firewall is conditional.** If section 4.2 found firewalld or real
+iptables rules and you removed the port, re-open it now
+([INSTALL §1.4](INSTALL-RHEL8.md#14-firewall)). If `firewall-cmd` was not
+installed — Case C, the common answer on an internal VM — there is nothing to
+re-open and no row for it here.
+
+### R1. Find your `CERT_SOURCE`
+
+A gate, not a task: **do you know the path to your certificate store?**
+
+- **Yes** — carry on to R2.
+- **No** — recover it *now*. R3 cannot be written without it, and R4 will
+  cheerfully start the app on plain HTTP if R3 is wrong. The recovery
+  procedure — where to look, how to verify a candidate is the right
+  certificate, and what to do if it is gone entirely — is the callout at the
+  end of [R3](#r3-recreate-envlocal-first).
+
+It is first in the list because it is the only step here that can fail in a way
+you cannot fix from this machine.
+
+### R2. Clone
+
 ```bash
 # Fresh clone of the PRIVATE repo (RHEL8 VM)
 # The cd is not optional: after --full your shell is still standing in the
@@ -631,6 +697,8 @@ object counts, then silence from `cd`.
 **If instead:** `Repository not found` — an access problem in disguise; GitHub
 reports private repos you cannot see as missing. Check your organisation
 membership and that your Personal Access Token carries `repo` scope.
+
+### R3. Recreate `.env.local` (FIRST)
 
 ```bash
 # Recreate .env.local FIRST — a full uninstall deleted it, and without it the
@@ -684,6 +752,8 @@ the values may need updating.
 **If instead:** the shell sits there showing `>` and will not return — it is
 still waiting for the closing `EOF`. Type `EOF` and press Enter.
 
+### R4. Install
+
 ```bash
 ./setup-after-clone-py.sh
 ```
@@ -706,6 +776,8 @@ that.
 
 **If instead:** it starts in HTTP mode — `.env.local` was missing or has a bad
 `CERT_SOURCE`. Fix it and re-run.
+
+### R5. Restore your data
 
 ```bash
 # Restore data if you kept a backup
@@ -737,17 +809,77 @@ wrong. `ls ~/crucible-backups/`.
 file but the app is holding the old one. `./container-py.sh restart`, then
 check again.
 
-Full instructions: [INSTALL-RHEL8.md](INSTALL-RHEL8.md) (including firewall,
-auto-start, and monitoring re-setup).
+**The app is now running with your data.** It is not yet a deployment: nothing
+restarts it after a reboot, and nothing is watching it. That is R6–R9.
 
-Do not treat that as an optional footnote. A full uninstall removed the systemd
-user unit, the cron entries, and possibly your firewall rule. The app is running
-now, but until you redo
-[section 4 of the install guide](INSTALL-RHEL8.md#4-auto-start-on-boot-and-monitoring)
-it will not come back after a reboot and nothing is watching its health. Then
-run the [V1–V9 checklist](INSTALL-RHEL8.md#5-verification-checklist) — a
+### R6. Re-enable lingering
+
+```bash
+sudo loginctl enable-linger $USER
+loginctl show-user $USER | grep Linger      # → Linger=yes
+```
+
+Section 4.3 of this guide turned this off. Do it **before** R7 — the unit will
+enable either way, so a missing `Linger=yes` costs you nothing visible until the
+reboot in R9. Why it is needed, and what to do if it refuses:
+[INSTALL §1.3](INSTALL-RHEL8.md#13-lingering).
+
+### R7. Re-create the systemd user unit
+
+The container must be **running** for this to work — `generate systemd`
+describes a container that exists.
+
+```bash
+mkdir -p ~/.config/systemd/user
+podman generate systemd --new --name crucible-py --files
+mv container-crucible-py.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now container-crucible-py.service
+systemctl --user status container-crucible-py.service
+```
+
+You need **both** `enabled` on the Loaded line and `active (running)` on the
+Active line. `active` alone means it runs today and vanishes at the next boot.
+The Quadlet variant, the expected output in full, and every way this fails:
+[INSTALL §4.2](INSTALL-RHEL8.md#42-generate-and-enable-the-unit).
+
+### R8. Re-create both cron jobs
+
+Two were removed by the uninstall. R4 offered to restore only the first.
+
+```bash
+# 1. Health monitor — let the script write the line; it fills in the
+#    USER= / XDG_RUNTIME_DIR= prefix that rootless podman needs under cron.
+SETUP_MONITOR=y ./setup-after-clone-py.sh
+
+# 2. Certificate expiry — not offered by any script; add it by hand.
+crontab -e
+# 0 8 * * 1 cd <THIS folder, from pwd> && ./cert-expiry-check.sh >> ~/crucible-cert.log 2>&1
+
+crontab -l | grep -iE 'monitor.sh|cert-expiry'    # → two lines, not one
+./cert-expiry-check.sh                            # prove it works: exit 0 = not expiring
+```
+
+⚠️ **The cert-expiry `cd` must point at this production checkout**, the one
+whose `certs/` holds the live certificate. Pointed at any other clone it finds
+no certificate, treats that as nothing-wrong, and reports "OK" every Monday
+without ever inspecting anything. Run `pwd` here and paste *that* path.
+Details: [INSTALL §4.3](INSTALL-RHEL8.md#43-health-monitoring) (monitor) and
+[INSTALL §3.4](INSTALL-RHEL8.md#34-switching-modes-and-keeping-an-eye-on-expiry)
+(expiry).
+
+### R9. Verify — V1 through V9
+
+Run the full [V1–V9 checklist](INSTALL-RHEL8.md#5-verification-checklist). A
 reinstall deserves the same verification as a first install, and arguably more,
-because you now have expectations about what the numbers should say.
+because you now have expectations about what the numbers should say — V1's
+counts should match the data you restored, not zeros.
+
+**V9 is the one that matters here, and it requires an actual reboot.** Reboot
+the VM, wait two minutes, and — *without logging in first* — run V1 and
+`systemctl --user status container-crucible-py.service` from a fresh session.
+Not logging in first is the whole point: it is what proves R6 took. Checking
+the unit while your login session is open tells you nothing about boot.
 
 ---
 

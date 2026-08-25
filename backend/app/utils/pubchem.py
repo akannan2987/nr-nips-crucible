@@ -237,15 +237,23 @@ class PubChemClient:
 
     # -- lookup -----------------------------------------------------------
 
-    def lookup(self, name: Optional[str], cas: Optional[str]) -> Optional[PubChemResult]:
+    def lookup(
+        self, name: Optional[str], cas: Optional[str], cid_only: bool = False
+    ) -> Optional[PubChemResult]:
         """Find a compound by CAS then by name; `None` if nothing matches.
 
         CAS is tried first because it is unambiguous when present. The name
         follows, which is what rescues the majority of rows here: over half
         carry no CAS, and salts and complexes frequently carry one that PubChem
         files under a different substance.
+
+        `cid_only` skips the second request that fetches the compound's
+        properties. A caller that just needs to know *which* compound a name
+        resolves to — to check it against a CAS number, say — was otherwise
+        paying for a full property fetch and discarding it, which is one
+        request in four wasted across a run.
         """
-        cache_key = f"{(cas or '').strip()}|{(name or '').strip().lower()}"
+        cache_key = f"{(cas or '').strip()}|{(name or '').strip().lower()}|{cid_only}"
         if cache_key in self._cache:
             return self._cache[cache_key]
 
@@ -254,6 +262,9 @@ class PubChemClient:
             cids = self._cids_for(kind, value)
             if not cids:
                 continue
+            if cid_only:
+                result = PubChemResult(cid=cids[0], matched_by=label, properties={})
+                break
             props = self._properties_for_cid(cids[0])
             if props:
                 result = PubChemResult(cid=cids[0], matched_by=label, properties=props)

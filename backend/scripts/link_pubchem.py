@@ -117,7 +117,9 @@ def main() -> int:
             no_cas += 1
         else:
             by_cas = client.lookup(None, cas)
-            by_name = client.lookup(name, None) if name else None
+            # Only the CID matters here — it is compared against the CAS's
+            # CID and never stored, so the property fetch is skipped.
+            by_name = client.lookup(name, None, cid_only=True) if name else None
             if by_cas is not None and by_name is None:
                 # The CAS resolves but PubChem does not recognise the name.
                 # Usually a house naming style rather than a doubtful identity

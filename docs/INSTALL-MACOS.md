@@ -503,8 +503,24 @@ are currently watching. The container keeps running.
 
 **What it means:** this is the script that cron runs every five minutes. Running
 it by hand proves the automated version will work. If it finds the app
-unresponsive it restarts the container and says so. Note the HTTPS form: the
-monitor assumes plain HTTP unless you tell it otherwise with `API_URL`.
+unresponsive it restarts the container and says so.
+
+> ⚠️ **If you enabled HTTPS**, the bare form is wrong and produces an alarming
+> failure that is entirely self-inflicted:
+>
+> ```
+> ⚠️  Health check failed!
+> ⚠️  Container unhealthy, restarting...
+> ✗ Container restart failed
+> ```
+>
+> `monitor.sh` defaults to `http://localhost:<port>/api/stats`, which a TLS
+> listener refuses — so it concludes the app is dead and restarts your
+> container. The last line is the second HTTP check failing after the restart,
+> not a container that would not start. Use the `API_URL=https://...` form
+> above. The same mistake in the **cron** line restarts the app every five
+> minutes forever while reporting success, so if you run HTTPS here, check the
+> installed line too: `crontab -l | grep monitor.sh`.
 
 ```bash
 # V6. Backup / restore round-trip works
@@ -526,7 +542,7 @@ cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
 **You should see:** a few minutes of `pip` download output, then a run of dots
-and a green summary line like `==== 214 passed in 6.31s ====`.
+and a green summary line like `==== 47 passed in 1.81s ====`.
 
 **What it means:** the backend's own automated tests all agree the code behaves.
 Two new words:
@@ -777,7 +793,7 @@ the last line: `✓ Image built successfully` or `✗ Failed to build image`.
 **See also:** [macOS Uninstall](UNINSTALL-MACOS.md) ·
 [Full deployment guide](../DEPLOYMENT.md) · [Project README](../README.md)
 
-**Last Updated:** August 6, 2026
+**Last Updated:** August 25, 2026
 
 ---
 

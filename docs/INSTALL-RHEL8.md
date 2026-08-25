@@ -1102,14 +1102,25 @@ replaces HTTP on the same port.
 **What it means:** every layer beneath is working. This is the highest-value
 single check in the document.
 
-**If instead:** empty output — the connection was made but nothing came back;
-check `./container-py.sh logs`.
+**If instead:** `curl: (52) Empty reply from server` from the **`http://`**
+line — that is the expected answer in HTTPS mode, not a fault. You spoke plain
+HTTP to a TLS listener; it closed the connection without replying. Use one of
+the `https://` lines. On a correctly deployed VM this is what V1's first line
+*should* print, and it is worth recognising, because the same message from a
+monitoring script means the same thing (see V5).
+
+**If instead:** empty output with no error at all — the connection was made but
+nothing came back; check `./container-py.sh logs`.
 
 **If instead:** `curl: (7) Failed to connect` — nothing is listening on 49160.
 
-**If instead:** `curl: (35) SSL ... wrong version number` — you asked for
-`https://` and the container is running in HTTP mode (or the reverse). Try the
+**If instead:** `curl: (35) SSL ... wrong version number` — the mirror image:
+you asked for `https://` and the container is running in HTTP mode. Try the
 other line.
+
+**If instead:** `bash: vm-hostname: No such file or directory` — you pasted the
+line literally. `<vm-hostname>` is a placeholder; substitute your real FQDN
+(`hostname -f` prints it), angle brackets and all.
 
 ```bash
 # V2. Container is up and (after ~30 s) healthy. `status` detects HTTP vs
@@ -1199,11 +1210,45 @@ crash-looping. Read the lines immediately before each restart.
 
 ```bash
 # V5. Health monitor runs (logs to /tmp/crucible-monitor.log)
-./monitor.sh                 # HTTPS mode: API_URL=https://localhost:49160/api/stats ./monitor.sh
+# On this VM the app is HTTPS, so API_URL is REQUIRED — monitor.sh defaults to
+# http:// and would otherwise report a healthy app as dead.
+API_URL=https://localhost:49160/api/stats ./monitor.sh
+
+# Then confirm the installed cron line carries the same URL:
+crontab -l | grep monitor.sh
 ```
 
 This runs one round of the monitor by hand, so you find out now whether it
 works rather than discovering at 3 a.m. that it never did.
+
+> ⚠️ **Do not run bare `./monitor.sh` on an HTTPS deployment.** Its built-in
+> default is `http://localhost:<port>/api/stats`, which a TLS listener refuses —
+> so the monitor concludes the app is dead and **restarts your container**. What
+> you see is alarming and entirely self-inflicted:
+>
+> ```
+> ⚠️  Health check failed!
+> ⚠️  Container unhealthy, restarting...
+> ✗ Container restart failed
+> ```
+>
+> The final line is the second HTTP check failing after the restart, not a
+> container that refused to start. Nothing was broken; the probe was pointed at
+> the wrong protocol. The same mistake **in the cron line** is far worse: it
+> restarts production every five minutes, indefinitely, while reporting that it
+> is doing its job. That is why the `crontab -l` check above is part of V5 and
+> not an afterthought — the installed line must contain
+> `API_URL=https://localhost:49160/api/stats`.
+>
+> The monitor already passes `-k`, so the certificate naming the FQDN rather
+> than `localhost` is not a problem here.
+
+> **Once section 4.2's systemd unit exists**, note that `monitor.sh` restarts
+> the container directly with `podman restart`, while the unit owns it and was
+> generated with `--new` (it removes and recreates the container). The two can
+> disagree about who is in charge. It resolves itself in practice — systemd
+> brings the container back — but if you ever see repeated restart churn in the
+> log, this interaction is the first place to look.
 
 **You should see:** little or no output, and a new line in
 `/tmp/crucible-monitor.log`:
@@ -1266,11 +1311,26 @@ runner; it finds the project's tests and executes them.
 **You should see:**
 
 ```
-==================== 147 passed, 3 skipped in 12.84s ====================
+==================== 47 passed in 1.81s ====================
 ```
 
-**What it means:** the backend behaves as its authors specified. Skips are
-normal — usually tests that need PostgreSQL.
+**What it means:** the backend behaves as its authors specified.
+
+**If instead:** `No matching distribution found for fastapi<1.0,>=0.115`, with
+the resolver listing only much older versions — **this is the normal result on
+a stock RHEL8 VM, and you should skip V7.** RHEL8 ships Python 3.6 as its
+system `python3` (the giveaway is `pip 9.0.3` in the same output), and the
+project's dependencies require 3.8+. Nothing is wrong with your deployment: the
+container carries its own Python 3.12, which is exactly why the app is running
+while this fails. Clean up the unusable venv and move on:
+
+```bash
+cd .. && rm -rf backend/.venv
+```
+
+Running the suite here would mean installing a newer Python from AppStream
+solely to test code the container has already proved. V2's healthcheck is the
+check that matters on a server.
 
 **If instead:** `No module named venv` — install `python3-devel` / the
 `python3` package that provides it, or simply skip V7 on the VM.
@@ -1637,7 +1697,7 @@ already — that is how it earned its place on the list.
 **See also:** [RHEL8 Uninstall](UNINSTALL-RHEL8.md) ·
 [Full deployment guide](../DEPLOYMENT.md) · [Project README](../README.md)
 
-**Last Updated:** August 24, 2026
+**Last Updated:** August 25, 2026
 
 ---
 

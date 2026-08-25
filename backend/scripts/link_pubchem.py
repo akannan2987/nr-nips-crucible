@@ -119,6 +119,11 @@ def _run() -> int:
     cas_to_id: dict[str, str] = {}
     name_to_id: dict[str, str] = {}
     cas_of: dict[str, str] = {}
+    # PubChem's own compound id. Two CAS numbers can legitimately resolve to
+    # one compound — a substance and its hydrate, say — so keying only on CAS
+    # lets the same substance be registered twice under different numbers.
+    # This map is what stops that.
+    cid_to_id: dict[int, str] = {}
     for d in all_docs(db, Chemical):
         chemical_id = d.get("chemical_id")
         if not chemical_id:
@@ -129,6 +134,8 @@ def _run() -> int:
             cas_of.setdefault(chemical_id, cas)
         if d.get("name"):
             name_to_id.setdefault(collapse_whitespace(d["name"]).lower(), chemical_id)
+        if d.get("pubchem_cid"):
+            cid_to_id.setdefault(int(d["pubchem_cid"]), chemical_id)
     known = set(cas_to_id.values())
 
     rows = all_rows(db, Screening)
@@ -232,10 +239,15 @@ def _run() -> int:
                 )
             else:
                 confirmed += 1
-                chemical_id = cas_to_id.get(cas)
+                # Reuse an existing entry when either the CAS number or the
+                # PubChem compound is already registered. Checking the compound
+                # as well as the number is what prevents one substance being
+                # registered twice under two equivalent CAS numbers.
+                chemical_id = cas_to_id.get(cas) or cid_to_id.get(by_cas.cid)
                 if chemical_id is None:
                     chemical_id = next_chemical_id(db, len(new_chemicals))
-                    cas_to_id[cas] = chemical_id
+                cas_to_id[cas] = chemical_id
+                cid_to_id[by_cas.cid] = chemical_id
                 # The same CAS can arrive under several spellings of the name
                 # ("Hexadecane (posh)" and "hexadecane"). They are one
                 # substance, so it is registered once and every spelling links

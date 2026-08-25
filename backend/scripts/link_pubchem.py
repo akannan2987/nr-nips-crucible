@@ -51,6 +51,9 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=0, help="stop after N compounds")
     parser.add_argument("--ca-bundle", default=None)
     parser.add_argument("--batch", type=int, default=20, help="write every N confirmed compounds")
+    parser.add_argument(
+        "--report", default=None, help="write the unlinked compounds and why to a CSV"
+    )
     args = parser.parse_args()
 
     db = SessionLocal()
@@ -101,7 +104,9 @@ def main() -> int:
     print("Registering only where the name and the CAS agree in PubChem.\n")
 
     linked_rows = confirmed = rejected = no_cas = not_found = 0
+    name_unknown = cas_unknown = 0
     pending_writes = 0
+    unlinked_detail: list[tuple[str, str, str]] = []
     new_chemicals: list[dict] = []
     started = time.time()
 
@@ -113,12 +118,27 @@ def main() -> int:
         else:
             by_cas = client.lookup(None, cas)
             by_name = client.lookup(name, None) if name else None
-            if by_cas is None or by_name is None:
+            if by_cas is not None and by_name is None:
+                # The CAS resolves but PubChem does not recognise the name.
+                # Usually a house naming style rather than a doubtful identity
+                # — 'Phenol, 2,4-di-tertiobutyl' is a real compound written the
+                # way this laboratory writes it. Counted separately so the cost
+                # of requiring both identifiers stays visible.
+                name_unknown += 1
+                unlinked_detail.append((name, cas, "name not in PubChem"))
+            elif by_cas is None and by_name is not None:
+                cas_unknown += 1
+                unlinked_detail.append((name, cas, "CAS not in PubChem"))
+            elif by_cas is None and by_name is None:
                 not_found += 1
+                unlinked_detail.append((name, cas, "neither found"))
             elif by_cas.cid != by_name.cid:
                 # The name and the CAS describe different substances — exactly
                 # the salt/complex case this rule exists to catch.
                 rejected += 1
+                unlinked_detail.append(
+                    (name, cas, f"name=CID {by_name.cid} but CAS=CID {by_cas.cid}")
+                )
             else:
                 confirmed += 1
                 chemical_id = cas_to_id.get(cas)
@@ -179,17 +199,28 @@ def main() -> int:
             rate = index / max(time.time() - started, 1e-6)
             print(
                 f"  {index}/{len(compounds)}  confirmed={confirmed} "
-                f"rejected={rejected} no_cas={no_cas} not_found={not_found} "
+                f"rejected={rejected} name_unknown={name_unknown} "
+                f"no_cas={no_cas} not_found={not_found} "
                 f"~{(len(compounds) - index) / rate / 60:.0f} min left",
                 flush=True,
             )
 
     print(
         f"\nConfirmed {confirmed} compounds ({linked_rows} rows).\n"
-        f"  rejected (name and CAS disagree): {rejected}\n"
-        f"  no CAS to corroborate the name:   {no_cas}\n"
-        f"  not in PubChem:                   {not_found}"
+        f"\nLeft unlinked, by reason:\n"
+        f"  name and CAS name DIFFERENT compounds: {rejected:5}  <- the check working\n"
+        f"  CAS resolves, name unknown to PubChem: {name_unknown:5}  "
+        f"<- usually a house naming style\n"
+        f"  name resolves, CAS unknown:            {cas_unknown:5}\n"
+        f"  no CAS to corroborate the name:        {no_cas:5}\n"
+        f"  neither identifier found:              {not_found:5}"
     )
+    if args.report:
+        with open(args.report, "w") as handle:
+            handle.write("compound_name,cas,reason\n")
+            for nm, cs, why in unlinked_detail:
+                handle.write(f'"{nm}","{cs}","{why}"\n')
+        print(f"\nUnlinked compounds written to {args.report}")
 
     if args.apply:
         insert_docs_bulk(db, Chemical, new_chemicals)

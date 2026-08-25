@@ -872,17 +872,35 @@ Two were removed by the uninstall. R4 offered to restore only the first.
 SETUP_MONITOR=y ./setup-after-clone-py.sh
 
 # 2. Certificate expiry — not offered by any script; add it by hand.
-crontab -e
-# 0 8 * * 1 cd <THIS folder, from pwd> && ./cert-expiry-check.sh >> ~/crucible-cert.log 2>&1
-
-crontab -l | grep -iE 'monitor.sh|cert-expiry'    # → two lines, not one
-./cert-expiry-check.sh                            # prove it works: exit 0 = not expiring
+#    First, print the exact line to paste, with your real path filled in:
+echo "0 8 * * 1 CERT_FILE=$(pwd)/certs/server.crt $(pwd)/cert-expiry-check.sh >> ~/crucible-cert.log 2>&1"
+crontab -e            # paste the line that just printed, verbatim
 ```
 
-⚠️ **The cert-expiry `cd` must point at this production checkout**, the one
-whose `certs/` holds the live certificate. Pointed at any other clone it finds
-no certificate, treats that as nothing-wrong, and reports "OK" every Monday
-without ever inspecting anything. Run `pwd` here and paste *that* path.
+Verify both, and prove the second one actually reads your certificate:
+
+```bash
+crontab -l | grep -iE 'monitor.sh|cert-expiry'    # → two lines, not one
+CERT_FILE="$(pwd)/certs/server.crt" ./cert-expiry-check.sh
+```
+
+**You should see** from the second command
+`cert-expiry: ✓ '…/certs/server.crt' OK (expires …)` — a real date, read from
+your real certificate.
+
+**If instead:** `cert-expiry: no certificate at … — nothing to check` — the
+path is wrong. Note that this message **exits successfully**, which is exactly
+how this check once reported "OK" every Monday for months while pointed at a
+clone that has no `certs/` directory. A monitor that cannot fail is not a
+monitor.
+
+⚠️ **Use the `echo` above rather than typing the cron line from memory.** It
+substitutes your real path so nothing is left to fill in — the previous form
+asked you to paste a path by hand, and a placeholder left in place produces a
+cron entry that fails silently at 08:00 every Monday. Passing `CERT_FILE` as an
+absolute path also removes the dependency on the working directory entirely,
+which is the thing that broke this check before.
+
 Details: [INSTALL §4.3](INSTALL-RHEL8.md#43-health-monitoring) (monitor) and
 [INSTALL §3.4](INSTALL-RHEL8.md#34-switching-modes-and-keeping-an-eye-on-expiry)
 (expiry).
@@ -902,7 +920,7 @@ the unit while your login session is open tells you nothing about boot.
 
 ---
 
-**Last Updated:** August 24, 2026
+**Last Updated:** August 25, 2026
 
 ---
 

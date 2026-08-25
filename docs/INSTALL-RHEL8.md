@@ -825,9 +825,24 @@ renewal now. Rotation instructions are below.
 it describes.
 
 ```bash
-crontab -e   # add the weekly check (Mondays 08:00):
-# 0 8 * * 1 cd /path/to/crucible && ./cert-expiry-check.sh >> ~/crucible-cert.log 2>&1
+# Print the exact line to paste, with your real paths already filled in.
+# Run this from the production checkout — the one whose certs/ holds the live
+# certificate — so that $(pwd) expands to the right place.
+echo "0 8 * * 1 CERT_FILE=$(pwd)/certs/server.crt $(pwd)/cert-expiry-check.sh >> ~/crucible-cert.log 2>&1"
+
+crontab -e   # paste the line that just printed, verbatim (Mondays 08:00)
 ```
+
+**Let the `echo` write the line; do not retype it.** Every character of the
+path is substituted for you, so there is nothing left to fill in and nothing to
+mistype. A placeholder accidentally left in place — `/path/to/crucible`, or
+anything with angle brackets — does not fail loudly: the shell chokes on the
+`cd`, `&&` short-circuits, and the check simply never runs, silently, every
+Monday.
+
+Passing `CERT_FILE` as an absolute path is deliberate too. It removes the
+working directory from the equation altogether, which is the thing that broke
+this check before (see the warning below).
 
 **cron** ([glossary](GLOSSARY.md#the-container-words)) — the machine's alarm
 clock. It holds a list of *"at this time, run this command"* instructions and
@@ -868,18 +883,32 @@ your list.
 **If instead:** `crontab: no crontab for <your-user>` from `crontab -l` — the
 save did not happen. Re-run `crontab -e`.
 
-> ⚠️ The cron line's `cd` must point at the **production checkout** — the one
-> whose `certs/` holds the live certificate. Pointing it at another clone
-> (e.g. the `~/work/Pandora_toolbox/crucible-mirror` folder, which has no `certs/`) makes the check
-> report "no cert present = OK" every week while never inspecting the real
-> certificate.
+> ⚠️ **`CERT_FILE` must resolve to the certificate this server is actually
+> serving** — the one in the **production checkout**. Point it at another clone
+> (e.g. `~/work/Pandora_toolbox/crucible-mirror`, which has no `certs/`) and the
+> check reports "no cert present = OK" every week while never inspecting the
+> real certificate.
 >
 > A **checkout** is one folder containing one copy of the code. It is entirely
 > normal for a VM to hold several. This warning describes a real failure that
-> has actually happened: the check ran faithfully every Monday for months,
-> reported "OK" every time, and was looking at an empty folder the whole while.
-> A monitor that cannot fail is not a monitor. `pwd` in the folder you intend,
-> and paste *that* path into the cron line.
+> has actually happened, twice, in different disguises: once as a `cd` pointing
+> at a clone with no `certs/`, and once as a placeholder left unsubstituted in
+> the cron line so the command never ran at all. Both reported nothing wrong
+> for months. **A monitor that cannot fail is not a monitor.**
+>
+> This is why the `echo` above builds the line for you, and why `CERT_FILE` is
+> absolute: neither the working directory nor your typing is left in the loop.
+>
+> Prove it once, and read the output rather than the exit code:
+>
+> ```bash
+> CERT_FILE="$(pwd)/certs/server.crt" ./cert-expiry-check.sh
+> ```
+>
+> A real expiry date means it is genuinely reading your certificate.
+> `no certificate at … — nothing to check` means it is not — and note that
+> this message **exits 0**, so anything watching only the exit status will call
+> it a pass.
 
 Certificate rotation (renewal or reissue): see
 [DEPLOYMENT.md → Maintenance](../DEPLOYMENT.md#maintenance-and-operational-tasks).

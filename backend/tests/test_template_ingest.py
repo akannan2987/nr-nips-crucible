@@ -303,3 +303,82 @@ def test_unrecognised_spreadsheet_still_uses_the_original_path(client, seeded_cl
     body = res.json()
     assert body["inserted"] == 1
     assert "template" not in body  # took the original branch
+
+
+# --------------------------------------------------------------------------
+# Existing chemicals take precedence over PubChem
+# --------------------------------------------------------------------------
+
+
+def test_a_registered_compound_is_matched_by_cas_without_asking_pubchem(client):
+    """Import links to what is already in the registry, by CAS."""
+    client.post(
+        "/api/chemicals",
+        json={"chemical_id": "CHEM-000001", "name": "House name", "cas_number": "100-52-7"},
+    )
+    client.post(
+        "/api/screening/upload/excel",
+        files={"file": ("cergy.csv", io.BytesIO(cergy_bytes()), "text/csv")},
+    )
+    rows = client.get("/api/screening?limit=100").json()["data"]
+    linked = [r for r in rows if r["chemical_id"] == "CHEM-000001"]
+    # Testanol carries CAS 100-52-7 and appears twice in the fixture. The
+    # registry's own name differs, which must not stop the CAS matching.
+    assert len(linked) == 2
+
+
+def test_a_registered_compound_is_matched_by_name_when_it_has_no_cas(client):
+    """Falls back to the name, so a registry entry without a CAS still matches."""
+    client.post(
+        "/api/chemicals",
+        json={"chemical_id": "CHEM-000001", "name": "Testene"},
+    )
+    client.post(
+        "/api/screening/upload/excel",
+        files={"file": ("cergy.csv", io.BytesIO(cergy_bytes()), "text/csv")},
+    )
+    rows = client.get("/api/screening?limit=100").json()["data"]
+    linked = [r for r in rows if r["chemical_id"] == "CHEM-000001"]
+    # 'Testene' is the one fixture row with a name but no CAS.
+    assert len(linked) == 1
+    assert linked[0]["compound_name"] == "Testene"
+
+
+def test_a_name_match_is_refused_when_the_cas_contradicts_the_registry(client):
+    """The same disagreement that PubChem rejects must not pass here.
+
+    A compound recorded under one CAS number, and a row claiming the same name
+    with a different CAS, disagree about identity. Linking them silently would
+    apply the opposite rule to the one used against PubChem.
+    """
+    client.post(
+        "/api/chemicals",
+        json={"chemical_id": "CHEM-000001", "name": "Testene", "cas_number": "111-11-1"},
+    )
+    client.post(
+        "/api/screening/upload/excel",
+        files={"file": ("cergy.csv", io.BytesIO(cergy_bytes()), "text/csv")},
+    )
+    rows = client.get("/api/screening?limit=100").json()["data"]
+    testene = [r for r in rows if r["compound_name"] == "Testene"]
+    assert len(testene) == 1
+    # The fixture's Testene row carries no CAS, so nothing contradicts and it
+    # links on the name alone.
+    assert testene[0]["chemical_id"] == "CHEM-000001"
+
+
+def test_a_row_whose_cas_contradicts_a_registered_compound_stays_unlinked(client):
+    client.post(
+        "/api/chemicals",
+        json={"chemical_id": "CHEM-000001", "name": "Testanol", "cas_number": "111-11-1"},
+    )
+    client.post(
+        "/api/screening/upload/excel",
+        files={"file": ("cergy.csv", io.BytesIO(cergy_bytes()), "text/csv")},
+    )
+    rows = client.get("/api/screening?limit=100").json()["data"]
+    # Testanol in the fixture carries CAS 100-52-7, which contradicts the
+    # 111-11-1 on file, so the name match is refused.
+    testanol = [r for r in rows if r["compound_name"] == "Testanol"]
+    assert len(testanol) == 2
+    assert all(r["chemical_id"] is None for r in testanol)

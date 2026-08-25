@@ -61,12 +61,15 @@ def resolve_chemicals(
     """
     by_cas: dict[str, str] = {}
     by_name: dict[str, str] = {}
+    cas_of: dict[str, str] = {}
     for doc in all_docs(db, Chemical):
         chemical_id = doc.get("chemical_id")
         if not chemical_id:
             continue
         if doc.get("cas_number"):
-            by_cas.setdefault(str(doc["cas_number"]).strip(), chemical_id)
+            cas = str(doc["cas_number"]).strip()
+            by_cas.setdefault(cas, chemical_id)
+            cas_of.setdefault(chemical_id, cas)
         if doc.get("name"):
             by_name.setdefault(_name_key(doc["name"]), chemical_id)
 
@@ -80,8 +83,21 @@ def resolve_chemicals(
                 break
         else:
             name_key = _name_key(record.get("compound_name"))
-            if name_key and name_key in by_name:
-                assignments[index] = by_name[name_key]
+            candidate = by_name.get(name_key) if name_key else None
+            if candidate is None:
+                continue
+            # A name match is enough — unless the row's own CAS number
+            # contradicts the one already recorded against that compound. Two
+            # different CAS numbers under one name is a real disagreement about
+            # identity, and it is the same disagreement that causes a rejection
+            # against PubChem. Treating it as a match here and a rejection
+            # there would apply opposite rules to identical evidence, so such a
+            # row is left unlinked for a person to look at.
+            row_cas = record.get("_cas_parsed") or []
+            known_cas = cas_of.get(candidate)
+            if row_cas and known_cas and known_cas not in row_cas:
+                continue
+            assignments[index] = candidate
 
     return assignments, 0
 

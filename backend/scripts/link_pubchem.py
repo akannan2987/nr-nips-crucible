@@ -30,6 +30,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("AUTO_INIT_DB", "false")
 
+from sqlalchemy.exc import OperationalError  # noqa: E402
+
 from app.compat import now_iso  # noqa: E402
 from app.database import SessionLocal  # noqa: E402
 from app.models import Chemical, Screening  # noqa: E402
@@ -45,7 +47,57 @@ from app.utils.pubchem import PubChemClient  # noqa: E402
 import uuid  # noqa: E402
 
 
+def commit(db, attempts: int = 5) -> None:
+    """Commit, waiting out a busy database rather than dying on it.
+
+    SQLite blocks writers while a reader holds the file. A long read in the
+    application — and until recently the column endpoint could scan every
+    document on a request — can outlast the connection's busy timeout, which
+    surfaces as `database is locked`. Unhandled, that ends a run that has been
+    going for an hour, and because the failure happens at a commit the run also
+    loses whatever it had not yet written.
+
+    Retrying costs nothing and turns a fatal error into a pause.
+    """
+    for attempt in range(attempts):
+        try:
+            db.commit()
+            return
+        except OperationalError as err:
+            if "locked" not in str(err).lower() and "busy" not in str(err).lower():
+                raise
+            db.rollback()
+            wait = 2.0 * (attempt + 1)
+            print(f"  database busy, retrying commit in {wait:.0f}s", flush=True)
+            time.sleep(wait)
+    # Out of attempts: raise, so the caller sees a real failure rather than
+    # silently continuing with uncommitted work.
+    db.commit()
+
+
+def _note(handle, collected, name: str, cas: str, reason: str) -> None:
+    """Record an unlinked compound, to memory and to the report file at once."""
+    collected.append((name, cas, reason))
+    if handle is not None:
+        handle.write(f'"{name}","{cas}","{reason}"\n')
+
+
 def main() -> int:
+    try:
+        return _run()
+    except Exception:  # noqa: BLE001 - a long run must explain how it ended
+        import traceback
+
+        print("\nRun ended early:", flush=True)
+        traceback.print_exc()
+        print(
+            "\nWork already committed is kept. Re-running resumes from there.",
+            flush=True,
+        )
+        return 1
+
+
+def _run() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true", help="write changes (default: dry run)")
     parser.add_argument("--limit", type=int, default=0, help="stop after N compounds")
@@ -64,11 +116,19 @@ def main() -> int:
     # Already-registered compounds are skipped, so a re-run continues rather
     # than repeating work.
     # CAS number -> the identifier this application gave that compound.
-    cas_to_id = {
-        d["cas_number"]: d["chemical_id"]
-        for d in all_docs(db, Chemical)
-        if d.get("cas_number") and d.get("chemical_id")
-    }
+    cas_to_id: dict[str, str] = {}
+    name_to_id: dict[str, str] = {}
+    cas_of: dict[str, str] = {}
+    for d in all_docs(db, Chemical):
+        chemical_id = d.get("chemical_id")
+        if not chemical_id:
+            continue
+        if d.get("cas_number"):
+            cas = str(d["cas_number"]).strip()
+            cas_to_id.setdefault(cas, chemical_id)
+            cas_of.setdefault(chemical_id, cas)
+        if d.get("name"):
+            name_to_id.setdefault(collapse_whitespace(d["name"]).lower(), chemical_id)
     known = set(cas_to_id.values())
 
     rows = all_rows(db, Screening)
@@ -80,12 +140,25 @@ def main() -> int:
         name = collapse_whitespace(row.doc.get("compound_name"))
         cas_values = parse_cas_numbers(row.doc.get("cas"))
         cas = cas_values[0] if cas_values else ""
-        if cas and cas in cas_to_id:
-            # Registered by an earlier run; link without asking PubChem again.
+        # Already-registered compounds are linked without asking PubChem, by
+        # CAS first and then by name — the same order the upload uses. Matching
+        # on CAS alone (an earlier version) left rows unlinked whenever the
+        # registered compound had a name but no CAS number, which is exactly
+        # the case a manually curated registry produces.
+        existing = cas_to_id.get(cas) if cas else None
+        if existing is None and name:
+            candidate = name_to_id.get(name.lower())
+            # Same rule as the upload: a name match is refused when the row's
+            # CAS contradicts the one recorded against that compound.
+            if candidate is not None:
+                known = cas_of.get(candidate)
+                if not (cas and known and known != cas):
+                    existing = candidate
+        if existing is not None:
             doc = dict(row.doc)
-            doc["chemical_id"] = cas_to_id[cas]
+            doc["chemical_id"] = existing
             row.doc = doc
-            row.chemical_id = cas_to_id[cas]
+            row.chemical_id = existing
             resumed += 1
             continue
         if name or cas:
@@ -93,7 +166,7 @@ def main() -> int:
 
     if resumed:
         if args.apply:
-            db.commit()
+            commit(db)
         print(f"Re-linked {resumed} rows to compounds registered by an earlier run.")
 
     compounds = list(pending.items())
@@ -101,7 +174,16 @@ def main() -> int:
         compounds = compounds[: args.limit]
 
     print(f"{sum(len(v) for _, v in compounds)} unlinked rows across {len(compounds)} compounds")
-    print("Registering only where the name and the CAS agree in PubChem.\n")
+    print("Registering only where the name and the CAS agree in PubChem.\n", flush=True)
+
+    # The report is written as the run proceeds, not at the end. A run of this
+    # length can be interrupted — by a restart, a kill, or a fault — and a
+    # report that only exists on clean completion is exactly the report you do
+    # not have when you need it most.
+    report_handle = None
+    if args.report:
+        report_handle = open(args.report, "w", buffering=1)
+        report_handle.write("compound_name,cas,reason\n")
 
     linked_rows = confirmed = rejected = no_cas = not_found = 0
     name_unknown = cas_unknown = 0
@@ -113,8 +195,11 @@ def main() -> int:
     for index, ((name, cas), members) in enumerate(compounds, start=1):
         if not cas:
             # Without a CAS there is nothing to corroborate the name against,
-            # so the 1:1 test cannot be satisfied.
+            # so the 1:1 test cannot be satisfied. Recorded in the report like
+            # every other unlinked compound — it is the largest category, and a
+            # report that omitted it would understate the work outstanding.
             no_cas += 1
+            _note(report_handle, unlinked_detail, name, "", "no CAS to corroborate the name")
         else:
             by_cas = client.lookup(None, cas)
             # Only the CID matters here — it is compared against the CAS's
@@ -127,19 +212,23 @@ def main() -> int:
                 # way this laboratory writes it. Counted separately so the cost
                 # of requiring both identifiers stays visible.
                 name_unknown += 1
-                unlinked_detail.append((name, cas, "name not in PubChem"))
+                _note(report_handle, unlinked_detail, name, cas, "name not in PubChem")
             elif by_cas is None and by_name is not None:
                 cas_unknown += 1
-                unlinked_detail.append((name, cas, "CAS not in PubChem"))
+                _note(report_handle, unlinked_detail, name, cas, "CAS not in PubChem")
             elif by_cas is None and by_name is None:
                 not_found += 1
-                unlinked_detail.append((name, cas, "neither found"))
+                _note(report_handle, unlinked_detail, name, cas, "neither found")
             elif by_cas.cid != by_name.cid:
                 # The name and the CAS describe different substances — exactly
                 # the salt/complex case this rule exists to catch.
                 rejected += 1
-                unlinked_detail.append(
-                    (name, cas, f"name=CID {by_name.cid} but CAS=CID {by_cas.cid}")
+                _note(
+                    report_handle,
+                    unlinked_detail,
+                    name,
+                    cas,
+                    f"name=CID {by_name.cid} but CAS=CID {by_cas.cid}",
                 )
             else:
                 confirmed += 1
@@ -192,7 +281,7 @@ def main() -> int:
         # account for thousands of rows before the chemical count moves.
         if args.apply and (len(new_chemicals) >= args.batch or pending_writes >= 2000):
             insert_docs_bulk(db, Chemical, new_chemicals)
-            db.commit()
+            commit(db)
             new_chemicals = []
             pending_writes = 0
 
@@ -217,16 +306,13 @@ def main() -> int:
         f"  no CAS to corroborate the name:        {no_cas:5}\n"
         f"  neither identifier found:              {not_found:5}"
     )
-    if args.report:
-        with open(args.report, "w") as handle:
-            handle.write("compound_name,cas,reason\n")
-            for nm, cs, why in unlinked_detail:
-                handle.write(f'"{nm}","{cs}","{why}"\n')
+    if report_handle is not None:
+        report_handle.close()
         print(f"\nUnlinked compounds written to {args.report}")
 
     if args.apply:
         insert_docs_bulk(db, Chemical, new_chemicals)
-        db.commit()
+        commit(db)
         print(f"\nApplied: {confirmed} chemicals registered, {linked_rows} rows linked.")
     else:
         # Genuinely nothing written. An earlier version linked rows through
@@ -238,7 +324,14 @@ def main() -> int:
         db.rollback()
         print("\nDry run — nothing written. Re-run with --apply.")
     if client.failures:
-        print(f"{client.failures} lookups gave up after retries; re-run to retry them.")
+        print(f"\n{client.failures} lookups gave up after retries; re-run to retry them.")
+    if client.throttled:
+        print(
+            f"PubChem throttled this run {client.throttled} times "
+            f"(request spacing ended at {client.min_interval:.2f}s). "
+            "Compounds it refused are reported as 'not in PubChem' but were "
+            "never actually asked — re-run to retry them."
+        )
     return 0
 
 

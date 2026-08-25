@@ -541,6 +541,22 @@ made; that is the file's own date column.
 
 ## The lab and chemistry words
 
+**Identification** — deciding which compound a screening row is *about*, and
+attaching it to one entry in the registry. A screening file records the compound
+as free text, so one substance can arrive under a dozen spellings; identification
+collapses them onto a single entry and adds the chemistry the file never
+contained. See [Chemical Identification](CHEMICAL-IDENTIFICATION.md).
+
+**PubChem** — a free public chemical database run by the US National Library of
+Medicine. Crucible consults it to identify compounds it does not already hold,
+and to fetch molecular formula, weight and structure. Like an address book: it
+supplies the details a message never carried.
+
+**Unlinked** — a screening row whose compound could not be identified with
+confidence. It is shown under the name the source file gave it. Not an error:
+an unidentified peak is a real observation, and inventing an identity for it
+would be worse than leaving it as recorded.
+
 **Chemical registry** — one catalogue that gives every compound a single
 identity, so that everything ever measured about it can be attached to that
 identity instead of scattered across separate files. It is what this

@@ -92,6 +92,19 @@ if [ -f "$DB" ]; then
   [ "$d" = "0" ] && ok "no dangling chemical links" || no "dangling links" "$d rows point at missing chemicals"
   fmt=$(sqlite3 "$DB" "SELECT COUNT(*) FROM chemicals WHERE chemical_id NOT LIKE 'CHEM-%';" 2>/dev/null)
   [ "${fmt:-0}" = "0" ] && ok "chemical ids all sequential (CHEM-nnnnnn)" || no "chemical id format" "$fmt use the old CAS- form"
+
+  # One substance must not appear twice in the registry. Checked three ways,
+  # because the identifiers have different granularity: two CAS numbers can
+  # legitimately point at one PubChem compound, so a repeated CID is a
+  # duplicate even when the CAS numbers differ.
+  dup_cas=$(sqlite3 "$DB" "SELECT COUNT(*) FROM (SELECT json_extract(doc,'\$.cas_number') c FROM chemicals WHERE c IS NOT NULL GROUP BY c HAVING COUNT(*)>1);" 2>/dev/null)
+  dup_cid=$(sqlite3 "$DB" "SELECT COUNT(*) FROM (SELECT json_extract(doc,'\$.pubchem_cid') c FROM chemicals WHERE c IS NOT NULL GROUP BY c HAVING COUNT(*)>1);" 2>/dev/null)
+  dup_nam=$(sqlite3 "$DB" "SELECT COUNT(*) FROM (SELECT LOWER(json_extract(doc,'\$.name')) n FROM chemicals WHERE n IS NOT NULL GROUP BY n HAVING COUNT(*)>1);" 2>/dev/null)
+  if [ "${dup_cas:-0}" = "0" ] && [ "${dup_cid:-0}" = "0" ] && [ "${dup_nam:-0}" = "0" ]; then
+    ok "no duplicate chemicals (by CAS, PubChem id or name)"
+  else
+    no "duplicate chemicals" "repeated CAS=$dup_cas  PubChem id=$dup_cid  name=$dup_nam"
+  fi
 else
   printf '  \033[0;33m SKIP \033[0m database checks (no %s here)\n' "$DB"
 fi

@@ -10,6 +10,11 @@ already have and when it asks an external database, and how to run and read the
 identification job.
 **Time:** ten minutes to read; the job itself runs in the background.
 
+> **New here?** [The Playbook](PLAYBOOK.md) puts this step in sequence with
+> everything around it — loading a file, checking the result, correcting it —
+> and explains the vocabulary from scratch. This guide is the detail behind its
+> Part 4 and Part 5.
+
 ## Table of Contents
 
 - [The problem, in your own data](#the-problem-in-your-own-data)

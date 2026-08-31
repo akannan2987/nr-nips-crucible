@@ -6,6 +6,11 @@ A comprehensive web application for managing chemical compounds, samples, screen
 
 **[Documentation index](#the-documentation-in-order)** · **[Glossary](docs/GLOSSARY.md)** · **[Release notes](NEWS.md)** · **[API cookbook](docs/API-COOKBOOK.md)**
 
+> **Never used this before?** Read **[the Playbook](docs/PLAYBOOK.md)** — it
+> walks the whole sequence in order, from what a chemical registry is through to
+> loading real data, checking it, and publishing a change, explaining every term
+> as it appears. It assumes no chemistry and no command-line experience.
+>
 > **New to any of this?** Every technical term used anywhere in this repository —
 > container, port, certificate, migration, CAS number, SLIMS — is explained in
 > plain words, with everyday comparisons, in **[docs/GLOSSARY.md](docs/GLOSSARY.md)**.
@@ -590,14 +595,15 @@ output you should get, and likely mistakes get a named fix.
 | # | Guide | What it teaches |
 |---|-------|-----------------|
 | 00 | **[Glossary](docs/GLOSSARY.md)** | Every term in the project, in plain words — read it, or keep it open in a tab |
-| 01 | **[macOS Install & Run](docs/INSTALL-MACOS.md)** | From a blank Mac to the app running: containers, ports, HTTPS. Uses the **public** repo |
-| 02 | **[RHEL8 Install & Run](docs/INSTALL-RHEL8.md)** | The production deployment: rootless podman, SELinux, firewall, real certificates, surviving a reboot. Uses the **private** repo |
-| 03 | **[API Cookbook](docs/API-COOKBOOK.md)** | Copy-paste recipes for talking to the app — every answer captured from a live instance |
-| 04 | **[Chemical Identification](docs/CHEMICAL-IDENTIFICATION.md)** | Why compound names need identifying, when a row links to your registry and when it asks PubChem |
-| 05 | **[Query Cookbook](docs/QUERY-COOKBOOK.md)** | Asking the database questions directly — why queries look unusual here, and recipes that work |
-| 06 | **[GitOps Workflow](docs/GITOPS-WORKFLOW.md)** | How a change travels from your Mac to the server, and the safety gate that stops secrets escaping |
-| 07 | **[macOS Uninstall](docs/UNINSTALL-MACOS.md)** | Clean removal, starting with what you cannot get back |
-| 08 | **[RHEL8 Uninstall](docs/UNINSTALL-RHEL8.md)** | The same, plus the server-only pieces (systemd, firewall, cron) |
+| 01 | **[The Playbook](docs/PLAYBOOK.md)** | **Start here.** The whole sequence in order — load a file, check it, identify compounds, correct mistakes, publish a change — with every concept explained from scratch |
+| 02 | **[macOS Install & Run](docs/INSTALL-MACOS.md)** | From a blank Mac to the app running: containers, ports, HTTPS. Uses the **public** repo |
+| 03 | **[RHEL8 Install & Run](docs/INSTALL-RHEL8.md)** | The production deployment: rootless podman, SELinux, firewall, real certificates, surviving a reboot. Uses the **private** repo |
+| 04 | **[API Cookbook](docs/API-COOKBOOK.md)** | Copy-paste recipes for talking to the app — every answer captured from a live instance |
+| 05 | **[Chemical Identification](docs/CHEMICAL-IDENTIFICATION.md)** | Why compound names need identifying, when a row links to your registry and when it asks PubChem |
+| 06 | **[Query Cookbook](docs/QUERY-COOKBOOK.md)** | Asking the database questions directly — why queries look unusual here, and recipes that work |
+| 07 | **[GitOps Workflow](docs/GITOPS-WORKFLOW.md)** | How a change travels from your Mac to the server, and the safety gate that stops secrets escaping |
+| 08 | **[macOS Uninstall](docs/UNINSTALL-MACOS.md)** | Clean removal, starting with what you cannot get back |
+| 09 | **[RHEL8 Uninstall](docs/UNINSTALL-RHEL8.md)** | The same, plus the server-only pieces (systemd, firewall, cron) |
 
 **Reference — look things up as needed**
 
@@ -606,6 +612,7 @@ output you should get, and likely mistakes get a named fix.
 | **[Deployment Guide](DEPLOYMENT.md)** | The deep operational reference: all runbooks, certificate rotation, PostgreSQL, systemd, troubleshooting |
 | **[API Documentation](API.md)** | Complete REST API reference, endpoint by endpoint |
 | **[API Testing Guide](docs/API-TESTING-GUIDE.md)** | Worked `curl` and Python examples |
+| **[The Playbook](docs/PLAYBOOK.md)** | Every routine task in sequence, written for a complete beginner |
 | **[Query Cookbook](docs/QUERY-COOKBOOK.md)** | Read-only SQL against the database, with recipes |
 | **[Chemical Identification](docs/CHEMICAL-IDENTIFICATION.md)** | How compounds are matched to the registry, and to PubChem |
 | **[Architecture](docs/architecture.md)** | How the pieces fit together |

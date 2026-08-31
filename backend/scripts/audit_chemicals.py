@@ -53,9 +53,10 @@ CHAIN_CARBONS = {
 # whose formula carried an unexplained heteroatom was genuinely the wrong
 # compound.
 HETEROATOMS = {
-    "N": ("amin", "amid", "amide", "carbam", "nitr", "azo", "azin", "azol",
-          "pyrid", "imid", "indol", "anilin", "cyan", "urea", "piperid",
-          "morphol", "triaz", "purin", "pyrrol", "quinol", "nitril", "oxim"),
+    "N": ("amin", "amid", "amide", "anilid", "carbam", "lactam", "nitr", "azo",
+          "azin", "azol", "pyrid", "imid", "imin", "indol", "anilin", "cyan",
+          "urea", "piperid", "morphol", "triaz", "purin", "pyrrol", "quinol",
+          "nitril", "oxim", "thiazol", "isothiazol"),
     "Cl": ("chlor",),
     "Br": ("brom",),
     "F": ("fluor",),
@@ -88,6 +89,12 @@ def formula_carbons(formula: str) -> int:
 def formula_elements(formula: str) -> set[str]:
     """Every element symbol in a molecular formula."""
     return set(re.findall(r"[A-Z][a-z]?", formula or ""))
+
+
+def _same_name(a: str, b: str) -> bool:
+    """Whether two chemical names are the same once punctuation is ignored."""
+    norm = lambda t: re.sub(r"[^a-z0-9]", "", (t or "").lower())  # noqa: E731
+    return bool(norm(a)) and norm(a) == norm(b)
 
 
 def unexplained_heteroatoms(name: str, formula: str) -> list[str]:
@@ -151,8 +158,15 @@ def main() -> int:
             reasons.append(
                 f"name says '{stem}…' ({claimed} carbons) but the formula has {actual}"
             )
+        # When both names say the same thing there is no disagreement to
+        # investigate, whatever the elements. A trivial name such as 'Caffeine'
+        # carries no structural hint at all, so the vocabulary can never
+        # account for its nitrogen — but PubChem agreeing with it is far better
+        # evidence than any word list.
+        agreed = title and _same_name(name, title)
+
         # The formula contains an element the name never mentions.
-        stray = unexplained_heteroatoms(name, doc.get("molecular_formula"))
+        stray = [] if agreed else unexplained_heteroatoms(name, doc.get("molecular_formula"))
         if stray:
             reasons.append(
                 f"formula has {', '.join(stray)} but nothing in the name accounts for it"

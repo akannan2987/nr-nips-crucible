@@ -22,6 +22,7 @@ identification job.
 - [Why it will not create duplicates](#why-it-will-not-create-duplicates)
 - [Running it](#running-it)
 - [Reading the report](#reading-the-report)
+- [Maintaining the registry](#maintaining-the-registry)
 - [When something goes wrong](#when-something-goes-wrong)
 
 ---
@@ -351,6 +352,140 @@ cut -d, -f3 unlinked.csv | sort | uniq -c | sort -rn
 - **name=CID … but CAS=CID …** — a genuine disagreement. This is the check
   earning its keep; each of these deserves a human look.
 - **CAS not in PubChem** — usually a malformed or obsolete number.
+
+---
+
+## Maintaining the registry
+
+Four scripts, all living inside the container image — so changing any of them
+means rebuilding, not just pulling. Each **reports before it writes**: run it
+without `--apply` first and read what it intends to do.
+
+Always take a backup first. Every one of these changes data.
+
+```bash
+cd ~/work/Pandora_toolbox/nr-nips-crucible
+./container-py.sh backup
+```
+
+### Recovering compounds rejected on their name alone
+
+A large group fails identification with a perfectly good CAS number, purely
+because the name is written in a house style PubChem does not recognise —
+`Phenol, 2,4-di-tertiobutyl` for 2,4-di-tert-butylphenol. Their CAS *does*
+resolve, so the chemistry is retrievable; what is missing is somebody willing to
+say "yes, that is the same compound".
+
+`propose_chemicals.py` prepares that decision. It reads the unlinked report,
+looks each CAS up, and writes a chemicals upload carrying **your** name for the
+compound alongside PubChem's, so you can compare them.
+
+```bash
+podman cp unlinked.csv crucible-py:/app/backend/unlinked.csv
+
+podman exec crucible-py python /app/backend/scripts/propose_chemicals.py \
+  /app/backend/unlinked.csv -o /app/backend/proposed.xlsx --limit 20   # sample first
+
+podman exec crucible-py python /app/backend/scripts/propose_chemicals.py \
+  /app/backend/unlinked.csv -o /app/backend/proposed.xlsx             # the full set
+
+podman cp crucible-py:/app/backend/proposed.xlsx ./proposed.xlsx
+```
+
+**You should see** a `PUBCHEM_NAME` column beside `CHEMICAL_NAME`.
+
+> ⚠️ **Review the file before uploading it.** The script registers nothing —
+> uploading is you vouching for those compounds, which is exactly the
+> corroboration the strict rule could not obtain automatically. Compare the two
+> name columns row by row and delete anything that does not match.
+>
+> This is not a formality. On 2026-08-25 the file was uploaded unreviewed and
+> `Glycerol, 2-monohexadecanoate` (CAS 23470-00-0) went in carrying the
+> chemistry of 2-methoxyaniline — a small aromatic amine where a C19 glycerol
+> ester was expected. A compound registered with somebody else's molecular
+> weight is worse than one left unidentified.
+
+Then upload through **Chemicals → Upload**, and re-link:
+
+```bash
+podman exec crucible-py python /app/backend/scripts/link_pubchem.py --apply
+```
+
+**You should see** `Re-linked N rows to compounds registered by an earlier run.`
+Those are your newly registered compounds being matched by CAS, no PubChem
+involved.
+
+### Auditing what is registered
+
+```bash
+sqlite3 -header -column data/crucible.db "
+SELECT chemical_id,
+       json_extract(doc,'\$.name')            AS your_name,
+       json_extract(doc,'\$.cas_number')      AS cas,
+       json_extract(doc,'\$.molecular_weight') AS mw,
+       json_extract(doc,'\$.pubchem_title')   AS pubchem_name
+FROM chemicals
+WHERE json_extract(doc,'\$.pubchem_title') IS NOT NULL
+ORDER BY CAST(mw AS REAL);"
+```
+
+Sorting by molecular weight puts the suspicious entries first: a name implying
+an ester, phosphite or oligomer against a weight under 200 is worth a look.
+
+### Removing entries that are wrong
+
+**Never delete a chemical through the interface or `DELETE /api/chemicals/…`.**
+Neither unlinks the rows that point at it, so they are left referencing
+something that no longer exists — rendering as links to nowhere, and reported by
+`verify-deploy.sh` as dangling. That has happened once, to 1,897 rows.
+
+```bash
+# By identifier — report first
+podman exec crucible-py python /app/backend/scripts/remove_chemicals.py CHEM-000123
+podman exec crucible-py python /app/backend/scripts/remove_chemicals.py CHEM-000123 --apply
+
+# From a list
+podman cp bad-ids.txt crucible-py:/app/backend/bad-ids.txt
+podman exec crucible-py python /app/backend/scripts/remove_chemicals.py \
+  --from-file /app/backend/bad-ids.txt --apply
+
+# Everything the identification job created, to rebuild the registry
+podman exec crucible-py python /app/backend/scripts/remove_chemicals.py \
+  --pubchem-registered --apply
+```
+
+**What it means:** the rows are not deleted. They lose their link and fall back
+to showing the compound name their source file recorded, which is the honest
+state for a compound whose identity is not established. Registering it again
+later re-links them.
+
+### Merging entries that describe one substance
+
+Two CAS numbers can legitimately point at one compound. Production held
+`1-Docosanol` twice, as `30303-65-2` and `661-19-8`, both PubChem 12620.
+
+```bash
+podman exec crucible-py python /app/backend/scripts/merge_duplicate_chemicals.py
+podman exec crucible-py python /app/backend/scripts/merge_duplicate_chemicals.py --apply
+```
+
+It keeps the **oldest** entry, copies over any field only the duplicate carried,
+repoints every screening, sample and toxicology row, and deletes only then.
+
+**Grouping is by PubChem compound id**, falling back to name only where no
+compound id exists. A shared *name* with different CAS numbers and different
+compound ids is **not** a duplicate — those are different substances carrying
+one label, such as isomers or a name truncated in the source, and merging them
+would destroy a real distinction.
+
+### Confirming afterwards
+
+```bash
+./verify-deploy.sh https://localhost:49160
+```
+
+**You should see** `no dangling chemical links` and `no duplicate chemicals`
+among the passes.
 
 ---
 

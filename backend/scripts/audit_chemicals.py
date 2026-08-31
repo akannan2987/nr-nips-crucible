@@ -46,8 +46,14 @@ CHAIN_CARBONS = {
     "tridec": 13, "dodec": 12, "undec": 11, "decan": 10, "nonan": 9, "octan": 8,
 }
 
-# Words implying a large molecule, used as a weaker second check.
-HEAVY_HINTS = ("glycerol", "phosphite", "phosphate", "oligomer", "phthalate", "citrate")
+# Words implying a *derivative* — an acid joined to something else — which is
+# necessarily heavier than either part. Plain 'glycerol' is deliberately absent:
+# glycerol itself is C3H8O3 at 92 g/mol, and an earlier version flagged it as
+# too light for its own name.
+DERIVATIVE_HINTS = (
+    "oate", "ester", "phthalate", "phosphite", "phosphate", "citrate",
+    "adipate", "stearate", "oligomer",
+)
 
 
 def implied_carbons(name: str) -> tuple[int, str]:
@@ -76,10 +82,21 @@ def main() -> int:
 
     db = SessionLocal()
     rows = []
+    skipped = 0
     for doc in all_docs(db, Chemical):
-        title = doc.get("pubchem_title")
-        if not title:
-            continue  # nothing was retrieved for this entry
+        # PubChem's own name for the compound, however the entry was created.
+        # The identification job stores it as `pubchem_title`; a spreadsheet
+        # upload keeps the whole row under `metadata`, so it arrives as
+        # PUBCHEM_NAME there. Reading only the first left every uploaded
+        # compound unaudited — which was exactly the set that had never been
+        # reviewed.
+        title = doc.get("pubchem_title") or (doc.get("metadata") or {}).get("PUBCHEM_NAME")
+
+        # The carbon-count test needs only the name and the formula, so an entry
+        # without a PubChem name is still worth checking.
+        if not doc.get("molecular_formula"):
+            skipped += 1
+            continue
 
         try:
             weight = float(doc.get("molecular_weight") or 0)
@@ -95,11 +112,14 @@ def main() -> int:
             reasons.append(
                 f"name says '{stem}…' ({claimed} carbons) but the formula has {actual}"
             )
-        # Weaker, and only where the first found nothing.
+        # Weaker, and only where the first found nothing. Restricted to names
+        # describing a derivative, which must outweigh the parts it is made of.
         if not reasons and weight and weight < 200:
-            hit = next((h for h in HEAVY_HINTS if h in name.lower()), None)
+            hit = next((h for h in DERIVATIVE_HINTS if h in name.lower()), None)
             if hit:
-                reasons.append(f"name says '{hit}' but the weight is only {weight:g}")
+                reasons.append(
+                    f"name says '{hit}', which implies a larger molecule than {weight:g}"
+                )
 
         # Severity for sorting: how far short the formula falls.
         gap = (claimed - actual) if reasons and claimed and actual else 0
@@ -109,14 +129,15 @@ def main() -> int:
     flagged = [r for r in rows if r[1]]
     shown = rows if args.all else flagged
 
-    print(f"{len(rows)} entries carry a PubChem name to compare against.")
+    print(f"{len(rows)} entries checked ({skipped} skipped for having no formula).")
     print(f"{len(flagged)} look{'s' if len(flagged) == 1 else ''} doubtful.\n")
 
     for _, reasons, doc in shown:
         mark = "  ??" if reasons else "  ok"
         print(f"{mark}  {doc['chemical_id']}")
         print(f"        yours   : {doc.get('name')}")
-        print(f"        pubchem : {doc.get('pubchem_title')}")
+        pubchem = doc.get("pubchem_title") or (doc.get("metadata") or {}).get("PUBCHEM_NAME")
+        print(f"        pubchem : {pubchem or '(none recorded)'}")
         print(f"        cas={doc.get('cas_number')}  formula={doc.get('molecular_formula')}"
               f"  mw={doc.get('molecular_weight')}")
         for reason in reasons:

@@ -46,14 +46,25 @@ CHAIN_CARBONS = {
     "tridec": 13, "dodec": 12, "undec": 11, "decan": 10, "nonan": 9, "octan": 8,
 }
 
-# Words implying a *derivative* — an acid joined to something else — which is
-# necessarily heavier than either part. Plain 'glycerol' is deliberately absent:
-# glycerol itself is C3H8O3 at 92 g/mol, and an earlier version flagged it as
-# too light for its own name.
-DERIVATIVE_HINTS = (
-    "oate", "ester", "phthalate", "phosphite", "phosphate", "citrate",
-    "adipate", "stearate", "oligomer",
-)
+# Elements beyond carbon, hydrogen and oxygen, and the name fragments that
+# earn them. An ester, a diol or a benzoate is built from C, H and O; if the
+# formula also contains nitrogen or chlorine, the name has to say so somewhere.
+# This is the strongest signal available: on real data every mismatched entry
+# whose formula carried an unexplained heteroatom was genuinely the wrong
+# compound.
+HETEROATOMS = {
+    "N": ("amin", "amid", "amide", "carbam", "nitr", "azo", "azin", "azol",
+          "pyrid", "imid", "indol", "anilin", "cyan", "urea", "piperid",
+          "morphol", "triaz", "purin", "pyrrol", "quinol", "nitril", "oxim"),
+    "Cl": ("chlor",),
+    "Br": ("brom",),
+    "F": ("fluor",),
+    "I": ("iodo", "iodi"),
+    "S": ("thio", "sulf", "sulph", "mercapt", "thia"),
+    "P": ("phosph",),
+    "Si": ("silan", "silox", "silic", "silyl"),
+    "B": ("boro", "borat"),
+}
 
 
 def implied_carbons(name: str) -> tuple[int, str]:
@@ -72,6 +83,30 @@ def formula_carbons(formula: str) -> int:
     if not match:
         return 0
     return int(match.group(1)) if match.group(1) else 1
+
+
+def formula_elements(formula: str) -> set[str]:
+    """Every element symbol in a molecular formula."""
+    return set(re.findall(r"[A-Z][a-z]?", formula or ""))
+
+
+def unexplained_heteroatoms(name: str, formula: str) -> list[str]:
+    """Elements in the formula that nothing in the name accounts for.
+
+    Carbon, hydrogen and oxygen are assumed throughout — practically every
+    organic name implies them. Anything else has to be earned by a fragment of
+    the name: `chloro`, `amide`, `phosph`. A benzoate whose formula contains
+    nitrogen is describing something the name does not.
+    """
+    lowered = (name or "").lower()
+    found = []
+    for element in formula_elements(formula) - {"C", "H", "O"}:
+        hints = HETEROATOMS.get(element)
+        if hints is None:
+            continue  # an element we have no vocabulary for; say nothing
+        if not any(hint in lowered for hint in hints):
+            found.append(element)
+    return sorted(found)
 
 
 def main() -> int:
@@ -107,19 +142,21 @@ def main() -> int:
         actual = formula_carbons(doc.get("molecular_formula"))
 
         reasons = []
+        # A cell naming two compounds ('X + Y') describes co-eluting peaks. The
+        # registered chemistry belongs to one of them, so a chain named by the
+        # other is not evidence of an error.
+        combined = " + " in name
         # The strong signal: the name names a chain the formula cannot hold.
-        if claimed and actual and actual < claimed:
+        if claimed and actual and actual < claimed and not combined:
             reasons.append(
                 f"name says '{stem}…' ({claimed} carbons) but the formula has {actual}"
             )
-        # Weaker, and only where the first found nothing. Restricted to names
-        # describing a derivative, which must outweigh the parts it is made of.
-        if not reasons and weight and weight < 200:
-            hit = next((h for h in DERIVATIVE_HINTS if h in name.lower()), None)
-            if hit:
-                reasons.append(
-                    f"name says '{hit}', which implies a larger molecule than {weight:g}"
-                )
+        # The formula contains an element the name never mentions.
+        stray = unexplained_heteroatoms(name, doc.get("molecular_formula"))
+        if stray:
+            reasons.append(
+                f"formula has {', '.join(stray)} but nothing in the name accounts for it"
+            )
 
         # Severity for sorting: how far short the formula falls.
         gap = (claimed - actual) if reasons and claimed and actual else 0

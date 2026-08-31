@@ -99,7 +99,21 @@ if [ -f "$DB" ]; then
   # duplicate even when the CAS numbers differ.
   dup_cas=$(sqlite3 "$DB" "SELECT COUNT(*) FROM (SELECT json_extract(doc,'\$.cas_number') c FROM chemicals WHERE c IS NOT NULL GROUP BY c HAVING COUNT(*)>1);" 2>/dev/null)
   dup_cid=$(sqlite3 "$DB" "SELECT COUNT(*) FROM (SELECT json_extract(doc,'\$.pubchem_cid') c FROM chemicals WHERE c IS NOT NULL GROUP BY c HAVING COUNT(*)>1);" 2>/dev/null)
-  dup_nam=$(sqlite3 "$DB" "SELECT COUNT(*) FROM (SELECT LOWER(json_extract(doc,'\$.name')) n FROM chemicals WHERE n IS NOT NULL GROUP BY n HAVING COUNT(*)>1);" 2>/dev/null)
+  # A shared name is only evidence of duplication when there is nothing better
+  # to go on. Two entries with different CAS numbers AND different PubChem
+  # compounds are different substances that happen to carry the same label -
+  # isomers, or a name truncated in the source - and merging them would be
+  # wrong. Only name collisions among entries lacking a distinguishing
+  # identifier are counted.
+  dup_nam=$(sqlite3 "$DB" "
+    SELECT COUNT(*) FROM (
+      SELECT LOWER(json_extract(doc,'\$.name')) n
+      FROM chemicals
+      WHERE json_extract(doc,'\$.name') IS NOT NULL
+      GROUP BY n
+      HAVING COUNT(*) > 1
+         AND COUNT(DISTINCT COALESCE(json_extract(doc,'\$.pubchem_cid'), json_extract(doc,'\$.cas_number'), rowid)) < COUNT(*)
+    );" 2>/dev/null)
   if [ "${dup_cas:-0}" = "0" ] && [ "${dup_cid:-0}" = "0" ] && [ "${dup_nam:-0}" = "0" ]; then
     ok "no duplicate chemicals (by CAS, PubChem id or name)"
   else

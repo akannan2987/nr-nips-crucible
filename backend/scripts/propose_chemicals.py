@@ -148,6 +148,11 @@ def main() -> int:
         print(f"{missing} CAS numbers did not resolve and were left out.")
     if client.throttled:
         print(f"PubChem throttled {client.throttled} times — re-run to fill the gaps.")
+    if client.ambiguous:
+        print(
+            f"{client.ambiguous} CAS numbers matched several compounds with none "
+            "claiming the number outright, and were left out rather than guessed at."
+        )
     print(
         "\nNothing has been registered. Review the file, remove anything you\n"
         "disagree with, then upload it through Chemicals -> Upload.\n"

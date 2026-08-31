@@ -177,6 +177,7 @@ class PubChemClient:
         self.requests_made = 0
         self.failures = 0
         self.throttled = 0
+        self.ambiguous = 0
         self.last_error: Optional[str] = None
 
     # -- transport --------------------------------------------------------
@@ -246,6 +247,35 @@ class PubChemClient:
         except (TypeError, KeyError, IndexError):
             return None
 
+    def _synonyms_for_cid(self, cid: int) -> list[str]:
+        """Every name PubChem holds for a compound."""
+        payload = self._get(f"{BASE}/compound/cid/{cid}/synonyms/JSON")
+        try:
+            return payload["InformationList"]["Information"][0]["Synonym"]
+        except (TypeError, KeyError, IndexError):
+            return []
+
+    def _cid_owning_cas(self, cids: list[int], cas: str) -> Optional[int]:
+        """Of several candidates, the one that is actually that CAS number.
+
+        `xref/rn` returns every compound whose record *references* a registry
+        number — as a related substance, an impurity, a reaction component —
+        ordered by identifier, not by relevance. Taking the first is a coin
+        toss: for 95-47-6 it yields Pipemidic Acid, while o-xylene sits second.
+
+        The compound that genuinely holds a CAS number lists it among its own
+        synonyms, and the others do not. Checking costs one request per
+        candidate and is the difference between the right compound and an
+        arbitrary one.
+
+        Returns None when no candidate claims the number, which is the honest
+        answer — better than registering a guess.
+        """
+        for cid in cids[:5]:
+            if cas in self._synonyms_for_cid(cid):
+                return cid
+        return None
+
     def _cids_for(self, kind: str, value: str) -> list[int]:
         """CIDs matching a name or registry number. `kind` is `name` or `xref/rn`."""
         url = f"{BASE}/compound/{kind}/{urllib.parse.quote(value, safe='')}/cids/JSON"
@@ -282,6 +312,15 @@ class PubChemClient:
             cids = self._cids_for(kind, value)
             if not cids:
                 continue
+            if kind == "xref/rn" and len(cids) > 1:
+                # Several compounds reference this registry number; only one
+                # owns it. Guessing here is how a food antioxidant ends up
+                # holding nicotine's chemistry.
+                owner = self._cid_owning_cas(cids, value)
+                if owner is None:
+                    self.ambiguous += 1
+                    continue
+                cids = [owner]
             if cid_only:
                 result = PubChemResult(cid=cids[0], matched_by=label, properties={})
                 break

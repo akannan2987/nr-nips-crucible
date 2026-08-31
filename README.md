@@ -827,6 +827,29 @@ endpoint removes the entry without unlinking the rows that reference it. Fixed
 with a tool that unlinks first — but the endpoint still behaves that way, which
 is recorded rather than hidden.
 
+**Position zero in a list nobody ranked.** Looking a compound up by its registry
+number used an endpoint that returns *every* compound referencing that number,
+ordered by internal identifier. The code took the first. For one number that is
+the right substance; for the next it is an unrelated one that merely mentions
+it. Nineteen compounds were registered holding another substance's formula —
+a food antioxidant carrying nicotine's chemistry — while every registry number
+in the source file was correct. *Lesson: an interface returning a list has not
+thereby ranked it.*
+
+**Two audit heuristics that had to be thrown away.** The first compared the
+laboratory's name for a compound against the public database's and flagged
+disagreement; but `Monostearin` and `Glycerol, 1-monooctadecanoate` are one
+substance sharing no words, so it flagged correct entries. The second assumed a
+name containing "ester" implied a heavy molecule; ethyl acetate is an ester at
+88 g/mol, and it produced 28 false alarms out of 41. Only checkable chemistry
+worked — a carbon chain the formula cannot hold, an element the name never
+mentions. *Lesson: a check that cries wolf is worse than no check, because it
+teaches the reader to skim.*
+
+**An audit that examined the wrong half of the data.** It read one field, which
+only one of the two import paths writes. Of 686 records it checked 367 — and the
+319 it skipped were precisely the ones that had never been reviewed.
+
 ---
 
 ## About the data (honesty notes)

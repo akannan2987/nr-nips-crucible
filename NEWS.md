@@ -10,6 +10,47 @@ change you are getting.
 
 ---
 
+## v2.2.1 — 2026-08-31 — "Checking what we registered"
+
+A correctness release. Auditing the chemical registry found that compounds had
+been registered carrying other substances' chemistry, and traced it to how a
+registry number was looked up.
+
+**Fixed**
+- **Looking a compound up by registry number returned the wrong compound.** The
+  public database's cross-reference endpoint lists every compound *referencing*
+  a number, ordered by internal identifier, and the code took the first. Of 319
+  compounds registered from a proposal file, **19 held another substance's
+  formula, weight and structure** — while every registry number in the source
+  file was correct. The compound that owns a number lists it among its own
+  synonyms, so candidates are now checked, and a number no candidate claims
+  registers nothing rather than a guess.
+- Identification was never affected: it requires a compound's name and its
+  registry number to resolve to the same substance, so every one of these was
+  rejected. That is what the rule is for.
+
+**Added**
+- `scripts/audit_chemicals.py` — flags registered compounds whose formula
+  contradicts their own name: a carbon chain the formula cannot hold, or an
+  element the name never accounts for. Entries where both names agree exactly
+  are exempt, as are cells naming two co-eluting compounds.
+- Registry maintenance is documented end to end in
+  [docs/CHEMICAL-IDENTIFICATION.md](docs/CHEMICAL-IDENTIFICATION.md): auditing,
+  reviewing, removing without orphaning measurements, and recovering afterwards.
+- Working files produced while auditing are gitignored. They carry real compound
+  names, and the publication gate would not have objected to them.
+
+**Known limitations (deliberate)**
+- The audit flags contradictions it can **measure**. A wrong registry number
+  pointing at a compound of similar composition leaves nothing to measure —
+  three such entries were found only by reading the pairs by hand. A pass is not
+  a guarantee.
+- 22 compounds were removed and their 232 measurements now show the name the
+  source file recorded. They are real substances and can be re-registered, but
+  the proposal file should be reviewed first.
+
+---
+
 ## v2.2.0 — 2026-08-25 — "Real data"
 
 The first release to carry a laboratory's own export rather than synthetic

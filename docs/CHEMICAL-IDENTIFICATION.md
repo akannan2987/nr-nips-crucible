@@ -23,6 +23,7 @@ identification job.
 - [Running it](#running-it)
 - [Reading the report](#reading-the-report)
 - [Maintaining the registry](#maintaining-the-registry)
+  - [Auditing what is registered](#auditing-what-is-registered)
 - [When something goes wrong](#when-something-goes-wrong)
 
 ---
@@ -417,20 +418,119 @@ involved.
 
 ### Auditing what is registered
 
+**Why this is necessary.** A compound registered from a proposal file carries
+your laboratory's name alongside chemistry fetched from PubChem using the CAS
+number. If the wrong compound is fetched, the entry keeps the right name and
+acquires somebody else's formula, weight and structure — and every screening
+row linked to it inherits that.
+
+This is not hypothetical. On 2026-08-31 an audit of 686 registered compounds
+found **19 carrying another substance's chemistry**: a food antioxidant holding
+nicotine's formula, o-xylene holding an antibiotic's, three entries named
+"Hydrocarbon (POSH)" holding halogenated compounds. The CAS numbers in the
+source file were correct; the fault was in how they were looked up (see
+[When something goes wrong](#when-something-goes-wrong)).
+
 ```bash
-sqlite3 -header -column data/crucible.db "
-SELECT chemical_id,
-       json_extract(doc,'\$.name')            AS your_name,
-       json_extract(doc,'\$.cas_number')      AS cas,
-       json_extract(doc,'\$.molecular_weight') AS mw,
-       json_extract(doc,'\$.pubchem_title')   AS pubchem_name
-FROM chemicals
-WHERE json_extract(doc,'\$.pubchem_title') IS NOT NULL
-ORDER BY CAST(mw AS REAL);"
+podman exec crucible-py python /app/backend/scripts/audit_chemicals.py
 ```
 
-Sorting by molecular weight puts the suspicious entries first: a name implying
-an ester, phosphite or oligomer against a weight under 200 is worth a look.
+**You should see:**
+
+```
+664 entries checked (0 skipped for having no formula).
+0 look doubtful.
+```
+
+**What it means:** every registered compound whose formula can be compared
+against its own name agrees with it.
+
+**If instead** entries are listed, each comes with the reason it was flagged:
+
+```
+  ??  CHEM-000413
+        yours   : Glycerol, 2-monohexadecanoate
+        pubchem : 2-Methoxyaniline
+        cas=23470-00-0  formula=C7H9NO  mw=123.15
+        -> name says 'hexadec…' (16 carbons) but the formula has 7
+        -> formula has N but nothing in the name accounts for it
+```
+
+#### What the two checks look for
+
+**A carbon chain the formula cannot hold.** A name saying *hexadecanoate*
+claims a sixteen-carbon chain. Seven carbons cannot provide one, and no naming
+convention explains the gap.
+
+**An element the name never mentions.** An ester, a diol or a benzoate is built
+from carbon, hydrogen and oxygen. Nitrogen or chlorine in the formula has to be
+earned by the name — *amide*, *chloro*, *phosph*. `Carbamic acid, butyl ester`
+contains nitrogen and says *carbam*, so it passes; `Dipropylene glycol
+dibenzoate` contains nitrogen and explains none of it, so it does not.
+
+Two exemptions stop the checks crying wolf:
+
+- **Both names agreeing.** When your name and PubChem's are the same string
+  there is no disagreement to investigate, whatever the elements. `Caffeine` can
+  never hint at its own nitrogen, and PubChem agreeing with it is better
+  evidence than any word list.
+- **Cells naming two compounds.** `Acrylic acid, diester with tetraethyleneglycol
+  + Eicosane (POSH)` describes co-eluting peaks. A chain named by the second
+  compound is not evidence against the first, so the carbon test is skipped.
+
+> ⚠️ **A pass is not a guarantee.** These flag contradictions that can be
+> *measured*. A wrong CAS pointing at a compound of similar composition leaves
+> nothing to measure — three such entries were found only by reading the pairs
+> by hand, including dibutyl phthalate stored as plain phthalic acid. To read
+> them all:
+>
+> ```bash
+> podman exec crucible-py python /app/backend/scripts/audit_chemicals.py --all | less
+> ```
+
+#### Acting on the result
+
+```bash
+# Write the flagged identifiers to a file
+podman exec crucible-py python /app/backend/scripts/audit_chemicals.py \
+  -o /app/backend/suspect.txt
+podman cp crucible-py:/app/backend/suspect.txt ./suspect.txt
+```
+
+**Read each flagged pair and decide.** The file is a *removal list*: delete from
+it any line you want to keep, and what remains gets removed. Add any identifier
+you found wrong by eye that the checks did not flag.
+
+Then follow [Removing entries that are wrong](#removing-entries-that-are-wrong)
+below.
+
+Afterwards, re-run the audit to confirm:
+
+```bash
+podman exec crucible-py python /app/backend/scripts/audit_chemicals.py
+./verify-deploy.sh https://localhost:49160
+```
+
+**You should see** `0 look doubtful` and `no dangling chemical links`.
+
+#### Recovering what you removed
+
+A removed compound is usually still a real substance with a valid CAS — it was
+the *lookup* that failed, not the source data. Re-proposing it now returns the
+right chemistry:
+
+```bash
+podman exec crucible-py python /app/backend/scripts/propose_chemicals.py \
+  /app/backend/unlinked.csv -o /app/backend/proposed-v2.xlsx
+```
+
+Review that file before uploading. That review is the step which would have
+prevented the whole episode.
+
+> The files these procedures produce — `unlinked.csv`, `proposed*.xlsx`,
+> `suspect.txt`, `bad-ids.txt` — carry real compound names and are gitignored.
+> Keep the removal list somewhere outside the repository as a record of what was
+> removed and when.
 
 ### Removing entries that are wrong
 
@@ -490,6 +590,32 @@ among the passes.
 ---
 
 ## When something goes wrong
+
+**If instead:** a registered compound carries chemistry belonging to a
+different substance — this happened to 19 entries and is worth understanding.
+
+PubChem's `xref/rn` endpoint returns **every compound whose record references a
+registry number**, ordered by identifier rather than by relevance. Asking for
+`95-47-6` returns three compounds, and o-xylene is the *second*:
+
+```
+CAS 95-47-6  →  [4831, 7237, 12245919]
+                 └ Pipemidic Acid   └ o-Xylene
+```
+
+An earlier version took the first, which was a coin toss — caffeine happened to
+win, o-xylene did not. The compound that genuinely owns a registry number lists
+it among its own synonyms and the others do not, so candidates are now checked
+and one extra request settles it. Where nothing claims the number the lookup
+returns nothing, and the run reports how often that happened rather than
+guessing.
+
+**Identification was never affected by this**, because it requires a compound's
+name and its CAS to resolve to the *same* PubChem compound. When the CAS lookup
+went astray the name lookup did not, they disagreed, and the entry was
+rejected — which is precisely what that rule is for. Only the proposal path,
+which looks up by CAS alone with nothing to corroborate it, let the fault
+through.
 
 **If instead:** the summary says *"PubChem throttled this run N times"* —
 PubChem was refusing requests because you were asking too fast. Compounds it

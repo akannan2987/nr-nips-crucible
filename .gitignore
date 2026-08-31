@@ -111,3 +111,17 @@ docs/excel-templates/**/*.csv
 !docs/excel-templates/**/*_template.xlsx
 !docs/excel-templates/**/*_template.sdf
 !docs/excel-templates/samples/Upload_Sample_Template.xlsx
+
+# --- Registry maintenance working files ---------------------------
+# Produced in the checkout while auditing the chemical registry:
+# reports of unlinked compounds, proposals for review, lists of entries
+# to remove. They carry real compound names from laboratory data, so a
+# stray `git add -A` on the authoring machine would publish them — and
+# check-public-safe.sh would not object, because it looks for secret
+# paths and internal identifiers, not compound lists.
+unlinked*.csv
+proposed*.csv
+proposed*.xlsx
+suspect*.txt
+bad-ids*.txt
+audit*.csv

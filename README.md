@@ -126,6 +126,13 @@ Neither upload limit is a hard cap. They are the volumes the system has been
 exercised at; see [About the data](#about-the-data-honesty-notes) for what that
 does and does not promise.
 
+**In practice**, one deployment holds 49,065 screening records from a single
+packaging-migration export, covering 3,500 distinct compounds. 686 of those are
+identified against a chemical registry, linking 43,631 rows (89%) to a compound
+entry. The remainder show the compound name their source file recorded —
+overwhelmingly because that file carries no CAS number for them, which no
+software can work around.
+
 ---
 
 ## 🚀 Quick Start
@@ -671,6 +678,7 @@ it was started.
 | P.5a | **macOS verification.** A full walk of the install guide from a simulated fresh clone, checklist V1–V7. | 2026-08 | ✅ Passed |
 | — | **Documentation rewritten for a newcomer**: the glossary, the API cookbook, release notes, and one home per topic across the guides. | 2026-08-24 (v2.1.0) | ✅ Complete |
 | P.5b | **RHEL8 production verification**, checklist V1–V9. V8 (external browser access) confirmed against the real access log. V9 (surviving a reboot) is the one item still untested. | in progress | 🔄 Open |
+| T | **Template ingestion of real data.** A `TemplateSpec` describes how to read a laboratory export — detection, column map, per-field cleaning — as data rather than code. First one loads a 49,000-row packaging-migration export: cp1252 encoding, Excel formula errors, repeated header rows from concatenated exports, multi-value CAS cells. Adds a data-driven screening table (filter, sort, export), a read-only SQL console, and two-stage chemical identification. | 2026-08-25 | ✅ Complete |
 | D | **Schema normalisation** — promote the frequently filtered fields out of JSON into real indexed columns, without changing the API. | next | ⏳ Planned |
 | E | **Authentication** — `/api/*` is currently open to anyone who can reach the port. | after D | ⏳ Planned |
 
@@ -702,7 +710,17 @@ hard to build, they are blocked on a decision or on each other.
   identity the only thing to limit by is IP address, which on a corporate
   network is often one proxy.
 - **Faceted search and filtering.** *Waits on:* schema normalisation. Counting
-  facets across a JSON column means reading every row.
+  facets across a JSON column means reading every row — measurable now that a
+  real dataset is loaded: an unfiltered page is answered from an index in
+  milliseconds, while a filtered one reads the JSON of every row.
+- **Ingesting the remaining laboratory templates.** The first is done and the
+  pattern holds; each further one should be a spec rather than a parser.
+  *Waits on:* nothing but the files.
+- **Compound-name normalisation.** Around 456 compounds carry a valid CAS
+  number but a name written in a house style external databases do not
+  recognise (`tertiobutyl` where they expect `tert-butyl`). Normalising those,
+  or holding them as synonyms, would identify them without weakening the
+  matching rule. *Waits on:* nothing.
 - **Data export (Excel, CSV, JSON).** *Waits on:* nothing. Simply not built
   yet — the API already returns the data, so this is a convenience layer.
 - **Batch upload validation.** Reporting every problem in a file at once
@@ -778,6 +796,37 @@ in a folder that no longer exists, and every `podman` command fails with
 that failure prints nothing — which is precisely what the guide says a pass
 looks like. The uninstall guide now starts those blocks with `cd ~`.
 
+**A "dry run" that wrote to the database.** The preview mode of a linking job
+reported *"Dry run — nothing written"* and had already written 1,897 rows. It
+recorded each link through a helper that commits on every call, so the closing
+rollback had nothing left to undo. *Lesson: a rollback cannot undo a function
+that already committed — check what the helpers do, not what the flag says.*
+
+**A job that looked hung was doing ten thousand disk commits.** The same helper
+meant one transaction per row against a 116 MB file. No output for minutes,
+indistinguishable from a crash. *Lesson: batch writes, and print progress often
+enough that a slow network cannot be mistaken for a dead process.*
+
+**A cache keyed on a number that never stopped moving.** The column metadata was
+cached against the count of registered compounds, so that a "how many are
+identified" figure stayed fresh. During identification that count changes every
+few seconds, so the cache never once hit, and every request re-read all 49,000
+records while competing with the job for the database. It surfaced as dropped
+connections.
+
+**A feature that had shipped, reported missing.** `index.html` was served with
+no cache headers. It names a content-hashed script bundle, so a cached copy
+pinned the browser to an old build no matter how many times it was reloaded.
+
+**`cut -d,` on a file full of commas.** A report summarised with `cut` turned
+`Phenol, 2,4-di-tertiobutyl` into fragments and produced a meaningless summary.
+*Lesson: CSV has quoting rules; parse it with something that knows them.*
+
+**Deleting a compound left its measurements pointing at nothing.** The delete
+endpoint removes the entry without unlinking the rows that reference it. Fixed
+with a tool that unlinks first — but the endpoint still behaves that way, which
+is recorded rather than hidden.
+
 ---
 
 ## About the data (honesty notes)
@@ -843,4 +892,4 @@ For support, contact: `<maintainer-email>`
 
 ---
 
-**Last Updated:** August 25, 2026
+**Last Updated:** August 31, 2026

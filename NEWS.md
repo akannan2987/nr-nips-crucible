@@ -10,6 +10,54 @@ change you are getting.
 
 ---
 
+## v2.2.0 — 2026-08-25 — "Real data"
+
+The first release to carry a laboratory's own export rather than synthetic
+templates. One deployment now holds 49,065 screening records.
+
+**Added**
+- **Template-driven ingestion.** A `TemplateSpec` describes how to read a
+  laboratory file — how to recognise it, what its columns mean, how each one is
+  cleaned — as data rather than code. Adding a template should mean adding a
+  spec; if it needs a new parser, the design has failed.
+- **A data-driven screening table.** Columns come from the records themselves,
+  because files from different laboratories share almost no field names. Raw
+  view, column chooser, per-column filters, sorting on every column, and export
+  to CSV, TSV, XLSX or JSON — including the untouched source row.
+- **Chemical identification**, in two stages: match against compounds already
+  registered, then consult PubChem, registering only where a compound's name
+  and its CAS number agree. See
+  [docs/CHEMICAL-IDENTIFICATION.md](docs/CHEMICAL-IDENTIFICATION.md).
+- **A read-only SQL console** (`/api/query` and a Query tab). The database
+  connection is opened read-only, so writes are refused by SQLite itself rather
+  than by a filter that could be worked around.
+- **`verify-deploy.sh`** — sixteen post-deploy checks in one command.
+- Maintenance tools for the registry: proposing compounds for review, merging
+  entries that describe one substance, and removing entries without orphaning
+  the measurements that reference them.
+
+**Changed**
+- Bulk inserts commit once rather than once per row. The previous behaviour
+  turned a 49,000-row import into 49,000 flushes to disk.
+- `index.html` is served `no-cache`. It names a content-hashed bundle, so a
+  cached copy pinned browsers to an old build.
+
+**Known limitations (deliberate)**
+- **Roughly three quarters of unidentified compounds carry no CAS number in the
+  source file.** No identification strategy can work from a free-typed name
+  alone; the fix is upstream, in the export.
+- Identification is strict by design: a compound is registered only when two
+  independent identifiers agree. That leaves real compounds unidentified when
+  their name is written in a house style — a trade made knowingly, in favour of
+  never attaching a measurement to the wrong substance.
+- `DELETE /api/chemicals/:id` still removes an entry without unlinking the rows
+  that reference it. Use `scripts/remove_chemicals.py` until the contract can
+  change.
+- `/api/*` remains unauthenticated, which the query console makes more
+  conspicuous.
+
+---
+
 ## v2.1.0 — 2026-08-24 — "Written for a newcomer"
 
 A documentation release. No application code changed; the app behaves

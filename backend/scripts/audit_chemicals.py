@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""Find registered compounds whose formula contradicts their own name.
+
+A compound registered from `propose_chemicals.py` carries the laboratory's name
+and the chemistry PubChem holds for that CAS number. If the CAS is wrong, or
+PubChem cross-references it oddly, the entry ends up describing a different
+substance. On 2026-08-25 a real entry paired `Glycerol, 2-monohexadecanoate`
+with `2-Methoxyaniline` — C7H9NO where a C19 glycerol ester belongs.
+
+**Comparing the two *names* does not work.** `Monostearin` and
+`Glycerol, 1-monooctadecanoate` are the same substance and share no words;
+`2,4-Di-tert-butylphenol` and `Phenol, 2,4-di-tertiobutyl` likewise. Word
+overlap flags those as suspicious and is worse than useless.
+
+Chemistry is checkable. A name saying *hexadecanoate* claims a sixteen-carbon
+chain; if the formula has seven carbons, the two disagree and no naming
+convention explains it. That is what this looks for.
+
+It decides nothing — it sorts, so somebody reviewing hundreds of entries meets
+the doubtful ones first instead of hunting for them.
+
+    .venv/bin/python scripts/audit_chemicals.py              # the suspicious ones
+    .venv/bin/python scripts/audit_chemicals.py --all        # every entry, ranked
+    .venv/bin/python scripts/audit_chemicals.py -o ids.txt   # ids for remove_chemicals.py
+"""
+
+import argparse
+import os
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+os.environ.setdefault("AUTO_INIT_DB", "false")
+
+from app.database import SessionLocal  # noqa: E402
+from app.models import Chemical  # noqa: E402
+from app.store import all_docs  # noqa: E402
+
+# Chain-length stems and the carbons each implies. These are the standard
+# multipliers in organic nomenclature: a name containing 'hexadec' claims a
+# sixteen-carbon chain, whatever else it says.
+CHAIN_CARBONS = {
+    "octacos": 28, "hexacos": 26, "tetracos": 24, "docos": 22, "eicos": 20,
+    "octadec": 18, "heptadec": 17, "hexadec": 16, "pentadec": 15, "tetradec": 14,
+    "tridec": 13, "dodec": 12, "undec": 11, "decan": 10, "nonan": 9, "octan": 8,
+}
+
+# Words implying a large molecule, used as a weaker second check.
+HEAVY_HINTS = ("glycerol", "phosphite", "phosphate", "oligomer", "phthalate", "citrate")
+
+
+def implied_carbons(name: str) -> tuple[int, str]:
+    """The longest carbon chain the name claims, and the stem that claimed it."""
+    lowered = (name or "").lower()
+    best, source = 0, ""
+    for stem, count in CHAIN_CARBONS.items():
+        if stem in lowered and count > best:
+            best, source = count, stem
+    return best, source
+
+
+def formula_carbons(formula: str) -> int:
+    """Carbon count from a molecular formula; 0 when it cannot be read."""
+    match = re.match(r"^C(\d*)(?![a-z])", (formula or "").strip())
+    if not match:
+        return 0
+    return int(match.group(1)) if match.group(1) else 1
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--all", action="store_true", help="show every entry, not just doubtful")
+    parser.add_argument("-o", "--out", help="write the flagged identifiers to a file")
+    args = parser.parse_args()
+
+    db = SessionLocal()
+    rows = []
+    for doc in all_docs(db, Chemical):
+        title = doc.get("pubchem_title")
+        if not title:
+            continue  # nothing was retrieved for this entry
+
+        try:
+            weight = float(doc.get("molecular_weight") or 0)
+        except (TypeError, ValueError):
+            weight = 0.0
+        name = doc.get("name") or ""
+        claimed, stem = implied_carbons(name)
+        actual = formula_carbons(doc.get("molecular_formula"))
+
+        reasons = []
+        # The strong signal: the name names a chain the formula cannot hold.
+        if claimed and actual and actual < claimed:
+            reasons.append(
+                f"name says '{stem}…' ({claimed} carbons) but the formula has {actual}"
+            )
+        # Weaker, and only where the first found nothing.
+        if not reasons and weight and weight < 200:
+            hit = next((h for h in HEAVY_HINTS if h in name.lower()), None)
+            if hit:
+                reasons.append(f"name says '{hit}' but the weight is only {weight:g}")
+
+        # Severity for sorting: how far short the formula falls.
+        gap = (claimed - actual) if reasons and claimed and actual else 0
+        rows.append((-gap, reasons, doc))
+
+    rows.sort(key=lambda r: (r[0], not r[1]))
+    flagged = [r for r in rows if r[1]]
+    shown = rows if args.all else flagged
+
+    print(f"{len(rows)} entries carry a PubChem name to compare against.")
+    print(f"{len(flagged)} look{'s' if len(flagged) == 1 else ''} doubtful.\n")
+
+    for _, reasons, doc in shown:
+        mark = "  ??" if reasons else "  ok"
+        print(f"{mark}  {doc['chemical_id']}")
+        print(f"        yours   : {doc.get('name')}")
+        print(f"        pubchem : {doc.get('pubchem_title')}")
+        print(f"        cas={doc.get('cas_number')}  formula={doc.get('molecular_formula')}"
+              f"  mw={doc.get('molecular_weight')}")
+        for reason in reasons:
+            print(f"        -> {reason}")
+        print()
+
+    if args.out and flagged:
+        Path(args.out).write_text("".join(f"{d['chemical_id']}\n" for _, _, d in flagged))
+        print(f"{len(flagged)} identifiers written to {args.out}")
+        print("Review them, delete the lines you want to KEEP, then:")
+        print(f"  scripts/remove_chemicals.py --from-file {args.out} --apply")
+
+    print(
+        "\nThis flags contradictions it can measure, not everything that is wrong.\n"
+        "An entry it passes may still be mismatched — a wrong CAS pointing at a\n"
+        "compound of similar size will not show up here. Read the pairs."
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

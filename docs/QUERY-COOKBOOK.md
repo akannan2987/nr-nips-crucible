@@ -11,6 +11,9 @@ way they do.
 The **Query** page in the application runs these. Everything here also works
 over the API.
 
+> **New here?** [The Playbook](PLAYBOOK.md) Part 7 introduces the query
+> console and why the data is shaped the way it is.
+
 ## Table of Contents
 
 - [Why queries look unusual here](#why-queries-look-unusual-here)
@@ -294,4 +297,4 @@ planned piece of work.
 
 ---
 
-**Last Updated:** August 25, 2026
+**Last Updated:** August 31, 2026

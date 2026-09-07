@@ -115,6 +115,8 @@ result for that compound, across every sample and every simulant.
 
 ## How a compound gets identified
 
+![Stage 1 links a row when either the CAS or the name matches the curated registry; stage 2 asks PubChem and registers only when name and CAS resolve to the same compound](img/fig_two_stage_identification.svg)
+
 Two stages, and they are tried in order. **The second is only reached if the
 first finds nothing.**
 

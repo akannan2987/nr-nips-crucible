@@ -29,6 +29,8 @@ and tests use `Base.metadata.create_all()` (`AUTO_INIT_DB=true`)
 
 ### The hybrid document pattern
 
+![One table row: indexed columns beside the doc column that holds the whole record](img/fig_doc_is_truth.svg)
+
 The original records were schemaless — records gain/lose fields depending on how they
 were created (manual POST, Excel upload, SDF upload), and `PUT` merges
 arbitrary keys. To keep API responses byte-identical, each table stores the

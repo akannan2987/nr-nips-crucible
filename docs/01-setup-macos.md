@@ -52,6 +52,8 @@ machine), including HTTPS. Companion documents: [macOS Uninstall](01-uninstall-m
 
 ### What you are actually installing
 
+![The same container image runs on macOS, Windows and RHEL 8; the database, certificates and settings are mounted in from your machine and answers come out on port 49160](img/fig_container_lunchbox.svg)
+
 Crucible is a lab-data web application — chemicals, samples, screening,
 toxicology. It has two halves: a **backend** (the part that stores and serves the
 data, written in Python) and a **frontend** (the part you look at in a browser,
@@ -697,6 +699,8 @@ them mean you did something wrong.
 ---
 
 ## What you have now
+
+![Set up once: runtime, clone, one command, checklist; then the loop: edit, test, rebuild, verify, publish](img/fig_setup_flow.svg)
 
 If you followed along, you have:
 

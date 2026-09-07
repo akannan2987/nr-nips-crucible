@@ -1,0 +1,44 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 360' width='940' height='360' role='img' aria-label='Stage 1 links a row when either the CAS or the name matches the curated registry; stage 2 asks PubChem and registers only when name and CAS agree' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='359' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>Chemical identification: two stages, opposite rules, on purpose</text>
+<rect x='30' y='80' width='170' height='90' rx='8' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='115' y='104' font-size='13' fill='#1f2937' text-anchor='middle' font-weight='bold'>a screening row</text>
+<rect x='43.7' y='131.7' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='43.7' y='137.89999999999998' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='43.7' y='144.1' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='49.900000000000006' y='131.7' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='49.900000000000006' y='137.89999999999998' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='49.900000000000006' y='144.1' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='56.1' y='131.7' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='56.1' y='137.89999999999998' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='56.1' y='144.1' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<text x='140' y='132' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>name: Phenol, 2,4-di-…</text>
+<text x='140' y='147' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>CAS: 96-76-4</text>
+<line x1='202' y1='125' x2='250' y2='125' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='252' y='70' width='260' height='110' rx='8' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='382' y='94' font-size='13' fill='#4f46e5' text-anchor='middle' font-weight='bold'>Stage 1 — your own registry</text>
+<text x='382' y='116' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>at upload, no network</text>
+<text x='382' y='132' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>CAS matches  OR  name matches</text>
+<text x='382' y='148' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>→ link</text>
+<text x='382' y='168' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>trusted: the registry is curated</text>
+<line x1='514' y1='125' x2='560' y2='125' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='562' y='70' width='348' height='110' rx='8' fill='#fff1f2' stroke='#be123c' stroke-width='1.2'/>
+<text x='736' y='94' font-size='13' fill='#be123c' text-anchor='middle' font-weight='bold'>Stage 2 — PubChem, a background job</text>
+<text x='736' y='116' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>name AND CAS must resolve</text>
+<text x='736' y='132' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>to the SAME compound</text>
+<text x='736' y='148' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>→ register it, then link</text>
+<text x='736' y='168' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>inference: it must corroborate itself</text>
+<path d='M 382 182 L 382 230' fill='none' stroke='#4f46e5' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='292' y='232' width='180' height='40' rx='6' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='382' y='257' font-size='11' fill='#4f46e5' text-anchor='middle' font-weight='normal'>linked to a registry entry</text>
+<path d='M 640 182 L 640 230' fill='none' stroke='#be123c' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='550' y='232' width='180' height='40' rx='6' fill='#ffffff' stroke='#be123c' stroke-width='1.2'/>
+<text x='640' y='257' font-size='11' fill='#be123c' text-anchor='middle' font-weight='normal'>registered and linked</text>
+<path d='M 830 182 L 830 230' fill='none' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<rect x='740' y='232' width='180' height='40' rx='6' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='830' y='257' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>unlinked report: the reason</text>
+<text x='470.0' y='300' font-size='12' fill='#1f2937' text-anchor='middle' font-weight='normal'>the strict rule rejects most house-style names (tertiobutyl for tert-butyl) — chosen knowingly:</text>
+<text x='470.0' y='318' font-size='12' fill='#1f2937' text-anchor='middle' font-weight='normal'>when one identifier was trusted alone, 19 compounds were registered with another substance&apos;s chemistry</text>
+<text x='470.0' y='342' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>everyday version: your own staff list needs one matching detail; a stranger&apos;s claim needs photo AND number to agree</text>
+</svg>

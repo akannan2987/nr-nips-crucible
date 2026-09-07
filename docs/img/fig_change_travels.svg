@@ -1,0 +1,42 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 250' width='940' height='250' role='img' aria-label='Seven steps: edit, test, gate, push on the Mac; mirror, deploy, confirm on the VM; then back to edit' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='249' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>How a change travels — the loop after setup, on one screen</text>
+<rect x='30' y='80' width='116' height='70' rx='8' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='88' y='106' font-size='14' fill='#4f46e5' text-anchor='middle' font-weight='bold'>edit</text>
+<text x='88' y='128' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>on develop</text>
+<text x='88' y='168' font-size='10' fill='#4f46e5' text-anchor='middle' font-weight='normal'>Mac</text>
+<line x1='148' y1='115' x2='160' y2='115' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='162' y='80' width='116' height='70' rx='8' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='220' y='106' font-size='14' fill='#4f46e5' text-anchor='middle' font-weight='bold'>test</text>
+<text x='220' y='128' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>90 passed</text>
+<text x='220' y='168' font-size='10' fill='#4f46e5' text-anchor='middle' font-weight='normal'>Mac</text>
+<line x1='280' y1='115' x2='292' y2='115' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='294' y='80' width='116' height='70' rx='8' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='352' y='106' font-size='14' fill='#4f46e5' text-anchor='middle' font-weight='bold'>gate</text>
+<text x='352' y='128' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>✓ SAFE TO PUSH</text>
+<text x='352' y='168' font-size='10' fill='#4f46e5' text-anchor='middle' font-weight='normal'>Mac</text>
+<line x1='412' y1='115' x2='424' y2='115' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='426' y='80' width='116' height='70' rx='8' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='484' y='106' font-size='14' fill='#4f46e5' text-anchor='middle' font-weight='bold'>push</text>
+<text x='484' y='128' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>3 branches</text>
+<text x='484' y='168' font-size='10' fill='#4f46e5' text-anchor='middle' font-weight='normal'>Mac</text>
+<line x1='544' y1='115' x2='556' y2='115' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='558' y='80' width='116' height='70' rx='8' fill='#ffffff' stroke='#be123c' stroke-width='1.2'/>
+<text x='616' y='106' font-size='14' fill='#be123c' text-anchor='middle' font-weight='bold'>mirror</text>
+<text x='616' y='128' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>public → private</text>
+<text x='616' y='168' font-size='10' fill='#be123c' text-anchor='middle' font-weight='normal'>VM</text>
+<line x1='676' y1='115' x2='688' y2='115' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='690' y='80' width='116' height='70' rx='8' fill='#ffffff' stroke='#be123c' stroke-width='1.2'/>
+<text x='748' y='106' font-size='14' fill='#be123c' text-anchor='middle' font-weight='bold'>deploy</text>
+<text x='748' y='128' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>pull, rebuild if code</text>
+<text x='748' y='168' font-size='10' fill='#be123c' text-anchor='middle' font-weight='normal'>VM</text>
+<line x1='808' y1='115' x2='820' y2='115' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='822' y='80' width='116' height='70' rx='8' fill='#ffffff' stroke='#be123c' stroke-width='1.2'/>
+<text x='880' y='106' font-size='14' fill='#be123c' text-anchor='middle' font-weight='bold'>confirm</text>
+<text x='880' y='128' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>only 6 workbooks differ</text>
+<text x='880' y='168' font-size='10' fill='#be123c' text-anchor='middle' font-weight='normal'>VM</text>
+<path d='M 880 152 L 880 200 L 48 200 L 48 154' fill='none' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<text x='470.0' y='222' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>a rebuild is needed only when backend/, client/ or the Dockerfile changed; documentation needs the pull alone</text>
+<text x='470.0' y='240' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>full commands with expected output: docs/03-git-workflow.md · one-screen version: the handbook cheat sheet</text>
+</svg>

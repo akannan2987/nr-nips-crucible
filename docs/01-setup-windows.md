@@ -44,6 +44,8 @@ private one is for the production VM only.
 
 ### What you are actually installing
 
+![The same container image runs on macOS, Windows and RHEL 8; the database, certificates and settings are mounted in from your PC and answers come out on port 49160](img/fig_container_lunchbox.svg)
+
 Crucible has a **backend** (stores and serves the data, Python) and a
 **frontend** (what you see in the browser, React). You install neither
 directly. You install one thing that carries both:
@@ -402,6 +404,8 @@ WSL 2 forwards ports automatically. Sections 1.3 (lingering), 1.4
 ---
 
 ## What you have now
+
+![Set up once: runtime, clone, one command, checklist; then the loop: edit, test, rebuild, verify, publish](img/fig_setup_flow.svg)
 
 - **Git for Windows** with Git Bash, and **Docker Desktop** with its hidden
   Linux machine.

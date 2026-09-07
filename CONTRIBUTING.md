@@ -1,913 +1,247 @@
 [← README](README.md) · [Handbook](docs/HANDBOOK.md) · [Glossary](docs/00-glossary.md)
 
-# Contributing to Crucible: Pandora Toolbox Enhancement (v2.0)
+# Contributing to Crucible
 
-Thank you for your interest in contributing to Crucible! This document provides guidelines and instructions for contributing.
-
----
-
-## Table of Contents
-
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [Development Workflow](#development-workflow)
-- [Pre-Push Checklist (Before Pushing to Develop)](#pre-push-checklist-before-pushing-to-develop)
-- [Promoting Changes Across Branches](#promoting-changes-across-branches)
-- [Coding Standards](#coding-standards)
-- [Commit Guidelines](#commit-guidelines)
-- [Pull Request Process](#pull-request-process)
-- [Testing](#testing)
-- [Documentation](#documentation)
-- [File Structure](#file-structure)
-- [Common Tasks](#common-tasks)
-- [Development Cleanup](#development-cleanup)
-- [Getting Help](#getting-help)
-- [Recognition](#recognition)
-- [License](#license)
+**Who this is for:** anyone changing this repository — including me, next
+month. It says how the work is organised, the loop every change goes through,
+and the norms that keep the code and the documentation trustworthy. The
+sequence of commands for publishing lives in one place,
+[`docs/03-git-workflow.md`](docs/03-git-workflow.md), and is linked from here
+rather than repeated.
+**Prerequisites:** a completed setup guide for your platform
+([macOS](docs/01-setup-macos.md) · [RHEL 8](docs/01-setup-rhel8.md) ·
+[Windows, untested](docs/01-setup-windows.md)) and the test virtual environment
+from its V7 check.
 
 ---
 
-## Code of Conduct
+## Contents
 
-### Our Pledge
-
-We are committed to providing a welcoming and inspiring community for all. Please be respectful and constructive in all interactions.
-
-### Our Standards
-
-**Positive behavior includes:**
-- Using welcoming and inclusive language
-- Being respectful of differing viewpoints
-- Gracefully accepting constructive criticism
-- Focusing on what is best for the community
-
-**Unacceptable behavior includes:**
-- Harassment or discriminatory language
-- Trolling or inflammatory comments
-- Public or private harassment
-- Publishing others' private information
+1. [Ways to contribute](#1-ways-to-contribute)
+2. [Branch model](#2-branch-model)
+3. [The day-to-day loop](#3-the-day-to-day-loop)
+4. [The push sequence](#4-the-push-sequence)
+5. [Release flow](#5-release-flow)
+6. [Code norms](#6-code-norms)
+7. [Documentation norms](#7-documentation-norms)
+8. [Review norms](#8-review-norms)
 
 ---
 
-## Getting Started
+## 1. Ways to contribute
 
-### Prerequisites
+- **Follow a guide literally and report where it disagrees with the machine.**
+  Every bug in [`docs/11-lessons-learned.md`](docs/11-lessons-learned.md) was
+  found that way; it is the most valuable contribution this project gets.
+  The Windows guide has never been walked and is waiting for exactly this.
+- **Add a laboratory template.** A new export format should be a new
+  `TemplateSpec` (data), not a new parser (code); see
+  [phase 04](docs/04-phase-tutorials/phase-04-template-ingestion.md). If it
+  needs new code, say so — that is a design finding.
+- **Fix a lesson that is still open.** The roadmap's
+  [planned items](docs/05-roadmap.md#planned-items-and-what-each-waits-on)
+  list the ones that wait on nothing.
+- **Improve a document.** A missing glossary term, a command without its
+  expected output, a claim that is no longer true. Small, welcome, quick to
+  review.
 
-- Python 3.12+ (FastAPI backend in `backend/`)
-- Node.js 18+ and npm 8+ (to build/run the React client)
-- Git
-- OpenSSL (for certificate verification)
-- Podman or Docker (for container testing)
-- Basic knowledge of React and FastAPI
-
-### Clone the Public Repo
-
-Crucible uses a **dual-repo model** (see [docs/03-git-workflow.md](docs/03-git-workflow.md) §2.1):
-the private `nestle-it` repo is the deploy-only source of truth, and the public
-`akannan2987` repo is the sanitized mirror where all changes are authored. The
-Mac authoring folder clones **only the public repo** — the private repo is
-**never** added as a remote on the Mac, so the folder cannot accidentally push
-to it. Content reaches the private repo via the VM mirror folder
-(03-git-workflow.md Flow A steps 6-8).
-
-```bash
-# Clone the PUBLIC repo — this is the Mac authoring folder
-git clone https://github.com/akannan2987/nr-nips-crucible.git
-cd nr-nips-crucible
-git switch develop
-
-# Confirm: origin must be the PUBLIC repo, and nothing else
-git remote -v
-```
-
-### Install Dependencies
-
-```bash
-# Python backend
-cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-
-# React client
-cd ../client && npm install
-```
-
-### Run Development Environment
-
-```bash
-# Terminal 1 — FastAPI (auto-reload) on a side port
-cd backend && .venv/bin/uvicorn app.main:app --reload --port 8000
-
-# Terminal 2 — React dev server, proxying /api to the backend above
-cd client && VITE_API_PROXY_TARGET=http://localhost:8000 npm run dev
-```
+Be constructive and specific; a report that says *what you typed, what you
+saw, what you expected* is worth ten opinions.
 
 ---
 
-## Development Workflow
+## 2. Branch model
 
-### 1. Create a Branch
+Three branches, always on the same commit after a publish:
 
-```bash
-# Update develop (the integration branch)
-git switch develop
-git pull --ff-only origin develop
+| Branch | Role |
+|---|---|
+| `develop` | Where every change is authored and committed |
+| `beta` | Fast-forwarded to `develop` at each push; a staging pointer |
+| `master` | Fast-forwarded to `develop` at each push; **production tracks it** |
 
-# Create feature branch
-git checkout -b feature/your-feature-name
-
-# Or for bug fixes
-git checkout -b fix/bug-description
-```
-
-### Branch Naming Convention
-
-- **Features**: `feature/descriptive-name`
-- **Bug fixes**: `fix/bug-description`
-- **Documentation**: `docs/what-changed`
-- **Refactoring**: `refactor/what-refactored`
-
-### 2. Make Changes
-
-- Write clean, readable code
-- Follow existing code style
-- Add comments for complex logic
-- Update documentation if needed
-
-### 3. Test Your Changes
+They are promoted **by fast-forward only** — one push moves all three onto
+the identical commit:
 
 ```bash
-# Run the backend test suite (contract-parity + unit tests)
-cd backend && .venv/bin/pytest
-
-# Run the app locally and smoke-test all modules:
-# - Upload chemicals via Excel / SDF
-# - Create samples
-# - Add screening & toxicology data
-# - Bulk operations
-# - API endpoints (/api/stats, /api/chemicals, ...)
-```
-
-### 4. Commit Changes
-
-```bash
-git add .
-git commit -m "feat: add bulk export functionality"
-```
-
-See [Commit Guidelines](#commit-guidelines) below.
-
-### 5. Push and Create PR
-
-```bash
-git push origin feature/your-feature-name
-```
-
-Then create a Pull Request on GitHub.
-
----
-
-## Pre-Push Checklist (Before Pushing to Develop)
-
-> ⚠️ **IMPORTANT**: The `develop` branch is the shared integration branch. Follow this checklist **every time** before pushing to avoid breaking the deployment or leaking sensitive files.
-
-### 🛡️ Step 1: Run the Public-Safety Gate
-
-`origin` is the **public** repo, so every push is a public push.
-[docs/03-git-workflow.md](docs/03-git-workflow.md) Golden Rule 4 mandates the
-gate script before every one:
-
-```bash
-./check-public-safe.sh
-# ✅ Must print "✓ SAFE TO PUSH". Do NOT push if it fails —
-#    fix what it lists and re-run.
-```
-
-The script checks tracked secret paths, the template allowlist, and greps for
-internal identifiers — it supersedes the manual checks in Steps 2 and 6 below,
-which are kept as optional deep-dives.
-
-### 🔒 Step 2: Verify No Sensitive Files Are Staged (optional deep-dive)
-
-SSL certificates, private keys, and database files must **never** be committed.
-`check-public-safe.sh` already covers this; run these by hand if you want to
-inspect the staged list yourself.
-
-```bash
-# Check what's staged for commit
-git status
-
-# Look for ANY of these — they should NOT appear:
-#   certs/          *.key    *.crt    *.pem    *.cer
-#   data/           .env     .env.local
-
-# Double-check staged files explicitly
-git diff --cached --name-only | grep -iE '\.(key|crt|pem|cer|p12|pfx)$|certs/|data/|\.env'
-# ✅ This command should return NOTHING. If it returns files, unstage them:
-# git reset HEAD <file>
-```
-
-### 🧪 Step 3: Test the Application Locally
-
-```bash
-# Option A: Quick dev test
-cd backend && .venv/bin/pytest        # backend tests must pass
-cd ../client && npm run dev
-# Open http://localhost:3000 and verify:
-#   - Dashboard loads with stats
-#   - Chemical upload works
-#   - No console errors in browser DevTools
-
-# Option B: Full container test (recommended before pushing)
-./container-py.sh build
-./container-py.sh start-ssl
-
-# Verify HTTPS endpoint responds
-curl --noproxy '*' -k -s https://localhost:49160/api/stats
-# ✅ Should return JSON with chemicals/samples/screening/toxicology counts
-
-# Check container logs for errors
-podman logs --tail 20 crucible-py
-# ✅ Should show uvicorn running with no errors
-
-# Clean up after testing
-./container-py.sh stop
-```
-
-### 📋 Step 4: Verify the Build Succeeds
-
-```bash
-# Build the production frontend
-cd client && npm run build
-# ✅ Should complete without errors
-
-# Build the container image
-./container-py.sh build
-# ✅ Should show "Image built successfully"
-```
-
-### 🔍 Step 5: Review Your Changes
-
-```bash
-# See what files changed
-git --no-pager diff --stat
-
-# Review actual code changes (look for debug code, console.logs, etc.)
-git --no-pager diff
-
-# If changes are already staged:
-git --no-pager diff --cached
-```
-
-**Remove before committing:**
-- `console.log()` debugging statements
-- Hardcoded localhost URLs (use relative paths or environment variables)
-- Commented-out code blocks
-- Temporary test files
-
-### ✅ Step 6: Verify .gitignore Is Intact (optional deep-dive)
-
-`check-public-safe.sh` (Step 1) also covers this; run manually if in doubt.
-
-```bash
-# Ensure .gitignore still protects sensitive files
-cat .gitignore | grep -E 'certs|key|crt|pem|data'
-# ✅ Should show: certs/, *.key, *.crt, *.pem, data/
-
-# Verify no tracked files should be ignored
-git ls-files -i -c --exclude-standard
-# ✅ Should return NOTHING
-```
-
-### 📝 Step 7: Follow Commit Message Conventions
-
-```bash
-# Use conventional commit format
-git commit -m "feat(chemicals): add bulk export to CSV"
-git commit -m "fix(api): handle duplicate chemical IDs"
-git commit -m "docs(readme): update HTTPS setup instructions"
-
-# For multiple changes, use descriptive body:
-git commit -m "feat(upload): add SDF file format support
-
-Add parser for SDF chemical structure files.
-Includes mol_block extraction and validation.
-
-Closes #42"
-```
-
-### 🚀 Step 8: Push to the Public Repo
-
-`origin` on the Mac is the **public** repo. A push promotes `develop`, `beta`,
-and `master` together by fast-forward (see
-[Promoting Changes Across Branches](#promoting-changes-across-branches)):
-
-```bash
-# Re-run the safety gate right before pushing
-./check-public-safe.sh                   # must print "✓ SAFE TO PUSH"
-
-# Pull latest changes from develop first (avoid conflicts)
-git pull --ff-only origin develop
-
-# If there are conflicts, resolve them and test again (Steps 3-4)
-
-# Push develop and fast-forward beta + master to the same commit
 git push origin develop develop:beta develop:master
 ```
 
-The change is now on the **public** repo only. To carry it into the private
-repo, continue with [docs/03-git-workflow.md](docs/03-git-workflow.md)
-**Flow A steps 6-11** (mirror public → private on the VM, then deploy).
+Never use a merge, squash or rebase button to promote `beta` or `master`:
+each mints a new commit and the three branches stop agreeing. A branch that
+shows `ahead N, behind M` has diverged; the realignment recipe is in
+[`03-git-workflow.md` §3](docs/03-git-workflow.md#3-golden-rules).
 
-### 📌 Step 9: Deploy and Verify on the VM
+**Two repositories.** `origin` on a development machine is the **public**
+repository, so every push is a public push. The private repository is filled
+by copying content from the public one on the VM, never the reverse:
+[`03-git-workflow.md` §1](docs/03-git-workflow.md#1-the-two-repositories).
 
-Production pulls from the **private** repo, so a `git pull` there is a no-op
-until the mirror steps (03-git-workflow.md Flow A steps 6-9) have copied your
-change into it. Once they have, deploy from the production folder exactly as in
-Flow A step 10 (folder layout and access: [docs/03-git-workflow.md](docs/03-git-workflow.md) §2.3
-and [docs/01-setup-rhel8.md](docs/01-setup-rhel8.md)):
-
-```bash
-# ▶ VM — production folder
-./container-py.sh backup                        # consistent snapshot → backups/
-# Copy that snapshot OUT of the project folder — backups/ lives inside it
-# and would be destroyed by a --full uninstall:
-cp "$(ls -t backups/crucible-*.db | head -1)" ~/data-backup-$(date +%Y%m%d).db
-git pull
-./container-py.sh rebuild                       # preserves HTTP/HTTPS mode
-curl --noproxy '*' -sSk https://localhost:49160/api/stats   # -k: the cert names the VM's FQDN, not localhost
-
-# Check application in browser
-# https://<vm-hostname>:49160
-```
-
-### 🛑 Quick Reference — DO NOT Push If:
-
-| Check | Command | Expected |
-|-------|---------|----------|
-| Safety gate passes | `./check-public-safe.sh` | `✓ SAFE TO PUSH` |
-| No certs/keys staged | `git diff --cached --name-only \| grep -iE '\.(key\|crt\|pem)'` | Empty output |
-| No data files staged | `git diff --cached --name-only \| grep 'data/'` | Empty output |
-| Backend tests pass | `cd backend && .venv/bin/pytest` | All green |
-| Build succeeds | `cd client && npm run build` | No errors |
-| Container starts | `./container-py.sh build && ./container-py.sh start-ssl` | "Image built successfully" |
-| API responds | `curl -k -s https://localhost:49160/api/stats` | Valid JSON |
-| No debug code | `grep -rn 'console.log' client/src/` | Review & remove |
-| .gitignore intact | `cat .gitignore \| grep certs` | `certs/` present |
+**Feature branches** are optional for a solo author and useful for anyone
+else: `feature/<what>`, `fix/<what>`, `docs/<what>`; merge into `develop` by
+pull request, then promote as above.
 
 ---
 
-## Promoting Changes Across Branches
-
-`develop`, `beta`, and `master` form a **linear promotion chain**. To move a change up the
-chain **while keeping the identical commit SHA on every branch**, promote by **fast-forward** —
-never with GitHub's *Merge / Squash / Rebase and merge* buttons for `beta`/`master`, because
-each of those mints a **new** SHA and causes `ahead/behind` divergence.
-
-> 💡 A branch keeps the same SHA as another **only** when it is advanced by a fast-forward
-> (the ref pointer moves to the exact same commit — no new commit is created). GitHub has no
-> "fast-forward merge" button, so this promotion is done from the CLI.
-
-### Prerequisites
-
-- A local `develop` that tracks the remote:
-  ```bash
-  git fetch origin
-  git switch develop            # first time: git switch -c develop origin/develop
-  ```
-- `beta` and `master` are **fast-forwardable** from `develop` (they carry no commits of their
-  own). If they diverge, realign once (see below) and fast-forward promotion works again.
-- Direct pushes to `beta`/`master` are allowed — branch protection with *"Require a pull
-  request"* will reject the direct fast-forward pushes.
-
-### Standard flow — you are on local `develop`
+## 3. The day-to-day loop
 
 ```bash
-# 1. Commit your change on develop — this is the single SHA that lands on all three branches
-git add -A
-git commit -m "feat(scope): describe the change"
+# 1. be on develop and current
+cd ~/Documents/Work/pandora_toolbox/nr-nips-crucible
+git switch develop && git pull --ff-only origin develop
 
-# 2. Push develop AND fast-forward beta + master to that SAME commit (one command)
-git push origin develop develop:beta develop:master
+# 2. edit code or docs
+
+# 3. the three checks, every time
+cd backend && .venv/bin/pytest -q && cd ..     # expect: 90 passed
+bash -n <any-edited>.sh                        # shell scripts must parse
+./check-public-safe.sh                         # expect: ✓ SAFE TO PUSH
+
+# 4. if code changed: rebuild and probe, for real
+./container-py.sh rebuild
+curl --noproxy '*' -sS http://localhost:49160/api/stats
+
+# 5. commit and push (section 4)
 ```
 
-`develop:beta` / `develop:master` move those remote refs onto develop's exact commit, so
-`develop`, `beta`, and `master` all end up on the **identical SHA**.
+Three self-checks before the commit:
 
-Explicit, safety-checked variant (`--ff-only` errors instead of creating a new SHA if a branch
-cannot be fast-forwarded):
-
-```bash
-git push origin develop
-git switch beta   && git merge --ff-only develop && git push origin beta
-git switch master && git merge --ff-only beta    && git push origin master
-git switch develop
-```
-
-### Verify all three match
-
-```bash
-git fetch origin
-for b in develop beta master; do echo "$b -> $(git rev-parse --short origin/$b)"; done
-# ✅ all three print the SAME short SHA
-```
-
-### Keep your local branches in sync
-
-After promoting, your local `master` (and any local `beta`) is simply **behind** its remote by
-the commit(s) you just pushed — a clean **fast-forward**, *not* a divergence. That is the payoff
-of promoting by fast-forward instead of a merge/rebase button. Bring them up to date:
-
-```bash
-git fetch origin
-git branch -f master origin/master      # fast-forward local master without checking it out
-# git branch -f beta origin/beta        # repeat if you keep a local beta
-```
-
-Or, when the branch is checked out:
-
-```bash
-git switch master
-git pull --ff-only origin master        # refuses (instead of merging) if it ever diverged
-git switch develop
-```
-
-> `git branch -f <branch> origin/<branch>` fast-forwards safely **only** when the local branch is
-> an **ancestor** of the remote — true right after a clean promotion (`git branch -vv` shows
-> `behind N`). If it ever shows `ahead N, behind M`, that is real divergence — use
-> *Realigning a diverged branch* below instead.
-
-### Realigning a diverged branch (one-time fix)
-
-If `git branch -vv` shows `ahead N, behind M`, or the branches show different SHAs for
-identical content, collapse them onto one commit. This example points `develop` and `beta` at
-`master`'s commit (so the protected `master` is not force-pushed):
-
-```bash
-git fetch origin
-git push --force-with-lease origin origin/master:develop origin/master:beta
-git switch master && git reset --hard origin/master     # sync local master
-```
-
-> ⚠️ `--force-with-lease` rewrites the shared `develop`/`beta` refs — coordinate with the team,
-> and note branch protection may block it. It is content-safe **only** when all branches already
-> hold identical content.
-
-### ❌ What breaks SHA parity (avoid)
-
-- GitHub **"Rebase and merge" / "Squash and merge" / "Create a merge commit"** to promote to `beta`/`master`.
-- Committing directly on `beta` or `master`.
-- `git pull` on a branch that was rebase/squash-merged on the remote — use `git reset --hard origin/<branch>` instead.
-
-> Use PRs (any merge strategy) **only** for `feature/* → develop`. Promote `develop → beta → master` by fast-forward.
+- **Contract.** If a parity test fails, you have changed the public API.
+  Propose the change, show the failing test, and wait for sign-off rather
+  than editing the assertion.
+- **Schema.** If a model changed, there is an Alembic revision, and
+  `cd backend && .venv/bin/alembic check` reports no drift.
+- **Data jobs.** If a script writes to the database, every commit point is
+  gated on `--apply`, writes are batched with progress output, and the dry
+  run has been proven dry. Lessons 17 and 18 are why.
 
 ---
 
-## Coding Standards
+## 4. The push sequence
 
-### JavaScript/React
+The full sequence — commit on the Mac, push three branches, mirror into the
+private repository on the VM, deploy, confirm the two repositories agree —
+is written once, with expected output at every step, in
+[`03-git-workflow.md` → Flow A](docs/03-git-workflow.md#4-flow-a---a-change-from-start-to-finish).
+The one-screen version is the [handbook's cheat sheet](docs/HANDBOOK.md#a-cheat-sheet).
 
-- Use ES6+ syntax
-- Prefer `const` over `let`, avoid `var`
-- Use arrow functions for callbacks
-- Use destructuring where appropriate
-- Keep functions small and focused
+**Commit messages.** Subject in the imperative, about fifty characters, saying
+what the change does (*Give the interactive architecture page one home*, not
+*docs update*). Body: one bullet per distinct change, each saying what and
+why. No type prefixes, no ticket numbers, no trailers naming any tool.
+Examples: `git log --format='%s' -15`.
 
-**Example:**
-
-```javascript
-// Good
-const getChemicals = async ({ page = 1, limit = 20 }) => {
-  const response = await api.get('/chemicals', { params: { page, limit } });
-  return response.data;
-};
-
-// Avoid
-function getChemicals(page, limit) {
-  page = page || 1;
-  limit = limit || 20;
-  var response = api.get('/chemicals', { params: { page: page, limit: limit } });
-  return response.data;
-}
-```
-
-### React Components
-
-- Use functional components with hooks
-- Keep components small and reusable
-- Use meaningful prop names
-- Add PropTypes or TypeScript types
-
-**Example:**
-
-```jsx
-// Good
-const ChemicalCard = ({ chemical, onDelete }) => {
-  const handleDelete = () => onDelete(chemical.id);
-  
-  return (
-    <div className="card">
-      <h3>{chemical.name}</h3>
-      <button onClick={handleDelete}>Delete</button>
-    </div>
-  );
-};
-
-// Avoid large components with multiple responsibilities
-```
-
-### Backend — Python (FastAPI, `backend/`)
-
-- Type hints everywhere; docstrings on public functions
-- Pydantic models for request bodies (kept lenient — see `backend/app/schemas.py`)
-- **API parity is the contract**: any change to a route must keep the response
-  shape identical to `docs/08-api-reference.md` and pass `backend/tests/` (`.venv/bin/pytest`)
-- Keep router files thin; business logic lives in `store.py` or `utils/`
-- Prefer clear, idiomatic code over clever one-liners; explain advanced
-  constructs (DI, sessions, validators) with a short comment on first use
-
-**Example:**
-
-```python
-# Good — thin router, lenient body, {"error": ...} shape on failure
-@router.post("", status_code=201)
-def add_chemical(body: ChemicalIn, db: Session = Depends(get_db)) -> dict[str, Any]:
-    if find_row(db, Chemical, "chemical_id", body.chemical_id):
-        raise HTTPException(status_code=400, detail="Chemical ID already exists")
-    chemical = {"id": str(uuid.uuid4()), **body.merged_dict(), "created_at": now_iso()}
-    insert_doc(db, Chemical, chemical)
-    return {"message": "Chemical added successfully", "chemical_id": chemical["chemical_id"]}
-```
-
-### CSS/Tailwind
-
-- Use Tailwind utility classes
-- Keep custom CSS minimal
-- Use responsive design classes
-- Follow mobile-first approach
-
-**Example:**
-
-```jsx
-// Good
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-  <Card />
-</div>
-
-// Avoid inline styles
-<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-```
+**Mirror after every public push**, not after every session, so that the two
+histories pair one commit to one commit.
 
 ---
 
-## Commit Guidelines
+## 5. Release flow
 
-We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.
+Versions follow **semantic versioning** and are recorded in
+[`NEWS.md`](NEWS.md): a fix bumps PATCH, a new capability that breaks nothing
+bumps MINOR, a change that would break existing users bumps MAJOR. There are
+no release tags yet; the version lives in the release notes, and tagging
+known-good releases is on the roadmap.
 
-### Commit Message Format
+A release commit carries, in the same commit:
 
-```
-<type>(<scope>): <subject>
+1. The `NEWS.md` entry: what changed, why, and **what the release deliberately
+   did not fix** — limitations get equal billing with features.
+2. The handbook's §0 status box, and its §7 build-log row if a phase ended.
+3. The phase tutorial, if a phase ended, in the shape of the existing ones.
 
-<body>
-
-<footer>
-```
-
-### Types
-
-- **feat**: New feature
-- **fix**: Bug fix
-- **docs**: Documentation changes
-- **style**: Code style changes (formatting, no logic change)
-- **refactor**: Code refactoring
-- **perf**: Performance improvements
-- **test**: Adding or updating tests
-- **chore**: Build process or auxiliary tool changes
-
-### Examples
-
-```bash
-# Feature
-git commit -m "feat(chemicals): add bulk export to CSV"
-
-# Bug fix
-git commit -m "fix(api): handle duplicate chemical IDs properly"
-
-# Documentation
-git commit -m "docs(api): add examples for bulk operations"
-
-# Refactoring
-git commit -m "refactor(dashboard): extract stats card into component"
-
-# With body
-git commit -m "feat(screening): add IC50 calculation
-
-Add automatic IC50 calculation from dose-response curves.
-Supports both linear and logarithmic scales.
-
-Closes #123"
-```
+A phase is one coherent, shippable unit with its own tutorial and its own
+commit. The definition of done: someone who was not in the room can follow
+the tutorial on a blank machine of the stated platform and reach the stated
+checkpoint.
 
 ---
 
-## Pull Request Process
+## 6. Code norms
 
-### Before Submitting
-
-- [ ] Code follows project style guidelines
-- [ ] All tests pass locally
-- [ ] Documentation is updated
-- [ ] Commit messages follow conventions
-- [ ] No console.log or debugging code
-- [ ] No merge conflicts with develop
-
-### PR Title
-
-Follow commit message format:
-
-```
-feat(chemicals): add bulk export functionality
-fix(api): resolve pagination issue
-docs(readme): update installation instructions
-```
-
-### PR Description Template
-
-```markdown
-## Description
-Brief description of changes
-
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Documentation update
-- [ ] Refactoring
-
-## Changes Made
-- Change 1
-- Change 2
-
-## Testing
-How were these changes tested?
-
-## Screenshots (if applicable)
-Add screenshots for UI changes
-
-## Related Issues
-Closes #123
-Refs #456
-```
-
-### Review Process
-
-1. Automated checks must pass
-2. At least one approval from maintainers
-3. No unresolved discussions
-4. Up-to-date with develop branch
+- **Follow the existing pattern.** Router → `get_db` → `store.py` → ORM;
+  every record stored whole in `doc` with a few indexed columns beside it;
+  lenient Pydantic schemas (every field optional, unknown keys preserved).
+  The one design rule everything follows from is in
+  [`02-architecture.md`](docs/02-architecture.md#the-one-design-rule-everything-else-follows-from);
+  nothing breaks it without a written decision there.
+- **Python:** type hints, FastAPI dependency injection, SQLAlchemy 2.0 style,
+  Pydantic v2. Small focused functions. Clear, slightly verbose code over
+  clever abstraction; explain an advanced construct with a comment on first
+  use. `pathlib`, never string paths; no OS-specific assumptions.
+- **React:** functional components with hooks; Tailwind utilities; every API
+  call relative (`/api/...`), never a hostname.
+- **Shell:** POSIX-friendly bash; runtime-agnostic (podman or docker
+  auto-detected); `bash -n` after every edit. Under `set -e` a function never
+  ends with a bare `[ … ] && { … }` (lesson 5). Every running mode survives
+  `rebuild` (lesson 1).
+- **Verification commands cannot fail silently:** `curl -sS`, never `-s`;
+  a `grep` whose empty output would look like success is rewritten.
+- **Portability:** no hard-coded hostnames, no ports below 1024; respect
+  `CRUCIBLE_PORT`, `DATABASE_URL`, `USE_POSTGRES`, `AUTO_INIT_DB`,
+  `USE_HTTPS`; mounts carry `:Z`. The container is the isolation layer on all
+  three platforms.
+- **Dependencies:** justify, don't accumulate. A new dependency, service or
+  roadmap technology enters only with a *Required now* verdict in
+  [`06-product-and-technology-roadmap.md`](docs/06-product-and-technology-roadmap.md).
+- **Never in a tracked file:** real laboratory data, certificates, keys,
+  `.env*`, database files, backups, internal hostnames, usernames, personal
+  paths. `.gitignore` is the lock; `check-public-safe.sh` is the guard at the
+  door, and it owns the list of internal identifiers — extend it there.
 
 ---
 
-## Testing
-
-### Manual Testing Checklist
-
-**Chemicals Module:**
-- [ ] Upload Excel file with valid data
-- [ ] Upload Excel with invalid data (error handling)
-- [ ] Create chemical manually
-- [ ] Edit chemical
-- [ ] Delete single chemical
-- [ ] Bulk select and delete
-- [ ] Bulk update fields
-- [ ] Search functionality
-- [ ] Pagination
-
-**Dashboard:**
-- [ ] Statistics display correctly
-- [ ] Auto-refresh works (5s interval)
-- [ ] Manual refresh button
-- [ ] Capacity bars update
-
-**API:**
-- [ ] All endpoints return correct status codes
-- [ ] Error responses are properly formatted
-- [ ] Pagination works correctly
-- [ ] Search/filter works
-
-### Testing Commands
-
-```bash
-# Run the backend tests
-cd backend && .venv/bin/pytest
-
-# Run the dev servers (backend on :8000, client on :3000)
-cd backend && .venv/bin/uvicorn app.main:app --reload --port 8000
-cd client && VITE_API_PROXY_TARGET=http://localhost:8000 npm run dev
-
-# Build the client for production
-cd client && npm run build
-
-# Test the container build
-./container-py.sh build
-./container-py.sh start-ssl
-./container-py.sh logs
-
-# Test HTTPS endpoint
-curl --noproxy '*' -k -s https://localhost:49160/api/stats
-```
-
----
-
-## Documentation
-
-### Code Documentation
-
-- Add JSDoc comments for functions
-- Document complex algorithms
-- Explain non-obvious code
-
-**Example:**
-
-```javascript
-/**
- * Upload chemicals from Excel file
- * @param {File} file - Excel file (.xlsx, .xls, .csv)
- * @returns {Promise<Object>} Upload results with counts and errors
- */
-async function uploadChemicalsExcel(file) {
-  // Implementation
-}
-```
-
-### Documentation norms
+## 7. Documentation norms
 
 The documentation is a numbered set with one living spine,
-[docs/HANDBOOK.md](docs/HANDBOOK.md). The rules that keep it true, in full,
-are in its last section; the ones every change must respect:
+[`docs/HANDBOOK.md`](docs/HANDBOOK.md). The rules that keep it true are in its
+last section; the ones every change must respect:
 
 - **One home per topic.** A command, table or explanation that appears in two
   files is a bug. Link to the home with one sentence of context instead.
-- **The handbook changes in the same commit** as the work it describes: its
-  §0 status box and, for a phase, its §7 build-log row.
+- **The handbook changes in the same commit** as the work it describes.
 - **Every phase has a tutorial** in `docs/04-phase-tutorials/`, in the shape
   the existing ones use: why it exists, what it built, numbered steps with
   *what / how / why / you should see / if instead*, a checkpoint, what it
   deliberately did not do, and the publish block.
-- **Every jargon term is explained where it first appears** and added to
-  [docs/00-glossary.md](docs/00-glossary.md); a missing term is a documentation bug.
-- **Show the output.** A verification command must be written so that failure
-  is visible (`curl -sS`, never `-s`).
-- **Release notes** go in [NEWS.md](NEWS.md): what changed, why, and what the
-  release deliberately did not fix.
+- **Every jargon term is explained where it first appears** — bold term, a
+  dash, an everyday comparison — and added to
+  [`docs/00-glossary.md`](docs/00-glossary.md). A missing term is a bug.
+- **Show the output.** Every command that matters has *You should see* and,
+  where it can plausibly fail, *If instead* with the named fix.
+- **Figures are generated, never pasted.** Every image under `docs/img/` comes
+  from [`docs/img/make_figures.py`](docs/img/make_figures.py); edit the script
+  and rerun it. One symbol per record type, defined once there, means the same
+  thing in every document.
+- **Voice:** first person, confident, honest about done versus in progress.
+  No marketing words, no closing summaries that restate the section.
 - **Nothing in a tracked file or a commit message** names a tool, vendor or
   assistant, and nothing implies the project exists for anything but its
-  stated purpose. The public-safety gate checks paths and identifiers; this
-  rule is checked by reading.
+  stated purpose. The safety gate checks paths and identifiers; this rule is
+  checked by reading.
+- **Diff-anchored writing is for `NEWS.md` only.** Every other document
+  describes the system as it is.
 
 ---
 
-## File Structure
+## 8. Review norms
 
-When adding new files, follow this structure:
+- **Pull requests are for `feature/* → develop` only.** `develop → beta →
+  master` is promoted by fast-forward from the command line, never by a
+  button.
+- **A review reads the tutorial first.** If a change ships without the
+  tutorial, handbook row and release note it needs, the review asks for them
+  before it reads the code.
+- **Look for the failure shape.** Almost every recorded bug is *an operation
+  reporting one thing while doing another*: a dry run that writes, a status
+  that cannot fail, a check that cannot run and prints what a pass looks like.
+  Ask of every new check: *how would this look if the thing it checks were
+  absent?*
+- **Do not merge a contract change without the failing test in the
+  description**, and do not merge a schema change without `alembic check`
+  output.
+- **Test-database output is not production output.** A number quoted in a
+  document says which instance it came from.
 
-```
-client/src/
-├── components/        # Reusable React components
-├── pages/            # Page components
-├── services/         # API service functions
-├── utils/            # Utility functions
-└── styles/           # Global styles
-
-backend/              # Python backend (FastAPI)
-├── app/
-│   ├── main.py       # App factory, static/SPA serving, error handling
-│   ├── routers/      # FastAPI routers (one file per resource)
-│   ├── models.py     # SQLAlchemy models (hybrid document pattern)
-│   ├── schemas.py    # Pydantic request models
-│   ├── store.py      # Data-access helpers
-│   ├── compat.py     # JS-semantics helpers (parity)
-│   └── utils/        # RDKit SDF, SLIMS Excel, generic Excel parsing
-├── scripts/          # healthcheck.py
-├── tests/            # Contract-parity + unit tests (pytest)
-└── Dockerfile        # python:3.12-slim image (multi-stage)
-
-Root:
-├── container-py.sh    # Container management — Python stack (podman/docker)
-├── monitor.sh        # Health monitoring script
-├── setup-after-clone-py.sh  # Post-clone setup with SSL certs
-├── setup-ssl.sh      # SSL certificate setup helper
-├── cert-expiry-check.sh  # Certificate expiry check
-├── check-public-safe.sh  # Pre-push safety gate (see docs/03-git-workflow.md)
-├── uninstall.sh      # Uninstall & cleanup script
-├── .gitignore        # Protects certs, data, keys
-├── NEWS.md           # Release notes
-└── docs/             # Every guide, numbered in reading order (00-glossary … 12-history)
-```
-
-### Security Notes for Contributors
-
-- **Never commit** SSL certificates, private keys, or database files
-- The `.gitignore` is configured to exclude `certs/`, `data/`, `*.key`, `*.crt`, `*.pem`
-- Always test with `./container-py.sh start-ssl` to verify HTTPS works
-- Run `openssl x509/rsa` verification after any certificate changes
-
----
-
-## Common Tasks
-
-### Adding a New API Endpoint
-
-1. Add a route function to the relevant file in `backend/app/routers/`
-2. Keep the router thin — put logic in `store.py` or `utils/`
-3. Add an API function in `client/src/services/api.js`
-4. Document it in `docs/08-api-reference.md` and add a test in `backend/tests/`
-5. Test with cURL or the OpenAPI docs at `/docs`
-
-### Adding a New UI Component
-
-1. Create component in `client/src/components/`
-2. Use Tailwind for styling
-3. Add PropTypes or TypeScript
-4. Import and use in page component
-5. Test in different screen sizes
-
-### Adding a New Page
-
-1. Create page in `client/src/pages/`
-2. Add route in `client/src/App.jsx`
-3. Add navigation link
-4. Update documentation
-
----
-
-## Development Cleanup
-
-After you're done developing or before switching to a different project, clean up your local environment.
-
-### Quick Cleanup (Recommended)
-
-Use the `uninstall.sh` script:
-
-```bash
-# Partial cleanup — removes container, image, all crucible cron jobs + logs,
-# certs/, and dependency artifacts; keeps source code, data, and base images
-./uninstall.sh --partial
-
-# Preview what would be removed first
-./uninstall.sh --dry-run
-```
-
-### Manual Cleanup
-
-If you prefer to run steps individually:
-
-```bash
-# Stop the dev servers (if running): press Ctrl+C in their terminals
-
-# Stop and remove container + image
-./container-py.sh clean
-
-# Remove ALL crucible cron jobs (monitor, cert-expiry, nightly backup) + logs
-crontab -l | grep -vE 'monitor\.sh|cert-expiry-check\.sh|container-py\.sh backup' | crontab -
-rm -f /tmp/crucible-monitor.log ~/crucible-cert.log ~/crucible-backup.log
-
-# Free disk space
-rm -rf client/node_modules/ backend/.venv/
-rm -rf client/dist/
-rm -rf certs/ data/   # ⚠️ deletes your local database — back up data/ first if you care about it
-```
-
-### Full Uninstall
-
-```bash
-# Removes everything including data and project directory
-./uninstall.sh --full
-```
-
-See the [Uninstall and reinstall guide](docs/07-operations.md#uninstall-and-reinstall) in the Deployment documentation for complete details.
-
----
-
-## Getting Help
-
-- **Questions**: Email <maintainer-email>
-- **Bugs**: Create an Issue with details
-- **Security**: Email <maintainer-email> — do not report security problems in a public Issue
-
----
-
-## Recognition
-
-Contributors will be recognized in:
-- Release notes
-- Project README
-
----
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the
-project's license (LICENSE file not yet added — pending owner decision).
-
----
-
-Thank you for contributing to Crucible! 🎉
+**Last Updated:** September 7, 2026

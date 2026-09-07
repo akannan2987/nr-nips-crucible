@@ -33,7 +33,7 @@ table. In order:
 
 | # | Phase | One line | Waits on |
 |---|---|---|---|
-| 05 | Documentation consolidation 🔨 | The numbered document set, the handbook, one tutorial per phase, the roadmaps, the lessons file, the Windows guide, figures | nothing — step 3 of 4 done; figures next |
+| 05 | Documentation consolidation ✅ | The numbered document set, the handbook, one tutorial per phase, the roadmaps, the lessons file, the Windows guide, figures | done 2026-09-07 (v2.3.0) |
 | 06 | Schema normalisation 🔜 | Promote the frequently filtered and sorted fields out of the JSON document into indexed columns, without changing the API | agreeing the list of "hot" fields first, from the client's filters and the query patterns in `store.py` |
 | 07 | Authentication 🔜 | A login in front of `/api/*` | a decision between corporate SSO/OIDC and a simpler token scheme, plus a feature flag |
 

@@ -1,5 +1,7 @@
 # Crucible: Pandora Toolbox Enhancement (v2.0)
 
+![Crucible: a chemical and sample registry for a research laboratory](docs/img/cover_crucible.svg)
+
 Chemical and Sample Management System - MVP
 
 A comprehensive web application for managing chemical compounds, samples, screening data, and toxicology information with an integrated Electronic Lab Notebook (ELN). Deployed with **HTTPS/TLS** encryption using official Nestlé SSL certificates.
@@ -116,6 +118,8 @@ adding a field later breaks nothing. The reasoning, and what it costs, is in
 ---
 
 ## What the system handles
+
+![The four record types: chemical, sample, screening, toxicology; sample, screening and toxicology each point at one chemical](docs/img/fig_record_types.svg)
 
 | Module | What it holds | Accepts | Optimised for | Linked to |
 |---|---|---|---|---|

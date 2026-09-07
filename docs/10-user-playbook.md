@@ -71,6 +71,8 @@ the tables, the filters, the exports — is in service of it.
 
 ## Four words you will meet constantly
 
+![The four record types: chemical, sample, screening, toxicology; the last three each point at one chemical](img/fig_record_types.svg)
+
 Think of a laboratory as a kitchen, and these as the four things it writes down:
 
 - A **chemical** is a substance on paper — a name, a formula, an identifier. Like
@@ -365,6 +367,8 @@ things.
 > cross-referencing; it is not a prerequisite for using your data.
 
 ## How a compound gets identified
+
+![Stage 1: either the CAS or the name matches your own registry; stage 2: PubChem, where name and CAS must agree](img/fig_two_stage_identification.svg)
 
 Two stages, tried in order. **The second only runs if the first finds nothing.**
 
@@ -764,6 +768,8 @@ Recipes and a troubleshooting section: [Query Cookbook](09-query-cookbook.md).
 # Part 8 — Change something and publish it
 
 ## Three folders, three jobs
+
+![Two repositories, three folders: the Mac authoring folder, the VM mirror folder, the VM production folder](img/fig_machine_layout.svg)
 
 The everyday version:
 

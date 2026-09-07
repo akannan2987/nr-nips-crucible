@@ -582,6 +582,8 @@ made; that is the file's own date column.
 
 ## The lab and chemistry words
 
+![The four record types and their symbols: hexagon for a chemical, vial for a sample, plate for screening, dose curve for toxicology](img/fig_record_types.svg)
+
 **Identification** — deciding which compound a screening row is *about*, and
 attaching it to one entry in the registry. A screening file records the compound
 as free text, so one substance can arrive under a dozen spellings; identification

@@ -1,0 +1,33 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 340' width='900' height='340' role='img' aria-label='A table row: a few indexed columns beside one doc column that holds the whole record; the doc is the truth, the indexes are derived' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='899' height='339' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='450.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>The one design rule: the stored document is the truth; every other column is an index</text>
+<text x='450.0' y='56' font-size='12' fill='#6b7280' text-anchor='middle' font-weight='normal'>one row of the screening table, as it really is</text>
+<rect x='40' y='80' width='120' height='70' rx='6' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='100' y='104' font-size='12' fill='#374151' text-anchor='middle' font-weight='bold' font-family='monospace'>id</text>
+<text x='100' y='132' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal' font-family='monospace'>UUID</text>
+<rect x='168' y='80' width='120' height='70' rx='6' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='228' y='104' font-size='12' fill='#374151' text-anchor='middle' font-weight='bold' font-family='monospace'>chemical_id</text>
+<text x='228' y='132' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal' font-family='monospace'>CHEM-0042</text>
+<rect x='296' y='80' width='120' height='70' rx='6' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='356' y='104' font-size='12' fill='#374151' text-anchor='middle' font-weight='bold' font-family='monospace'>created_at</text>
+<text x='356' y='132' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal' font-family='monospace'>2026-08-25</text>
+<rect x='424' y='80' width='120' height='70' rx='6' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='484' y='104' font-size='12' fill='#374151' text-anchor='middle' font-weight='bold' font-family='monospace'>seq</text>
+<text x='484' y='132' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal' font-family='monospace'>18 311</text>
+<rect x='555' y='80' width='305' height='170' rx='8' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.6'/>
+<text x='707' y='104' font-size='13' fill='#4f46e5' text-anchor='middle' font-weight='bold' font-family='monospace'>doc</text>
+<text x='570' y='128' font-size='11' fill='#1f2937' text-anchor='start' font-weight='normal'>{ "Compound": "Phenol, 2,4-di-tertiobutyl",</text>
+<text x='570' y='145' font-size='11' fill='#1f2937' text-anchor='start' font-weight='normal'>  "CAS": "96-76-4",</text>
+<text x='570' y='162' font-size='11' fill='#1f2937' text-anchor='start' font-weight='normal'>  "Migration (mg/kg)": "#DIV/0!",</text>
+<text x='570' y='179' font-size='11' fill='#1f2937' text-anchor='start' font-weight='normal'>  "Temp": "40 °C", "Time": "10 d",</text>
+<text x='570' y='196' font-size='11' fill='#1f2937' text-anchor='start' font-weight='normal'>  "source_file": "…screening_export.xlsm",</text>
+<text x='570' y='213' font-size='11' fill='#1f2937' text-anchor='start' font-weight='normal'>  … every column the file had … }</text>
+<text x='295' y='175' font-size='12' fill='#374151' text-anchor='middle' font-weight='bold'>indexes: exist only to FIND the row quickly</text>
+<text x='295' y='193' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>derived from doc — can be added, dropped or rebuilt</text>
+<text x='707' y='268' font-size='12' fill='#4f46e5' text-anchor='middle' font-weight='bold'>the truth: the row exactly as the laboratory wrote it</text>
+<line x1='560' y1='168' x2='480' y2='168' stroke='#4f46e5' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<text x='520' y='158' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>derive</text>
+<text x='450.0' y='305' font-size='12' fill='#1f2937' text-anchor='middle' font-weight='normal'>why it matters: an upload never has to be reshaped to fit a schema, and adding a column later breaks nothing</text>
+<text x='450.0' y='324' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>everyday version: the original letter in the folder; the card index in the drawer only says which folder</text>
+</svg>

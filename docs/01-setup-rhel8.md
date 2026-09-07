@@ -79,6 +79,8 @@ documents: [RHEL8 Uninstall](01-uninstall-rhel8.md) ·
 
 ## Before anything: what are we actually installing?
 
+![The same container image runs on macOS, Windows and RHEL 8; the database, certificates and settings are mounted in from the host and answers come out on port 49160](img/fig_container_lunchbox.svg)
+
 Skip this if you already know. It costs two minutes and saves twenty.
 
 **Crucible** is a web application for laboratory data — chemicals, samples,
@@ -1592,6 +1594,8 @@ tell the monitor explicitly with `API_URL=`.
 ---
 
 ## What you have now
+
+![Set up once: runtime, clone, one command, checklist; then the loop: edit, test, rebuild, verify, publish](img/fig_setup_flow.svg)
 
 If the section 5 checklist passed, here is what is actually running on this VM —
 worth reading once, because it is the mental model you will debug against later.

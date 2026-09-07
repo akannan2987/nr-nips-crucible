@@ -25,6 +25,8 @@ Start at section 2 if you are setting up a machine for the first time.
 
 ## 1. The two repositories
 
+![A Mac authoring folder pushes to the public repository; the VM's mirror folder fetches public and pushes private; the production folder pulls master from private; content flows public to private only](img/fig_machine_layout.svg)
+
 | | **Private** | **Public** |
 |---|---|---|
 | URL | `github.com/nestle-it/nr-nips-crucible` | `github.com/akannan2987/nr-nips-crucible` |
@@ -181,6 +183,8 @@ If you ever need to recreate it, clone the private repo and follow
 ---
 
 ## 4. Flow A - a change from start to finish
+
+![Seven steps: edit, test, gate, push on the Mac; mirror, deploy, confirm on the VM; then back to edit](img/fig_change_travels.svg)
 
 The complete path for a normal change: you edit something on the Mac, and finish
 with **both repositories' `develop`, `beta`, and `master` branches in sync** and

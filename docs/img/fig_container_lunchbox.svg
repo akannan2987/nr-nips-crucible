@@ -1,0 +1,33 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 320' width='940' height='320' role='img' aria-label='One container image runs identically on macOS, Windows and RHEL 8; the database, certificates and settings are mounted in from the host and answers come out on port 49160' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='319' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>The container is the isolation — the same sealed lunchbox on every platform</text>
+<rect x='30' y='66' width='280' height='40' rx='8' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='170' y='91' font-size='12' fill='#374151' text-anchor='middle' font-weight='bold'>macOS</text>
+<rect x='330' y='66' width='280' height='40' rx='8' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='470' y='91' font-size='12' fill='#374151' text-anchor='middle' font-weight='bold'>Windows (Docker Desktop / WSL 2)</text>
+<rect x='630' y='66' width='280' height='40' rx='8' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='770' y='91' font-size='12' fill='#374151' text-anchor='middle' font-weight='bold'>RHEL 8 VM (rootless podman)</text>
+<rect x='230' y='130' width='480' height='120' rx='12' fill='#eef2ff' stroke='#4f46e5' stroke-width='2'/>
+<text x='470' y='156' font-size='14' fill='#4f46e5' text-anchor='middle' font-weight='bold'>crucible-py image</text>
+<text x='470' y='180' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>Python 3.12 · FastAPI · SQLAlchemy · RDKit · openpyxl</text>
+<text x='470' y='197' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>the built React page · the Alembic migrations</text>
+<text x='470' y='214' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>identical bytes on all three machines</text>
+<rect x='30' y='130' width='170' height='120' rx='8' fill='#ffffff' stroke='#0d9488' stroke-width='1.2'/>
+<text x='115' y='154' font-size='12' fill='#0d9488' text-anchor='middle' font-weight='bold'>mounted IN</text>
+<text x='115' y='176' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>data/crucible.db</text>
+<text x='115' y='191' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>certs/ (read-only)</text>
+<text x='115' y='206' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>.env.local values</text>
+<text x='115' y='221' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>— stay on the host,</text>
+<text x='115' y='236' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>never inside the image</text>
+<line x1='202' y1='190' x2='228' y2='190' stroke='#0d9488' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='740' y='130' width='170' height='120' rx='8' fill='#ffffff' stroke='#d97706' stroke-width='1.2'/>
+<text x='825' y='154' font-size='12' fill='#d97706' text-anchor='middle' font-weight='bold'>answers OUT</text>
+<text x='825' y='176' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>port 49160</text>
+<text x='825' y='191' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>HTTP on a laptop,</text>
+<text x='825' y='206' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>HTTPS in production</text>
+<text x='825' y='221' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>(CRUCIBLE_PORT to change)</text>
+<line x1='712' y1='190' x2='738' y2='190' stroke='#d97706' stroke-width='1.6' marker-end='url(#arrow)'/>
+<text x='470.0' y='282' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>no virtual environment for the app: the lunchbox already holds every library; backend/.venv exists only to run the tests outside it</text>
+<text x='470.0' y='302' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>delete the lunchbox and every trace of the app goes with it — your data, certificates and settings stay because they were never inside</text>
+</svg>

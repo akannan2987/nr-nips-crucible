@@ -45,11 +45,11 @@ specialised pages; this page tells you which one to read, when, and why.
 
 | | |
 |---|---|
-| **Version** | 2.3.0 in progress — last released 2.2.1 (2026-08-31) |
+| **Version** | 2.3.0 (2026-09-07) |
 | **Status date** | 2026-09-07 |
 | **Tests** | 90 passing (`cd backend && .venv/bin/pytest`) |
-| **Last phase done** | 04 — Template ingestion of real laboratory data ✅ (2026-08-25); registry audit and lookup fix ✅ (2026-08-31) |
-| **Phase in progress** | 05 — Documentation consolidation 🔨 (step 3 of 4 done: tutorials, roadmaps, Windows guide; figures next) |
+| **Last phase done** | 05 — Documentation consolidation ✅ (2026-09-07): the numbered set, this handbook, the phase tutorials, the roadmaps, the Windows guide, the figures |
+| **Phase in progress** | none — next is 06, and a small CI phase can come first |
 | **Next** | 06 — Schema normalisation 🔜 · 07 — Authentication 🔜 |
 | **Production** | one RHEL 8 VM, one container, one SQLite file: 49,065 screening rows, 664 registered chemicals, 88 % of rows linked to a registry entry |
 
@@ -72,7 +72,7 @@ specialised pages; this page tells you which one to read, when, and why.
 | [§4 Run it and look around](#4-day-1--run-it-and-look-around) | You have loaded a file, looked at it in the browser, and asked the API a question | 1 h | ✅ |
 | [§5 Understand how it is built](#5-understand-how-it-is-built) | You can explain the one design rule and why the container is the isolation | 1–2 h | ✅ |
 | [§6 How a change travels](#6-how-a-change-travels) | You can take an edit from your Mac to production without leaking anything | 1 h reading, minutes per change | ✅ |
-| [§7 The build, phase by phase](#7-the-build-phase-by-phase) | You know what was built, in what order, and why | 1 h | ✅ tutorials 00–04 · 🔨 05 |
+| [§7 The build, phase by phase](#7-the-build-phase-by-phase) | You know what was built, in what order, and why | 1 h | ✅ tutorials 00–05 |
 | [§8 Operate it](#8-operate-it) | Update, back up, rotate certificates, monitor, uninstall | as needed | ✅ |
 | [§9 Work with real laboratory data](#9-work-with-real-laboratory-data) | A laboratory export loaded, its compounds identified, the registry audited | half a day | ✅ |
 | [§10 What comes next](#10-what-comes-next) | The next three phases and what each waits on | 20 min | ✅ written |
@@ -99,6 +99,8 @@ ending with your first upload. After that, one section per sitting.
 
 ## §1 The story so far, on one page
 
+![Milestones on one line, from the Node prototype in May 2026 through the Python rewrite, publication, verification, real data, the audit and the handbook](img/fig_timeline.svg)
+
 One line per milestone. Dates are when the change shipped. Where the history
 does not record a date, it says so rather than guessing.
 
@@ -112,7 +114,7 @@ does not record a date, it says so rather than guessing.
 | 2026-08-24 | **v2.1.0.** Documentation rewritten for a newcomer: the glossary with its "missing term is a bug" contract, the API cookbook with every answer captured live. |
 | 2026-08-25 | **v2.2.0.** Real laboratory data: a 49,000-row export loaded through a template that is data, not code; a screening table built from the file; a read-only SQL console; two-stage chemical identification. RHEL 8 production rebuilt from the guides and verified. |
 | 2026-08-31 | **v2.2.1.** The registry audited; a lookup that took the first result from an unranked list found and fixed; 22 mis-identified compounds removed. |
-| 2026-09-07 | **v2.3.0 (in progress).** The documentation reshaped into the numbered set my other projects use, with this handbook as its spine. |
+| 2026-09-07 | **v2.3.0.** The documentation reshaped into the numbered set my other projects use, with this handbook as its spine, one tutorial per phase, both roadmaps, a Windows guide and figures. |
 
 ---
 
@@ -122,6 +124,8 @@ does not record a date, it says so rather than guessing.
 **Why this comes first:** every later page uses the same small set of words —
 chemical, sample, screening, toxicology, CAS number, registry. Twenty minutes
 here removes a hundred small confusions later.
+
+![The four record types; sample, screening and toxicology each point at one chemical](img/fig_record_types.svg)
 
 *Everyday version:* a library where every book has been catalogued three times
 under three different titles by three librarians who have since left. Nobody
@@ -160,6 +164,8 @@ every fix, every redeploy — is a short repeatable loop on top of this
 foundation. Rushed setup is the single biggest source of "it does not work on
 my machine".
 
+![The same container image on macOS, Windows and RHEL 8; the database, certificates and settings are mounted in from the host](img/fig_container_lunchbox.svg)
+
 *Everyday version:* the container is a sealed lunchbox. The app and every
 library it needs are packed inside, so it tastes the same on a laptop and on a
 server. Setting up the workshop means installing the one tool that can open
@@ -185,6 +191,8 @@ that command is doing rather than watching it scroll past.
 the production VM clones the **private** one. Content flows public → private
 only, through a mirror folder. You do not need to understand this to install,
 but you need it before §6: [`03-git-workflow.md` §1](03-git-workflow.md#1-the-two-repositories).
+
+![Four one-time setup steps, then a five-step loop for every change](img/fig_setup_flow.svg)
 
 **You are done when** the checklist for your platform passes, and in
 particular when this prints a line containing `"chemicals"`:
@@ -243,6 +251,8 @@ ideas that everything else follows from.
 **Why now:** you have seen the system work; the design will make sense
 because you have something to attach it to.
 
+![One table row: indexed columns beside the doc column that holds the whole record](img/fig_doc_is_truth.svg)
+
 The two ideas to hold before changing any code:
 
 1. **The stored document is the truth; every other column is an index.** Each
@@ -255,6 +265,8 @@ The two ideas to hold before changing any code:
    the application; the image carries Python, RDKit and the built client, and
    runs identically on a laptop and on the VM. `backend/.venv` exists only to
    run the tests outside it. → [`02-architecture.md` → Four words you need first](02-architecture.md#four-words-you-need-first)
+
+![One request through router, session, store, model and database, and the JSON answer back](img/fig_request_path.svg)
 
 Then read, in this order:
 
@@ -278,6 +290,8 @@ step what would stop a secret from travelling with it.
 and the gate between public and private is the reason internal names never
 reach the public one.
 
+![A Mac authoring folder pushes to the public repository; the VM's mirror folder fetches public and pushes private; the production folder pulls master from private](img/fig_machine_layout.svg)
+
 *Everyday version:* a letter goes from your desk (the Mac) to the post office
 (the public repository), where a clerk checks it carries no home address
 (the gate), then to the company mailroom (the private mirror), and only then to
@@ -290,6 +304,8 @@ documentation. Read [§1 The two repositories](03-git-workflow.md#1-the-two-repo
 [§3 Golden rules](03-git-workflow.md#3-golden-rules) and
 [Flow A](03-git-workflow.md#4-flow-a---a-change-from-start-to-finish) once;
 after that the cheat sheet in [§A](#a-cheat-sheet) is enough.
+
+![Seven steps: edit, test, gate, push on the Mac; mirror, deploy, confirm on the VM; then back to edit](img/fig_change_travels.svg)
 
 **Every session after setup** starts the same way, on the Mac:
 
@@ -328,7 +344,7 @@ silent rather than inventing a command.
 | 02 | Public-repository hygiene | Certificates backed up outside the repo; internal hostnames, users and paths behind placeholders; real workbooks replaced by synthetic ones from a tracked generator; four platform guides; the pre-push gate | [`phase-02-public-repo-hygiene.md`](04-phase-tutorials/phase-02-public-repo-hygiene.md) | 2026-08-06 (v2.0.0) | ✅ (reconstructed) |
 | 03 | Platform verification | Both guides walked from a blank machine: macOS V1–V7, RHEL 8 V1–V9 (V9 pending a reboot window); fifteen bugs found and fixed by following the guides literally | [`phase-03-platform-verification.md`](04-phase-tutorials/phase-03-platform-verification.md) | 2026-08-17 → 2026-08-25 | ✅ (reconstructed) |
 | 04 | Template ingestion | A laboratory export described as data (fingerprint, column map, cleaners, provenance), the screening table built from the file, the read-only SQL console, two-stage chemical identification, the registry audit and the five maintenance scripts | [`phase-04-template-ingestion.md`](04-phase-tutorials/phase-04-template-ingestion.md) | 2026-08-25 (v2.2.0), 2026-08-31 (v2.2.1) | ✅ (reconstructed) |
-| 05 | Documentation consolidation | The numbered document set, this handbook, the phase tutorials, the roadmaps, the lessons file, the Windows guide, figures | [`phase-05-docs-consolidation.md`](04-phase-tutorials/phase-05-docs-consolidation.md) | 2026-09 | 🔨 step 3 of 4 |
+| 05 | Documentation consolidation | The numbered document set, this handbook, the phase tutorials, the roadmaps, the lessons file, the Windows guide, figures | [`phase-05-docs-consolidation.md`](04-phase-tutorials/phase-05-docs-consolidation.md) | 2026-09-07 (v2.3.0) | ✅ |
 | 06 | Schema normalisation | The frequently-filtered fields promoted from JSON into indexed columns, without changing the API or breaking the design rule | `04-phase-tutorials/phase-06-schema-normalisation.md` | — | 🔜 |
 | 07 | Authentication | A login in front of `/api/*`, behind a feature flag so internal users are not locked out mid-week | `04-phase-tutorials/phase-07-authentication.md` | — | 🔜 |
 
@@ -387,6 +403,9 @@ Follow the playbook in order; it was written for exactly this sequence:
    and [`09-chemical-identification.md`](09-chemical-identification.md). The
    two stages use opposite rules on purpose:
 
+   ![Stage 1 links a row when either the CAS or the name matches the curated registry; stage 2 asks PubChem and registers only when name and CAS agree](img/fig_two_stage_identification.svg)
+
+
    | Stage | Rule | Why |
    |---|---|---|
    | Your own registry, at upload, no network | **either** the CAS number **or** the name matches → link | the registry is curated, so one match is trustworthy |
@@ -424,8 +443,8 @@ Two documents, two horizons:
 
 The next three phases, in order:
 
-1. **05 — finish this consolidation:** the figures, and `CONTRIBUTING.md`
-   in the shape my other projects use.
+1. **CI on the public repository:** `ruff` and `pytest` on Linux and macOS
+   runners for every push; small, and it makes the gates automatic.
 2. **06 — schema normalisation:** list the fields the client filters and
    sorts on, agree them, *then* write the migration. Guessing here means a
    migration that backfills the wrong columns.

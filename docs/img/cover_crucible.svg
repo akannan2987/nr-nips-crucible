@@ -1,0 +1,27 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 300' width='1200' height='300' role='img' aria-label='Crucible: a chemical and sample registry for a research laboratory' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='1199' height='299' rx='12' fill='#111827' stroke='#111827'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<rect x='0' y='0' width='1200' height='300' rx='12' fill='#111827'/>
+<path d='M 90 100 L 210 100 L 190 190 Q 150 210 110 190 Z' fill='#fbbf24' fill-opacity='0.9'/>
+<rect x='125' y='205' width='50' height='12' rx='3' fill='#fbbf24'/>
+<circle cx='150' cy='70' r='6' fill='#fde68a'/><circle cx='130' cy='55' r='4' fill='#fde68a'/><circle cx='172' cy='52' r='5' fill='#fde68a'/>
+<text x='260' y='118' font-size='56' fill='#f9fafb' text-anchor='start' font-weight='bold'>Crucible</text>
+<text x='262' y='160' font-size='20' fill='#d1d5db' text-anchor='start' font-weight='normal'>a chemical and sample registry for a research laboratory</text>
+<text x='262' y='190' font-size='15' fill='#9ca3af' text-anchor='start' font-weight='normal'>one identity per compound · every measurement attached to it · spreadsheets in, an API out</text>
+<polygon points='1000,226 1012.124,233.0 1012.124,247.0 1000,254 987.876,247.0 987.876,233.0' fill='#4f46e5' fill-opacity='0.15' stroke='#4f46e5' stroke-width='2'/>
+<rect x='1043.7' y='231.6' width='12.6' height='21.7' rx='4.2' fill='#0d9488' fill-opacity='0.15' stroke='#0d9488' stroke-width='2'/>
+<rect x='1045.8' y='226.7' width='8.4' height='5.6000000000000005' fill='#0d9488'/>
+<rect x='1087.98' y='227.98' width='6.68' height='6.68' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='1087.98' y='236.66' width='6.68' height='6.68' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='1087.98' y='245.33999999999997' width='6.68' height='6.68' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='1096.66' y='227.98' width='6.68' height='6.68' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='1096.66' y='236.66' width='6.68' height='6.68' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='1096.66' y='245.33999999999997' width='6.68' height='6.68' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='1105.34' y='227.98' width='6.68' height='6.68' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='1105.34' y='236.66' width='6.68' height='6.68' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='1105.34' y='245.33999999999997' width='6.68' height='6.68' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='1136.0' y='228.8' width='28' height='22.400000000000002' rx='4' fill='#be123c' fill-opacity='0.12' stroke='#be123c' stroke-width='2'/>
+<path d='M 1139.0 247.20000000000002 C 1148.6 247.20000000000002, 1151.4 232.8, 1161.0 232.8' fill='none' stroke='#be123c' stroke-width='2.2'/>
+<text x='1075' y='280' font-size='11' fill='#9ca3af' text-anchor='middle' font-weight='normal'>chemical · sample · screening · toxicology</text>
+<text x='262' y='250' font-size='13' fill='#6b7280' text-anchor='start' font-weight='normal'>one machine · one container · one database file · three platforms</text>
+</svg>

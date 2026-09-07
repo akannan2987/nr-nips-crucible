@@ -10,12 +10,13 @@ change you are getting.
 
 ---
 
-## v2.3.0 — in progress — "One document set, in reading order"
+## v2.3.0 — 2026-09-07 — "One document set, in reading order"
 
-The documentation is being reshaped to the structure my other projects use:
-numbered files whose names give the reading order, one living handbook as the
-spine, one tutorial per build phase, and figures for the ideas newcomers
-stumble on. This entry grows as each step lands.
+A documentation release; the application is unchanged. The documentation is
+reshaped to the structure my other projects use: numbered files whose names
+give the reading order, one living handbook as the spine, one tutorial per
+build phase, both roadmaps, a third platform guide, and figures for the ideas
+newcomers stumble on. Four steps, each its own commit.
 
 **Changed (step 1 — the numbered set, 2026-09-07)**
 - Fifteen documents renamed with `git mv`, so their history follows them.
@@ -95,11 +96,28 @@ stumble on. This entry grows as each step lands.
 - `CONTRIBUTING.md`: the stale "update these files" list replaced by the
   documentation norms the handbook enforces.
 
-**Not yet done in this step (deliberate)**
-- Figures under `docs/img/`, one symbol per record type across the documents,
-  and `CONTRIBUTING.md` restructured to the sibling shape are step 4.
+**Added (step 4 — the figures, 2026-09-07)**
+- **`docs/img/`** — eleven figures, all produced by one dependency-free script,
+  `docs/img/make_figures.py`, so they are edited as text, carry no metadata and
+  diff like code. One symbol per record type (hexagon, vial, plate, dose
+  curve) is defined once and used everywhere. Each figure sits under the
+  heading that explains its idea: the four record types, the document-is-truth
+  rule, the request path, the two repositories and three folders, the loop
+  after setup, two-stage identification, the container on three platforms,
+  set-up-once, and the timeline. A banner and a mark for the README.
+- **`CONTRIBUTING.md`** rewritten to the shape of my other projects: ways to
+  contribute, branch model, the day-to-day loop, the push sequence (linked,
+  not repeated), release flow, code norms, documentation norms, review norms.
+  The old file's pull-request template, manual testing checklist and file tree
+  duplicated the playbook and the README and are gone.
+
+**Known limitations (deliberate)**
 - The Windows guide has not been walked. Its checklist is the definition of
   done for that platform.
+- The stubs at the fifteen old document paths stay for this release and go in
+  the next.
+- The figures are static. The one interactive figure remains the architecture
+  page served at `/architecture`.
 
 ---
 

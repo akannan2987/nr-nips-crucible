@@ -176,6 +176,8 @@ database has no history worth migrating.
 
 ## The one design rule everything else follows from
 
+![One table row: a few indexed columns beside one doc column that holds the whole record; the doc is the truth, the indexes are derived](img/fig_doc_is_truth.svg)
+
 **The `doc` column is the source of truth. Every other column is a derived
 index.**
 
@@ -352,6 +354,8 @@ CREATE TABLE chemicals (
 ---
 
 ## Data Flow
+
+![One request passes browser to router to session to store to model and database, and the JSON answer returns the same way](img/fig_request_path.svg)
 
 ### Read Operation (GET)
 

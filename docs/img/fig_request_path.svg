@@ -1,0 +1,41 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 300' width='940' height='300' role='img' aria-label='A request passes browser to router to session to store to model and database, and the JSON answer returns the same way' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='299' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>One request, four layers — why the routers are thin</text>
+<rect x='30' y='70' width='160' height='110' rx='8' fill='#ffffff' stroke='#374151' stroke-width='1.2'/>
+<text x='110' y='94' font-size='13' fill='#374151' text-anchor='middle' font-weight='bold'>Browser or script</text>
+<text x='110' y='116' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>GET /api/chemicals</text>
+<text x='110' y='131' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>(the web page is just</text>
+<text x='110' y='146' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>the API&apos;s first client)</text>
+<line x1='192' y1='110' x2='208' y2='110' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<line x1='208' y1='150' x2='192' y2='150' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<rect x='210' y='70' width='160' height='110' rx='8' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='290' y='94' font-size='13' fill='#4f46e5' text-anchor='middle' font-weight='bold'>Router</text>
+<text x='290' y='116' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>backend/app/routers/</text>
+<text x='290' y='131' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>a few lines: receive,</text>
+<text x='290' y='146' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>call the store, return</text>
+<line x1='372' y1='110' x2='388' y2='110' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<line x1='388' y1='150' x2='372' y2='150' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<rect x='390' y='70' width='160' height='110' rx='8' fill='#ffffff' stroke='#0d9488' stroke-width='1.2'/>
+<text x='470' y='94' font-size='13' fill='#0d9488' text-anchor='middle' font-weight='bold'>Session</text>
+<text x='470' y='116' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>database.py · get_db</text>
+<text x='470' y='131' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>opens a session before,</text>
+<text x='470' y='146' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>closes it after</text>
+<line x1='552' y1='110' x2='568' y2='110' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<line x1='568' y1='150' x2='552' y2='150' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<rect x='570' y='70' width='160' height='110' rx='8' fill='#ffffff' stroke='#d97706' stroke-width='1.2'/>
+<text x='650' y='94' font-size='13' fill='#d97706' text-anchor='middle' font-weight='bold'>Store</text>
+<text x='650' y='116' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>store.py</text>
+<text x='650' y='131' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>the ONLY place that</text>
+<text x='650' y='146' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>talks to the tables</text>
+<line x1='732' y1='110' x2='748' y2='110' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<line x1='748' y1='150' x2='732' y2='150' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<rect x='750' y='70' width='160' height='110' rx='8' fill='#ffffff' stroke='#be123c' stroke-width='1.2'/>
+<text x='830' y='94' font-size='13' fill='#be123c' text-anchor='middle' font-weight='bold'>Model + database</text>
+<text x='830' y='116' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>models.py → SQLite file</text>
+<text x='830' y='131' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>data/crucible.db</text>
+<text x='830' y='146' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>(or PostgreSQL)</text>
+<text x='470.0' y='212' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>solid: the request going in · dashed: the answer coming back as JSON, byte-identical to the original prototype&apos;s</text>
+<text x='470.0' y='232' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>a new client — a script, another tool — gets exactly what the web page gets, because the logic lives in one place</text>
+<text x='470.0' y='262' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>everyday version: reception (router) → the key to the archive (session) → the archivist (store) → the shelves (database)</text>
+</svg>

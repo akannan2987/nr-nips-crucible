@@ -160,7 +160,8 @@ Non-interactive: `SETUP_MONITOR=y ./setup-after-clone-py.sh` (or `n`).
 
 Guided walkthroughs, with expected output at every step:
 [docs/01-setup-macos.md](01-setup-macos.md) ·
-[docs/01-setup-rhel8.md](01-setup-rhel8.md).
+[docs/01-setup-rhel8.md](01-setup-rhel8.md) ·
+[docs/01-setup-windows.md](01-setup-windows.md) (untested).
 
 ### Container commands
 
@@ -777,7 +778,7 @@ deletes `certs/`, and no clone can restore them.
 /certs/            # SSL certificates (plus *.key/*.crt/*.pem/... globs)
 /data/             # SQLite database and runtime data
 /backups/          # local database backups
-.env, .env.*, *.env  # environment files / secrets (.env.example is tracked)
+.env, .env.*, *.env  # environment files / secrets; the VM keeps CERT_SOURCE, CERT_HOSTNAME and USE_HTTPS in an untracked .env.local (docs/01-setup-rhel8.md §3.2)
 node_modules/      # dependencies (installed per machine)
 client/dist/       # build output
 .venv/             # Python virtualenv

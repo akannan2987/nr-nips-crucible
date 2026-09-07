@@ -209,7 +209,7 @@ cd backend && .venv/bin/pytest
 ## Support
 
 1. [docs/08-api-reference.md](../08-api-reference.md) — upload endpoint reference
-2. [docs/API-TESTING-GUIDE.md](../API-TESTING-GUIDE.md) — worked `curl` examples
+2. [docs/08-api-cookbook.md](../08-api-cookbook.md#loading-data-in) — worked `curl` examples for every upload
 3. [CONTRIBUTING.md](../../CONTRIBUTING.md) — reporting bugs
 
 ---

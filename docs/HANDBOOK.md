@@ -49,7 +49,7 @@ specialised pages; this page tells you which one to read, when, and why.
 | **Status date** | 2026-09-07 |
 | **Tests** | 90 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | 04 — Template ingestion of real laboratory data ✅ (2026-08-25); registry audit and lookup fix ✅ (2026-08-31) |
-| **Phase in progress** | 05 — Documentation consolidation 🔨 (this handbook is its second step) |
+| **Phase in progress** | 05 — Documentation consolidation 🔨 (step 3 of 4 done: tutorials, roadmaps, Windows guide; figures next) |
 | **Next** | 06 — Schema normalisation 🔜 · 07 — Authentication 🔜 |
 | **Production** | one RHEL 8 VM, one container, one SQLite file: 49,065 screening rows, 664 registered chemicals, 88 % of rows linked to a registry entry |
 
@@ -68,11 +68,11 @@ specialised pages; this page tells you which one to read, when, and why.
 | Stage | What you get out of it | Time | Status |
 |---|---|---|---|
 | [§2 Understand the domain](#2-day-0--understand-the-domain) | You can explain what a chemical registry is and why spreadsheets fail at the job | 30–45 min | ✅ |
-| [§3 Set up your workshop](#3-day-0--set-up-your-workshop) | The app running on your machine, installed once, with proof it works | ~45 min | ✅ macOS · ✅ RHEL 8 · 🔜 Windows |
+| [§3 Set up your workshop](#3-day-0--set-up-your-workshop) | The app running on your machine, installed once, with proof it works | ~45 min | ✅ macOS · ✅ RHEL 8 · 🔨 Windows (guide written, untested) |
 | [§4 Run it and look around](#4-day-1--run-it-and-look-around) | You have loaded a file, looked at it in the browser, and asked the API a question | 1 h | ✅ |
 | [§5 Understand how it is built](#5-understand-how-it-is-built) | You can explain the one design rule and why the container is the isolation | 1–2 h | ✅ |
 | [§6 How a change travels](#6-how-a-change-travels) | You can take an edit from your Mac to production without leaking anything | 1 h reading, minutes per change | ✅ |
-| [§7 The build, phase by phase](#7-the-build-phase-by-phase) | You know what was built, in what order, and why | 1 h | ✅ phases 00–04 · 🔨 05 |
+| [§7 The build, phase by phase](#7-the-build-phase-by-phase) | You know what was built, in what order, and why | 1 h | ✅ tutorials 00–04 · 🔨 05 |
 | [§8 Operate it](#8-operate-it) | Update, back up, rotate certificates, monitor, uninstall | as needed | ✅ |
 | [§9 Work with real laboratory data](#9-work-with-real-laboratory-data) | A laboratory export loaded, its compounds identified, the registry audited | half a day | ✅ |
 | [§10 What comes next](#10-what-comes-next) | The next three phases and what each waits on | 20 min | ✅ written |
@@ -173,9 +173,9 @@ its expected output**, and ends with a numbered checklist:
 |---|---|---|---|
 | A Mac, for development | [`01-setup-macos.md`](01-setup-macos.md) | V1–V7 | ✅ walked from a fresh clone |
 | A RHEL 8 VM, for production | [`01-setup-rhel8.md`](01-setup-rhel8.md) — rootless podman, SELinux, the three firewall cases, corporate certificates, surviving a reboot | V1–V9 | ✅ walked on the real machine; V9 (reboot) ⏸ waits on a window |
-| A Windows PC | `01-setup-windows.md` — Docker Desktop, the scripts under Git Bash or WSL 2 | — | 🔜 written next, marked *untested* until walked on a real machine |
+| A Windows PC | [`01-setup-windows.md`](01-setup-windows.md) — Docker Desktop, the scripts under Git Bash, or a Linux distribution under WSL 2 | V1–V7 (Windows variants) | 🔨 written, marked *untested* until walked on a real PC |
 
-The two existing guides use the **same one-command install**,
+All three guides use the **same one-command install**,
 `./setup-after-clone-py.sh`, which copies certificates when a store exists,
 builds the image, starts the app, polls the API until it answers, and offers
 to install the health-monitoring cron. The guides exist so that you know what
@@ -323,12 +323,12 @@ silent rather than inventing a command.
 
 | # | Phase | Delivered | Tutorial | Shipped | Status |
 |---|---|---|---|---|---|
-| 00 | Node → Python | The FastAPI backend behind the same API as the Node prototype, verified by parity tests; the React client untouched; the Node stack retired | `04-phase-tutorials/phase-00-node-to-python.md` | pre-2.0, date not recorded | ✅ reconstructed tutorial 🔜 |
-| 01 | PostgreSQL and Alembic | Engine-agnostic storage via `DATABASE_URL`; Alembic owns the schema in the container; SQLite stays the default | `04-phase-tutorials/phase-01-postgres-alembic.md` | pre-2.0, date not recorded | ✅ reconstructed tutorial 🔜 |
-| 02 | Public-repository hygiene | Certificates backed up outside the repo; internal hostnames, users and paths behind placeholders; real workbooks replaced by synthetic ones from a tracked generator; four platform guides; the pre-push gate | `04-phase-tutorials/phase-02-public-repo-hygiene.md` | 2026-08-06 (v2.0.0) | ✅ reconstructed tutorial 🔜 |
-| 03 | Platform verification | Both guides walked from a blank machine: macOS V1–V7, RHEL 8 V1–V9 (V9 pending a reboot window); fifteen bugs found and fixed by following the guides literally | `04-phase-tutorials/phase-03-platform-verification.md` | 2026-08-17 → 2026-08-25 | ✅ reconstructed tutorial 🔜 |
-| 04 | Template ingestion | A laboratory export described as data (fingerprint, column map, cleaners, provenance), the screening table built from the file, the read-only SQL console, two-stage chemical identification, the registry audit and the five maintenance scripts | `04-phase-tutorials/phase-04-template-ingestion.md` | 2026-08-25 (v2.2.0), 2026-08-31 (v2.2.1) | ✅ reconstructed tutorial 🔜 |
-| 05 | Documentation consolidation | The numbered document set, this handbook, the phase tutorials, the roadmaps, the lessons file, the Windows guide, figures | `04-phase-tutorials/phase-05-docs-consolidation.md` | 2026-09 | 🔨 step 2 of 4 |
+| 00 | Node → Python | The FastAPI backend behind the same API as the Node prototype, verified by parity tests; the React client untouched; the Node stack retired | [`phase-00-node-to-python.md`](04-phase-tutorials/phase-00-node-to-python.md) | pre-2.0, date not recorded | ✅ (reconstructed) |
+| 01 | PostgreSQL and Alembic | Engine-agnostic storage via `DATABASE_URL`; Alembic owns the schema in the container; SQLite stays the default | [`phase-01-postgres-alembic.md`](04-phase-tutorials/phase-01-postgres-alembic.md) | pre-2.0, date not recorded | ✅ (reconstructed) |
+| 02 | Public-repository hygiene | Certificates backed up outside the repo; internal hostnames, users and paths behind placeholders; real workbooks replaced by synthetic ones from a tracked generator; four platform guides; the pre-push gate | [`phase-02-public-repo-hygiene.md`](04-phase-tutorials/phase-02-public-repo-hygiene.md) | 2026-08-06 (v2.0.0) | ✅ (reconstructed) |
+| 03 | Platform verification | Both guides walked from a blank machine: macOS V1–V7, RHEL 8 V1–V9 (V9 pending a reboot window); fifteen bugs found and fixed by following the guides literally | [`phase-03-platform-verification.md`](04-phase-tutorials/phase-03-platform-verification.md) | 2026-08-17 → 2026-08-25 | ✅ (reconstructed) |
+| 04 | Template ingestion | A laboratory export described as data (fingerprint, column map, cleaners, provenance), the screening table built from the file, the read-only SQL console, two-stage chemical identification, the registry audit and the five maintenance scripts | [`phase-04-template-ingestion.md`](04-phase-tutorials/phase-04-template-ingestion.md) | 2026-08-25 (v2.2.0), 2026-08-31 (v2.2.1) | ✅ (reconstructed) |
+| 05 | Documentation consolidation | The numbered document set, this handbook, the phase tutorials, the roadmaps, the lessons file, the Windows guide, figures | [`phase-05-docs-consolidation.md`](04-phase-tutorials/phase-05-docs-consolidation.md) | 2026-09 | 🔨 step 3 of 4 |
 | 06 | Schema normalisation | The frequently-filtered fields promoted from JSON into indexed columns, without changing the API or breaking the design rule | `04-phase-tutorials/phase-06-schema-normalisation.md` | — | 🔜 |
 | 07 | Authentication | A login in front of `/api/*`, behind a feature flag so internal users are not locked out mid-week | `04-phase-tutorials/phase-07-authentication.md` | — | 🔜 |
 
@@ -376,6 +376,7 @@ are not — a cp1252 encoding, `#DIV/0!` in a measurement column, header rows
 repeated mid-file, two CAS numbers in one cell — and identifying a compound
 from a house-style name is a judgement, not a lookup.
 
+The build of all this is [phase 04](04-phase-tutorials/phase-04-template-ingestion.md).
 Follow the playbook in order; it was written for exactly this sequence:
 
 1. [Part 2 — put a laboratory file in](10-user-playbook.md#part-2--put-a-laboratory-file-in):
@@ -416,15 +417,15 @@ Two documents, two horizons:
   order, and what each item waits on. The honest part is the waiting: most
   items are not hard to build; they are blocked on a decision or on each
   other.
-- `06-product-and-technology-roadmap.md` — from today's system of record to
-  an industrialised, hosted product: every candidate technology with a
-  verdict (required now, recommended later, optional, not needed) and the
-  trigger that would change it. 🔜 written in the next step of phase 05.
+- [`06-product-and-technology-roadmap.md`](06-product-and-technology-roadmap.md)
+  — from today's system of record to an industrialised, hosted product:
+  every candidate technology with a verdict (required now, recommended
+  later, optional, not needed) and the trigger that would change it.
 
 The next three phases, in order:
 
-1. **05 — finish this consolidation:** the phase tutorials, the roadmaps, the
-   lessons file, the Windows guide, the figures.
+1. **05 — finish this consolidation:** the figures, and `CONTRIBUTING.md`
+   in the shape my other projects use.
 2. **06 — schema normalisation:** list the fields the client filters and
    sorts on, agree them, *then* write the migration. Guessing here means a
    migration that backfills the wrong columns.

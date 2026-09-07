@@ -66,13 +66,40 @@ stumble on. This entry grows as each step lands.
   `backend/README.md` and `docs/02-architecture.md`, where the same material
   already had a home; nothing was dropped.
 
+**Added (step 3 — the tutorials, the roadmaps, the third platform, 2026-09-07)**
+- **`docs/04-phase-tutorials/`** — one tutorial per build phase, 00 to 05, in
+  the shape my other projects use: why the phase existed, what it built, steps
+  with *what / how / why / you should see / if instead*, a checkpoint, what it
+  deliberately did not do, and the commits that shipped it. Phases 00–04 are
+  **reconstructed** from these release notes, the git log and the guides, and
+  say *not recorded* where the history is silent. Each opens with a diagram.
+- **`docs/06-product-and-technology-roadmap.md`** — from one VM to a product:
+  every candidate technology (product surface, identity and access, data
+  platform, chemistry and knowledge, language-model and agent components,
+  cloud and operations, the regulatory frame, discoverability) answered with
+  the same three questions and given a verdict and a trigger. The honest
+  count: two *required now* items beyond what exists — authentication and
+  name normalisation — and a small CI phase.
+- **`docs/01-setup-windows.md`** — the third platform, to the depth of the
+  macOS guide: Docker Desktop and Git Bash, or a Linux distribution under
+  WSL 2. **Marked untested** until walked on a real PC; every expected output
+  says so.
+- **`docs/08-api-cookbook.md`** absorbs the API testing guide as one section,
+  *Fetching a compound from PubChem and registering it*, rewritten: the text
+  that called PubChem linking "proposed" now points at the identification job
+  that does it, and carries the caution the job learned about unranked lookups.
+  A stub stays at `docs/API-TESTING-GUIDE.md` for one release.
+- **`docs/11-lessons-learned.md`** now holds all 27 lessons, grouped and
+  numbered; six that were only in private notes are public for the first time.
+- Glossary: 32 new entries for the terms these documents introduce.
+- `CONTRIBUTING.md`: the stale "update these files" list replaced by the
+  documentation norms the handbook enforces.
+
 **Not yet done in this step (deliberate)**
-- `docs/API-TESTING-GUIDE.md` keeps its name until its content is merged into
-  the API cookbook; part of it describes PubChem linking as "proposed", which
-  has been implemented since.
-- No document's *content* was rewritten. The handbook, the phase tutorials,
-  the roadmaps, the lessons file, the Windows guide and the figures are the
-  following steps.
+- Figures under `docs/img/`, one symbol per record type across the documents,
+  and `CONTRIBUTING.md` restructured to the sibling shape are step 4.
+- The Windows guide has not been walked. Its checklist is the definition of
+  done for that platform.
 
 ---
 

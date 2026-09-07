@@ -4,8 +4,8 @@
 
 **What this is:** the plan for *this* system, the internal system of record.
 The longer view — from here to an industrialised, hosted product, with a
-verdict on every candidate technology — is `06-product-and-technology-roadmap.md`
-(being written; see the [handbook §10](HANDBOOK.md#10-what-comes-next)).
+verdict on every candidate technology — is
+[`06-product-and-technology-roadmap.md`](06-product-and-technology-roadmap.md).
 **How to read it:** each item says what it waits on. That is the honest part:
 most of these are not hard to build; they are blocked on a decision or on
 each other. An item that waits on nothing is simply not built yet.
@@ -33,7 +33,7 @@ table. In order:
 
 | # | Phase | One line | Waits on |
 |---|---|---|---|
-| 05 | Documentation consolidation 🔨 | The numbered document set, the handbook, one tutorial per phase, the roadmaps, the lessons file, the Windows guide, figures | nothing — in progress |
+| 05 | Documentation consolidation 🔨 | The numbered document set, the handbook, one tutorial per phase, the roadmaps, the lessons file, the Windows guide, figures | nothing — step 3 of 4 done; figures next |
 | 06 | Schema normalisation 🔜 | Promote the frequently filtered and sorted fields out of the JSON document into indexed columns, without changing the API | agreeing the list of "hot" fields first, from the client's filters and the query patterns in `store.py` |
 | 07 | Authentication 🔜 | A login in front of `/api/*` | a decision between corporate SSO/OIDC and a simpler token scheme, plus a feature flag |
 

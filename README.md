@@ -160,8 +160,8 @@ The production VM clones the **private** repository instead and the same
 command serves HTTPS with the corporate certificates. What that command is
 doing, step by step, with the output each step should print and the likely
 mistakes named: **[docs/01-setup-macos.md](docs/01-setup-macos.md)** ·
-**[docs/01-setup-rhel8.md](docs/01-setup-rhel8.md)** (Windows: guide in
-preparation, see the handbook). If you have never used a container, follow
+**[docs/01-setup-rhel8.md](docs/01-setup-rhel8.md)** ·
+**[docs/01-setup-windows.md](docs/01-setup-windows.md)** (untested). If you have never used a container, follow
 the guide rather than the one-liner — it takes an hour and you will know what
 you have.
 
@@ -201,14 +201,16 @@ get, and likely mistakes get a named fix.
 | 01 | **[Set up: RHEL 8](docs/01-setup-rhel8.md)** | The production deployment: rootless podman, SELinux, firewall cases, real certificates, surviving a reboot. Uses the **private** repo |
 | 01 | **[Uninstall: macOS](docs/01-uninstall-macos.md)** | Clean removal, starting with what you cannot get back |
 | 01 | **[Uninstall: RHEL 8](docs/01-uninstall-rhel8.md)** | The same, plus the server-only pieces (systemd, lingering, cron) and the R1–R9 reinstall checklist |
+| 01 | **[Set up: Windows](docs/01-setup-windows.md)** | Docker Desktop and Git Bash, or a Linux distribution under WSL 2 — written to the same depth, **untested** until walked on a real PC |
 | 02 | **[Architecture](docs/02-architecture.md)** | How the boxes fit; the one design rule everything else follows from; the interactive architecture page |
 | 02 | **[Database schema](docs/02-database-schema.md)** | The hybrid document pattern; SQLite and PostgreSQL; Alembic |
 | 03 | **[Git workflow](docs/03-git-workflow.md)** | Two repositories, three folders; how a change travels from your Mac to the server; the safety gate that stops secrets escaping |
+| 04 | **[Phase tutorials](docs/04-phase-tutorials/phase-00-node-to-python.md)** | One tutorial per build phase, 00 to 05: why it existed, what it built, steps with expected output, a checkpoint, what it deliberately did not do |
 | 05 | **[Roadmap](docs/05-roadmap.md)** | What is planned, in order, and what each item waits on |
+| 06 | **[Product and technology roadmap](docs/06-product-and-technology-roadmap.md)** | From one VM to a product: every candidate technology with a verdict and the trigger that would change it |
 | 07 | **[Operations](docs/07-operations.md)** | The deep runbook: certificate rotation, PostgreSQL, systemd, backups, monitoring, troubleshooting |
 | 08 | **[API reference](docs/08-api-reference.md)** | Every endpoint, request and response |
 | 08 | **[API cookbook](docs/08-api-cookbook.md)** | Copy-paste `curl` and Python recipes — every answer captured from a live instance |
-| 08 | **[API testing guide](docs/API-TESTING-GUIDE.md)** | Worked `curl` and Python examples (being folded into the cookbook) |
 | 09 | **[Chemical identification](docs/09-chemical-identification.md)** | Why compound names need identifying; the two-stage rule; maintaining the registry |
 | 09 | **[Query cookbook](docs/09-query-cookbook.md)** | Read-only SQL against the hybrid schema — why queries look unusual here, and recipes that work |
 | 10 | **[The user playbook](docs/10-user-playbook.md)** | **Hands-on start.** Load a file, check it, identify compounds, correct mistakes, ask questions, publish a change — every concept explained from scratch |
@@ -218,9 +220,6 @@ get, and likely mistakes get a named fix.
 | — | **[Backend README](backend/README.md)** | Python backend: quickstart, tests, environment variables |
 | — | **[Contributing](CONTRIBUTING.md)** | How to make and publish a change |
 | — | **[Release notes](NEWS.md)** | What changed in each version, why, and what each release deliberately did not fix |
-
-Numbers 04 (one tutorial per build phase) and 06 (the product and technology
-roadmap) are being written and will appear here as they land.
 
 ---
 

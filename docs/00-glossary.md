@@ -210,6 +210,18 @@ different doormen; Red Hat machines use one, the other, or neither.
 "**Dangling**" images are anonymous leftovers from previous builds — real
 disk space, no name, no purpose.
 
+**Docker Desktop** — the Windows and macOS application that installs a container runtime together with the small hidden Linux machine containers need. On Windows it runs them inside WSL 2. Free for individuals and small organisations; larger ones need a licence.
+
+**WSL 2 (Windows Subsystem for Linux)** — a small, real Linux machine that Windows keeps running invisibly, so that Linux programs (containers included) can run on a Windows PC. *Everyday version:* a kitchen in the basement that you order from upstairs.
+
+**Git Bash** — the terminal that comes with Git for Windows. It understands the same commands as a Mac or Linux terminal, which is why every command in this project's guides works on Windows unchanged when typed there.
+
+**PowerShell** — Windows' own command-line window. This project uses it for two commands at most; everything else runs in Git Bash.
+
+**Kubernetes** — a system for running many containers across many machines, with scheduling and self-healing. *Everyday version:* a fleet with a dispatcher; this project is one van with a driver, so it does not need one.
+
+**Serverless** — running code on demand on a cloud provider's machines, with no server of your own to manage. Ill-suited to a single-file database that must stay open.
+
 ---
 
 ## The web and API words
@@ -333,6 +345,22 @@ shapes rather than as pixels, so it stays sharp at any size and can be edited
 in a text editor. The animated diagram on the interactive architecture page
 is one; the moving dots follow the same curves as the drawn arrows.
 
+**Contract (API contract)** — the promise a server makes to its clients: send *this*, get exactly *that* back — addresses, field names, status codes, even messages. Crucible's is locked by the tests in `backend/tests/`; a change to it is announced, never slipped in.
+
+**Parity test** — a test asserting that two implementations give the same answer to the same request. The Python backend was proven against the Node prototype this way before the prototype was removed ([phase 00](04-phase-tutorials/phase-00-node-to-python.md)).
+
+**Strangler fig** — a way of replacing a running system: build the new one to behave identically, prove it, swap it in behind the same front end, then remove the old one. Named after a plant that grows around a host tree until the host can go. *Everyday version:* replacing a car's engine while keeping the dashboard and the key.
+
+**SSO / OIDC** — *single sign-on*: the organisation's existing identity service vouches for a user, so there is no separate password. *OpenID Connect* is the standard protocol it speaks. *Everyday version:* the building's badge system. The alternative, a **token scheme**, is a long secret in a request header — a key cut per person.
+
+**Role-based access control (RBAC)** — what each identity may do: read, upload, delete, administer. Meaningless without a login, which is why it waits on authentication.
+
+**Audit trail** — a permanent record of every change: who, what, when, and the value before. *Everyday version:* the laboratory-notebook rule that nothing is erased, only struck through and initialled. Crucible has none yet; it waits on knowing *who*.
+
+**Rate limiting** — refusing a caller who sends too many requests too fast. Without a login the only handle is the network address, which on a corporate network is often one shared proxy.
+
+**CI / CD (continuous integration and deployment)** — a service that runs the tests and the gates on every push (integration) and can deploy the result (deployment). *Everyday version:* a smoke alarm tested every time you cook. Planned for the public repository as its own small phase.
+
 ---
 
 ## The data words
@@ -423,6 +451,14 @@ error `File is not a zip file`.
 **CSV** — "comma-separated values": a plain-text table, one line per row.
 Simpler than Excel and readable in any editor. Only the chemicals endpoint
 accepts it.
+
+**Object storage** — a cloud service that stores files by name at any scale (S3 and its compatible cousins). *Everyday version:* the off-site archive box for the paper originals. A candidate home for the original upload files, later.
+
+**Orchestrator** — a program that runs pipeline steps on a schedule, in order, with retries and a web page showing what ran (Airflow, Dagster, Prefect). *Everyday version:* an alarm clock with a checklist. Not needed while a person runs identification after each upload.
+
+**Knowledge graph** — records stored as nodes with typed links between them (compound → sample → result → study), queried by relationship. *Everyday version:* a corkboard with string instead of four filing cabinets. Crucible's four tables and their keys already form that graph for today's questions.
+
+**Data warehouse / lakehouse** — rented cloud platforms for very large data (Snowflake, Databricks). *Everyday version:* container-port logistics; this registry is a delivery van.
 
 ---
 
@@ -637,6 +673,16 @@ blunt, historical measure of acute toxicity.
 **Route of administration** — how a substance was given: oral, dermal,
 inhalation.
 
+**InChIKey** — a fixed-length fingerprint computed from a compound's structure; the same for the compound whatever it is called, and computable by anyone. Contrast a **CAS number**, which is issued by a registry. Stored when a structure is known; a candidate canonical identifier later.
+
+**ChEBI** — a curated public dictionary of biologically relevant compounds, a possible second source beside PubChem.
+
+**GHS hazard classes** — the global system for classifying and labelling chemical hazards (the pictograms on a bottle). A controlled vocabulary a toxicology record could cite, later.
+
+**OECD test guidelines** — numbered standard protocols that toxicology studies follow, so that studies are comparable and regulators recognise them.
+
+**PubChem CID** — PubChem's own identifier for a compound (caffeine is 2519). Different from the CAS number; the identification job records both.
+
 ---
 
 ## The Python and testing words
@@ -741,6 +787,24 @@ boxes, moving dots on the arrows; one HTML file,
 `docs/architecture-interactive.html`, copied into the image at build time.
 How to open, read and change it:
 [02-architecture.md → Interactive Architecture Page](02-architecture.md#interactive-architecture-page).
+
+**Verdict and trigger** — the two words every option in the [product and technology roadmap](06-product-and-technology-roadmap.md) ends with: the verdict (*required now*, *recommended later*, *optional*, *not needed*) and the event that would change it. The rule behind them: justify, don't accumulate.
+
+**Reconstructed (tutorial)** — a phase tutorial written after the phase shipped, from the release notes, the git log and the guides, never from memory; it says *not recorded* where the history is silent rather than inventing a command.
+
+**Stub** — a one-line file left at a document's old path after a rename, pointing to the new one, kept for one release so bookmarks and the private mirror's links still land.
+
+**ALCOA+** — the data-integrity expectations regulated laboratories meet: data must be attributable, legible, contemporaneous, original and accurate, plus complete, consistent, enduring and available. Crucible keeps values original and accurate; *attributable* waits on a login.
+
+**21 CFR Part 11** — the United States regulation on electronic records and signatures in regulated industries: secure, time-stamped audit trails and signed records. A frame the registry would meet if it became the source of a regulatory submission.
+
+**GDPR** — the European data-protection regulation: personal data must be protected, used only for its purpose, and deletable. Relevant here only where a sample's metadata names a person.
+
+**ISO 27001** — the international standard for an information-security management system, expected of anyone hosting other people's data. Not applicable to one internal VM.
+
+**Model context protocol server** — a standard way for agent tools to call a system's functions with the system's own rules enforced. *Everyday version:* a service hatch with a menu, so another program can order without entering the kitchen. Optional for Crucible; the REST API is already the machine interface.
+
+**SEO / AEO / GEO** — search-engine, answer-engine and generative-engine optimisation: shaping public content so that search tools, question-answering tools and generative tools find and quote it. Not needed for an internal system of record.
 
 ---
 

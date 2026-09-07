@@ -33,7 +33,8 @@
 
 Step-by-step guide to install, run, and verify Crucible on **macOS** (development
 machine), including HTTPS. Companion documents: [macOS Uninstall](01-uninstall-macos.md) ·
-[RHEL8 Install & Run](01-setup-rhel8.md) · [RHEL8 Uninstall](01-uninstall-rhel8.md).
+[RHEL8 Install & Run](01-setup-rhel8.md) · [RHEL8 Uninstall](01-uninstall-rhel8.md) ·
+[Windows Install & Run](01-setup-windows.md) (untested).
 
 > **Repository for macOS:** clone from the **public** repo
 > `https://github.com/akannan2987/nr-nips-crucible` (no authentication needed).

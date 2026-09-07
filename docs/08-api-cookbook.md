@@ -404,7 +404,106 @@ Rows whose `chemical_id` is not already in the chemicals table are rejected rath
 
 ---
 
-Every endpoint, with every field and every option, is catalogued live at <http://localhost:49160/docs> (Swagger UI, with a "Try it out" button on each one) and written up in full in [docs/08-api-reference.md](08-api-reference.md).
+---
+
+## Fetching a compound from PubChem and registering it
+
+**The normal way is not this section.** Since [phase 04](04-phase-tutorials/phase-04-template-ingestion.md) the system consults PubChem itself, in stage 2 of [chemical identification](09-chemical-identification.md), and registers a compound only when its name and its CAS number resolve to the same substance. That is the safe path for laboratory data. This section is for the other case: you want to add **one compound you already know**, by name or CAS, and see what PubChem says about it first.
+
+**What does PubChem say about a compound? (no Crucible involved yet)**
+
+PubChem is the free public compound database. Its address scheme puts the question in the URL: the compound, then the properties you want, then the format.
+
+```bash
+# By name
+curl --noproxy '*' -sS "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/caffeine/property/MolecularFormula,MolecularWeight,IUPACName/JSON"
+# By CAS number — the same address; PubChem accepts a CAS where it accepts a name
+curl --noproxy '*' -sS "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/58-08-2/property/MolecularFormula,MolecularWeight,IUPACName/JSON"
+```
+
+```json
+{"PropertyTable":{"Properties":[{"CID":2519,"MolecularFormula":"C8H10N4O2","MolecularWeight":194.19,"IUPACName":"1,3,7-trimethylpurine-2,6-dione"}]}}
+```
+
+`CID` is PubChem's own identifier for the compound. The same URL pasted into a browser shows the same answer. Other useful shapes: synonyms at `…/compound/cid/2519/synonyms/JSON`; a structure search at `…/compound/smiles/CCO/property/MolecularFormula,MolecularWeight,IUPACName/JSON` (`CCO` is ethanol written as **SMILES**, a line notation for a structure).
+
+> **A caution the identification job learned the hard way.** Asking PubChem for a CAS number through the cross-reference address (`xref/rn`) returns *every compound that mentions that number*, unranked. Taking the first is how 19 compounds were once registered with another substance's chemistry ([lessons entry 25](11-lessons-learned.md)). The `name/<cas>` form above resolves to one compound, and the identification job additionally checks that the candidate lists the number among its own synonyms. Do the same if you script this.
+
+**How do I add that compound to Crucible in one command?**
+
+The helper script does the lookup and the registration; it targets `http://localhost:49160` unless `PANDORA_URL` says otherwise:
+
+```bash
+./docs/pubchem-to-pandora.sh caffeine          # by name
+./docs/pubchem-to-pandora.sh "50-78-2"         # by CAS (aspirin)
+PANDORA_URL=https://<vm-hostname>:49160 ./docs/pubchem-to-pandora.sh vanillin
+```
+
+It prints the fetched formula, weight, InChIKey and CID, the record it will send, and the server's reply. A second run for a compound already present is refused by the server as a duplicate, which is the right answer.
+
+**The same thing by hand, so you can see the two steps**
+
+```bash
+# Step 1: ask PubChem
+curl --noproxy '*' -sS "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/caffeine/property/IUPACName,MolecularFormula,MolecularWeight,CanonicalSMILES,InChIKey/JSON"
+
+# Step 2: register it (fill the values from step 1; give it an explicit chemical_id so re-runs are detectable as duplicates)
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/chemicals \
+  -H "Content-Type: application/json" \
+  -d '{"chemical_id":"PUBCHEM-2519","name":"caffeine","cas_number":"58-08-2","molecular_formula":"C8H10N4O2","molecular_weight":194.19,"inchi_key":"RYYVLZVUVIJVGH-UHFFFAOYSA-N","description":"1,3,7-trimethylpurine-2,6-dione","metadata":{"pubchem_cid":2519,"source":"PubChem"}}'
+
+# Step 3: confirm
+curl --noproxy '*' -sS "http://localhost:49160/api/chemicals?search=caffeine"
+```
+
+**And from Python, as a starting point for your own scripts**
+
+```python
+"""Fetch a compound from PubChem and register it in Crucible."""
+import requests
+
+CRUCIBLE = "http://localhost:49160/api"     # or the VM's https:// address
+query = "vanillin"                           # a name or a CAS number
+
+props = requests.get(
+    "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/"
+    f"{query}/property/IUPACName,MolecularFormula,MolecularWeight,CanonicalSMILES,InChIKey/JSON",
+    timeout=30,
+).json()["PropertyTable"]["Properties"][0]
+
+chemical = {
+    "chemical_id": f"PUBCHEM-{props['CID']}",
+    "name": query,
+    "molecular_formula": props.get("MolecularFormula"),
+    "molecular_weight": float(props.get("MolecularWeight", 0)) or None,
+    "smiles": props.get("CanonicalSMILES"),
+    "inchi_key": props.get("InChIKey"),
+    "description": props.get("IUPACName"),
+    "metadata": {"pubchem_cid": props["CID"], "source": "PubChem"},
+}
+
+r = requests.post(f"{CRUCIBLE}/chemicals", json=chemical)
+if r.status_code == 201:
+    print("Added:", r.json()["chemical_id"])
+elif r.status_code == 400:
+    print("Skipped:", r.json()["error"])      # already exists
+else:
+    r.raise_for_status()
+```
+
+The fields a chemical record accepts are in [`08-api-reference.md` → Chemicals](08-api-reference.md#chemicals). A ready-made demonstration of five PubChem lookups, standard library only, is `docs/api-demo.py` (`python3 docs/api-demo.py`).
+
+**When PubChem itself misbehaves**
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `curl` works, Python `requests` fails with an SSL error | corporate TLS interception | `export REQUESTS_CA_BUNDLE=/path/to/corporate-ca.pem` |
+| no response, then a timeout | a proxy in the way | `export https_proxy=http://<proxy>:<port>` for the PubChem call only — never for localhost, which needs `--noproxy '*'` |
+| `404` from PubChem | the name or number is unknown to it | check the spelling; try the CAS instead of the name |
+| `503` under repeated calls | PubChem throttles callers above about five requests a second | slow down; the identification job backs off automatically |
 
 ---
-**Next:** [API testing guide](API-TESTING-GUIDE.md) — worked examples with Python as well as curl.
+
+Every endpoint, with every field and every option, is catalogued live at <http://localhost:49160/docs> (Swagger UI, with a "Try it out" button on each one) and written up in full in [docs/08-api-reference.md](08-api-reference.md).
+
+**Next:** [`09-chemical-identification.md`](09-chemical-identification.md) — how the system identifies compounds in bulk, and the rule this section's caution comes from.

@@ -738,14 +738,30 @@ async function uploadChemicalsExcel(file) {
 }
 ```
 
-### Update Documentation
+### Documentation norms
 
-When making changes, update relevant documentation:
+The documentation is a numbered set with one living spine,
+[docs/HANDBOOK.md](docs/HANDBOOK.md). The rules that keep it true, in full,
+are in its last section; the ones every change must respect:
 
-- **README.md**: Overview, installation, quick start
-- **docs/08-api-reference.md**: API endpoint changes
-- **docs/07-operations.md**: Deployment process changes
-- **CONTRIBUTING.md**: Development process changes
+- **One home per topic.** A command, table or explanation that appears in two
+  files is a bug. Link to the home with one sentence of context instead.
+- **The handbook changes in the same commit** as the work it describes: its
+  §0 status box and, for a phase, its §7 build-log row.
+- **Every phase has a tutorial** in `docs/04-phase-tutorials/`, in the shape
+  the existing ones use: why it exists, what it built, numbered steps with
+  *what / how / why / you should see / if instead*, a checkpoint, what it
+  deliberately did not do, and the publish block.
+- **Every jargon term is explained where it first appears** and added to
+  [docs/00-glossary.md](docs/00-glossary.md); a missing term is a documentation bug.
+- **Show the output.** A verification command must be written so that failure
+  is visible (`curl -sS`, never `-s`).
+- **Release notes** go in [NEWS.md](NEWS.md): what changed, why, and what the
+  release deliberately did not fix.
+- **Nothing in a tracked file or a commit message** names a tool, vendor or
+  assistant, and nothing implies the project exists for anything but its
+  stated purpose. The public-safety gate checks paths and identifiers; this
+  rule is checked by reading.
 
 ---
 

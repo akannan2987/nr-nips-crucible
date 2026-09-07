@@ -1,7 +1,7 @@
 """Parity tests: /api/chemicals must match the frozen v1 contract exactly.
 
 Every expectation in this file was derived from the legacy (v1) chemicals
-route and API.md — response keys, messages, and status codes are asserted
+route and docs/08-api-reference.md — response keys, messages, and status codes are asserted
 verbatim.
 """
 

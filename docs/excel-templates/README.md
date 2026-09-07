@@ -1,4 +1,4 @@
-[← README](../../README.md) · [All docs in order](../../README.md#the-documentation-in-order) · [Glossary](../GLOSSARY.md)
+[← README](../../README.md) · [Handbook](../HANDBOOK.md) · [Glossary](../00-glossary.md)
 
 # Excel Templates - Crucible: Pandora Toolbox Enhancement (v2.0)
 
@@ -17,10 +17,10 @@ Ready-to-fill upload templates for bulk data import into Crucible.
 
 | Module | File | Accepted upload formats |
 |--------|------|-------------------------|
-| **Chemicals** | [chemicals_template.csv](./chemicals/chemicals_template.csv) · [chemicals_template.xlsx](./chemicals/chemicals_template.xlsx) · [chemicals_template.sdf](./chemicals/chemicals_template.sdf) | `.csv`, `.xlsx`, and `.sdf` |
-| **Samples** | [Upload_Sample_Template.xlsx](./samples/Upload_Sample_Template.xlsx) | `.xlsx` only (SLIMS layout) |
-| **Screening** | [screening_template.xlsx](./screening/screening_template.xlsx) | `.xlsx` only |
-| **Toxicology** | [toxicology_template.xlsx](./toxicology/toxicology_template.xlsx) | `.xlsx` only |
+| **Chemicals** | [chemicals_template.csv](chemicals/chemicals_template.csv) · [chemicals_template.xlsx](chemicals/chemicals_template.xlsx) · [chemicals_template.sdf](chemicals/chemicals_template.sdf) | `.csv`, `.xlsx`, and `.sdf` |
+| **Samples** | [Upload_Sample_Template.xlsx](samples/Upload_Sample_Template.xlsx) | `.xlsx` only (SLIMS layout) |
+| **Screening** | [screening_template.xlsx](screening/screening_template.xlsx) | `.xlsx` only |
+| **Toxicology** | [toxicology_template.xlsx](toxicology/toxicology_template.xlsx) | `.xlsx` only |
 
 > ⚠️ **Only the Chemicals endpoint accepts CSV.** Samples, Screening, and
 > Toxicology are read with openpyxl and require a real `.xlsx` workbook —
@@ -189,7 +189,7 @@ Each is also accepted in `Title_Case` (`Chemical_ID`, `Study_Type`, `NOAEL`,
 ## Regenerating these templates
 
 The templates are produced by
-[`generate_templates.py`](./generate_templates.py) so they stay in sync with the
+[`generate_templates.py`](generate_templates.py) so they stay in sync with the
 parsers, carry no document metadata, and contain no real data. To change a
 template, edit the script and re-run it (it needs the backend virtualenv, which
 has openpyxl and RDKit):
@@ -208,7 +208,7 @@ cd backend && .venv/bin/pytest
 
 ## Support
 
-1. [API.md](../../API.md) — upload endpoint reference
+1. [docs/08-api-reference.md](../08-api-reference.md) — upload endpoint reference
 2. [docs/API-TESTING-GUIDE.md](../API-TESTING-GUIDE.md) — worked `curl` examples
 3. [CONTRIBUTING.md](../../CONTRIBUTING.md) — reporting bugs
 

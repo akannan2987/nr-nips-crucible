@@ -1,4 +1,4 @@
-[← README](README.md) · [All docs in order](README.md#the-documentation-in-order) · [Glossary](docs/GLOSSARY.md)
+[← README](README.md) · [Handbook](docs/HANDBOOK.md) · [Glossary](docs/00-glossary.md)
 
 # Contributing to Crucible: Pandora Toolbox Enhancement (v2.0)
 
@@ -62,13 +62,13 @@ We are committed to providing a welcoming and inspiring community for all. Pleas
 
 ### Clone the Public Repo
 
-Crucible uses a **dual-repo model** (see [docs/GITOPS-WORKFLOW.md](docs/GITOPS-WORKFLOW.md) §2.1):
+Crucible uses a **dual-repo model** (see [docs/03-git-workflow.md](docs/03-git-workflow.md) §2.1):
 the private `nestle-it` repo is the deploy-only source of truth, and the public
 `akannan2987` repo is the sanitized mirror where all changes are authored. The
 Mac authoring folder clones **only the public repo** — the private repo is
 **never** added as a remote on the Mac, so the folder cannot accidentally push
 to it. Content reaches the private repo via the VM mirror folder
-(GITOPS-WORKFLOW.md Flow A steps 6-8).
+(03-git-workflow.md Flow A steps 6-8).
 
 ```bash
 # Clone the PUBLIC repo — this is the Mac authoring folder
@@ -172,7 +172,7 @@ Then create a Pull Request on GitHub.
 ### 🛡️ Step 1: Run the Public-Safety Gate
 
 `origin` is the **public** repo, so every push is a public push.
-[docs/GITOPS-WORKFLOW.md](docs/GITOPS-WORKFLOW.md) Golden Rule 4 mandates the
+[docs/03-git-workflow.md](docs/03-git-workflow.md) Golden Rule 4 mandates the
 gate script before every one:
 
 ```bash
@@ -314,16 +314,16 @@ git push origin develop develop:beta develop:master
 ```
 
 The change is now on the **public** repo only. To carry it into the private
-repo, continue with [docs/GITOPS-WORKFLOW.md](docs/GITOPS-WORKFLOW.md)
+repo, continue with [docs/03-git-workflow.md](docs/03-git-workflow.md)
 **Flow A steps 6-11** (mirror public → private on the VM, then deploy).
 
 ### 📌 Step 9: Deploy and Verify on the VM
 
 Production pulls from the **private** repo, so a `git pull` there is a no-op
-until the mirror steps (GITOPS-WORKFLOW.md Flow A steps 6-9) have copied your
+until the mirror steps (03-git-workflow.md Flow A steps 6-9) have copied your
 change into it. Once they have, deploy from the production folder exactly as in
-Flow A step 10 (folder layout and access: [docs/GITOPS-WORKFLOW.md](docs/GITOPS-WORKFLOW.md) §2.3
-and [docs/INSTALL-RHEL8.md](docs/INSTALL-RHEL8.md)):
+Flow A step 10 (folder layout and access: [docs/03-git-workflow.md](docs/03-git-workflow.md) §2.3
+and [docs/01-setup-rhel8.md](docs/01-setup-rhel8.md)):
 
 ```bash
 # ▶ VM — production folder
@@ -519,7 +519,7 @@ const ChemicalCard = ({ chemical, onDelete }) => {
 - Type hints everywhere; docstrings on public functions
 - Pydantic models for request bodies (kept lenient — see `backend/app/schemas.py`)
 - **API parity is the contract**: any change to a route must keep the response
-  shape identical to `API.md` and pass `backend/tests/` (`.venv/bin/pytest`)
+  shape identical to `docs/08-api-reference.md` and pass `backend/tests/` (`.venv/bin/pytest`)
 - Keep router files thin; business logic lives in `store.py` or `utils/`
 - Prefer clear, idiomatic code over clever one-liners; explain advanced
   constructs (DI, sessions, validators) with a short comment on first use
@@ -743,8 +743,8 @@ async function uploadChemicalsExcel(file) {
 When making changes, update relevant documentation:
 
 - **README.md**: Overview, installation, quick start
-- **API.md**: API endpoint changes
-- **DEPLOYMENT.md**: Deployment process changes
+- **docs/08-api-reference.md**: API endpoint changes
+- **docs/07-operations.md**: Deployment process changes
 - **CONTRIBUTING.md**: Development process changes
 
 ---
@@ -780,12 +780,11 @@ Root:
 ├── setup-after-clone-py.sh  # Post-clone setup with SSL certs
 ├── setup-ssl.sh      # SSL certificate setup helper
 ├── cert-expiry-check.sh  # Certificate expiry check
-├── check-public-safe.sh  # Pre-push safety gate (see docs/GITOPS-WORKFLOW.md)
+├── check-public-safe.sh  # Pre-push safety gate (see docs/03-git-workflow.md)
 ├── uninstall.sh      # Uninstall & cleanup script
 ├── .gitignore        # Protects certs, data, keys
-├── DEPLOYMENT.md     # Deployment runbooks, SSL, systemd
-├── MIGRATION.md      # Migration history + learning map
-└── docs/             # Documentation (incl. GITOPS-WORKFLOW.md, install/uninstall runbooks)
+├── NEWS.md           # Release notes
+└── docs/             # Every guide, numbered in reading order (00-glossary … 12-history)
 ```
 
 ### Security Notes for Contributors
@@ -804,7 +803,7 @@ Root:
 1. Add a route function to the relevant file in `backend/app/routers/`
 2. Keep the router thin — put logic in `store.py` or `utils/`
 3. Add an API function in `client/src/services/api.js`
-4. Document it in `API.md` and add a test in `backend/tests/`
+4. Document it in `docs/08-api-reference.md` and add a test in `backend/tests/`
 5. Test with cURL or the OpenAPI docs at `/docs`
 
 ### Adding a New UI Component
@@ -868,7 +867,7 @@ rm -rf certs/ data/   # ⚠️ deletes your local database — back up data/ fir
 ./uninstall.sh --full
 ```
 
-See the [Uninstall and reinstall guide](DEPLOYMENT.md#uninstall-and-reinstall) in the Deployment documentation for complete details.
+See the [Uninstall and reinstall guide](docs/07-operations.md#uninstall-and-reinstall) in the Deployment documentation for complete details.
 
 ---
 

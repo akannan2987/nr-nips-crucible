@@ -147,7 +147,7 @@ REGISTRY: tuple[TemplateSpec, ...] = (CERGY_SCREENING,)
 #
 # They are described here rather than only in code because a column with no
 # explanation is a column nobody can trust. The table shows these descriptions,
-# and `docs/GLOSSARY.md` repeats them.
+# and `docs/00-glossary.md` repeats them.
 
 DERIVED_COLUMNS: dict[str, str] = {
     "chemical_id": (

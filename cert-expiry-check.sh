@@ -42,10 +42,10 @@ fi
 
 warn_secs=$(( WARN_DAYS * 86400 ))
 if ! openssl x509 -checkend 0 -noout -in "$CERT_FILE" >/dev/null 2>&1; then
-    echo "cert-expiry: ✗ '$CERT_FILE' has ALREADY EXPIRED ($end_date). Rotate it now — DEPLOYMENT.md → Rotating the certificate."
+    echo "cert-expiry: ✗ '$CERT_FILE' has ALREADY EXPIRED ($end_date). Rotate it now — docs/07-operations.md → Rotating the certificate."
     exit 1
 elif ! openssl x509 -checkend "$warn_secs" -noout -in "$CERT_FILE" >/dev/null 2>&1; then
-    echo "cert-expiry: ⚠ '$CERT_FILE' expires soon (${left_msg}, < ${WARN_DAYS} days; $end_date). Plan rotation — DEPLOYMENT.md → Rotating the certificate."
+    echo "cert-expiry: ⚠ '$CERT_FILE' expires soon (${left_msg}, < ${WARN_DAYS} days; $end_date). Plan rotation — docs/07-operations.md → Rotating the certificate."
     exit 1
 else
     echo "cert-expiry: ✓ '$CERT_FILE' OK (${left_msg}; expires $end_date)."

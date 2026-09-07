@@ -2,7 +2,7 @@
 
 # check-public-safe.sh — verify this checkout is safe to push to the PUBLIC repo.
 #
-# Run it before every public push (see docs/GITOPS-WORKFLOW.md):
+# Run it before every public push (see docs/03-git-workflow.md):
 #     ./check-public-safe.sh
 #
 # Exit 0 = safe to push. Exit 1 = something sensitive would be published.

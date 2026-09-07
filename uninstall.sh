@@ -193,7 +193,7 @@ backup_data() {
     local found=0
     mkdir -p "${backup_dir}"
     # Containers are already stopped at this point, so plain copies are safe
-    # (never copy a RUNNING SQLite database — see MIGRATION.md §11).
+    # (never copy a RUNNING SQLite database — see docs/07-operations.md → Backup and restore).
     if [ -f "${PROJECT_DIR}/data/crucible.db" ]; then
         cp "${PROJECT_DIR}/data/crucible.db" "${backup_dir}/crucible-final-${stamp}.db"
         success "SQLite database backed up to ${backup_dir}/crucible-final-${stamp}.db"
@@ -263,7 +263,7 @@ remove_systemd() {
     echo -e "${BOLD}Step 8: Remove systemd Services (rootless + system, if configured)${NC}"
     local found=0
 
-    # Rootless user units from MIGRATION.md §6 (RHEL8: podman generate systemd / Quadlet)
+    # Rootless user units, see docs/07-operations.md → Auto-start on boot (RHEL8: podman generate systemd / Quadlet)
     local user_unit="${HOME}/.config/systemd/user/container-crucible-py.service"
     if [ -f "$user_unit" ]; then
         systemctl --user stop container-crucible-py.service 2>/dev/null || true

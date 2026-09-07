@@ -12,7 +12,7 @@ column; this module says what each cleaner actually does.
 
 **Nothing here ever discards information.** A cleaner returns the cleaned
 value *and* the original text, so the caller can keep the raw row alongside
-the tidy one. `docs/architecture.md` states that the stored document is the
+the tidy one. `docs/02-architecture.md` states that the stored document is the
 source of truth; cleaning that threw the original away would break that.
 """
 

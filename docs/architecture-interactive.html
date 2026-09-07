@@ -125,9 +125,9 @@
       🐍 <strong>v2.0 Python backend:</strong> this page describes the current
       <strong>Python/FastAPI</strong> architecture (SQLAlchemy&nbsp;+&nbsp;SQLite, RDKit).
       It was migrated from a Node.js/Express backend (now retired) with an
-      <em>identical</em> API. Deployment runbooks: <code>DEPLOYMENT.md</code>;
-      migration history: <code>MIGRATION.md</code>; deeper detail:
-      <code>docs/architecture.md</code> and <code>docs/database-schema.md</code>.
+      <em>identical</em> API. Deployment runbooks: <code>docs/07-operations.md</code>;
+      migration history: <code>docs/12-history.md</code>; deeper detail:
+      <code>docs/02-architecture.md</code> and <code>docs/02-database-schema.md</code>.
     </p>
   </div>
 </div>
@@ -833,7 +833,7 @@
                   <tr><td class="pr-2 py-0.5"><b>Let's Encrypt</b></td><td>Great for public sites but Pandora is internal-only. Nestlé has its own CA.</td></tr>
                 </tbody>
               </table>
-              <p class="text-slate-400 pt-1"><b>Status in v2.0:</b> the Python backend serves TLS in-process via uvicorn with Nestlé's certificates — start it with <code>./container-py.sh start-ssl</code> (falls back to HTTP when no certs are present). See <code>DEPLOYMENT.md</code> → SSL/TLS.</p>
+              <p class="text-slate-400 pt-1"><b>Status in v2.0:</b> the Python backend serves TLS in-process via uvicorn with Nestlé's certificates — start it with <code>./container-py.sh start-ssl</code> (falls back to HTTP when no certs are present). See <code>docs/07-operations.md</code> → SSL/TLS.</p>
             </div>
           </div>
           <div class="glass rounded-lg p-4 lift cursor-pointer" onclick="document.getElementById('cron-why').classList.toggle('hidden')">

@@ -1,9 +1,9 @@
-[← README](../README.md) · [All docs in order](../README.md#the-documentation-in-order) · [Glossary](../docs/GLOSSARY.md)
+[← README](../README.md) · [Handbook](../docs/HANDBOOK.md) · [Glossary](../docs/00-glossary.md)
 
 # Crucible Python Backend (FastAPI)
 
 The Crucible backend: FastAPI + SQLAlchemy 2 + Pydantic v2 over SQLite (with
-optional PostgreSQL). It implements the frozen v1 API contract (see `../API.md`)
+optional PostgreSQL). It implements the frozen v1 API contract (see `docs/08-api-reference.md`)
 so the React client works unchanged. (It began life as a strangler-fig
 replacement for a Node/Express service, which has since been retired.)
 
@@ -39,6 +39,15 @@ python3 -m venv .venv
 ```
 
 Interactive API docs (FastAPI generates them from the code): http://localhost:8000/docs
+
+**Bare-metal production build** — serves the API *and* the built client on
+`http://localhost:49160` without a container (the container is the supported
+way to run it; this is for debugging the serving path):
+
+```bash
+cd client && npm run build                                  # → client/dist
+cd ../backend && PORT=49160 .venv/bin/python -m app.main
+```
 
 ## Pointing the React dev server at the backend
 

@@ -10,6 +10,97 @@ change you are getting.
 
 ---
 
+## v2.3.0 — in progress — "One document set, in reading order"
+
+The documentation is being reshaped to the structure my other projects use:
+numbered files whose names give the reading order, one living handbook as the
+spine, one tutorial per build phase, and figures for the ideas newcomers
+stumble on. This entry grows as each step lands.
+
+**Changed (step 1 — the numbered set, 2026-09-07)**
+- Fifteen documents renamed with `git mv`, so their history follows them.
+  `DEPLOYMENT.md`, `API.md` and `MIGRATION.md` move from the repository root
+  into `docs/`. Full mapping:
+
+  | Was | Now |
+  |---|---|
+  | `docs/GLOSSARY.md` | `docs/00-glossary.md` |
+  | `docs/INSTALL-MACOS.md` · `docs/INSTALL-RHEL8.md` | `docs/01-setup-macos.md` · `docs/01-setup-rhel8.md` |
+  | `docs/UNINSTALL-MACOS.md` · `docs/UNINSTALL-RHEL8.md` | `docs/01-uninstall-macos.md` · `docs/01-uninstall-rhel8.md` |
+  | `docs/architecture.md` · `docs/database-schema.md` | `docs/02-architecture.md` · `docs/02-database-schema.md` |
+  | `docs/GITOPS-WORKFLOW.md` | `docs/03-git-workflow.md` |
+  | `DEPLOYMENT.md` | `docs/07-operations.md` |
+  | `API.md` · `docs/API-COOKBOOK.md` | `docs/08-api-reference.md` · `docs/08-api-cookbook.md` |
+  | `docs/CHEMICAL-IDENTIFICATION.md` · `docs/QUERY-COOKBOOK.md` | `docs/09-chemical-identification.md` · `docs/09-query-cookbook.md` |
+  | `docs/PLAYBOOK.md` | `docs/10-user-playbook.md` |
+  | `MIGRATION.md` | `docs/12-history.md` |
+
+- Every relative link in the repository rewritten in one scripted pass and
+  checked; the wording that named the old files updated too, in docs, scripts,
+  code comments and the interactive architecture page.
+- A one-line stub stays at each old path for one release, so bookmarks and the
+  private mirror's links keep landing somewhere; `DEPLOYMENT.md`'s stub keeps
+  the eleven headings other documents used to link to. The stubs go in the
+  release after next.
+- The README's documentation index is now one table in reading order.
+
+**Added (step 2 — the handbook, 2026-09-07)**
+- **`docs/HANDBOOK.md`** — the living spine: a status box (§0) updated with
+  every phase commit, the story so far on one page, then Day 0 to today in
+  order — understand the domain, set up once, run it, understand the design,
+  how a change travels, the build phase by phase (the only build log in the
+  repository), operate it, real laboratory data, what comes next, lessons —
+  and a one-screen cheat sheet. Each stage says its goal, why it comes where
+  it does, numbered reading steps with *why*, and "you are done when".
+- **`docs/05-roadmap.md`** — the README roadmap moved out, keeping the
+  "waits on" framing, plus the next three phases, the carried items and what
+  is deliberately not planned.
+- **`docs/11-lessons-learned.md`** — the README's "bumps" moved out, grouped
+  by where they were found and numbered.
+- Every document's first line now reads `[← README] · [Handbook] · [Glossary]`.
+- **The README is a front door again**: what a registry is, the problem, how it
+  works, the module table, a quick start, one documentation index with the
+  handbook first, the repository map, the honesty notes, licence and author.
+  Its container, development, testing, HTTPS, monitoring, troubleshooting,
+  security and uninstall sections moved to `docs/07-operations.md`,
+  `backend/README.md` and `docs/02-architecture.md`, where the same material
+  already had a home; nothing was dropped.
+
+**Not yet done in this step (deliberate)**
+- `docs/API-TESTING-GUIDE.md` keeps its name until its content is merged into
+  the API cookbook; part of it describes PubChem linking as "proposed", which
+  has been implemented since.
+- No document's *content* was rewritten. The handbook, the phase tutorials,
+  the roadmaps, the lessons file, the Windows guide and the figures are the
+  following steps.
+
+---
+
+## v2.2.2 — 2026-09-07 — "One description of the interactive page"
+
+A documentation-only release. Nothing in the application changed.
+
+**Changed**
+- **The interactive architecture page now has one home.** The section in
+  [docs/02-architecture.md](docs/02-architecture.md#interactive-architecture-page)
+  explains what the page is, how to open it on each platform, what each of its
+  six tabs shows and where the same facts live in text, how FastAPI serves it,
+  and the edit → rebuild → checklist → publish loop for changing it — with two
+  diagrams. Two earlier tutorials that described the page's construction step
+  by step, `docs/architecture-template-tutorial.md` and
+  `docs/architecture-template-tutorial-pandora-example.md`, are removed; their
+  reusable parts (the architecture-brief-first method, the stable-`id` rule,
+  the `offset-path` pitfall, the browser checklist) moved into that section.
+  Neither file was linked from any other document.
+- Glossary gains **SVG** and **interactive architecture page**.
+
+**Known limitations (deliberate)**
+- The page is a second description of the architecture and can drift from the
+  text. The section states the rule — change the text first, then the page —
+  but nothing enforces it.
+
+---
+
 ## v2.2.1 — 2026-08-31 — "Checking what we registered"
 
 A correctness release. Auditing the chemical registry found that compounds had
@@ -35,7 +126,7 @@ registry number was looked up.
   element the name never accounts for. Entries where both names agree exactly
   are exempt, as are cells naming two co-eluting compounds.
 - Registry maintenance is documented end to end in
-  [docs/CHEMICAL-IDENTIFICATION.md](docs/CHEMICAL-IDENTIFICATION.md): auditing,
+  [docs/CHEMICAL-IDENTIFICATION.md](docs/09-chemical-identification.md): auditing,
   reviewing, removing without orphaning measurements, and recovering afterwards.
 - Working files produced while auditing are gitignored. They carry real compound
   names, and the publication gate would not have objected to them.
@@ -68,7 +159,7 @@ templates. One deployment now holds 49,065 screening records.
 - **Chemical identification**, in two stages: match against compounds already
   registered, then consult PubChem, registering only where a compound's name
   and its CAS number agree. See
-  [docs/CHEMICAL-IDENTIFICATION.md](docs/CHEMICAL-IDENTIFICATION.md).
+  [docs/CHEMICAL-IDENTIFICATION.md](docs/09-chemical-identification.md).
 - **A read-only SQL console** (`/api/query` and a Query tab). The database
   connection is opened read-only, so writes are refused by SQLite itself rather
   than by a filter that could be worked around.
@@ -232,4 +323,4 @@ very different machines.
 
 ---
 
-**See also:** [README](README.md) · [the documentation index](README.md#the-documentation-in-order) · [Glossary](docs/GLOSSARY.md)
+**See also:** [README](README.md) · [the documentation index](README.md#the-documentation-in-order) · [Glossary](docs/00-glossary.md)

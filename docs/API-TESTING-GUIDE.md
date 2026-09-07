@@ -1,4 +1,4 @@
-[← README](../README.md) · [All docs in order](../README.md#the-documentation-in-order) · [Glossary](GLOSSARY.md)
+[← README](../README.md) · [Handbook](HANDBOOK.md) · [Glossary](00-glossary.md)
 
 # API Testing Guide - Crucible: Pandora Toolbox Enhancement (v2.0)
 
@@ -97,7 +97,7 @@ print(props["InChIKey"])           # RYYVLZVUVIJVGH-UHFFFAOYSA-N
 > 📚 **For plain Crucible CRUD from Python** (create/read/update/delete
 > chemicals with `requests`, step by step, including error handling, bulk
 > operations and file uploads), see
-> [API.md → "Python (Requests) — step-by-step guide"](../API.md#python-requests--step-by-step-guide).
+> [docs/08-api-reference.md → "Python (Requests) — step-by-step guide"](08-api-reference.md#python-requests--step-by-step-guide).
 > This guide only covers the PubChem-specific workflows.
 
 ---

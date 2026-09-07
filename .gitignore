@@ -89,17 +89,10 @@ ehthumbs.db
 *.swo
 *~
 
-# --- Local AI-assistant settings ----------------------------------
-.claude/settings.local.json
-
 # --- Local working notes (not for publication) --------------------
-crucible-costar-prompt.md
-# CLAUDE.md is auto-loaded by Claude Code every session. It is a symlink to
-# crucible-costar-prompt.md above, so it carries the same internal notes and
-# must never be published either.
-CLAUDE.md
-CLAUDE.local.md
-.claude/
+# Per-machine notes live outside the repository or in .git/info/exclude,
+# which is local to the clone and never published.
+*.local.md
 
 # --- Upload templates: only the sanitized, synthetic templates are
 #     tracked. Any other workbook dropped in here (a real export used
@@ -126,6 +119,3 @@ suspect*.txt
 bad-ids*.txt
 audit*.csv
 
-# local working notes - never published
-CLAUDE.md
-.claude/

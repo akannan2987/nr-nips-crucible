@@ -394,7 +394,7 @@ git diff --stat public/develop develop
 **Expected:** only the private-only files - the 6 real-data workbooks under
 `docs/excel-templates/`. That difference is correct and permanent.
 
-> The private repo also tracked a stale `crucible-costar-prompt.md` from its
+> The private repo also tracked a stale local working-notes file from its
 > pre-2026-08 history. It was untracked on 2026-08-24 (`git rm --cached`), since
 > the file is gitignored, machine-local working notes, and being
 > tracked-but-ignored is a confusing state. If your sync diff still lists it,

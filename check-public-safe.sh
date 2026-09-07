@@ -26,9 +26,11 @@ echo ""
 
 # ── 1. Paths that must never be tracked ─────────────────────────────
 echo "1. Secret / runtime paths"
-for p in certs data backups .env .env.local crucible-costar-prompt.md \
-         CLAUDE.md CLAUDE.local.md .claude \
-         .claude/settings.local.json backend/.venv client/node_modules; do
+# Anything a machine excludes locally (.git/info/exclude) must not be tracked
+# either — that file is where per-machine notes and editor settings are listed.
+local_excludes=$(grep -vE '^\s*(#|$)' .git/info/exclude 2>/dev/null || true)
+for p in certs data backups .env .env.local backend/.venv client/node_modules \
+         '*.local.md' $local_excludes; do
     tracked=$(git ls-files -- "$p" 2>/dev/null)
     if [ -n "$tracked" ]; then
         echo -e "   ${RED}✗ TRACKED: $p${NC}"

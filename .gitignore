@@ -125,3 +125,7 @@ proposed*.xlsx
 suspect*.txt
 bad-ids*.txt
 audit*.csv
+
+# local working notes - never published
+CLAUDE.md
+.claude/

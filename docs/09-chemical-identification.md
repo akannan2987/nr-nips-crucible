@@ -120,26 +120,14 @@ result for that compound, across every sample and every simulant.
 Two stages, and they are tried in order. **The second is only reached if the
 first finds nothing.**
 
-```
-   a screening row
-        │
-        ▼
-   ┌─────────────────────────────────────────┐
-   │ STAGE 1  Do we already have this        │   at upload, instantly,
-   │          compound registered?           │   no network involved
-   │          CAS matches?  → link           │
-   │          name matches? → link           │
-   └───────────────┬─────────────────────────┘
-                   │ nothing matched
-                   ▼
-   ┌─────────────────────────────────────────┐
-   │ STAGE 2  Ask PubChem.                   │   a background job,
-   │          Register ONLY if the name AND  │   roughly an hour
-   │          the CAS agree on one compound  │
-   └───────────────┬─────────────────────────┘
-                   │ not confident enough
-                   ▼
-        row keeps its own name, unlinked
+```mermaid
+flowchart TB
+    A["a screening row: a name, maybe a CAS"] --> S1{"STAGE 1 — at upload, no network<br/>already registered?"}
+    S1 -- "CAS matches" --> L1["link to that entry"]
+    S1 -- "name matches" --> L1
+    S1 -- "nothing matched" --> S2{"STAGE 2 — background job, about an hour<br/>ask PubChem"}
+    S2 -- "name AND CAS resolve to the same compound" --> REG["register the compound, then link"]
+    S2 -- "they disagree, or one is missing" --> U["row keeps its own name, unlinked — with the reason in the report"]
 ```
 
 **The two stages use deliberately different rules**, and this is the part worth

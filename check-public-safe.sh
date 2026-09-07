@@ -66,7 +66,7 @@ fi
 # paths, and internal project/data identifiers.
 echo ""
 echo "3. Internal identifiers in tracked content"
-hits=$(git grep -inE 'nr-ubp|rdkannanab|gpfs|PIPM|NQAC' -- \
+hits=$(git grep -inE --untracked 'nr-ubp|rdkannanab|gpfs|PIPM|NQAC' -- \
        ':!check-public-safe.sh' 2>/dev/null)
 if [ -n "$hits" ]; then
     echo -e "   ${RED}✗ found — redact before pushing:${NC}"
@@ -80,7 +80,7 @@ fi
 # exception (README authors, self-signed cert subject, UI footer).
 echo ""
 echo "4. Org attribution (informational — accepted exceptions)"
-org=$(git grep -inE 'nihs|nestle\.com' -- \
+org=$(git grep -inE --untracked 'nihs|nestle\.com' -- \
       ':!check-public-safe.sh' 2>/dev/null | cut -c1-100)
 if [ -n "$org" ]; then
     echo "$org" | sed 's/^/       /'

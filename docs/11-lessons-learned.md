@@ -201,6 +201,15 @@ teaches the reader to skim.*
 only one of the two import paths writes. Of 686 records it checked 367 — and the
 319 it skipped were precisely the ones that had never been reviewed.
 
+
+**28. The gate passed on a file it could not see.** The public-safety gate
+searched *tracked* content for internal identifiers. New figures were run
+past it while still untracked, it reported safe, the files were committed and
+pushed, and only the next run — with the files now tracked — found a real
+workbook code in an example row. The gate now searches untracked files too.
+*Lesson: a check that runs before `git add` must look at the working tree,
+not the index; otherwise "new" is exactly the case it misses.*
+
 ---
 
 ## The one rule they add up to

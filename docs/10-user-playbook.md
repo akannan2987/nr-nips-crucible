@@ -204,25 +204,12 @@ compound record is broken. Run this after any change.
 
 Four stages, and understanding them makes the rest obvious:
 
-```
-   your spreadsheet
-         │
-         ▼
-   ┌───────────────┐   Is this a file shape I recognise?
-   │  Recognise    │   Matched by its column headings.
-   └───────┬───────┘
-           ▼
-   ┌───────────────┐   Fix the mess: encoding, error cells,
-   │  Clean        │   repeated headings, odd spellings of "nothing".
-   └───────┬───────┘
-           ▼
-   ┌───────────────┐   Store the tidy version AND the original row.
-   │  Store        │   Nothing is discarded.
-   └───────┬───────┘
-           ▼
-   ┌───────────────┐   Point each row at a known compound,
-   │  Link         │   where one is already registered.
-   └───────────────┘
+```mermaid
+flowchart TB
+    F["📄 your spreadsheet"] --> R["Recognise<br/>is this a file shape I know? — matched by its column headings"]
+    R --> C["Clean<br/>fix the mess: encoding, error cells, repeated headings, odd spellings of “nothing”"]
+    C --> S["Store<br/>the tidy version AND the original row — nothing is discarded"]
+    S --> L["Link<br/>point each row at a known compound, where one is already registered"]
 ```
 
 ## The mess it expects to find

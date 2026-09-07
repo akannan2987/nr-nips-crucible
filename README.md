@@ -81,30 +81,13 @@ system of record, not an analysis platform.
 
 ## How it works
 
-```
-   Your spreadsheet or structure file
-   (.xlsx · .csv · .sdf)
-              │
-              ▼
-   ┌──────────────────────┐   You map your column names to the fields
-   │  Upload (ELN page)   │   Crucible knows. Nothing is renamed on disk.
-   └──────────┬───────────┘
-              ▼
-   ┌──────────────────────┐   openpyxl reads spreadsheets; RDKit reads
-   │  Parse & validate    │   chemical structures. Bad rows are reported,
-   └──────────┬───────────┘   not silently dropped.
-              ▼
-   ┌──────────────────────┐   Every record is stored whole, as JSON, plus a
-   │  Store (SQLite)      │   few indexed columns for finding it again.
-   └──────────┬───────────┘   Your original fields survive verbatim.
-              │
-      ┌───────┴────────┐
-      ▼                ▼
- ┌─────────┐    ┌─────────────┐
- │ Browser │    │  REST API   │  Same data, two doors: people use the
- │ Viewer  │    │  /api/*     │  web pages, programs use the endpoints.
- │Dashboard│    └─────────────┘
- └─────────┘
+```mermaid
+flowchart TB
+    F["📄 Your spreadsheet or structure file<br/>.xlsx · .csv · .sdf"] --> U["Upload page (ELN)<br/>map your column names once — nothing is renamed on disk"]
+    U --> P["Parse and validate<br/>openpyxl reads spreadsheets · RDKit reads structures<br/>bad rows are reported, not silently dropped"]
+    P --> S[("Store (SQLite)<br/>every record kept whole as JSON<br/>plus a few indexed columns to find it")]
+    S --> B["🖥 Browser<br/>viewer · dashboard · screening table · query tab"]
+    S --> A["🔌 REST API<br/>/api/* — the same data, for programs"]
 ```
 
 Upload a file, map its columns once, and the records land in the database with

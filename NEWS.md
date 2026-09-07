@@ -10,6 +10,39 @@ change you are getting.
 
 ---
 
+## v2.3.1 — 2026-09-07 — "Diagrams that render"
+
+A documentation-only follow-up to v2.3.0; the application is unchanged.
+
+**Changed**
+- **Every text-art diagram is now a rendered diagram.** The README's
+  how-it-works, the architecture document's system view, deployment view and
+  three data flows (now sequence diagrams), the schema document's
+  entity-relationship diagram, the playbook's four-stage upload flow and the
+  identification decision flow are written in the diagram language the
+  public host renders natively, so they appear as pictures with real arrows
+  rather than as monospaced boxes.
+- The operations runbook opens with a picture of the two machines, the ports,
+  the cron jobs and the systemd unit.
+- **The banner** sits on a deep indigo gradient instead of near-black, with
+  the four record symbols on a light card so every element reads.
+- The figure index says which diagram form to use when: the diagram language
+  for anything that will change with the code, generated SVG for the ideas
+  that need drawing.
+
+**Fixed**
+- **The example row in the document-is-truth figure named a real laboratory
+  workbook.** The figure now uses a synthetic file name. The gate had passed
+  because the figures were not yet tracked when it ran: `check-public-safe.sh`
+  searched tracked files only. It now searches untracked files as well, so a
+  new file is checked before its first commit, not after.
+
+**Known limitations (deliberate)**
+- The diagram language renders on the public host and in most editors, not
+  in every markdown viewer. The generated SVG figures render everywhere.
+
+---
+
 ## v2.3.0 — 2026-09-07 — "One document set, in reading order"
 
 A documentation release; the application is unchanged. The documentation is

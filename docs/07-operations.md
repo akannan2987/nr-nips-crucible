@@ -50,6 +50,24 @@ binds `0.0.0.0`, so the same image runs unmodified on macOS and RHEL8.
 
 ## Architecture at a glance
 
+```mermaid
+flowchart LR
+    subgraph mac["Mac (development)"]
+        M["container-py.sh start<br/>HTTP on 127.0.0.1:49160"]
+    end
+    subgraph vm["RHEL 8 VM (production)"]
+        direction TB
+        P["container-py.sh start-ssl<br/>HTTPS on 0.0.0.0:49160<br/>USE_HTTPS=true in .env.local"]
+        D[("data/crucible.db<br/>backups/ nightly")]
+        CR["cron: monitor.sh every 5 min<br/>cert-expiry-check.sh weekly<br/>backup nightly"]
+        SD["systemd user unit + lingering<br/>survives logout and reboot"]
+        P --> D
+        CR -.-> P
+        SD -.-> P
+    end
+    W["workstations on the internal network"] -- "https://vm-hostname:49160" --> P
+```
+
 A single **FastAPI** process (served by uvicorn) does everything:
 
 - answers all `/api/*` routes (chemicals, samples, screening, toxicology, stats),

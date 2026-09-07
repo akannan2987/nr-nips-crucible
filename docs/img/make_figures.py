@@ -349,28 +349,36 @@ def fig_timeline() -> None:
 
 def cover() -> None:
     W, H = 1200, 300
-    b = f"<rect x='0' y='0' width='{W}' height='{H}' rx='12' fill='#111827'/>\n"
-    # a crucible mark: a bowl with a base
-    b += "<path d='M 90 100 L 210 100 L 190 190 Q 150 210 110 190 Z' fill='#fbbf24' fill-opacity='0.9'/>\n"
-    b += "<rect x='125' y='205' width='50' height='12' rx='3' fill='#fbbf24'/>\n"
-    b += "<circle cx='150' cy='70' r='6' fill='#fde68a'/><circle cx='130' cy='55' r='4' fill='#fde68a'/><circle cx='172' cy='52' r='5' fill='#fde68a'/>\n"
-    b += text(260, 118, "Crucible", 56, "#f9fafb", "start", "bold")
-    b += text(262, 160, "a chemical and sample registry for a research laboratory", 20, "#d1d5db", "start")
-    b += text(262, 190, "one identity per compound · every measurement attached to it · spreadsheets in, an API out", 15, "#9ca3af", "start")
+    b = ("<defs><linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>"
+         "<stop offset='0' stop-color='#1e1b4b'/><stop offset='1' stop-color='#312e81'/></linearGradient>"
+         "<linearGradient id='bowl' x1='0' y1='0' x2='0' y2='1'>"
+         "<stop offset='0' stop-color='#fcd34d'/><stop offset='1' stop-color='#f59e0b'/></linearGradient></defs>\n")
+    b += f"<rect x='0' y='0' width='{W}' height='{H}' rx='16' fill='url(#bg)'/>\n"
+    # the mark: a crucible with sparks
+    b += "<path d='M 88 104 L 212 104 L 192 196 Q 150 218 108 196 Z' fill='url(#bowl)'/>\n"
+    b += "<rect x='122' y='210' width='56' height='12' rx='3' fill='#f59e0b'/>\n"
+    b += "<circle cx='150' cy='72' r='7' fill='#fde68a'/><circle cx='128' cy='56' r='4.5' fill='#fde68a'/><circle cx='174' cy='52' r='5.5' fill='#fde68a'/>\n"
+    b += text(262, 120, "Crucible", 58, "#ffffff", "start", "bold")
+    b += text(263, 162, "a chemical and sample registry for a research laboratory", 21, "#e0e7ff", "start")
+    b += text(263, 194, "one identity per compound · every measurement attached to it · spreadsheets in, an API out", 15, "#c7d2fe", "start")
+    b += text(263, 250, "one machine · one container · one database file · macOS · Windows · RHEL 8", 13, "#a5b4fc", "start")
+    # record-type symbols on a light card so they read on the dark ground
+    b += box(958, 206, 212, 74, "#f8fafc", "#f8fafc", 10)
     for i, kind in enumerate(["chemical", "sample", "screening", "toxicology"]):
-        cx = 1000 + i * 50
-        b += symbol(kind, cx, 240, 14)
-    b += text(1075, 280, "chemical · sample · screening · toxicology", 11, "#9ca3af")
-    b += text(262, 250, "one machine · one container · one database file · three platforms", 13, "#6b7280", "start")
-    write("cover_crucible.svg", svg(W, H, "Crucible: a chemical and sample registry for a research laboratory", b).replace(f"fill='{PAPER}' stroke='#e5e7eb'", "fill='#111827' stroke='#111827'"))
+        b += symbol(kind, 985 + i * 52, 236, 13)
+    b += text(1064, 272, "chemical · sample · screening · toxicology", 10.5, "#1f2937")
+    write("cover_crucible.svg", svg(W, H, "Crucible: a chemical and sample registry for a research laboratory", b).replace(f"fill='{PAPER}' stroke='#e5e7eb'", "fill='#1e1b4b' stroke='#1e1b4b'"))
 
 
 def logo() -> None:
     W, H = 120, 120
-    b = "<path d='M 25 40 L 95 40 L 84 92 Q 60 104 36 92 Z' fill='#fbbf24'/>\n"
-    b += "<rect x='46' y='100' width='28' height='8' rx='2' fill='#fbbf24'/>\n"
+    b = ("<defs><linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>"
+         "<stop offset='0' stop-color='#1e1b4b'/><stop offset='1' stop-color='#312e81'/></linearGradient></defs>\n")
+    b += f"<rect x='0' y='0' width='{W}' height='{H}' rx='20' fill='url(#bg)'/>\n"
+    b += "<path d='M 25 40 L 95 40 L 84 92 Q 60 104 36 92 Z' fill='#fbbf24'/>\n"
+    b += "<rect x='46' y='100' width='28' height='8' rx='2' fill='#f59e0b'/>\n"
     b += "<circle cx='60' cy='24' r='5' fill='#fde68a'/><circle cx='46' cy='14' r='3' fill='#fde68a'/><circle cx='75' cy='13' r='4' fill='#fde68a'/>\n"
-    write("logo_crucible.svg", svg(W, H, "Crucible logo: a crucible with sparks", b).replace(f"fill='{PAPER}' stroke='#e5e7eb'", "fill='#111827' stroke='#111827'"))
+    write("logo_crucible.svg", svg(W, H, "Crucible logo: a crucible with sparks", b).replace(f"fill='{PAPER}' stroke='#e5e7eb'", "fill='#1e1b4b' stroke='#1e1b4b'"))
 
 
 if __name__ == "__main__":

@@ -29,6 +29,15 @@ is defined once and means the same thing in every document.
 | `fig_setup_flow.svg` | Set up once, then the loop | the three setup guides, handbook §3 |
 | `fig_timeline.svg` | The milestones on one line | handbook §1 |
 
+**Two kinds of diagram, and when to use which.** Anything that will change
+with the code — the system view, a request's path, the deployment layout, the
+entity-relationship diagram, a decision flow — is written inline in the
+documents in the diagram language the public host renders natively (fenced
+`mermaid` blocks), so a code change and its diagram change are one edit in one
+file. The ideas that need *drawing* — a symbol per record type, a row with its
+document, the two repositories — are generated SVG here, because they must
+look identical everywhere and carry the shared symbols.
+
 The interactive figure — the animated architecture page served at
 `/architecture` — is a separate, hand-written file,
 [`../architecture-interactive.html`](../architecture-interactive.html),

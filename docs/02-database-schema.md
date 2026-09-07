@@ -431,31 +431,39 @@ XLSX-only; `Title_Case` column headers are accepted as aliases).
 
 ### Entity Relationship Diagram
 
-```
-┌─────────────────┐
-│   Chemicals     │
-│  (no hard cap)  │
-│  chemical_id*   │
-└────┬───────┬────┘
-     │       │
-     │       │ N:M (chemical_ids[], app-managed)
-     │       │
-     │       ▼
-     │  ┌────────────────┐
-     │  │    Samples     │
-     │  │   (no cap)     │
-     │  │ chemical_ids[] │
-     │  └────────────────┘
-     │
-     │ 1:N
-     ├──────────────────┐
-     │                  │
-     ▼                  ▼
-┌─────────────┐  ┌──────────────┐
-│  Screening  │  │ Toxicology   │
-│ (Unlimited) │  │ (Unlimited)  │
-│ chemical_id │  │ chemical_id  │
-└─────────────┘  └──────────────┘
+```mermaid
+erDiagram
+    CHEMICALS {
+        string id PK "UUID"
+        string chemical_id UK "business key, e.g. CHEM-0042"
+        string created_at "ISO timestamp"
+        int seq "insertion order"
+        json doc "the whole record: name, CAS, formula, weight, supplier, metadata…"
+    }
+    SAMPLES {
+        string id PK
+        string sample_id UK
+        string created_at
+        int seq
+        json doc "batch, concentration, location, expiry, chemical_ids[]"
+    }
+    SCREENING {
+        string id PK
+        string chemical_id FK "may be null until identified"
+        string created_at
+        int seq
+        json doc "the source row verbatim + cleaned fields"
+    }
+    TOXICOLOGY {
+        string id PK
+        string chemical_id FK
+        string created_at
+        int seq
+        json doc "doses, endpoints, NOAEL…"
+    }
+    CHEMICALS ||--o{ SCREENING : "one chemical, many results"
+    CHEMICALS ||--o{ TOXICOLOGY : "one chemical, many studies"
+    CHEMICALS }o--o{ SAMPLES : "a sample lists its chemical_ids (app-managed, no hard foreign key)"
 ```
 
 ### Relationship Rules

@@ -45,7 +45,7 @@ specialised pages; this page tells you which one to read, when, and why.
 
 | | |
 |---|---|
-| **Version** | 2.3.0 (2026-09-07) |
+| **Version** | 2.3.1 (2026-09-07) |
 | **Status date** | 2026-09-07 |
 | **Tests** | 90 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | 05 — Documentation consolidation ✅ (2026-09-07): the numbered set, this handbook, the phase tutorials, the roadmaps, the Windows guide, the figures |

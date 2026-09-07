@@ -804,6 +804,12 @@ How to open, read and change it:
 
 **ISO 27001** — the international standard for an information-security management system, expected of anyone hosting other people's data. Not applicable to one internal VM.
 
+**Mermaid diagram** — a diagram written as short text inside a document
+(`flowchart`, `sequenceDiagram`, `erDiagram`) that the public repository host
+draws as a picture. Used here for every diagram that changes with the code;
+the generated SVG figures under `docs/img/` are used for the ideas that need
+drawing by hand.
+
 **Model context protocol server** — a standard way for agent tools to call a system's functions with the system's own rules enforced. *Everyday version:* a service hatch with a menu, so another program can order without entering the kitchen. Optional for Crucible; the REST API is already the machine interface.
 
 **SEO / AEO / GEO** — search-engine, answer-engine and generative-engine optimisation: shaping public content so that search tools, question-answering tools and generative tools find and quote it. Not needed for an internal system of record.

@@ -90,33 +90,28 @@ page application served by the same process.
 
 ### High-Level Architecture
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                       Client Browser                          │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │              React Application (SPA)                    │  │
-│  │  ┌─────────┐  ┌──────────┐  ┌────────────────────┐    │  │
-│  │  │Dashboard│  │Chemicals │  │Samples / Screening  │    │  │
-│  │  │  Page   │  │ Manager  │  │Toxicology           │    │  │
-│  │  └─────────┘  └──────────┘  └────────────────────┘    │  │
-│  │            Vite Dev Server / Static Build               │  │
-│  └────────────────────────────────────────────────────────┘  │
-│                     ↕ REST /api/* + static files              │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │        FastAPI Backend (backend/app/, uvicorn)          │  │
-│  │  ┌──────────┐  ┌───────────────┐  ┌───────────────┐   │  │
-│  │  │ Routers  │  │ Upload parsers │  │ Static + SPA  │   │  │
-│  │  │ /api/*   │  │ openpyxl·RDKit │  │ serving       │   │  │
-│  │  └────┬─────┘  └───────────────┘  └───────────────┘   │  │
-│  │       │   SQLAlchemy 2 ORM (store.py · models.py)      │  │
-│  └───────┼────────────────────────────────────────────────┘  │
-│          ↕                                                    │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │            SQLite Database (data/crucible.db)           │  │
-│  │  tables: chemicals · samples · screening · toxicology   │  │
-│  │  (each row: indexed columns + full record as JSON doc)  │  │
-│  └────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph browser["Client browser"]
+        direction TB
+        R["React application (SPA) — built by Vite, served as static files"]
+        R --- D["Dashboard"] --- C["Chemicals"] --- SS["Samples · Screening · Toxicology"] --- Q["Query tab"]
+    end
+    subgraph container["Container crucible-py — one Python process (uvicorn)"]
+        direction TB
+        RT["Routers  /api/*<br/>chemicals · samples · screening · toxicology · stats · query"]
+        UP["Upload parsers<br/>openpyxl · RDKit · template specs"]
+        ST["Static + SPA serving<br/>client/dist · /architecture"]
+        ORM["SQLAlchemy 2 ORM<br/>store.py · models.py"]
+        RT --> ORM
+        UP --> ORM
+    end
+    subgraph db["data/crucible.db — SQLite (PostgreSQL optional)"]
+        T[("chemicals · samples · screening · toxicology<br/>each row: indexed columns + the full record as JSON doc")]
+    end
+    R -- "REST /api/* · static files" --> RT
+    R --> ST
+    ORM --> T
 ```
 
 ---
@@ -357,40 +352,60 @@ CREATE TABLE chemicals (
 
 ![One request passes browser to router to session to store to model and database, and the JSON answer returns the same way](img/fig_request_path.svg)
 
-### Read Operation (GET)
+### Read operation (GET)
 
-```
-User Action → React Component → API Service (Axios)
-    ↓
-FastAPI Router → get_db Session → store.all_docs() (SQLAlchemy → SQLite)
-    ↓
-Filter / sort / paginate in Python (identical semantics to the v1 API)
-    ↓
-JSON Response → Update Component State → Re-render UI
-```
-
-### Write Operation (POST/PUT)
-
-```
-User Input → Form Validation → API Service
-    ↓
-FastAPI Router → Pydantic model parse → business checks (duplicates, refs)
-    ↓
-store.insert_doc / replace_doc → SQLAlchemy commit → crucible.db
-    ↓
-Success Response → Update UI → Show Toast
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant R as React component
+    participant API as FastAPI router
+    participant DB as store.py → SQLite
+    U->>R: opens a page or applies a filter
+    R->>API: GET /api/chemicals?page=1
+    API->>DB: get_db session · all_docs()
+    DB-->>API: rows (indexed columns + doc)
+    API->>API: filter · sort · paginate in Python (v1 semantics)
+    API-->>R: JSON, byte-identical to the original contract
+    R-->>U: re-rendered table
 ```
 
-### File Upload Flow
+### Write operation (POST / PUT)
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant R as React form
+    participant API as FastAPI router
+    participant DB as store.py → SQLite
+    U->>R: fills the form, presses save
+    R->>API: POST /api/chemicals (JSON body)
+    API->>API: Pydantic parse (lenient) · duplicate and reference checks
+    API->>DB: insert_doc / replace_doc → one commit
+    DB-->>API: ok
+    API-->>R: {"message": "…", "chemical_id": "…"}
+    R-->>U: toast, list refreshed
 ```
-User Selects File → FormData → FastAPI UploadFile (multipart)
-    ↓
-Excel: openpyxl (or CSV parser)   |   SDF: text record split + RDKit analysis
-    ↓
-Row/record mapping (same field-alias tables as the legacy parsers)
-    ↓
-Batch insert/update → Return {inserted, updated, errors} → Display Summary
+
+### File upload flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant R as Upload page
+    participant API as FastAPI router
+    participant P as Parser
+    participant DB as store.py → SQLite
+    U->>R: chooses a file, maps columns once
+    R->>API: multipart POST /api/…/upload/excel (or /sdf)
+    API->>P: openpyxl or CSV · SDF split + RDKit · template-spec cleaners
+    P-->>API: mapped rows (aliases resolved), problems listed per row
+    API->>DB: batch insert / update, one commit
+    DB-->>API: counts
+    API-->>R: {"inserted": n, "updated": m, "errors": [...]}
+    R-->>U: summary — bad rows reported, never silently dropped
 ```
 
 ---
@@ -561,30 +576,25 @@ for the macOS/RHEL8 runbooks and systemd auto-start.
 
 ### Deployment Diagram
 
-```
-┌──────────────────────────────────────────┐
-│         User's Browser                    │
-│  http://<host>:49160                      │
-└────────────────┬─────────────────────────┘
-                 │ Port 49160
-┌────────────────▼─────────────────────────┐
-│   Container: crucible-py (podman/docker)  │
-│  ┌────────────────────────────────────┐  │
-│  │   uvicorn + FastAPI (Python 3.12)  │  │
-│  │   Serves: React App + /api + /docs │  │
-│  │   HEALTHCHECK → /api/stats         │  │
-│  └────────────┬───────────────────────┘  │
-│               │ SQLAlchemy                │
-│  ┌────────────▼───────────────────────┐  │
-│  │   Data Volume  /app/data           │  │
-│  │   crucible.db                      │  │
-│  └────────────────────────────────────┘  │
-└──────────────────────────────────────────┘
-         ↑
-┌────────┴─────────────────────────────────┐
-│  Health Monitor (cron every 5 min)        │
-│  CONTAINER_NAME=crucible-py ./monitor.sh  │
-└──────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    B["User's browser<br/>http(s)://host:49160"] -- "port 49160" --> C
+    subgraph host["The host machine — macOS, Windows or RHEL 8"]
+        subgraph C["Container crucible-py (podman or docker)"]
+            direction TB
+            U["uvicorn + FastAPI, Python 3.12<br/>serves the React app · /api · /docs · /architecture"]
+            H["HEALTHCHECK every 30 s → /api/stats<br/>HTTP first, then HTTPS, so one image is healthy in both modes"]
+            U --- H
+        end
+        V[("./data → /app/data (:Z)<br/>crucible.db — survives every rebuild")]
+        K["./certs → /app/certs, read-only<br/>server.crt · server.key (HTTPS mode)"]
+        M["cron every 5 min: monitor.sh<br/>GET /api/stats, restart on failure"]
+        S["systemd user unit + lingering (RHEL 8)<br/>starts the container at boot"]
+        U -- "SQLAlchemy" --> V
+        K -.-> U
+        M -.-> C
+        S -.-> C
+    end
 ```
 
 ---

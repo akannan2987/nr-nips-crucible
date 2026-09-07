@@ -1,7 +1,7 @@
 """/api/toxicology — toxicology resource endpoints."""
 
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
@@ -18,10 +18,10 @@ router = APIRouter(prefix="/api/toxicology", tags=["toxicology"])
 
 @router.get("")
 def list_toxicology(
-    page: Optional[str] = None,
-    limit: Optional[str] = None,
-    search: Optional[str] = None,
-    chemical_id: Optional[str] = None,
+    page: str | None = None,
+    limit: str | None = None,
+    search: str | None = None,
+    chemical_id: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """GET /api/toxicology — paginated list, filterable, enriched with chemical_name."""
@@ -114,7 +114,7 @@ def add_toxicology(body: ToxicologyIn, db: Session = Depends(get_db)) -> dict[st
 
 @router.post("/upload/excel")
 async def upload_excel(
-    file: Optional[UploadFile] = File(default=None), db: Session = Depends(get_db)
+    file: UploadFile | None = File(default=None), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
     """POST /api/toxicology/upload/excel."""
     if file is None:
@@ -126,7 +126,7 @@ async def upload_excel(
     errors: list[dict[str, Any]] = []
     valid_ids = {c.get("chemical_id") for c in all_docs(db, Chemical)}
 
-    def col(row: dict[str, str], *names: str) -> Optional[str]:
+    def col(row: dict[str, str], *names: str) -> str | None:
         for n in names:
             v = row.get(n)
             if v not in (None, ""):

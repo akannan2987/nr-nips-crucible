@@ -84,7 +84,7 @@ def parse_csv_rows(text: str) -> list[dict[str, str]]:
     The v1 code implemented a small RFC-4180 parser that TRIMS every field;
     Python's csv module handles the quoting, and we add the trim.
     """
-    lines = [l for l in text.splitlines() if l.strip()]
+    lines = [line for line in text.splitlines() if line.strip()]
     if len(lines) < 2:
         return []
     reader = csv.reader(lines)

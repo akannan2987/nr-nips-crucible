@@ -13,9 +13,9 @@ works from the CLI; scripts/db_bootstrap.py adds it explicitly for the app.
 
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from alembic import context
 from app import models  # noqa: F401  (registers all tables on Base.metadata)
 from app.config import DATABASE_URL
 from app.database import Base

@@ -540,12 +540,14 @@ never overwrite each other. Do this before anything you consider risky.
 
 ```bash
 # V7. Backend test suite passes (bare-metal venv required)
-cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.lock
 .venv/bin/pytest
+.venv/bin/ruff check .
 ```
 
 **You should see:** a few minutes of `pip` download output, then a run of dots
-and a green summary line like `==== 47 passed in 1.81s ====`.
+and a green summary line like `90 passed in 2.4s`, then `All checks passed!`
+from the linter.
 
 **What it means:** the backend's own automated tests all agree the code behaves.
 Two new words:
@@ -557,6 +559,12 @@ Two new words:
   narrower.
 - **pytest** ([glossary](00-glossary.md#the-python-and-testing-words)) — the tool that finds
   and runs the project's tests. One dot per test; `F` for a failure.
+- **`requirements.lock`** ([glossary](00-glossary.md#the-python-and-testing-words)) — the
+  exact versions the container image runs, so your tests exercise the same
+  libraries as production. `requirements.txt` is the wish list; the lock is
+  the receipt. Never edit it by hand: `./container-py.sh lock` regenerates it.
+- **ruff** — the linter, the same check the public repository's CI runs on
+  every push. `All checks passed!` is the only acceptable answer before a push.
 
 **If instead:** `python3: command not found` — V7 is the one check that needs
 Python installed on the Mac itself (`brew install python@3.12`). V1–V6 do not.

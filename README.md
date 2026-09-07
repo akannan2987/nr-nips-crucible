@@ -165,7 +165,7 @@ real laboratory data, what comes next.
 | Load a file, check it, identify compounds, correct mistakes, ask questions, publish a change | [The user playbook](docs/10-user-playbook.md) |
 | Take an edit from my Mac to production safely | [Git workflow](docs/03-git-workflow.md) · [Handbook §6](docs/HANDBOOK.md#6-how-a-change-travels) |
 | Update, back up, rotate a certificate, monitor, troubleshoot, uninstall | [Operations](docs/07-operations.md) |
-| Develop against the backend, run the tests | [backend/README.md](backend/README.md) · [Architecture → Testing](docs/02-architecture.md#testing) |
+| Develop against the backend, run the checks CI runs | [backend/README.md](backend/README.md) · [Contributing → the loop](CONTRIBUTING.md#3-the-day-to-day-loop) · [Architecture → Testing](docs/02-architecture.md#testing) |
 | Call the API from a script | [API cookbook](docs/08-api-cookbook.md) · [API reference](docs/08-api-reference.md) |
 | Understand a word | [Glossary](docs/00-glossary.md) |
 
@@ -192,7 +192,7 @@ get, and likely mistakes get a named fix.
 | 02 | **[Architecture](docs/02-architecture.md)** | How the boxes fit; the one design rule everything else follows from; the interactive architecture page |
 | 02 | **[Database schema](docs/02-database-schema.md)** | The hybrid document pattern; SQLite and PostgreSQL; Alembic |
 | 03 | **[Git workflow](docs/03-git-workflow.md)** | Two repositories, three folders; how a change travels from your Mac to the server; the safety gate that stops secrets escaping |
-| 04 | **[Phase tutorials](docs/04-phase-tutorials/phase-00-node-to-python.md)** | One tutorial per build phase, 00 to 05: why it existed, what it built, steps with expected output, a checkpoint, what it deliberately did not do |
+| 04 | **[Phase tutorials](docs/04-phase-tutorials/phase-00-node-to-python.md)** | One tutorial per build phase, 00 to 05b: why it existed, what it built, steps with expected output, a checkpoint, what it deliberately did not do |
 | 05 | **[Roadmap](docs/05-roadmap.md)** | What is planned, in order, and what each item waits on |
 | 06 | **[Product and technology roadmap](docs/06-product-and-technology-roadmap.md)** | From one VM to a product: every candidate technology with a verdict and the trigger that would change it |
 | 07 | **[Operations](docs/07-operations.md)** | The deep runbook: certificate rotation, PostgreSQL, systemd, backups, monitoring, troubleshooting |

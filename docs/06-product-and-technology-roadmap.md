@@ -378,7 +378,7 @@ time you cook.
 on discipline; on the public repository they cost nothing to automate
 (`ruff` and `pytest` on Linux and macOS runners). The private repository
 would not run it.
-*Verdict:* **Required now** — its own small phase, after phase 05.
+*Verdict:* **Required now** — delivered as [phase 05b](04-phase-tutorials/phase-05b-reproducible-builds-and-ci.md): `.github/workflows/ci.yml` on the public repository, installing from the lock on Python 3.12.
 
 ### Monitoring beyond the cron health check
 
@@ -455,7 +455,7 @@ marketed.
 | Grounded report drafting | Optional | A recurring hand-written report |
 | Container image | **Required now** (exists) | — |
 | Kubernetes / serverless | Optional | Hosted product, multiple instances |
-| CI on the public repository | **Required now** (next small phase) | — |
+| CI on the public repository | **Required now** (exists, phase 05b) | — |
 | Monitoring beyond cron | Recommended later | Second instance or an unnoticed outage |
 | Cost model | Recommended later | First hosting decision |
 | Regulatory frame (ALCOA+, Part 11, GDPR, ISO 27001) | Recommended later | A regulatory citation or hosting |

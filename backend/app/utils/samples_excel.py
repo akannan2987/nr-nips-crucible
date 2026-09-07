@@ -17,7 +17,7 @@ field. Function-for-function port of the JS module:
 
 import re
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from .excel import sheet_as_grid
 
@@ -28,7 +28,7 @@ SLIMS_KEY_HINTS = [
 ]
 
 
-def normalize_date(val: Any) -> Optional[str]:
+def normalize_date(val: Any) -> str | None:
     """Normalise a European date (DD/MM/YYYY) to ISO YYYY-MM-DD.
 
     Passes ISO through; returns None for blanks; returns the original string
@@ -56,7 +56,7 @@ def normalize_date(val: Any) -> Optional[str]:
     return s
 
 
-def _clean(val: Any) -> Optional[str]:
+def _clean(val: Any) -> str | None:
     """Trim a cell; empty string → None (JS `clean`)."""
     if val is None:
         return None
@@ -147,7 +147,7 @@ def map_row_to_sample(raw_row: dict[str, Any]) -> dict[str, Any]:
         lc[base.replace("_", " ")] = val
         lc[base.replace(" ", "_")] = val
 
-    def find(*keys: str) -> Optional[Any]:
+    def find(*keys: str) -> Any | None:
         for k in keys:
             v = lc.get(str(k).lower())
             if v is not None and str(v).strip() != "":

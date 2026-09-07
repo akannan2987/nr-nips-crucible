@@ -1,7 +1,7 @@
 """/api/samples — samples resource endpoints."""
 
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
@@ -29,9 +29,9 @@ _SEARCH_FIELDS = (
 
 @router.get("")
 def list_samples(
-    page: Optional[str] = None,
-    limit: Optional[str] = None,
-    search: Optional[str] = None,
+    page: str | None = None,
+    limit: str | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """GET /api/samples — paginated list with optional search."""
@@ -94,7 +94,7 @@ def add_sample(body: SampleIn, db: Session = Depends(get_db)) -> dict[str, Any]:
 
 @router.post("/upload/excel")
 async def upload_excel(
-    file: Optional[UploadFile] = File(default=None), db: Session = Depends(get_db)
+    file: UploadFile | None = File(default=None), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
     """POST /api/samples/upload/excel — SLIMS 'Content record' bulk import."""
     if file is None:

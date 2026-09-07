@@ -12,7 +12,7 @@ of `store.py` (which stays generic).
 from __future__ import annotations
 
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -23,7 +23,7 @@ from .utils.cleaning import collapse_whitespace, stable_hash
 from .utils.templates import ParseReport, TemplateSpec
 
 
-def _name_key(name: Optional[str]) -> str:
+def _name_key(name: str | None) -> str:
     """A forgiving key for matching compound names.
 
     Case and internal spacing vary between exports for what is obviously the
@@ -32,7 +32,7 @@ def _name_key(name: Optional[str]) -> str:
     return collapse_whitespace(name).lower()
 
 
-def _chemical_id_for(cas: Optional[str], name: Optional[str]) -> str:
+def _chemical_id_for(cas: str | None, name: str | None) -> str:
     """A stable, readable business key for an auto-created chemical.
 
     CAS-keyed where possible, because a CAS number is the one identifier that

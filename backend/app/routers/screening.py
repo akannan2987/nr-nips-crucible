@@ -4,7 +4,7 @@ import csv
 import io
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -20,8 +20,8 @@ from ..store import all_docs, delete_row, find_row, insert_doc, replace_doc
 from ..utils.excel import sheet_rows_as_dicts
 from ..utils.templates import (
     describe_column,
-    label_for,
     detect_template,
+    label_for,
     parse_with_spec,
     source_column_for,
 )
@@ -29,7 +29,7 @@ from ..utils.templates import (
 router = APIRouter(prefix="/api/screening", tags=["screening"])
 
 
-def _chemical_name_map(db: Session) -> dict[Optional[str], str]:
+def _chemical_name_map(db: Session) -> dict[str | None, str]:
     return {c.get("chemical_id"): c.get("name") for c in all_docs(db, Chemical)}
 
 
@@ -56,7 +56,7 @@ _INTERNAL_KEYS = {
 _COLUMNS_CACHE: dict[str, Any] = {}
 
 
-def _order_by(statement, sort: Optional[str], direction: str, numeric: bool):
+def _order_by(statement, sort: str | None, direction: str, numeric: bool):
     """Order by any column, in the database.
 
     Sorting happens in SQL for the same reason filtering does — pulling 49,000
@@ -78,11 +78,11 @@ def _order_by(statement, sort: Optional[str], direction: str, numeric: bool):
 
 def _apply_filters(
     statement,
-    search: Optional[str],
-    chemical_id: Optional[str],
-    tag: Optional[str],
+    search: str | None,
+    chemical_id: str | None,
+    tag: str | None,
     filters: dict[str, str],
-    duplicates: Optional[str] = None,
+    duplicates: str | None = None,
 ):
     """Add the requested filters to a SQL statement, or return None.
 
@@ -158,18 +158,18 @@ def _column_order(docs: list[dict[str, Any]]) -> list[str]:
 @router.get("")
 def list_screening(
     request: Request,
-    page: Optional[str] = None,
-    limit: Optional[str] = None,
-    search: Optional[str] = None,
-    chemical_id: Optional[str] = None,
-    tag: Optional[str] = None,
-    sort: Optional[str] = None,
+    page: str | None = None,
+    limit: str | None = None,
+    search: str | None = None,
+    chemical_id: str | None = None,
+    tag: str | None = None,
+    sort: str | None = None,
     dir: str = "asc",
     # Taken as text, not bool: browsers send empty strings for unset parameters
     # and FastAPI rejects "" as a boolean, which would fail the whole request.
-    sort_numeric: Optional[str] = None,
+    sort_numeric: str | None = None,
     # all | unique | identical | repeat | flagged
-    duplicates: Optional[str] = None,
+    duplicates: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """GET /api/screening — paginated list, filterable, sortable, enriched.
@@ -371,11 +371,11 @@ def _humanise(key: str) -> str:
 
 def _filtered_docs(
     db: Session,
-    search: Optional[str],
-    chemical_id: Optional[str],
-    tag: Optional[str],
+    search: str | None,
+    chemical_id: str | None,
+    tag: str | None,
     filters: dict[str, str],
-    duplicates: Optional[str] = None,
+    duplicates: str | None = None,
 ) -> list[dict[str, Any]]:
     """The same selection the table shows, for export — filtered in SQL."""
     statement = _apply_filters(select(Screening), search, chemical_id, tag, filters, duplicates)
@@ -388,12 +388,12 @@ def _filtered_docs(
 def export_screening(
     request: Request,
     format: str = "csv",
-    columns: Optional[str] = None,
-    search: Optional[str] = None,
-    chemical_id: Optional[str] = None,
-    tag: Optional[str] = None,
+    columns: str | None = None,
+    search: str | None = None,
+    chemical_id: str | None = None,
+    tag: str | None = None,
     raw: bool = False,
-    duplicates: Optional[str] = None,
+    duplicates: str | None = None,
     db: Session = Depends(get_db),
 ):
     """GET /api/screening/export — download the current selection as a file.
@@ -532,7 +532,7 @@ def add_screening(body: ScreeningIn, db: Session = Depends(get_db)) -> dict[str,
 
 @router.post("/upload/excel")
 async def upload_excel(
-    file: Optional[UploadFile] = File(default=None), db: Session = Depends(get_db)
+    file: UploadFile | None = File(default=None), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
     """POST /api/screening/upload/excel.
 
@@ -558,7 +558,7 @@ async def upload_excel(
     errors: list[dict[str, Any]] = []
     valid_ids = {c.get("chemical_id") for c in all_docs(db, Chemical)}
 
-    def col(row: dict[str, str], *names: str) -> Optional[str]:
+    def col(row: dict[str, str], *names: str) -> str | None:
         for n in names:
             v = row.get(n)
             if v not in (None, ""):

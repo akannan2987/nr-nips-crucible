@@ -34,6 +34,7 @@ table. In order:
 | # | Phase | One line | Waits on |
 |---|---|---|---|
 | 05 | Documentation consolidation ✅ | The numbered document set, the handbook, one tutorial per phase, the roadmaps, the lessons file, the Windows guide, figures | done 2026-09-07 (v2.3.0) |
+| 05b | Reproducible builds and CI ✅ | A lock file generated inside the image, the linter, and a workflow on the public repository that runs every check on Linux and macOS | done 2026-09-07 (v2.4.0) |
 | 06 | Schema normalisation 🔜 | Promote the frequently filtered and sorted fields out of the JSON document into indexed columns, without changing the API | agreeing the list of "hot" fields first, from the client's filters and the query patterns in `store.py` |
 | 07 | Authentication 🔜 | A login in front of `/api/*` | a decision between corporate SSO/OIDC and a simpler token scheme, plus a feature flag |
 
@@ -89,9 +90,6 @@ table. In order:
   nothing — the API already returns the data, so this is a convenience layer.
 - **Batch upload validation.** Reporting every problem in a file at once
   instead of stopping at the first. *Waits on:* nothing.
-- **Continuous integration on the public repository.** `ruff` and `pytest`
-  on Linux and macOS runners for every push. The private repository would not
-  run it. *Waits on:* nothing; its own small phase.
 - **A `LICENSE` file.** *Waits on:* the repository owner's decision. Until one
   exists, "public on GitHub" still legally means all rights reserved.
 

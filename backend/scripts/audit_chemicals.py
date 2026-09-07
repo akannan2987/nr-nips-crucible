@@ -140,10 +140,9 @@ def main() -> int:
             skipped += 1
             continue
 
-        try:
-            weight = float(doc.get("molecular_weight") or 0)
-        except (TypeError, ValueError):
-            weight = 0.0
+        # The weight was once part of an "ester implies heavy" heuristic that
+        # produced 28 false alarms in 41 and was removed; only checkable
+        # chemistry remains (lessons entry 26).
         name = doc.get("name") or ""
         claimed, stem = implied_carbons(name)
         actual = formula_carbons(doc.get("molecular_formula"))

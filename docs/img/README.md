@@ -28,6 +28,7 @@ is defined once and means the same thing in every document.
 | `fig_container_lunchbox.svg` | The same image on three platforms; what is mounted in and what comes out | the three setup guides, handbook §3 |
 | `fig_setup_flow.svg` | Set up once, then the loop | the three setup guides, handbook §3 |
 | `fig_timeline.svg` | The milestones on one line | handbook §1 |
+| `fig_requirements_lock.svg` | The wish list, the receipt, and who installs from it | phase 05b tutorial, `backend/README.md` |
 
 **Two kinds of diagram, and when to use which.** Anything that will change
 with the code — the system view, a request's path, the deployment layout, the

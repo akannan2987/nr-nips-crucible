@@ -29,8 +29,11 @@ WORKDIR /app
 
 # Dependencies first (layer caching): RDKit, pandas etc. install as
 # prebuilt manylinux wheels — no compiler needed on linux/amd64 or arm64.
-COPY backend/requirements.txt backend/requirements.txt
-RUN pip install --no-cache-dir -r backend/requirements.txt
+# Install the EXACT versions recorded in the lock, not the ranges in
+# requirements.txt, so every build resolves the same tree. Regenerate the lock
+# with ./container-py.sh lock whenever requirements.txt changes.
+COPY backend/requirements.txt backend/requirements.lock backend/
+RUN pip install --no-cache-dir --root-user-action=ignore -r backend/requirements.lock
 
 # Application code, docs (for /architecture) and the built client.
 # The /app layout mirrors the repo layout (backend/, client/dist, docs/,

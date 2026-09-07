@@ -37,7 +37,7 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 BASE = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
 
@@ -48,7 +48,7 @@ _LINUX_BUNDLES = (
 )
 
 
-def build_ssl_context(ca_bundle: Optional[str] = None) -> ssl.SSLContext:
+def build_ssl_context(ca_bundle: str | None = None) -> ssl.SSLContext:
     """An SSL context that trusts the roots this machine trusts.
 
     On a corporate network an inspecting proxy re-signs HTTPS traffic with an
@@ -75,7 +75,7 @@ def build_ssl_context(ca_bundle: Optional[str] = None) -> ssl.SSLContext:
     return ssl.create_default_context()
 
 
-def _platform_ca_bundle() -> Optional[str]:
+def _platform_ca_bundle() -> str | None:
     """The operating system's trust store as a PEM file, if we can find one."""
     for path in _LINUX_BUNDLES:
         if Path(path).is_file():
@@ -166,23 +166,23 @@ class PubChemClient:
         self,
         min_interval: float = 0.22,
         timeout: float = 10.0,
-        ca_bundle: Optional[str] = None,
+        ca_bundle: str | None = None,
     ):
         # 0.22s ≈ 4.5 requests/second, just inside PubChem's stated limit.
         self.min_interval = min_interval
         self.timeout = timeout
         self._context = build_ssl_context(ca_bundle)
         self._last_call = 0.0
-        self._cache: dict[str, Optional[PubChemResult]] = {}
+        self._cache: dict[str, PubChemResult | None] = {}
         self.requests_made = 0
         self.failures = 0
         self.throttled = 0
         self.ambiguous = 0
-        self.last_error: Optional[str] = None
+        self.last_error: str | None = None
 
     # -- transport --------------------------------------------------------
 
-    def _get(self, url: str, attempts: int = 3) -> Optional[dict[str, Any]]:
+    def _get(self, url: str, attempts: int = 3) -> dict[str, Any] | None:
         """One GET, rate-limited and retried. Returns parsed JSON, or None.
 
         A 404 simply means "PubChem does not know this", which is an ordinary
@@ -239,7 +239,7 @@ class PubChemClient:
         self.failures += 1
         return None
 
-    def _properties_for_cid(self, cid: int) -> Optional[dict[str, Any]]:
+    def _properties_for_cid(self, cid: int) -> dict[str, Any] | None:
         url = f"{BASE}/compound/cid/{cid}/property/{','.join(PROPERTIES)}/JSON"
         payload = self._get(url)
         try:
@@ -255,7 +255,7 @@ class PubChemClient:
         except (TypeError, KeyError, IndexError):
             return []
 
-    def _cid_owning_cas(self, cids: list[int], cas: str) -> Optional[int]:
+    def _cid_owning_cas(self, cids: list[int], cas: str) -> int | None:
         """Of several candidates, the one that is actually that CAS number.
 
         `xref/rn` returns every compound whose record *references* a registry
@@ -288,8 +288,8 @@ class PubChemClient:
     # -- lookup -----------------------------------------------------------
 
     def lookup(
-        self, name: Optional[str], cas: Optional[str], cid_only: bool = False
-    ) -> Optional[PubChemResult]:
+        self, name: str | None, cas: str | None, cid_only: bool = False
+    ) -> PubChemResult | None:
         """Find a compound by CAS then by name; `None` if nothing matches.
 
         CAS is tried first because it is unambiguous when present. The name
@@ -307,7 +307,7 @@ class PubChemClient:
         if cache_key in self._cache:
             return self._cache[cache_key]
 
-        result: Optional[PubChemResult] = None
+        result: PubChemResult | None = None
         for kind, value, label in self._attempts(name, cas):
             cids = self._cids_for(kind, value)
             if not cids:
@@ -333,7 +333,7 @@ class PubChemClient:
         return result
 
     @staticmethod
-    def _attempts(name: Optional[str], cas: Optional[str]) -> list[tuple[str, str, str]]:
+    def _attempts(name: str | None, cas: str | None) -> list[tuple[str, str, str]]:
         """The lookups to try, in order of how much we trust them."""
         attempts: list[tuple[str, str, str]] = []
         if cas:

@@ -10,7 +10,7 @@ so the routers read almost like the legacy (v1) routes they replaced:
 """
 
 import re
-from typing import Any, Optional, Type
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -55,22 +55,22 @@ def model_chemical():
     return Chemical
 
 
-def all_rows(db: Session, model: Type[Base]) -> list:
+def all_rows(db: Session, model: type[Base]) -> list:
     """All rows in original array order (insertion order via `seq`)."""
     return list(db.scalars(select(model).order_by(model.seq)))
 
 
-def all_docs(db: Session, model: Type[Base]) -> list[dict[str, Any]]:
+def all_docs(db: Session, model: type[Base]) -> list[dict[str, Any]]:
     """All record documents in insertion order — the v1 `.value()` equivalent."""
     return [row.doc for row in all_rows(db, model)]
 
 
-def find_row(db: Session, model: Type[Base], field: str, value: Any):
+def find_row(db: Session, model: type[Base], field: str, value: Any):
     """First row whose extracted column `field` equals `value` (or None)."""
     return db.scalars(select(model).where(getattr(model, field) == value)).first()
 
 
-def _next_seq(db: Session, model: Type[Base]) -> int:
+def _next_seq(db: Session, model: type[Base]) -> int:
     current = db.scalar(select(func.max(model.seq)))
     return (current or 0) + 1
 
@@ -82,7 +82,7 @@ def _sync_columns(row, doc: dict[str, Any]) -> None:
     row.created_at = doc.get("created_at")
 
 
-def insert_doc(db: Session, model: Type[Base], doc: dict[str, Any]) -> None:
+def insert_doc(db: Session, model: type[Base], doc: dict[str, Any]) -> None:
     """Insert a new record document (v1 `.push(...).write()`)."""
     row = model(id=doc["id"], seq=_next_seq(db, model), doc=doc)
     _sync_columns(row, doc)
@@ -90,7 +90,7 @@ def insert_doc(db: Session, model: Type[Base], doc: dict[str, Any]) -> None:
     db.commit()
 
 
-def insert_docs_bulk(db: Session, model: Type[Base], docs: list[dict[str, Any]]) -> int:
+def insert_docs_bulk(db: Session, model: type[Base], docs: list[dict[str, Any]]) -> int:
     """Insert many documents in one transaction; returns how many were added.
 
     `insert_doc` is fine for a handful of records but issues a `SELECT max(seq)`
@@ -130,7 +130,7 @@ def delete_row(db: Session, row) -> None:
     db.commit()
 
 
-def clear_all(db: Session, model: Type[Base]) -> int:
+def clear_all(db: Session, model: type[Base]) -> int:
     """Delete every row; returns how many were deleted (v1 `.set(col, [])`)."""
     rows = all_rows(db, model)
     for row in rows:

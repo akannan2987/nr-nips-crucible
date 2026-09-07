@@ -22,7 +22,7 @@ SQLite and PostgreSQL; a later normalisation into real columns can be
 done incrementally without touching the API layer.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import JSON, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
@@ -42,8 +42,8 @@ class Chemical(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     # Business key used by the API (URL paths, uploads). Unique; nullable to
     # tolerate legacy records without one (SQLite/Postgres allow multiple NULLs).
-    chemical_id: Mapped[Optional[str]] = mapped_column(String(255), unique=True, index=True)
-    created_at: Mapped[Optional[str]] = mapped_column(String(40))
+    chemical_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    created_at: Mapped[str | None] = mapped_column(String(40))
     seq: Mapped[int] = mapped_column(Integer, index=True)
     doc: Mapped[dict[str, Any]] = mapped_column(JSONDoc)
 
@@ -52,8 +52,8 @@ class Sample(Base):
     __tablename__ = "samples"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    sample_id: Mapped[Optional[str]] = mapped_column(String(255), unique=True, index=True)
-    created_at: Mapped[Optional[str]] = mapped_column(String(40))
+    sample_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    created_at: Mapped[str | None] = mapped_column(String(40))
     seq: Mapped[int] = mapped_column(Integer, index=True)
     doc: Mapped[dict[str, Any]] = mapped_column(JSONDoc)
 
@@ -63,8 +63,8 @@ class Screening(Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     # Screening records reference a chemical; not unique (many per chemical).
-    chemical_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
-    created_at: Mapped[Optional[str]] = mapped_column(String(40))
+    chemical_id: Mapped[str | None] = mapped_column(String(255), index=True)
+    created_at: Mapped[str | None] = mapped_column(String(40))
     seq: Mapped[int] = mapped_column(Integer, index=True)
     doc: Mapped[dict[str, Any]] = mapped_column(JSONDoc)
 
@@ -73,7 +73,7 @@ class Toxicology(Base):
     __tablename__ = "toxicology"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    chemical_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
-    created_at: Mapped[Optional[str]] = mapped_column(String(40))
+    chemical_id: Mapped[str | None] = mapped_column(String(255), index=True)
+    created_at: Mapped[str | None] = mapped_column(String(40))
     seq: Mapped[int] = mapped_column(Integer, index=True)
     doc: Mapped[dict[str, Any]] = mapped_column(JSONDoc)

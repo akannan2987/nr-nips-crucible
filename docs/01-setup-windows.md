@@ -317,8 +317,9 @@ minutes — untested, and on a development PC the monitor earns little.
 # V7. Backend test suite passes (needs Python on Windows itself)
 cd backend
 py -3.12 -m venv .venv 2>/dev/null || python -m venv .venv
-.venv/Scripts/pip install -r requirements.txt
+.venv/Scripts/pip install -r requirements.lock       # the exact versions the image runs
 .venv/Scripts/pytest
+.venv/Scripts/ruff check .
 cd ..
 ```
 

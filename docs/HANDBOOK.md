@@ -45,11 +45,11 @@ specialised pages; this page tells you which one to read, when, and why.
 
 | | |
 |---|---|
-| **Version** | 2.3.1 (2026-09-07) |
+| **Version** | 2.4.0 (2026-09-07) |
 | **Status date** | 2026-09-07 |
 | **Tests** | 90 passing (`cd backend && .venv/bin/pytest`) |
-| **Last phase done** | 05 — Documentation consolidation ✅ (2026-09-07): the numbered set, this handbook, the phase tutorials, the roadmaps, the Windows guide, the figures |
-| **Phase in progress** | none — next is 06, and a small CI phase can come first |
+| **Last phase done** | 05b — Reproducible builds and CI ✅ (2026-09-07): a lock file generated inside the image, the linter, a workflow on the public repository running every check on Linux and macOS |
+| **Phase in progress** | none — next is the owner's pick: the 22 compounds, the removal-script test, the delete endpoint, or 06 |
 | **Next** | 06 — Schema normalisation 🔜 · 07 — Authentication 🔜 |
 | **Production** | one RHEL 8 VM, one container, one SQLite file: 49,065 screening rows, 664 registered chemicals, 88 % of rows linked to a registry entry |
 
@@ -115,6 +115,7 @@ does not record a date, it says so rather than guessing.
 | 2026-08-25 | **v2.2.0.** Real laboratory data: a 49,000-row export loaded through a template that is data, not code; a screening table built from the file; a read-only SQL console; two-stage chemical identification. RHEL 8 production rebuilt from the guides and verified. |
 | 2026-08-31 | **v2.2.1.** The registry audited; a lookup that took the first result from an unranked list found and fixed; 22 mis-identified compounds removed. |
 | 2026-09-07 | **v2.3.0.** The documentation reshaped into the numbered set my other projects use, with this handbook as its spine, one tutorial per phase, both roadmaps, a Windows guide and figures. |
+| 2026-09-07 | **v2.4.0.** Reproducible builds: a lock file resolved inside the image, the linter, and continuous integration on the public repository running every check on Linux and macOS. |
 
 ---
 
@@ -316,8 +317,12 @@ git status                                                # expect: clean
 cd backend && .venv/bin/pytest -q && cd ..               # expect: 90 passed
 ```
 
-and ends with the three gates — tests, `./check-public-safe.sh` printing
-`✓ SAFE TO PUSH`, and a rebuild if code changed — before anything is pushed.
+and ends with the gates — the linter, the tests, the link check,
+`./check-public-safe.sh` printing `✓ SAFE TO PUSH` after `git add`, and a
+rebuild if code changed — before anything is pushed. After the push, the
+public repository's CI runs the same checks on a Linux and a macOS machine
+([phase 05b](04-phase-tutorials/phase-05b-reproducible-builds-and-ci.md));
+mirror only a green commit.
 A fix discovered on the VM travels back as a patch, never a push:
 [Flow B](03-git-workflow.md#5-flow-b---a-fix-discovered-on-the-vm).
 
@@ -345,6 +350,7 @@ silent rather than inventing a command.
 | 03 | Platform verification | Both guides walked from a blank machine: macOS V1–V7, RHEL 8 V1–V9 (V9 pending a reboot window); fifteen bugs found and fixed by following the guides literally | [`phase-03-platform-verification.md`](04-phase-tutorials/phase-03-platform-verification.md) | 2026-08-17 → 2026-08-25 | ✅ (reconstructed) |
 | 04 | Template ingestion | A laboratory export described as data (fingerprint, column map, cleaners, provenance), the screening table built from the file, the read-only SQL console, two-stage chemical identification, the registry audit and the five maintenance scripts | [`phase-04-template-ingestion.md`](04-phase-tutorials/phase-04-template-ingestion.md) | 2026-08-25 (v2.2.0), 2026-08-31 (v2.2.1) | ✅ (reconstructed) |
 | 05 | Documentation consolidation | The numbered document set, this handbook, the phase tutorials, the roadmaps, the lessons file, the Windows guide, figures | [`phase-05-docs-consolidation.md`](04-phase-tutorials/phase-05-docs-consolidation.md) | 2026-09-07 (v2.3.0) | ✅ |
+| 05b | Reproducible builds and CI | `backend/requirements.lock` resolved inside the image by `./container-py.sh lock`; the Dockerfile, CI and the test environment install from it; the linter with an explicit rule set; a workflow on the public repository running every check on Linux and macOS | [`phase-05b-reproducible-builds-and-ci.md`](04-phase-tutorials/phase-05b-reproducible-builds-and-ci.md) | 2026-09-07 (v2.4.0) | ✅ |
 | 06 | Schema normalisation | The frequently-filtered fields promoted from JSON into indexed columns, without changing the API or breaking the design rule | `04-phase-tutorials/phase-06-schema-normalisation.md` | — | 🔜 |
 | 07 | Authentication | A login in front of `/api/*`, behind a feature flag so internal users are not locked out mid-week | `04-phase-tutorials/phase-07-authentication.md` | — | 🔜 |
 
@@ -443,8 +449,9 @@ Two documents, two horizons:
 
 The next three phases, in order:
 
-1. **CI on the public repository:** `ruff` and `pytest` on Linux and macOS
-   runners for every push; small, and it makes the gates automatic.
+1. **The registry housekeeping:** re-propose the 22 removed compounds with a
+   row-by-row review, a test for the removal script, and the delete endpoint
+   unlinking rows first.
 2. **06 — schema normalisation:** list the fields the client filters and
    sorts on, agree them, *then* write the migration. Guessing here means a
    migration that backfills the wrong columns.
@@ -473,11 +480,12 @@ machines; they auto-detect podman or Docker.
 | | macOS (development) | RHEL 8 VM (production) |
 |---|---|---|
 | Start of session | `git switch develop && git pull --ff-only origin develop` | — |
-| Run the tests | `cd backend && .venv/bin/pytest -q` | not possible on the VM (system Python 3.6); the container ships its own |
+| Run the checks CI runs | `cd backend && .venv/bin/ruff check . && .venv/bin/pytest -q` | not possible on the VM (system Python 3.6); the container ships its own |
+| Changed `requirements.txt`? | `./container-py.sh lock`, review the diff, then rebuild | — |
 | Rebuild after a code change | `./container-py.sh rebuild` | `./container-py.sh backup && ./container-py.sh rebuild` |
 | Is it up? | `curl --noproxy '*' -sS http://localhost:49160/api/stats` | `curl --noproxy '*' -sSk https://localhost:49160/api/stats` |
 | Status, logs | `./container-py.sh status` · `logs` | same |
-| The gate, before every push | `./check-public-safe.sh` → `✓ SAFE TO PUSH` | — |
+| The gate, before every push | `git add -A && ./check-public-safe.sh` → `✓ SAFE TO PUSH` · `python3 check-links.py` | — |
 | Publish | `git push origin develop develop:beta develop:master` | — |
 | Mirror public → private | — | mirror folder: `git fetch public && git checkout public/develop -- .` → commit → push three branches |
 | Deploy | — | production folder: `git switch master && git pull --ff-only origin master`, rebuild only if code changed |

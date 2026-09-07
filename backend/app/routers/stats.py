@@ -1,6 +1,6 @@
 """/api/stats — dashboard statistics endpoints."""
 
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -54,7 +54,7 @@ def get_stats(db: Session = Depends(get_db)) -> dict[str, Any]:
 
 
 @router.get("/recent")
-def recent_activity(limit: Optional[str] = None, db: Session = Depends(get_db)) -> list[dict[str, Any]]:
+def recent_activity(limit: str | None = None, db: Session = Depends(get_db)) -> list[dict[str, Any]]:
     """GET /api/stats/recent — merged newest-first activity feed."""
     limit_n = parse_int_or(limit, 10)
 
@@ -89,7 +89,7 @@ def recent_activity(limit: Optional[str] = None, db: Session = Depends(get_db)) 
 
 
 @router.get("/chemicals-summary")
-def chemicals_summary(limit: Optional[str] = None, db: Session = Depends(get_db)) -> list[dict[str, Any]]:
+def chemicals_summary(limit: str | None = None, db: Session = Depends(get_db)) -> list[dict[str, Any]]:
     """GET /api/stats/chemicals-summary — chemicals with related-data counts.
 
     NOTE: like the v1 API, this takes the FIRST `limit` chemicals in insertion

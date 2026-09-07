@@ -23,7 +23,7 @@ import io
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional
+from typing import Any
 
 from .cleaning import (
     Measurement,
@@ -80,10 +80,10 @@ class TemplateSpec:
     date_fields: dict[str, str] = field(default_factory=dict)
     """`source column` → `canonical field`, normalised to `YYYY-MM-DD`."""
 
-    cas_field: Optional[str] = None
+    cas_field: str | None = None
     """Source column holding CAS numbers, if any."""
 
-    name_field: Optional[str] = None
+    name_field: str | None = None
     """Source column naming the compound, if any."""
 
     identity_fields: tuple[str, ...] = ()
@@ -215,7 +215,7 @@ def label_for(canonical: str) -> str:
     return canonical
 
 
-def source_column_for(canonical: str) -> Optional[str]:
+def source_column_for(canonical: str) -> str | None:
     """The heading this column had in the source file, if it came from one.
 
     Returns None for columns this application added, which is what lets the
@@ -231,7 +231,7 @@ def source_column_for(canonical: str) -> Optional[str]:
     return None
 
 
-def describe_column(canonical: str) -> Optional[str]:
+def describe_column(canonical: str) -> str | None:
     """A plain-language description of a column this application added."""
     if canonical in DERIVED_COLUMNS:
         return DERIVED_COLUMNS[canonical]
@@ -277,7 +277,7 @@ def read_delimited(content: bytes, spec: TemplateSpec) -> tuple[list[dict[str, s
     return out, encoding
 
 
-def detect_template(content: bytes, filename: str = "") -> Optional[TemplateSpec]:
+def detect_template(content: bytes, filename: str = "") -> TemplateSpec | None:
     """Return the spec matching this file, or `None` if nothing recognises it.
 
     Detection reads only the header row, so it is cheap even on a large file.

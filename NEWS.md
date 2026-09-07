@@ -10,6 +10,50 @@ change you are getting.
 
 ---
 
+## v2.4.0 — 2026-09-07 — "The same build, every time"
+
+A build-and-checks release. The application's behaviour is unchanged; what
+changed is how surely two builds are the same, and who checks a push.
+
+**Added**
+- **`backend/requirements.lock`** — 44 exact versions, resolved inside the
+  same `python:3.12-slim` image the Dockerfile builds from, by one command:
+  `./container-py.sh lock`. `requirements.txt` keeps the ranges (what the
+  project asks for); the lock records what it got. The Dockerfile, the CI
+  workflow and the test virtual environment all install from the lock.
+  Running the command twice gives the same file byte for byte.
+- **A linter with an explicit rule set** (`backend/ruff.toml`): real errors,
+  unused names, import order, modern 3.12 syntax, common bugs. 182 findings
+  fixed — 180 automatically, two by hand — so `ruff check .` prints
+  `All checks passed!`, and the same rules run in CI.
+- **Continuous integration on the public repository**
+  (`.github/workflows/ci.yml`): on every push, a Linux and a macOS runner
+  install from the lock on Python 3.12, run the linter and the 90 tests,
+  regenerate the figures and expect no diff, check every documentation link,
+  and run the safety gate; a second job builds the client with Node 18 from
+  its own lockfile. The private repository, a content mirror, runs nothing.
+- **`check-links.py`** — the documentation link checker as a tracked,
+  cross-platform script, so CI and a laptop run the same one.
+- Tutorial: [phase 05b](docs/04-phase-tutorials/phase-05b-reproducible-builds-and-ci.md).
+
+**Changed**
+- RDKit is capped at the newest release with pre-built packages for every
+  machine this project uses — the Linux image and VM, the macOS CI runner,
+  and the Intel Mac the code is developed on. The comment beside the cap
+  says how to check the next release before lifting it.
+- The publication gate is now run *after* `git add`, so new files are checked
+  before their first commit; the contributing guide and the cheat sheet say so.
+
+**Known limitations (deliberate)**
+- No Windows runner until the Windows guide has been walked by a person; a
+  runner's failures would be hard to tell from the guide's.
+- One lock resolved on Linux serves every platform because every pinned
+  package ships wheels for Linux and macOS on Python 3.12 to 3.14. A second
+  package with patchy wheel coverage would be the trigger for a
+  cross-platform resolver.
+
+---
+
 ## v2.3.1 — 2026-09-07 — "Diagrams that render"
 
 A documentation-only follow-up to v2.3.0; the application is unchanged.

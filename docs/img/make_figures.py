@@ -336,7 +336,7 @@ def fig_timeline() -> None:
         (540, "2026-08-17→25", ["v2.0.x–2.1.0", "guides walked"], COLOURS["sample"], True),
         (660, "2026-08-25", ["v2.2.0", "real data"], COLOURS["screening"], False),
         (770, "2026-08-31", ["v2.2.1", "registry audited"], COLOURS["screening"], True),
-        (880, "2026-09-07", ["v2.3.0", "the handbook"], COLOURS["toxicology"], False),
+        (880, "2026-09-07", ["v2.3 · v2.4", "handbook · CI"], COLOURS["toxicology"], False),
     ]
     for x, date, rows, col, up in marks:
         b += f"<circle cx='{x}' cy='130' r='7' fill='{col}'/>\n"
@@ -345,6 +345,31 @@ def fig_timeline() -> None:
         b += lines(x, ty, rows, 11, INK, "middle", 15, "bold")
     b += text(W/2, 236, "phases 00–04 are reconstructed tutorials; 05 is this documentation; 06 (normalise) and 07 (authenticate) are next", 11, MUTED)
     write("fig_timeline.svg", svg(W, H, "Milestones from the Node prototype in May 2026 through the Python rewrite, publication, verification, real data, the audit and the handbook", b))
+
+
+def fig_requirements_lock() -> None:
+    W, H = 940, 330
+    b = text(W/2, 34, "What you asked for, and what you got — why there is a lock file", 16, INK, "middle", "bold")
+    b += box(40, 66, 330, 150, PAPER, COLOURS["sample"], 10)
+    b += text(205, 92, "requirements.txt — the shopping list", 13, COLOURS["sample"], "middle", "bold")
+    b += lines(205, 116, ["fastapi>=0.115,<1.0", "SQLAlchemy>=2.0,<3.0", "rdkit>=2024.3.1", "… 12 lines, ranges: the INTENT"], 11.5, INK, "middle", 17, "normal")
+    b += text(205, 202, "edited by a person", 10.5, MUTED)
+    b += arrow(372, 140, 428, 140, LINE)
+    b += box(430, 100, 120, 80, PANEL, LINE, 8)
+    b += lines(490, 126, ["pip resolves", "inside", "python:3.12"], 11, ACCENT, "middle", 15, "bold")
+    b += text(490, 194, "./container-py.sh lock", 10, MUTED, "middle", "normal", "monospace")
+    b += arrow(552, 140, 608, 140, LINE)
+    b += box(610, 66, 300, 150, "#eef2ff", COLOURS["chemical"], 10)
+    b += text(760, 92, "requirements.lock — the receipt", 13, COLOURS["chemical"], "middle", "bold")
+    b += lines(760, 116, ["fastapi==0.141.1", "SQLAlchemy==2.0.x · rdkit==2025.9.3", "pydantic-core==… (a dependency's dependency)", "… 44 lines, exact: what was GOT"], 11.5, INK, "middle", 17, "normal")
+    b += text(760, 202, "generated, never edited by hand", 10.5, MUTED)
+    for i, (who, col) in enumerate([("Dockerfile → the image", COLOURS["toxicology"]), ("CI on Linux + macOS", COLOURS["screening"]), ("backend/.venv for tests", COLOURS["sample"])]):
+        x = 130 + i * 300
+        b += path_arrow(f"M 760 218 L 760 236 L {x+110} 236 L {x+110} 250", COLOURS["chemical"], dash=True) if i != 2 else path_arrow("M 760 218 L 760 250", COLOURS["chemical"], dash=True)
+        b += box(x, 252, 220, 36, PAPER, col, 6)
+        b += text(x + 110, 275, who, 11.5, col, "middle", "bold")
+    b += text(W/2, 314, "everyday version: the list says “bread, milk”; the receipt says exactly which loaf and which carton — and everyone gets the same receipt", 11, MUTED)
+    write("fig_requirements_lock.svg", svg(W, H, "requirements.txt states version ranges; pip resolves them inside the Python 3.12 image into requirements.lock with exact versions; the Dockerfile, CI and the test environment all install from the lock", b))
 
 
 def cover() -> None:
@@ -383,5 +408,5 @@ def logo() -> None:
 
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
-              fig_two_stage, fig_container_lunchbox, fig_setup_flow, fig_timeline, cover, logo):
+              fig_two_stage, fig_container_lunchbox, fig_setup_flow, fig_timeline, fig_requirements_lock, cover, logo):
         f()

@@ -7,7 +7,7 @@ shapes, same messages, same status codes — including the quirks (the
 
 import time
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
@@ -41,9 +41,9 @@ router = APIRouter(prefix="/api/chemicals", tags=["chemicals"])
 
 @router.get("")
 def list_chemicals(
-    page: Optional[str] = None,
-    limit: Optional[str] = None,
-    search: Optional[str] = None,
+    page: str | None = None,
+    limit: str | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """GET /api/chemicals — paginated list with optional search."""
@@ -119,7 +119,7 @@ def add_chemical(body: ChemicalIn, db: Session = Depends(get_db)) -> dict[str, A
 
 @router.post("/upload/sdf")
 async def upload_sdf(
-    file: Optional[UploadFile] = File(default=None), db: Session = Depends(get_db)
+    file: UploadFile | None = File(default=None), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
     """POST /api/chemicals/upload/sdf — bulk import from an SDF file."""
     if file is None:
@@ -224,7 +224,7 @@ async def upload_sdf(
 
 @router.post("/upload/excel")
 async def upload_excel(
-    file: Optional[UploadFile] = File(default=None), db: Session = Depends(get_db)
+    file: UploadFile | None = File(default=None), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
     """POST /api/chemicals/upload/excel — bulk import from Excel/CSV."""
     if file is None:
@@ -246,7 +246,7 @@ async def upload_excel(
     updated = 0
     errors: list[dict[str, Any]] = []
 
-    def col(row: dict[str, str], *names: str) -> Optional[str]:
+    def col(row: dict[str, str], *names: str) -> str | None:
         """First non-falsy value among the candidate column names (JS `||` chain)."""
         for n in names:
             v = row.get(n)

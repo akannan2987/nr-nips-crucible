@@ -92,10 +92,11 @@ git switch develop && git pull --ff-only origin develop
 
 # 2. edit code or docs
 
-# 3. the three checks, every time
-cd backend && .venv/bin/pytest -q && cd ..     # expect: 90 passed
+# 3. the checks, every time — the same ones CI runs on every push
+cd backend && .venv/bin/ruff check . && .venv/bin/pytest -q && cd ..   # expect: All checks passed! · 90 passed
 bash -n <any-edited>.sh                        # shell scripts must parse
-./check-public-safe.sh                         # expect: ✓ SAFE TO PUSH
+python3 check-links.py                         # expect: links: clean
+git add -A && ./check-public-safe.sh           # expect: ✓ SAFE TO PUSH (after add, so new files are seen)
 
 # 4. if code changed: rebuild and probe, for real
 ./container-py.sh rebuild
@@ -114,6 +115,11 @@ Three self-checks before the commit:
 - **Data jobs.** If a script writes to the database, every commit point is
   gated on `--apply`, writes are batched with progress output, and the dry
   run has been proven dry. Lessons 17 and 18 are why.
+- **Dependencies.** If `backend/requirements.txt` changed, `./container-py.sh lock`
+  regenerated `backend/requirements.lock` in the same commit, and
+  `./container-py.sh rebuild` was run for real. The lock is what the image,
+  CI and the test environment install; a changed wish list with an unchanged
+  receipt is a lie.
 
 ---
 
@@ -185,6 +191,11 @@ checkpoint.
 - **Dependencies:** justify, don't accumulate. A new dependency, service or
   roadmap technology enters only with a *Required now* verdict in
   [`06-product-and-technology-roadmap.md`](docs/06-product-and-technology-roadmap.md).
+  Ranges go in `requirements.txt`; exact versions live only in the generated
+  `requirements.lock`; Python 3.12 is the reference interpreter because it is
+  the one in the image.
+- **Lint clean.** `ruff check .` in `backend/` prints `All checks passed!`;
+  the rules are in `backend/ruff.toml` and are the same ones CI runs.
 - **Never in a tracked file:** real laboratory data, certificates, keys,
   `.env*`, database files, backups, internal hostnames, usernames, personal
   paths. `.gitignore` is the lock; `check-public-safe.sh` is the guard at the
@@ -227,6 +238,10 @@ last section; the ones every change must respect:
 
 ## 8. Review norms
 
+- **CI must be green** on the public repository before a push is mirrored:
+  the linter, the tests on Linux and macOS, the client build, the figure
+  determinism check, the link check and the safety gate. A red run is read
+  before anything else is done.
 - **Pull requests are for `feature/* → develop` only.** `develop → beta →
   master` is promoted by fast-forward from the command line, never by a
   button.

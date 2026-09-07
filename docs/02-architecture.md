@@ -548,7 +548,7 @@ Stage 1: docker.io/library/node:18-alpine
     → npm install + vite build  (client/dist)
 
 Stage 2: docker.io/library/python:3.12-slim
-    → pip install -r backend/requirements.txt   (RDKit et al. as wheels)
+    → pip install -r backend/requirements.lock  (exact versions; RDKit et al. as wheels)
     → copy backend/app, backend/scripts, backend/alembic, docs, client/dist
     → HEALTHCHECK: python backend/scripts/healthcheck.py
       (probes /api/stats — tries HTTP then HTTPS, so the same image is
@@ -787,6 +787,11 @@ wait for sign-off rather than editing the assertion.
 
 Bare-metal setup for the virtual environment the tests use:
 [`backend/README.md` → Quickstart](../backend/README.md#quickstart-macos).
+The environment installs from `backend/requirements.lock`, the exact versions
+the image runs, so a test failure means the code, not a library drift. The
+linter (`ruff check .`, rules in `backend/ruff.toml`) runs beside the tests,
+and both run again on every push in the public repository's CI on Linux and
+macOS — [phase 05b](04-phase-tutorials/phase-05b-reproducible-builds-and-ci.md).
 
 ---
 

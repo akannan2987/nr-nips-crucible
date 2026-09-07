@@ -18,9 +18,10 @@ Run automatically by the container entrypoint; safe to run by hand too:
 import sys
 from pathlib import Path
 
-from alembic import command
 from alembic.config import Config
 from sqlalchemy import inspect
+
+from alembic import command
 
 # Make the app package importable (this file lives at <repo>/backend/scripts/).
 BACKEND_DIR = Path(__file__).resolve().parent.parent

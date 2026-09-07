@@ -1,0 +1,26 @@
+# Linter settings for the backend — the same rules run locally and in CI.
+#
+# ruff is a fast Python linter. It reads code and reports patterns that are
+# usually mistakes (an unused import, a variable assigned and never read) or
+# out of step with the modern idiom this project asks for (type hints in the
+# 3.12 style, sorted imports). It changes nothing unless asked to (--fix).
+#
+# Run from backend/:   .venv/bin/ruff check .        (report)
+#                      .venv/bin/ruff check . --fix  (apply the safe fixes)
+
+target-version = "py312"
+line-length = 120
+extend-exclude = ["alembic/versions"]   # generated migration files keep their generated shape
+
+[lint]
+select = [
+    "E", "W",   # pycodestyle: real errors and warnings, not cosmetics
+    "F",        # pyflakes: unused imports and variables, undefined names
+    "I",        # import order
+    "UP",       # modern syntax for the declared Python version
+    "B",        # common bugs (mutable defaults, useless comparisons)
+]
+ignore = [
+    "B008",     # function calls in defaults — FastAPI's Depends(get_db) is exactly that, on purpose
+    "E501",     # line length is advisory here; long strings in messages and SQL are clearer unbroken
+]

@@ -31,6 +31,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("AUTO_INIT_DB", "false")
 
+import uuid  # noqa: E402
+
 from sqlalchemy.exc import OperationalError  # noqa: E402
 
 from app.compat import now_iso  # noqa: E402
@@ -44,8 +46,6 @@ from app.store import (  # noqa: E402
 )
 from app.utils.cleaning import collapse_whitespace, parse_cas_numbers  # noqa: E402
 from app.utils.pubchem import PubChemClient  # noqa: E402
-
-import uuid  # noqa: E402
 
 
 def commit(db, attempts: int = 5) -> None:

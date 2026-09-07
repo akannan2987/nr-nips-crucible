@@ -233,6 +233,17 @@ git push origin develop develop:beta develop:master
 This sends your local `develop` to the remote `develop`, `beta`, **and** `master` -
 one commit ID across all three, fast-forward, no merge commits.
 
+### Step 4b - Watch CI go green
+
+The push starts the workflow in `.github/workflows/ci.yml` on the public
+repository: two rented machines (Linux and macOS) install the backend from
+`backend/requirements.lock` on Python 3.12, run the linter and the tests,
+build the client, regenerate the figures, check every documentation link
+and run the safety gate. Open the repository's *Actions* tab; a green tick on
+your commit means the checks you ran by hand also pass on machines that are
+not yours. **Do not mirror a red commit** — read the failing step first.
+The private repository does not run workflows.
+
 ### Step 5 - Level your local master
 
 ```bash

@@ -28,7 +28,7 @@ from __future__ import annotations
 import re
 import sqlite3
 import time
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy import text
@@ -84,7 +84,7 @@ def validate(sql: str) -> str:
     return bare
 
 
-def _sqlite_path() -> Optional[str]:
+def _sqlite_path() -> str | None:
     if DATABASE_URL.startswith("sqlite:///"):
         return DATABASE_URL[len("sqlite:///") :]
     return None

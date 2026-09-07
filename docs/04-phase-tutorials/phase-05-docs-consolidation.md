@@ -1,4 +1,4 @@
-[← README](../../README.md) · [Handbook](../HANDBOOK.md) · [Glossary](../00-glossary.md) · [← Phase 04](phase-04-template-ingestion.md)
+[← README](../../README.md) · [Handbook](../HANDBOOK.md) · [Glossary](../00-glossary.md) · [← Phase 04](phase-04-template-ingestion.md) · [Phase 05b →](phase-05b-reproducible-builds-and-ci.md)
 
 # Phase 05 — Giving the documentation a spine
 

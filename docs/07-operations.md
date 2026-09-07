@@ -200,6 +200,7 @@ avoid clashes on shared machines).
 ./container-py.sh clean       # Remove container and image
 ./container-py.sh backup      # Consistent snapshot → backups/ (safe while running)
 ./container-py.sh restore     # List backups; with a path: stop → swap db → restart
+./container-py.sh lock        # Regenerate backend/requirements.lock inside the base image (after editing requirements.txt)
 ```
 
 **PostgreSQL (optional — SQLite is the default):**

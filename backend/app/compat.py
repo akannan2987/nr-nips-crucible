@@ -8,8 +8,8 @@ Pythonic equivalent. Each function documents the JS behaviour it mirrors.
 
 import math
 import re
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 
 def js_falsy(value: Any) -> bool:
@@ -58,7 +58,7 @@ def parse_int_or(value: Any, default: int) -> int:
     return n if n != 0 else default
 
 
-def parse_float_or_none(value: Any) -> Optional[float]:
+def parse_float_or_none(value: Any) -> float | None:
     """Mirror of `parseFloat(value)` with NaN → None.
 
     parseFloat also accepts leading-number strings like "194.19 g/mol".
@@ -78,7 +78,7 @@ def now_iso() -> str:
     """Current UTC time in the exact format of JS `new Date().toISOString()`:
     millisecond precision with a 'Z' suffix, e.g. 2026-07-28T14:51:12.177Z
     """
-    dt = datetime.now(timezone.utc)
+    dt = datetime.now(UTC)
     return dt.strftime("%Y-%m-%dT%H:%M:%S.") + f"{dt.microsecond // 1000:03d}Z"
 
 

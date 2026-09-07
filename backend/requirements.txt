@@ -9,8 +9,12 @@ pydantic>=2.7,<3.0
 python-multipart>=0.0.9        # required by FastAPI for multipart file uploads
 pandas>=2.2
 openpyxl>=3.1
-rdkit>=2024.3.1                # pip wheel exists for macOS arm64 AND linux x86_64
+rdkit>=2024.3.1,<2025.9.4      # newest release with pre-built wheels for EVERY machine this project uses:
+                               # Linux x86_64 (image, VM), macOS arm64 (CI), macOS Intel (the development
+                               # laptop), Python 3.12-3.14. Before lifting the cap, check the next version
+                               # with: pip download --only-binary=:all: --no-deps rdkit==<v>  on each of them.
 
 # Test dependencies
 pytest>=8.0
 httpx>=0.27                    # used by fastapi.testclient and the live parity diff
+ruff>=0.6                      # linter; the same check CI runs

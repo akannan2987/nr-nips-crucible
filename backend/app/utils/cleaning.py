@@ -22,7 +22,7 @@ import hashlib
 import re
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 # Values that mean "no data". Compared case-insensitively after stripping.
 # `#DIV/0!` and `#VALUE!` are Excel formula errors: the spreadsheet tried to
@@ -77,7 +77,7 @@ def is_null_token(value: Any) -> bool:
     return collapse_whitespace(value).lower() in NULL_TOKENS
 
 
-def clean_text(value: Any) -> Optional[str]:
+def clean_text(value: Any) -> str | None:
     """Tidy free text; `None` when the cell is empty or a missing-data token."""
     text = collapse_whitespace(value)
     return None if text.lower() in NULL_TOKENS else text
@@ -96,7 +96,7 @@ class Measurement:
     * ``text``        — some other text we could not turn into a number
     """
 
-    value: Optional[float]
+    value: float | None
     raw: str
     status: str
 
@@ -150,7 +150,7 @@ def parse_measurement(value: Any) -> Measurement:
     return Measurement(None, raw, "text")
 
 
-def parse_date(value: Any, dayfirst: bool = False) -> Optional[str]:
+def parse_date(value: Any, dayfirst: bool = False) -> str | None:
     """Normalise a date to `YYYY-MM-DD`, or `None` if it is not a date.
 
     `dayfirst` picks between the two ambiguous readings of `01/02/2025`.

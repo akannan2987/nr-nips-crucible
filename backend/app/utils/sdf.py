@@ -25,7 +25,7 @@ from the JS implementation.
 """
 
 import re
-from typing import Any, Optional
+from typing import Any
 
 from rdkit import Chem, RDLogger
 from rdkit.Chem import Descriptors  # noqa: F401  (kept for future use)
@@ -63,7 +63,7 @@ def _parse_data_items(lines: list[str], m_end_index: int, warnings: list[str]) -
     if m_end_index < 0:
         return properties
 
-    current_field: Optional[str] = None
+    current_field: str | None = None
     current_value: list[str] = []
 
     for i in range(m_end_index + 1, len(lines)):
@@ -301,7 +301,7 @@ def _build_lookup(props: dict[str, str]) -> dict[str, str]:
 def _finder(lc: dict[str, str]):
     """Return a find(*keys) helper matching the JS behaviour (skip '' values)."""
 
-    def find(*keys: str) -> Optional[str]:
+    def find(*keys: str) -> str | None:
         for k in keys:
             v = lc.get(k.lower())
             if v is not None and v != "":

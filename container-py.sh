@@ -145,6 +145,7 @@ show_help() {
     echo "  rebuild     Rebuild image and restart container"
     echo "  backup      Consistent database backup → backups/ (safe while running)"
     echo "  restore <f> Restore a backup file (stops app, swaps db, restarts)"
+    echo "  lock        Regenerate backend/requirements.lock inside the base image"
     echo "  logs        Show container logs (follow)"
     echo "  status      Show container status + /api/stats healthcheck"
     echo "  shell       Open a shell in the container"
@@ -332,6 +333,45 @@ start_container_ssl() {
         echo -e "${RED}✗ Failed to start container with HTTPS${NC}"
         exit 1
     fi
+}
+
+lock_requirements() {
+    # Resolve backend/requirements.txt (ranges, the intent) into exact versions
+    # inside the SAME base image the Dockerfile builds from, and write them to
+    # backend/requirements.lock (what a real build gets). The Dockerfile, CI and
+    # the test virtualenv all install from the lock, so every build is the same.
+    check_podman_machine
+    local base
+    base=$(grep -E '^FROM .*python:' "$(pwd)/backend/Dockerfile" | head -1 | awk '{print $2}')
+    local lock="$(pwd)/backend/requirements.lock"
+    echo -e "${YELLOW}Resolving backend/requirements.txt inside ${base} ...${NC}"
+    local pins
+    pins=$($RUNTIME run --rm \
+        -v "$(pwd)/backend/requirements.txt:/w/requirements.txt:ro,Z" \
+        "${base}" sh -c 'pip install -q --no-cache-dir --root-user-action=ignore -r /w/requirements.txt >/dev/null 2>&1 && python -V && pip freeze --exclude-editable') || {
+        echo -e "${RED}✗ pip could not resolve requirements.txt — the lock was not changed${NC}"; exit 1; }
+    local pyver
+    pyver=$(printf '%s\n' "${pins}" | head -1)
+    {
+        echo "# backend/requirements.lock — the exact versions the container image runs."
+        echo "#"
+        echo "# GENERATED, do not edit by hand. Regenerate whenever backend/requirements.txt"
+        echo "# changes, from the repository root, inside the same base image the Dockerfile"
+        echo "# uses (so the versions are the ones a real build would resolve):"
+        echo "#"
+        echo "#   ./container-py.sh lock"
+        echo "#"
+        echo "# requirements.txt says what the project ASKS for (ranges, the intent);"
+        echo "# this file says what it GOT (every package, every dependency of a dependency,"
+        echo "# one exact version each). The Dockerfile, the CI workflow and the test"
+        echo "# virtual environment all install from THIS file, so a build a year from now"
+        echo "# installs what a build today installs."
+        echo "#"
+        echo "# Resolved with ${pyver} on $(date +%Y-%m-%d)."
+        printf '%s\n' "${pins}" | tail -n +2 | grep -vE '^(pip|setuptools|wheel)=='
+    } > "${lock}"
+    echo -e "${GREEN}✓ Wrote ${lock} ($(grep -c '==' "${lock}") pinned packages)${NC}"
+    echo "  Review with: git diff backend/requirements.lock   then rebuild: ./container-py.sh rebuild"
 }
 
 backup_data() {
@@ -537,6 +577,7 @@ case "$1" in
     restart)  restart_container ;;
     rebuild)  rebuild ;;
     backup)   backup_data ;;
+    lock)     lock_requirements ;;
     restore)  restore_data "$2" ;;
     logs)     show_logs ;;
     status)   show_status ;;

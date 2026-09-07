@@ -18,7 +18,7 @@ the stored record (the PUT update endpoints) accept a plain `dict` instead —
 there is genuinely no schema to describe there.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -39,92 +39,92 @@ class _LenientModel(BaseModel):
 class ChemicalIn(_LenientModel):
     """Body of POST /api/chemicals (all fields optional, like the v1 API)."""
 
-    chemical_id: Optional[str] = None
-    nestle_id: Optional[str] = None
-    name: Optional[str] = None
-    cas_number: Optional[str] = None
-    molecular_formula: Optional[str] = None
-    molecular_weight: Optional[float] = None
-    smiles: Optional[str] = None
-    inchi: Optional[str] = None
-    inchi_key: Optional[str] = None
-    supplier: Optional[str] = None
-    description: Optional[str] = None
-    metadata: Optional[dict[str, Any]] = None
+    chemical_id: str | None = None
+    nestle_id: str | None = None
+    name: str | None = None
+    cas_number: str | None = None
+    molecular_formula: str | None = None
+    molecular_weight: float | None = None
+    smiles: str | None = None
+    inchi: str | None = None
+    inchi_key: str | None = None
+    supplier: str | None = None
+    description: str | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class SampleIn(_LenientModel):
     """Body of POST /api/samples — the v1 API spread the whole body into the
     record, so extra keys are preserved via `extra="allow"`."""
 
-    sample_id: Optional[str] = None
-    identification: Optional[str] = None
-    content_type: Optional[str] = None
-    material_type: Optional[str] = None
-    project_number: Optional[str] = None
-    status: Optional[str] = None
+    sample_id: str | None = None
+    identification: str | None = None
+    content_type: str | None = None
+    material_type: str | None = None
+    project_number: str | None = None
+    status: str | None = None
 
 
 class ScreeningIn(_LenientModel):
     """Body of POST /api/screening."""
 
-    chemical_id: Optional[str] = None
-    assay_name: Optional[str] = None
-    assay_type: Optional[str] = None
-    target: Optional[str] = None
-    result: Optional[str] = None
-    result_value: Optional[Any] = None
-    result_unit: Optional[str] = None
-    concentration: Optional[Any] = None
-    concentration_unit: Optional[str] = None
-    timepoint: Optional[Any] = None
-    replicate: Optional[Any] = None
-    plate_id: Optional[str] = None
-    well_position: Optional[str] = None
-    experiment_date: Optional[str] = None
-    operator: Optional[str] = None
-    notes: Optional[str] = None
-    metadata: Optional[dict[str, Any]] = None
+    chemical_id: str | None = None
+    assay_name: str | None = None
+    assay_type: str | None = None
+    target: str | None = None
+    result: str | None = None
+    result_value: Any | None = None
+    result_unit: str | None = None
+    concentration: Any | None = None
+    concentration_unit: str | None = None
+    timepoint: Any | None = None
+    replicate: Any | None = None
+    plate_id: str | None = None
+    well_position: str | None = None
+    experiment_date: str | None = None
+    operator: str | None = None
+    notes: str | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class ToxicologyIn(_LenientModel):
     """Body of POST /api/toxicology."""
 
-    chemical_id: Optional[str] = None
-    study_type: Optional[str] = None
-    species: Optional[str] = None
-    strain: Optional[str] = None
-    sex: Optional[str] = None
-    route_of_administration: Optional[str] = None
-    duration: Optional[Any] = None
-    duration_unit: Optional[str] = None
-    dose: Optional[Any] = None
-    dose_unit: Optional[str] = None
-    endpoint: Optional[str] = None
-    endpoint_value: Optional[Any] = None
-    endpoint_unit: Optional[str] = None
-    noael: Optional[Any] = None
-    loael: Optional[Any] = None
-    ld50: Optional[Any] = None
-    study_reference: Optional[str] = None
-    study_date: Optional[str] = None
-    source: Optional[str] = None
-    notes: Optional[str] = None
-    metadata: Optional[dict[str, Any]] = None
+    chemical_id: str | None = None
+    study_type: str | None = None
+    species: str | None = None
+    strain: str | None = None
+    sex: str | None = None
+    route_of_administration: str | None = None
+    duration: Any | None = None
+    duration_unit: str | None = None
+    dose: Any | None = None
+    dose_unit: str | None = None
+    endpoint: str | None = None
+    endpoint_value: Any | None = None
+    endpoint_unit: str | None = None
+    noael: Any | None = None
+    loael: Any | None = None
+    ld50: Any | None = None
+    study_reference: str | None = None
+    study_date: str | None = None
+    source: str | None = None
+    notes: str | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class BulkDeleteChemicals(_LenientModel):
-    chemical_ids: Optional[Any] = None  # validated by hand, like the v1 API
+    chemical_ids: Any | None = None  # validated by hand, like the v1 API
 
 
 class BulkUpdateChemicals(_LenientModel):
-    chemical_ids: Optional[Any] = None
-    updates: Optional[dict[str, Any]] = None
+    chemical_ids: Any | None = None
+    updates: dict[str, Any] | None = None
 
 
 class BulkDeleteSamples(_LenientModel):
-    sample_ids: Optional[Any] = None
+    sample_ids: Any | None = None
 
 
 class LinkChemicals(_LenientModel):
-    chemical_ids: Optional[Any] = None
+    chemical_ids: Any | None = None

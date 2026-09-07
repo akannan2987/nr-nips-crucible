@@ -1,0 +1,88 @@
+# ---------------------------------------------------------------------------
+# Continuous integration (CI) for the PUBLIC repository.
+#
+# Every time a commit is pushed, the host rents two fresh machines — one Linux,
+# one macOS — installs the backend exactly the way the setup guides say to
+# (from the lock file, on Python 3.12, the same version the container image
+# uses), runs the linter and the 90 tests, builds the React client, regenerates
+# the figures to prove they are deterministic, checks every documentation link,
+# and runs the publication safety gate. Green means the checks a person runs by
+# hand before a push all passed on machines that are not that person's.
+#
+# Everyday analogy: a driving test taken on two different cars every time you
+# change anything about how you drive.
+#
+# This workflow is for the public repository. The private repository is a
+# content mirror and does not run workflows; its deploy is verified on the VM
+# by ./verify-deploy.sh instead (docs/07-operations.md).
+# ---------------------------------------------------------------------------
+name: CI
+
+on:
+  push:
+    branches: [develop, beta, master]
+  pull_request:
+    branches: [develop]
+
+concurrency:
+  # A second push cancels the older run of the same branch — saves minutes.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false              # let both finish so every failure is visible
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12 (the version inside the container image)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.lock
+
+      - name: Install the pinned stack from the lock
+        run: python -m pip install --upgrade pip && python -m pip install -r backend/requirements.lock
+
+      - name: Lint
+        run: cd backend && ruff check .
+
+      - name: Tests (fresh in-process app + throwaway SQLite per test)
+        run: cd backend && python -m pytest -q
+
+      - name: Figures are deterministic (regenerate, expect no diff)
+        run: python3 docs/img/make_figures.py && git diff --exit-code -- docs/img
+
+      - name: Documentation links resolve
+        run: python3 check-links.py
+
+      - name: Publication safety gate
+        run: ./check-public-safe.sh
+
+  client:
+    name: client build · ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node 18 (the version in the image's build stage)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install exactly what the lockfile says
+        run: cd client && npm ci
+
+      - name: Build the page the container serves
+        run: cd client && npm run build

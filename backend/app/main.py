@@ -15,7 +15,6 @@ This app:
 """
 
 import os
-from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -34,7 +33,7 @@ from .config import (
     USE_HTTPS,
 )
 from .database import init_db
-from .routers import chemicals, samples, screening, stats, toxicology, query
+from .routers import chemicals, query, samples, screening, stats, toxicology
 
 
 def create_app() -> FastAPI:

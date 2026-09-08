@@ -25,6 +25,8 @@ is defined once and means the same thing in every document.
 | `fig_machine_layout.svg` | Two repositories, three folders, content flowing public → private | handbook §6, `03-git-workflow.md`, playbook Part 8 |
 | `fig_change_travels.svg` | The seven-step loop after setup, Mac then VM | handbook §6, `03-git-workflow.md` |
 | `fig_two_stage_identification.svg` | Stage 1 (either identifier) versus stage 2 (both must agree) | handbook §9, `09-chemical-identification.md`, playbook Part 4 |
+| `fig_registry_first.svg` | The registry as a gate: a row needs both keys, name and CAS, to match one registered entry; otherwise it waits on the unregistered list | `09-chemical-identification.md` (the specification), `05-roadmap.md` |
+| `fig_tracks.svg` | The six tracks of the plan, one per module and the shared spine, each with its next phase | `05-roadmap.md`, handbook §10 |
 | `fig_container_lunchbox.svg` | The same image on three platforms; what is mounted in and what comes out | the three setup guides, handbook §3 |
 | `fig_setup_flow.svg` | Set up once, then the loop | the three setup guides, handbook §3 |
 | `fig_timeline.svg` | The milestones on one line | handbook §1 |
@@ -44,4 +46,4 @@ The interactive figure — the animated architecture page served at
 [`../architecture-interactive.html`](../architecture-interactive.html),
 described in [`02-architecture.md`](../02-architecture.md#interactive-architecture-page).
 
-**Last Updated:** September 7, 2026
+**Last Updated:** September 8, 2026

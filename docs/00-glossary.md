@@ -850,8 +850,67 @@ value its source file had, including the compound name.
 emptying the registry, so that a new identification logic starts clean. Two
 gated steps of the removal script; [phase R](04-phase-tutorials/phase-r-registry-reset.md).
 
+**Track** — one lane of the plan: all the work that belongs to one module
+(Chemical Registry, Screening Data, Sample Management, Toxicology, Query
+Console) or to the shared spine everything stands on. Each track has its own
+list of phases and its own "next"; [`05-roadmap.md`](05-roadmap.md). *Everyday
+version:* the plumber's list and the electrician's list on one renovation.
+
+**Phase code** — a phase's name inside its track: the track's two letters and
+a number, `CR-3` for the third phase of the Chemical Registry track. The
+tutorial takes the same code in its file name (`phase-cr-3-…`). Phases
+shipped before the tracks existed keep their numbers (`05b`) and are
+assigned a track in the handbook's build log.
+
+**Shared spine (SH)** — the track for what every module stands on: the
+platform, the documents, CI, the schema, authentication, the module names.
+
+**Registry-first rule** — the identification rule specified on 2026-09-08 to
+replace the two-stage one: a screening row attaches to a compound only when
+*both* its name *and* its CAS number match one compound *already registered*;
+ingestion never asks PubChem; unregistered compounds are reported and a
+person decides whether to register them; a row can be linked by hand only to
+a registered compound. Specified, not yet built:
+[`09-chemical-identification.md`](09-chemical-identification.md#the-next-rule-registry-first--specification).
+
+**Specification** — the rule or feature written down in full, with its open
+decisions and what "done" means, and agreed *before* any code. Status 📝 in
+the roadmap. The safeguard against changing a data rule by reasoning alone
+(lesson 25).
+
+**Unregistered compound** — a compound named in the screening data (a name +
+CAS pair) that has no entry in the registry, so its rows cannot attach. Not
+stored as a list: worked out from the data whenever asked. Planned: a notice
+in the Chemical Registry and a review table to register some or all (CR-5).
+
+**Incomplete entry** — a registered compound missing one or more of the fields
+that make an entry complete (the set is agreed in CR-4). Entries registered
+from screening data start incomplete by design: they hold a name, a CAS
+number and provenance, nothing inferred. A person completes them by hand, by
+asking PubChem with a review step, or marks them complete as they are.
+
+**Notice** — a message that stays at the top of a module until the condition
+it reports is gone: *N compounds are not registered*, *N entries are
+incomplete*. Each links to the table where you act on it. Not a pop-up: it is
+there every time you open the page.
+
+**View (of a table)** — a named set of columns. Planned for the registry:
+*Compact* (the default, today's columns), *Complete* (every field the records
+hold), *PubChem* (the identifiers and structure fields an outside database
+supplied). Underneath, a column chooser; the choice is remembered per browser.
+
+**Sort** — ordering a table's rows by one column, ascending or descending,
+by clicking its header. Planned for the registry (CR-1); the screening table
+has it.
+
+**Filter (per column)** — a search box under a column header that keeps only
+the rows whose value in *that* column contains what you typed; several
+columns' filters combine. The screening table has it; the registry gets it in
+CR-1. Different from the single search box, which looks in several fields at
+once.
+
 **Something missing?** If you met a word in this project that isn't here,
 that's a gap worth filling — the whole point of this file is that nobody
 should have to already know the vocabulary to follow the documentation.
 
-**Last Updated:** September 7, 2026
+**Last Updated:** September 8, 2026

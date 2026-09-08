@@ -188,7 +188,7 @@ cd backend && .venv/bin/alembic check && cd ..
 
 **Why:** "drift" is a model changed without a migration, or the reverse. The
 check compares the two and reports any difference. It is the gate every
-schema change in [phase 06](../05-roadmap.md#the-next-three-phases) must pass.
+schema change in [phase 06](../05-roadmap.md#sh--shared-spine) must pass.
 
 **You should see:** `No new upgrade operations detected.`
 

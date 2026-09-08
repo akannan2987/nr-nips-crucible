@@ -1,0 +1,42 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 380' width='940' height='380' role='img' aria-label='A screening row reaches the registry with two keys, its name and its CAS number; both must fit one registered entry or the row waits, unlinked, on the unregistered list' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='379' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>The registry-first rule: the registry is the gate, and a row needs both keys</text>
+<rect x='30' y='80' width='210' height='120' rx='8' fill='#f9fafb' stroke='#d97706' stroke-width='1.2'/>
+<text x='135' y='104' font-size='13' fill='#1f2937' text-anchor='middle' font-weight='bold'>a screening row</text>
+<rect x='51.7' y='141.7' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='51.7' y='147.89999999999998' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='51.7' y='154.1' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='57.900000000000006' y='141.7' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='57.900000000000006' y='147.89999999999998' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='57.900000000000006' y='154.1' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='64.1' y='141.7' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='64.1' y='147.89999999999998' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='64.1' y='154.1' width='4.2' height='4.2' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<text x='160' y='138' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='bold'>key 1 · name: Phenol</text>
+<text x='160' y='156' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>key 2 · CAS: 108-95-2</text>
+<text x='135' y='190' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>as written in the laboratory&apos;s file</text>
+<line x1='242' y1='140' x2='300' y2='140' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='302' y='66' width='300' height='150' rx='8' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='452' y='90' font-size='13' fill='#4f46e5' text-anchor='middle' font-weight='bold'>the Chemical Registry</text>
+<polygon points='340,132 355.588,141.0 355.588,159.0 340,168 324.412,159.0 324.412,141.0' fill='#4f46e5' fill-opacity='0.15' stroke='#4f46e5' stroke-width='2'/>
+<text x='470' y='122' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>ONE registered entry must match</text>
+<text x='470' y='138' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>BOTH the name AND the CAS</text>
+<text x='470' y='154' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>→ link the row to it</text>
+<text x='452' y='200' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>nothing is registered at the door; PubChem is never asked</text>
+<path d='M 380 218 L 380 262' fill='none' stroke='#4f46e5' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='290' y='264' width='180' height='40' rx='6' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='380' y='289' font-size='11' fill='#4f46e5' text-anchor='middle' font-weight='normal'>both keys fit: linked</text>
+<path d='M 540 218 L 540 262' fill='none' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<rect x='480' y='264' width='220' height='40' rx='6' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='590' y='289' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>a key missing: stored, unlinked</text>
+<line x1='702' y1='284' x2='740' y2='284' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<rect x='742' y='236' width='170' height='96' rx='8' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='827' y='258' font-size='12' fill='#d97706' text-anchor='middle' font-weight='bold'>unregistered list</text>
+<text x='827' y='278' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>a notice in the registry</text>
+<text x='827' y='292' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>download, or register</text>
+<text x='827' y='306' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>some or all — by a person</text>
+<path d='M 827 234 L 827 218 L 620 218 L 620 140 L 604 140' fill='none' stroke='#d97706' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<text x='470.0' y='340' font-size='12' fill='#1f2937' text-anchor='middle' font-weight='normal'>a name alone, or a CAS alone, is not enough — that is the failure the old second stage had, and the rule removes it</text>
+<text x='470.0' y='362' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>everyday version: a members-only building — name AND membership number must match the same member in the book; nobody joins at the door</text>
+</svg>

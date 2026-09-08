@@ -10,6 +10,49 @@ change you are getting.
 
 ---
 
+## v2.8.0 — 2026-09-08 — "Six tracks, and the rule written down first"
+
+A planning release: no application code changed. Two things the owner asked
+for after the first hands-on use of the reset tools, both documents.
+
+**Added**
+- **The plan runs as tracks.** [`docs/05-roadmap.md`](docs/05-roadmap.md) is
+  reorganised into six tracks — one per module (Chemical Registry, Screening
+  Data, Sample Management, Toxicology, Query Console) and a shared spine —
+  each with the phases it builds next, what each adds, why, and what it
+  waits on; the same shape my other projects use. New phases are named by
+  track code and number (`CR-3`); the handbook's build log gained a *Track*
+  column and assigns every earlier phase to one. Phases 06 and 07 keep their
+  numbers and are also SH-2 and SH-3.
+- **The registry-first rule, as a specification.** The owner described the
+  new identification logic; it is written down in
+  [`docs/09-chemical-identification.md`](docs/09-chemical-identification.md#the-next-rule-registry-first--specification)
+  as five rules, what "basic information" means, how the rule is re-run over
+  rows already loaded, ten decisions with recommendations, and what "done"
+  means — phase SD-1, **specified and awaiting agreement before any code**.
+  The rule that runs today is unchanged and still described above it.
+- **Planned from the owner's requests**, each in its track with a *waits on*:
+  the module renames (SH-1), JSON upload and a terminal import command for
+  every module (CR-3, SD-2, SM-2), sort, search and filter per column
+  (CR-1), Compact, Complete and PubChem views (CR-2), the incomplete-entries
+  notice with a PubChem review step (CR-4), and the unregistered-compounds
+  notice and review table (CR-5).
+- Two figures: the six tracks, and the registry as a door with two keys.
+  Eleven glossary entries (track, phase code, shared spine, registry-first
+  rule, specification, unregistered compound, incomplete entry, notice,
+  view, sort, filter).
+
+**Recorded**
+- R-2 now waits on the specification being agreed as well as the owner's
+  go: emptying the registry only makes sense once the rule the refilled
+  registry must satisfy is known.
+
+**Deliberately not done**
+- No code. The renames, the table features and the rule are planned, not
+  built; each ships as its own phase with its own tutorial and release note.
+
+---
+
 ## v2.7.0 — 2026-09-08 — "Which rows, which chemical, are you sure"
 
 Three things the first hands-on use of the link buttons asked for.

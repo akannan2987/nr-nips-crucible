@@ -193,7 +193,7 @@ get, and likely mistakes get a named fix.
 | 02 | **[Database schema](docs/02-database-schema.md)** | The hybrid document pattern; SQLite and PostgreSQL; Alembic |
 | 03 | **[Git workflow](docs/03-git-workflow.md)** | Two repositories, three folders; how a change travels from your Mac to the server; the safety gate that stops secrets escaping |
 | 04 | **[Phase tutorials](docs/04-phase-tutorials/phase-00-node-to-python.md)** | One tutorial per build phase, 00 to 05b and R: why it existed, what it built, steps with expected output, a checkpoint, what it deliberately did not do |
-| 05 | **[Roadmap](docs/05-roadmap.md)** | What is planned, in order, and what each item waits on |
+| 05 | **[Roadmap](docs/05-roadmap.md)** | Six tracks, one per module and a shared spine: what each builds next, why, and what it waits on |
 | 06 | **[Product and technology roadmap](docs/06-product-and-technology-roadmap.md)** | From one VM to a product: every candidate technology with a verdict and the trigger that would change it |
 | 07 | **[Operations](docs/07-operations.md)** | The deep runbook: certificate rotation, PostgreSQL, systemd, backups, monitoring, troubleshooting |
 | 08 | **[API reference](docs/08-api-reference.md)** | Every endpoint, request and response |

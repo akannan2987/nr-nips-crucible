@@ -2,7 +2,7 @@
 
 # Phase R — The registry reset: unlink everything, empty the registry, start again
 
-**Version shipped:** 2.5.0 (the tools), 2.6.0 (the buttons), 2.7.0 (select-all-matching, confirmation, per-chemical summaries) · **Date:** 2026-09-08 · **Status:** in progress — **R-1 done on production on 2026-09-08** (the owner, from the browser, then the terminal for a re-linked page); R-2 waits on the owner's go; R-3 waits on the owner's description
+**Version shipped:** 2.5.0 (the tools), 2.6.0 (the buttons), 2.7.0 (select-all-matching, confirmation, per-chemical summaries) · **Date:** 2026-09-08 · **Status:** in progress — **R-1 done on production on 2026-09-08** (the owner, from the browser, then the terminal for a re-linked page); R-2 waits on the owner's go, after the new rule is agreed; R-3 was described on 2026-09-08 and is now the **SD-1 specification**, awaiting agreement
 **Prerequisites:** [Phase 04](phase-04-template-ingestion.md) for what identification is; the [playbook](../10-user-playbook.md) Parts 4–6 for the registry as it stands; on the VM, a backup you have copied outside the repository.
 **Learning goal:** you understand what a link between a measurement and a compound is, where it is stored, why removing it is safe and reversible while deleting a compound is not, and how a data operation is made *provably dry* before it is made real.
 **Deliverable:** two new modes on the removal script — `--unlink-all` and `--all` — each gated on `--apply`, batched, and covered by the script's first automated tests; a written procedure for the two steps on production; the registry emptied so that the new identification logic starts clean.
@@ -182,11 +182,32 @@ and the post-deploy checks passing, including "no dangling chemical links".
 
 ## Step 4 — R-3: the new identification logic
 
-Not designed yet. The owner will describe the rule; it is written down in
-[`09-chemical-identification.md`](../09-chemical-identification.md) and
-agreed *before* any code, because the last logic was changed once by
+**What:** replace the two-stage rule with the **registry-first rule**: a row
+attaches only when *both* its name *and* its CAS number match one registered
+compound; unregistered compounds are reported and offered for registration
+from the file's own information; ingestion never asks PubChem; a row can be
+linked by hand only to a registered compound.
+
+**How:** the owner described the rule on 2026-09-08. It is written as a
+specification — five rules, what "basic information" means, how the rule is
+re-run over rows already loaded, and ten decisions with recommendations — in
+[`09-chemical-identification.md` → The next rule](../09-chemical-identification.md#the-next-rule-registry-first--specification),
+and agreed *before* any code, because the last logic was changed once by
 reasoning alone and registered 19 compounds with another substance's
-chemistry (lesson 25).
+chemistry (lesson 25). Once agreed it is built as phase **SD-1** of the
+Screening Data track, with its own tutorial; the roadmap's
+[why this order](../05-roadmap.md#why-this-order) puts the agreement *before*
+R-2 and the build *after* the registry can be refilled (CR-3).
+
+**Why R-2 waits on the agreement:** emptying the registry only makes sense
+once the rule the refilled registry must satisfy is known. Under the new
+rule nothing attaches until a compound is registered, so the empty registry
+has to be refillable from a curated file first — the 664 entries in the
+pre-R-1 backup, exported and reviewed, are the candidate first file (decision
+D10 in the specification).
+
+**You should see,** when the specification is agreed: the status box in the
+handbook moves SD-1 from *specified* to *in progress*, and R-2 gets its go.
 
 ---
 
@@ -209,8 +230,10 @@ For R-1 and R-2, the outputs quoted in Steps 2 and 3, on production.
 - **Fix the delete endpoint.** After R-2 no row points at anything, so the
   orphaning behaviour has nothing to orphan; the endpoint change remains on
   the roadmap for when the registry is rebuilt.
-- **Re-propose the 22 removed compounds.** Superseded: the new logic
-  re-identifies everything.
+- **Re-propose the 22 removed compounds.** Superseded: under the new rule
+  they are registered by a person from the review table, with everything
+  else.
+- **Build the new rule.** This phase wrote it down; phase SD-1 builds it.
 
 ---
 

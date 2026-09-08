@@ -277,6 +277,73 @@ def fig_two_stage() -> None:
     write("fig_two_stage_identification.svg", svg(W, H, "Stage 1 links a row when either the CAS or the name matches the curated registry; stage 2 asks PubChem and registers only when name and CAS agree", b))
 
 
+def fig_tracks() -> None:
+    W, H = 940, 400
+    b = text(W/2, 34, "The plan as six tracks: one per module, and the spine they all stand on", 16, INK, "middle", "bold")
+    tracks = [
+        ("CR", "Chemical Registry", "chemical", ["every way in · sort, filter, views", "unregistered + incomplete notices"], "next: CR-3 every way in"),
+        ("SD", "Screening Data", "screening", ["the registry-first rule", "every way in · re-identify"], "next: SD-1 (specified)"),
+        ("SM", "Sample Management", "sample", ["the same table conveniences", "the same rule, later"], "next: SM-1 after CR-1"),
+        ("TX", "Toxicology", "toxicology", ["a real study export", "as a template spec"], "waits on: a file"),
+        ("QC", "Query Console", None, ["saved queries · download", "recipes follow the schema"], "next: QC-1"),
+    ]
+    x0, w, gap = 30, 170, 8
+    for i, (code, name, kind, rows, nxt) in enumerate(tracks):
+        x = x0 + i * (w + gap)
+        col = COLOURS[kind] if kind else ACCENT
+        b += box(x, 60, w, 230, PAPER, col, 10)
+        b += text(x + 16, 86, code, 15, col, "start", "bold")
+        b += text(x + w/2, 112, name, 12.5, INK, "middle", "bold")
+        if kind:
+            b += symbol(kind, x + w/2, 152, 16)
+        else:
+            b += text(x + w/2, 158, "SELECT …", 13, ACCENT, "middle", "bold", "ui-monospace,Menlo,Consolas,monospace")
+        b += lines(x + w/2, 198, rows, 10.5, MUTED, "middle", 15)
+        b += box(x + 10, 246, w - 20, 30, PANEL, col, 6)
+        b += text(x + w/2, 266, nxt, 10.5, col, "middle", "bold")
+    # the spine
+    b += box(30, 304, 882, 52, "#f3f4f6", ACCENT, 10)
+    b += text(46, 326, "SH", 15, ACCENT, "start", "bold")
+    b += text(470, 324, "Shared spine — the platform, the documents, CI, the schema, authentication, the module names", 12, INK, "middle", "bold")
+    b += text(470, 344, "phases 00–05b live here · next: SH-1 module names, then SH-2 schema normalisation, then SH-3 authentication", 10.5, MUTED)
+    b += text(W/2, 382, "everyday version: five trades on one renovation, each with its own list — and the scaffolding all of them stand on", 11, MUTED)
+    write("fig_tracks.svg", svg(W, H, "Six tracks: Chemical Registry, Screening Data, Sample Management, Toxicology, Query Console, and the shared spine, each with its next phase", b))
+
+
+def fig_registry_first() -> None:
+    W, H = 940, 380
+    b = text(W/2, 34, "The registry-first rule: the registry is the gate, and a row needs both keys", 16, INK, "middle", "bold")
+    # the row, with two keys
+    b += box(30, 80, 210, 120, PANEL, COLOURS["screening"], 8)
+    b += text(135, 104, "a screening row", 13, INK, "middle", "bold")
+    b += symbol("screening", 60, 150, 10)
+    b += lines(160, 138, ["key 1 · name: Phenol", "key 2 · CAS: 108-95-2"], 11, INK, "middle", 18, "bold")
+    b += text(135, 190, "as written in the laboratory's file", 10, MUTED)
+    b += arrow(242, 140, 300, 140, LINE)
+    # the door / registry
+    b += box(302, 66, 300, 150, "#eef2ff", COLOURS["chemical"], 8)
+    b += text(452, 90, "the Chemical Registry", 13, COLOURS["chemical"], "middle", "bold")
+    b += symbol("chemical", 340, 150, 18)
+    b += lines(470, 122, ["ONE registered entry must match", "BOTH the name AND the CAS", "→ link the row to it"], 11, INK, "middle", 16)
+    b += text(452, 200, "nothing is registered at the door; PubChem is never asked", 10, MUTED)
+    # outcomes
+    b += path_arrow("M 380 218 L 380 262", COLOURS["chemical"])
+    b += box(290, 264, 180, 40, PAPER, COLOURS["chemical"], 6)
+    b += text(380, 289, "both keys fit: linked", 11, COLOURS["chemical"])
+    b += path_arrow("M 540 218 L 540 262", LINE, dash=True)
+    b += box(480, 264, 220, 40, PAPER, LINE, 6)
+    b += text(590, 289, "a key missing: stored, unlinked", 11, MUTED)
+    # the lobby / review
+    b += arrow(702, 284, 740, 284, LINE, dash=True)
+    b += box(742, 236, 170, 96, "#fff7ed", COLOURS["screening"], 8)
+    b += text(827, 258, "unregistered list", 12, COLOURS["screening"], "middle", "bold")
+    b += lines(827, 278, ["a notice in the registry", "download, or register", "some or all — by a person"], 10, INK, "middle", 14)
+    b += path_arrow("M 827 234 L 827 218 L 620 218 L 620 140 L 604 140", COLOURS["screening"], dash=True)
+    b += text(W/2, 340, "a name alone, or a CAS alone, is not enough — that is the failure the old second stage had, and the rule removes it", 12, INK)
+    b += text(W/2, 362, "everyday version: a members-only building — name AND membership number must match the same member in the book; nobody joins at the door", 11, MUTED)
+    write("fig_registry_first.svg", svg(W, H, "A screening row reaches the registry with two keys, its name and its CAS number; both must fit one registered entry or the row waits, unlinked, on the unregistered list", b))
+
+
 def fig_container_lunchbox() -> None:
     W, H = 940, 320
     b = text(W/2, 34, "The container is the isolation — the same sealed lunchbox on every platform", 16, INK, "middle", "bold")
@@ -343,7 +410,7 @@ def fig_timeline() -> None:
         ty = 80 if up else 168
         b += text(x, ty - 22 if up else ty + 40, date, 10, MUTED)
         b += lines(x, ty, rows, 11, INK, "middle", 15, "bold")
-    b += text(W/2, 236, "phases 00–04 are reconstructed tutorials; 05 is this documentation; 06 (normalise) and 07 (authenticate) are next", 11, MUTED)
+    b += text(W/2, 236, "phases 00–04 are reconstructed tutorials; 05 is this documentation; from v2.8 the plan runs as six tracks (05-roadmap.md)", 11, MUTED)
     write("fig_timeline.svg", svg(W, H, "Milestones from the Node prototype in May 2026 through the Python rewrite, publication, verification, real data, the audit and the handbook", b))
 
 
@@ -408,5 +475,6 @@ def logo() -> None:
 
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
-              fig_two_stage, fig_container_lunchbox, fig_setup_flow, fig_timeline, fig_requirements_lock, cover, logo):
+              fig_two_stage, fig_tracks, fig_registry_first, fig_container_lunchbox, fig_setup_flow, fig_timeline,
+              fig_requirements_lock, cover, logo):
         f()

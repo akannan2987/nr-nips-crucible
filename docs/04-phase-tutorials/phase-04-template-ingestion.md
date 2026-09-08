@@ -218,7 +218,7 @@ entries were found only by reading pairs by hand.
 
 **What it means:** the 22 compounds removed on 2026-08-31 are real
 substances; re-registering them waits on a row-by-row review, as the
-[roadmap](../05-roadmap.md#planned-items-and-what-each-waits-on) says.
+[roadmap](../05-roadmap.md#where-each-track-stands-and-its-next-phase) says.
 
 ---
 

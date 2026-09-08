@@ -35,5 +35,5 @@
 <text x='880' y='208' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>2026-09-07</text>
 <text x='880' y='168' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='bold'>v2.3 · v2.4</text>
 <text x='880' y='183' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>handbook · CI</text>
-<text x='470.0' y='236' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>phases 00–04 are reconstructed tutorials; 05 is this documentation; 06 (normalise) and 07 (authenticate) are next</text>
+<text x='470.0' y='236' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>phases 00–04 are reconstructed tutorials; 05 is this documentation; from v2.8 the plan runs as six tracks (05-roadmap.md)</text>
 </svg>

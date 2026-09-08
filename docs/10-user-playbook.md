@@ -377,6 +377,14 @@ contacts that a website suggested.
 Everything it covers links instantly, with no network and no strict rule to
 satisfy, because you vouched for it.
 
+> **This rule is changing.** The registry-first rule — a row attaches only
+> when *both* its name *and* its CAS number match a compound you have already
+> registered, stage 2 is retired for screening rows, and unregistered
+> compounds are reviewed by a person — was written down on 2026-09-08 and
+> waits on agreement before it is built:
+> [`09-chemical-identification.md` → The next rule](09-chemical-identification.md#the-next-rule-registry-first--specification).
+> Until then, this Part describes what the system does.
+
 ## Running stage 2
 
 This is a long job — roughly an hour for a few thousand compounds — because

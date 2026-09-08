@@ -27,6 +27,7 @@ identification job.
 - [Why it will not create duplicates](#why-it-will-not-create-duplicates)
 - [Running it](#running-it)
 - [Reading the report](#reading-the-report)
+- [The next rule: registry-first — specification](#the-next-rule-registry-first--specification)
 - [Maintaining the registry](#maintaining-the-registry)
   - [Auditing what is registered](#auditing-what-is-registered)
 - [When something goes wrong](#when-something-goes-wrong)
@@ -114,6 +115,11 @@ result for that compound, across every sample and every simulant.
 ---
 
 ## How a compound gets identified
+
+> **This is the rule that runs today.** It is being replaced by the
+> registry-first rule, [specified below](#the-next-rule-registry-first--specification)
+> on 2026-09-08 and not yet built. Until phase SD-1 ships, what follows is
+> what the code does.
 
 ![Stage 1 links a row when either the CAS or the name matches the curated registry; stage 2 asks PubChem and registers only when name and CAS resolve to the same compound](img/fig_two_stage_identification.svg)
 
@@ -348,6 +354,130 @@ cut -d, -f3 unlinked.csv | sort | uniq -c | sort -rn
 - **name=CID … but CAS=CID …** — a genuine disagreement. This is the check
   earning its keep; each of these deserves a human look.
 - **CAS not in PubChem** — usually a malformed or obsolete number.
+
+---
+
+## The next rule: registry-first — specification
+
+> **Status: specified, not built.** Written on 2026-09-08 from the owner's
+> description, as phase **SD-1** of the [roadmap](05-roadmap.md#sd--screening-data).
+> Everything above this heading describes the rule that runs *today*; this
+> section is the rule that replaces it, written down and agreed **before any
+> code**, because the last rule was changed once by reasoning alone and
+> registered 19 compounds with another substance's chemistry
+> ([lesson 25](11-lessons-learned.md)). The decisions at the end are the parts
+> the description left open; each has a recommendation.
+
+![A screening row reaches the registry's door with two keys, its name and its CAS number; both must fit one entry or the row waits outside, unlinked, on the unregistered list](img/fig_registry_first.svg)
+
+### The idea in one sentence
+
+**The registry is the gate.** A screening row attaches to a compound only
+when the registry already holds that compound, recognised by *both* its name
+*and* its CAS number; nothing in the upload path invents a compound or asks
+an outside database.
+
+*Everyday version:* a members-only building. A visitor gives a name and a
+membership number; the receptionist looks both up in the members' book and
+lets them in only if the *same* member has that name and that number. Nobody
+is signed up at the door on the strength of a business card. If the visitor
+is not in the book, reception says so, notes them on the "asked to join" list,
+and a member of staff decides later whether to add them — the visitor is not
+turned away, they wait in the lobby (the row is stored, unlinked).
+
+### The five rules
+
+```mermaid
+flowchart TB
+    U["new screening data arrives:<br/>browser · API · terminal"] --> P["read each row's compound name and CAS number"]
+    P --> Q{"Rule 1 — does ONE registry entry<br/>match BOTH the name AND the CAS?"}
+    Q -- "yes" --> L["link the row to that entry"]
+    Q -- "no" --> N["Rule 2 — tell the user: this compound is not registered"]
+    N --> A{"Rule 3 — register it now, with the<br/>basic information the file carries?"}
+    A -- "yes" --> REG["register: name, CAS, provenance<br/>(nothing from PubChem — Rule 4)"] --> L
+    A -- "no" --> S["store the rows as they are, unlinked;<br/>the registry shows the unregistered notice"]
+    S -.-> H["later: the review table — download, or<br/>register some or all, which links their rows"]
+    L2["a person clicks Link on a row"] --> R5{"Rule 5 — is the chosen compound registered?"}
+    R5 -- "yes" --> L
+    R5 -- "no" --> E["error: register it in the Chemical Registry first"]
+```
+
+| # | Rule | What it means in the system |
+|---|---|---|
+| **1** | **Both identifiers, one entry.** When screening data is added — from the browser, the API or a terminal — each row's compound name and CAS number are looked up in the registry. The row links only if *one* registered compound matches **both**. | The upload path keeps the registry lookup it has (`resolve_chemicals` in `backend/app/ingest.py`) but the condition changes from *CAS or name* to *name and CAS, same entry*. A name match with a different CAS, or a CAS match with a different name, is **not** a link. |
+| **2** | **Say so.** When a row's name + CAS pair has no registered match, the user is told the compound does not appear in the registry. | The upload response and the upload page report the count of unregistered compounds and list the pairs (name, CAS, rows). |
+| **3** | **Offer, don't assume.** The user is asked whether to register those compounds now with the basic information the screening data carries. **Yes:** they are registered from the file's own fields and their rows link. **No:** the rows are stored exactly as they are, unlinked, and the **Chemical Registry** shows a notice — *N compounds in the screening data are not registered; review them* — with a link to a table of those compounds and their metadata, downloadable, from which the user can register some or all later. | The upload itself never registers. A separate action, *Register from screening data*, does, taking a list of pairs or *all*; the same action serves the upload page's *Yes* and the review table's *Register selected*. The unregistered table is derived from the data (distinct name + CAS pairs among unlinked rows with no matching entry), not stored. |
+| **4** | **Never PubChem during ingestion.** No part of adding screening data, or of registering from it, fetches anything from PubChem or any outside source. | The background identification job (`link_pubchem.py`, stage 2 above) is retired for screening rows. PubChem is consulted only from the registry, on request, for entries a person has already registered — phase [CR-4](05-roadmap.md#cr--chemical-registry). |
+| **5** | **Link only to what is registered.** A row can be linked by hand only to a compound that exists in the registry. If the user tries to link a row whose compound is not registered, the system says so instead of linking. | The chooser lists registered compounds only (it already does; the endpoint answers 404 for an unknown identifier). New: opening the chooser from a row pre-searches that row's name and CAS; when nothing matches both, the chooser shows *Not registered: name (CAS) — register it in the Chemical Registry first*, with a link to the unregistered table. Choosing a *different* registered compound by hand remains allowed — that is the user's decision, and it targets a registered entry. |
+
+### What "basic information" means
+
+When a compound is registered from screening data (Rule 3, *yes*), the entry
+holds exactly what the file can vouch for and nothing inferred:
+
+| Field | From |
+|---|---|
+| `name` | the row's compound name, as written in the file |
+| `cas_number` | the first well-formed CAS number in the row's CAS cell |
+| `cas_alternatives` | any further CAS numbers found in the same cell |
+| `chemical_id` | generated, `CAS-<number>`, so the same compound registered twice gets the same identifier |
+| `identification` | `"registered from screening data"` — the provenance tag every entry carries |
+| `source` | the upload's provenance tag (`Cergy_data` for the first template) |
+| `created_at`, `updated_at` | now |
+
+Formula, weight, SMILES, InChI and the rest stay empty. That is deliberate:
+those entries are *incomplete*, the registry's incomplete-entries notice
+(CR-4) shows them, and a person fills them — by hand, or by asking PubChem
+from the registry with a review step. The gap is visible, not papered over.
+
+### Re-running the rule over rows already loaded
+
+After the reset (R-2) the registry is empty and the 49,065 rows are unlinked.
+As compounds are registered — from a curated file, or from the review table —
+their rows must attach without the export being uploaded again. Two routes,
+same logic:
+
+| Route | Where | What it does |
+|---|---|---|
+| Terminal, on the server | `backend/scripts/identify_screening.py`, report by default, `--apply` to write | Applies Rule 1 to every unlinked row (or to `--pubchem-registered`, `--tag`, or named chemicals), prints rows per chemical before and after, batched commits |
+| API and browser | `POST /api/screening/identify` with `{"all": true}` or `{"match": …}`; a button *Attach rows to registered compounds* on the Screening Data page | The same, over the rows the table shows |
+| On registration | every route that registers a compound (upload page, API, terminal, the review table) | Rule 1 for the new entries only, so registering a compound attaches its waiting rows in the same operation, and the response says how many |
+
+### Decisions to agree before code
+
+Each is a place the description could be read two ways. The recommendation
+is what the code will do unless the owner says otherwise.
+
+| # | Question | Recommendation | Why |
+|---|---|---|---|
+| D1 | How is a *name match* judged? | Exact after normalisation: lower-case, whitespace collapsed, the same key function used today (`_name_key`). No fuzzy or partial matching. | Fuzzy matching is inference, and inference is what the rule removes |
+| D2 | A CAS cell holding two numbers (`96-76-4; 128-39-2`)? | The row matches an entry if the name matches **and** *any* of the row's well-formed CAS numbers equals the entry's `cas_number`. The first number is the row's CAS for registration; the others go to `cas_alternatives`. | The cell is the laboratory's evidence; either number is a genuine claim |
+| D3 | Rows with no CAS number (2,278 compounds)? | Never attached automatically. They may be linked by hand to a registered compound (Rule 5 holds: the target is registered). They appear on the unregistered table with an empty CAS and cannot be registered from it. | Registering a compound on a name alone is exactly the failure the rule prevents |
+| D4 | Two registry entries with the same name **and** CAS? | No automatic link; the pair is reported as a duplicate for the audit and the merge tool. | A link must be unambiguous |
+| D5 | The default when the API or the terminal adds screening data? | Do **not** register (`register_unregistered=false`); the response lists the unregistered pairs and counts. The browser asks; scripts must ask explicitly. | An unattended route must never widen the registry by default |
+| D6 | The upload page's question (Rule 3): before or after the rows are written? | **After.** Rows are written unlinked, then the dialog offers *Register these N compounds and link their rows* / *Not now*. | One upload endpoint for every route; the *yes* is the same action the review table uses; nothing is lost if the browser closes |
+| D7 | Does registering a compound attach its waiting rows? | **Yes**, on every registration route, for the new entries only; the response reports rows linked per compound. | Otherwise every registration needs a second, easily forgotten step |
+| D8 | What becomes of stage 2 and the PubChem scripts? | `link_pubchem.py` no longer runs against screening rows; `propose_chemicals.py` is superseded by the review table; `enrich_pubchem.py` becomes the engine behind CR-4's *Fetch from PubChem* with a review step. The scripts stay in the image until CR-4 ships, then are retired in one commit with their documentation. | Nothing is deleted before its replacement exists |
+| D9 | Do the samples and toxicology modules follow the same rule? | Yes, when their tracks reach it (SM-3). Until then their upload paths are unchanged. | One rule for every record type that links; but each module's change is its own phase |
+| D10 | The 664 entries in the pre-R-1 backup? | Export them as JSON, review, and load the good ones through CR-3 as the first curated file. | Most were registered under the strict PubChem rule and carry correct chemistry; the review is the safeguard |
+
+### What "done" means for SD-1
+
+- The upload path links on name **and** CAS, and the parity tests for the
+  Cergy template are updated to show it (a name-only match no longer links; a
+  CAS-only match no longer links; a both-match links).
+- Every route that adds screening data reports unregistered pairs; none of
+  them touches PubChem (a test asserts no network call).
+- *Register from screening data* exists as one action behind the upload
+  page's question and the review table, registers only the fields above, and
+  links the rows of what it registers.
+- The re-identify command and endpoint exist, are `--apply`-gated, batched,
+  and print rows per chemical; a dry run is provably dry.
+- The link chooser, opened from a row whose compound is not registered, says
+  so and does not link.
+- The playbook, the API reference, the cookbook, this page's "How a compound
+  gets identified" section and its figure describe the new rule, and the old
+  two-stage description moves to [`12-history.md`](12-history.md).
 
 ---
 

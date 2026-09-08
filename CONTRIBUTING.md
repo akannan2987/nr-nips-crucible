@@ -39,7 +39,7 @@ from its V7 check.
   [phase 04](docs/04-phase-tutorials/phase-04-template-ingestion.md). If it
   needs new code, say so — that is a design finding.
 - **Fix a lesson that is still open.** The roadmap's
-  [planned items](docs/05-roadmap.md#planned-items-and-what-each-waits-on)
+  [planned items](docs/05-roadmap.md#where-each-track-stands-and-its-next-phase)
   list the ones that wait on nothing.
 - **Improve a document.** A missing glossary term, a command without its
   expected output, a claim that is no longer true. Small, welcome, quick to

@@ -258,9 +258,9 @@ one answering it.
   would have broken the page during the switch; it can be done later, one
   clause at a time, with the tests as the record.
 - **Normalise the schema.** The `doc` column keeps the data exactly as it was;
-  promoting fields into real columns is [phase 06](../05-roadmap.md#the-next-three-phases).
+  promoting fields into real columns is [phase 06](../05-roadmap.md#sh--shared-spine).
 - **Add authentication.** The prototype had none; the rewrite kept parity.
-  That is [phase 07](../05-roadmap.md#the-next-three-phases).
+  That is [phase 07](../05-roadmap.md#sh--shared-spine).
 
 ---
 

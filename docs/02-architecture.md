@@ -145,7 +145,7 @@ logic hidden inside a request handler can only be tested through HTTP.
 
 **`store.py`.** All data access, in one place, behind verbs. Nothing else in
 the codebase issues a query. This is what made the Node→Python migration
-survivable and what will make the schema normalisation in Phase D survivable
+survivable and what will make the schema normalisation in phase SH-2 survivable
 too: when every read and write goes through one module, changing *how* data is
 stored touches one file rather than five routers.
 
@@ -195,12 +195,12 @@ this plainly:
 3. **Indexed columns can be added and rebuilt at will.** Since they are
    derived, promoting a field into a real column is a backfill, not a data
    migration: read it out of `doc`, write it to the new column, and no record
-   changes meaning. This is precisely what Phase D does, and the reason it can
+   changes meaning. This is precisely what phase SH-2 (schema normalisation) does, and the reason it can
    be done without touching the API contract.
 
 The cost is honest and worth knowing: **filtering on a field that has no
 indexed column means reading every row.** That is fine at the current scale and
-is exactly the pressure Phase D relieves. The rule is not that indexes are
+is exactly the pressure phase SH-2 relieves. The rule is not that indexes are
 unnecessary — it is that they are *replaceable*, because losing one loses no
 information.
 

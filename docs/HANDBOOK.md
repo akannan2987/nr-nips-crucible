@@ -45,12 +45,12 @@ specialised pages; this page tells you which one to read, when, and why.
 
 | | |
 |---|---|
-| **Version** | 2.7.0 (2026-09-08) |
-| **Status date** | 2026-09-07 |
+| **Version** | 2.8.0 (2026-09-08) |
+| **Status date** | 2026-09-08 |
 | **Tests** | 105 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | 05b — Reproducible builds and CI ✅ (2026-09-07): a lock file generated inside the image, the linter, a workflow on the public repository running every check on Linux and macOS |
-| **Phase in progress** | **R — the registry reset** 🔨: **R-1 done on production 2026-09-08** (every row unlinked, 664 entries kept, backup held); R-2 runs only on the owner's go; R-3, the new identification logic, waits on the owner's description — [phase R](04-phase-tutorials/phase-r-registry-reset.md) |
-| **Next** | 06 — Schema normalisation 🔜 · 07 — Authentication 🔜 |
+| **Phase in progress** | **R — the registry reset** 🔨 (tracks CR + SD): **R-1 done on production 2026-09-08** (every row unlinked, 664 entries kept, backup held); R-2 runs only on the owner's go, after the new rule is agreed; R-3 is now **SD-1, specified 📝** — the registry-first rule, written from the owner's description on 2026-09-08 and awaiting agreement — [phase R](04-phase-tutorials/phase-r-registry-reset.md) · [the specification](09-chemical-identification.md#the-next-rule-registry-first--specification) |
+| **Plan** | Six **tracks**, one per module and a shared spine, each with its next phase — [`05-roadmap.md`](05-roadmap.md). Next in order: SH-1 module names 🔜 · SD-1 agreed 📝 → R-2 → CR-3 every way in 🔜 → SD-1 build → CR-5 unregistered review → CR-1/CR-2 table → CR-4 incomplete entries → SH-2 schema normalisation → SH-3 authentication |
 | **Production** | one RHEL 8 VM, one container, one SQLite file: 49,065 screening rows, 664 registered chemicals, **0 rows linked** since R-1 on 2026-09-08 (by design; the reset is in progress) |
 
 **Open items, none blocking:**
@@ -58,7 +58,7 @@ specialised pages; this page tells you which one to read, when, and why.
 - ⏸ The RHEL 8 reboot check (V9) waits on a maintenance window.
 - 🔜 The script that removes chemicals has no automated test; it deletes data.
 - 🔜 Deleting a chemical through the API leaves its screening rows pointing at nothing (the removal script unlinks first; the endpoint does not yet).
-- ⏸ Twenty-two real compounds were removed after a lookup bug mis-identified them. They can be re-registered, but only after the proposal is reviewed row by row.
+- ⏸ Twenty-two real compounds were removed after a lookup bug mis-identified them. Under the new rule they are registered by a person from the review table (CR-5), with everything else.
 - ⏸ No `LICENSE` file yet; the owner's decision. Public on GitHub without one still means all rights reserved.
 
 ---
@@ -117,6 +117,8 @@ does not record a date, it says so rather than guessing.
 | 2026-09-07 | **v2.3.0.** The documentation reshaped into the numbered set my other projects use, with this handbook as its spine, one tutorial per phase, both roadmaps, a Windows guide and figures. |
 | 2026-09-07 | **v2.4.0.** Reproducible builds: a lock file resolved inside the image, the linter, and continuous integration on the public repository running every check on Linux and macOS. |
 | 2026-09-08 | **v2.5.0.** The registry reset's tools: unlink every row, empty the registry, each gated and tested; the reset itself waits on the owner's go and the new identification logic. |
+| 2026-09-08 | **v2.6.0–2.7.0.** Link and unlink buttons on the screening table, select all matching rows, a confirmation before a link, per-chemical summaries. R-1 run on production: every row unlinked, the entries kept. |
+| 2026-09-08 | **v2.8.0.** The plan reorganised into six tracks, one per module and a shared spine; the registry-first rule specified from the owner's description, to be agreed before the registry is emptied. |
 
 ---
 
@@ -346,18 +348,27 @@ Phases shipped before the tutorials existed are *reconstructed* from the
 release notes and the git log, and say "not recorded" where the history is
 silent rather than inventing a command.
 
-| # | Phase | Delivered | Tutorial | Shipped | Status |
-|---|---|---|---|---|---|
-| 00 | Node → Python | The FastAPI backend behind the same API as the Node prototype, verified by parity tests; the React client untouched; the Node stack retired | [`phase-00-node-to-python.md`](04-phase-tutorials/phase-00-node-to-python.md) | pre-2.0, date not recorded | ✅ (reconstructed) |
-| 01 | PostgreSQL and Alembic | Engine-agnostic storage via `DATABASE_URL`; Alembic owns the schema in the container; SQLite stays the default | [`phase-01-postgres-alembic.md`](04-phase-tutorials/phase-01-postgres-alembic.md) | pre-2.0, date not recorded | ✅ (reconstructed) |
-| 02 | Public-repository hygiene | Certificates backed up outside the repo; internal hostnames, users and paths behind placeholders; real workbooks replaced by synthetic ones from a tracked generator; four platform guides; the pre-push gate | [`phase-02-public-repo-hygiene.md`](04-phase-tutorials/phase-02-public-repo-hygiene.md) | 2026-08-06 (v2.0.0) | ✅ (reconstructed) |
-| 03 | Platform verification | Both guides walked from a blank machine: macOS V1–V7, RHEL 8 V1–V9 (V9 pending a reboot window); fifteen bugs found and fixed by following the guides literally | [`phase-03-platform-verification.md`](04-phase-tutorials/phase-03-platform-verification.md) | 2026-08-17 → 2026-08-25 | ✅ (reconstructed) |
-| 04 | Template ingestion | A laboratory export described as data (fingerprint, column map, cleaners, provenance), the screening table built from the file, the read-only SQL console, two-stage chemical identification, the registry audit and the five maintenance scripts | [`phase-04-template-ingestion.md`](04-phase-tutorials/phase-04-template-ingestion.md) | 2026-08-25 (v2.2.0), 2026-08-31 (v2.2.1) | ✅ (reconstructed) |
-| 05 | Documentation consolidation | The numbered document set, this handbook, the phase tutorials, the roadmaps, the lessons file, the Windows guide, figures | [`phase-05-docs-consolidation.md`](04-phase-tutorials/phase-05-docs-consolidation.md) | 2026-09-07 (v2.3.0) | ✅ |
-| 05b | Reproducible builds and CI | `backend/requirements.lock` resolved inside the image by `./container-py.sh lock`; the Dockerfile, CI and the test environment install from it; the linter with an explicit rule set; a workflow on the public repository running every check on Linux and macOS | [`phase-05b-reproducible-builds-and-ci.md`](04-phase-tutorials/phase-05b-reproducible-builds-and-ci.md) | 2026-09-07 (v2.4.0) | ✅ |
-| R | Registry reset | `--unlink-all` and `--all` on the removal script, batched and gated, with the script's first six tests; the two-step procedure on production; then the new identification logic | [`phase-r-registry-reset.md`](04-phase-tutorials/phase-r-registry-reset.md) | 2026-09-08 (v2.5.0 tools · v2.6.0 buttons · v2.7.0 match, confirm, summaries) | 🔨 R-1 done 2026-09-08 · R-2 awaiting go · R-3 awaiting the owner's description |
-| 06 | Schema normalisation | The frequently-filtered fields promoted from JSON into indexed columns, without changing the API or breaking the design rule | `04-phase-tutorials/phase-06-schema-normalisation.md` | — | 🔜 |
-| 07 | Authentication | A login in front of `/api/*`, behind a feature flag so internal users are not locked out mid-week | `04-phase-tutorials/phase-07-authentication.md` | — | 🔜 |
+**Tracks.** Since v2.8.0 the plan is organised in six **tracks** — one per
+module (CR Chemical Registry, SD Screening Data, SM Sample Management, TX
+Toxicology, QC Query Console) and SH, the shared spine — the way my other
+projects run two tracks over one core. Phases shipped before the tracks
+existed keep their numbers and are assigned a track here; new phases are
+named by track code and number (`CR-3`), and their tutorials by the same
+code (`phase-cr-3-every-way-in.md`). What each track does next is
+[`05-roadmap.md`](05-roadmap.md#where-each-track-stands-and-its-next-phase).
+
+| # | Track | Phase | Delivered | Tutorial | Shipped | Status |
+|---|---|---|---|---|---|---|
+| 00 | SH | Node → Python | The FastAPI backend behind the same API as the Node prototype, verified by parity tests; the React client untouched; the Node stack retired | [`phase-00-node-to-python.md`](04-phase-tutorials/phase-00-node-to-python.md) | pre-2.0, date not recorded | ✅ (reconstructed) |
+| 01 | SH | PostgreSQL and Alembic | Engine-agnostic storage via `DATABASE_URL`; Alembic owns the schema in the container; SQLite stays the default | [`phase-01-postgres-alembic.md`](04-phase-tutorials/phase-01-postgres-alembic.md) | pre-2.0, date not recorded | ✅ (reconstructed) |
+| 02 | SH | Public-repository hygiene | Certificates backed up outside the repo; internal hostnames, users and paths behind placeholders; real workbooks replaced by synthetic ones from a tracked generator; four platform guides; the pre-push gate | [`phase-02-public-repo-hygiene.md`](04-phase-tutorials/phase-02-public-repo-hygiene.md) | 2026-08-06 (v2.0.0) | ✅ (reconstructed) |
+| 03 | SH | Platform verification | Both guides walked from a blank machine: macOS V1–V7, RHEL 8 V1–V9 (V9 pending a reboot window); fifteen bugs found and fixed by following the guides literally | [`phase-03-platform-verification.md`](04-phase-tutorials/phase-03-platform-verification.md) | 2026-08-17 → 2026-08-25 | ✅ (reconstructed) |
+| 04 | SD · CR | Template ingestion | A laboratory export described as data (fingerprint, column map, cleaners, provenance), the screening table built from the file, the read-only SQL console, two-stage chemical identification, the registry audit and the five maintenance scripts | [`phase-04-template-ingestion.md`](04-phase-tutorials/phase-04-template-ingestion.md) | 2026-08-25 (v2.2.0), 2026-08-31 (v2.2.1) | ✅ (reconstructed) |
+| 05 | SH | Documentation consolidation | The numbered document set, this handbook, the phase tutorials, the roadmaps, the lessons file, the Windows guide, figures | [`phase-05-docs-consolidation.md`](04-phase-tutorials/phase-05-docs-consolidation.md) | 2026-09-07 (v2.3.0) | ✅ |
+| 05b | SH | Reproducible builds and CI | `backend/requirements.lock` resolved inside the image by `./container-py.sh lock`; the Dockerfile, CI and the test environment install from it; the linter with an explicit rule set; a workflow on the public repository running every check on Linux and macOS | [`phase-05b-reproducible-builds-and-ci.md`](04-phase-tutorials/phase-05b-reproducible-builds-and-ci.md) | 2026-09-07 (v2.4.0) | ✅ |
+| R | CR · SD | Registry reset | `--unlink-all` and `--all` on the removal script, batched and gated, with the script's first six tests; the two-step procedure on production; then the new identification logic | [`phase-r-registry-reset.md`](04-phase-tutorials/phase-r-registry-reset.md) | 2026-09-08 (v2.5.0 tools · v2.6.0 buttons · v2.7.0 match, confirm, summaries) | 🔨 R-1 done 2026-09-08 · R-2 awaiting go after SD-1 is agreed · R-3 written as the SD-1 specification 📝 (2026-09-08) |
+| 06 (SH-2) | SH | Schema normalisation | The frequently-filtered fields promoted from JSON into indexed columns, without changing the API or breaking the design rule | `04-phase-tutorials/phase-06-schema-normalisation.md` | — | 🔜 |
+| 07 (SH-3) | SH | Authentication | A login in front of `/api/*`, behind a feature flag so internal users are not locked out mid-week | `04-phase-tutorials/phase-07-authentication.md` | — | 🔜 |
 
 Version-by-version detail, including what each release deliberately did *not*
 fix, is in [`NEWS.md`](../NEWS.md).
@@ -426,6 +437,12 @@ Follow the playbook in order; it was written for exactly this sequence:
    style (`tertiobutyl` for `tert-butyl`). That was chosen knowingly; the
    lessons file records what happened when a lookup was trusted on one
    identifier.
+
+   **This rule is being replaced.** The registry-first rule — both
+   identifiers must match one *registered* compound, ingestion never asks
+   PubChem, unregistered compounds are reviewed by a person — was specified
+   on 2026-09-08 and waits on agreement:
+   [`09-chemical-identification.md` → The next rule](09-chemical-identification.md#the-next-rule-registry-first--specification).
 3. [Part 5 — check what you registered](10-user-playbook.md#part-5--check-what-you-registered)
    and [Part 6 — correct what is wrong](10-user-playbook.md#part-6--correct-what-is-wrong):
    the audit, and removing or merging entries without orphaning measurements.
@@ -452,19 +469,31 @@ Two documents, two horizons:
   every candidate technology with a verdict (required now, recommended
   later, optional, not needed) and the trigger that would change it.
 
-The next three phases, in order:
+![Six tracks, one per module and a shared spine, each with its next phase](img/fig_tracks.svg)
 
-1. **The registry reset** ([roadmap](05-roadmap.md#the-next-three-phases)):
-   unlink every screening row from every chemical, then remove every
-   chemical, each step behind a backup and an explicit go, then the new
-   identification logic the owner will describe. The removal script gets
-   its first test on the way.
-2. **06 — schema normalisation:** list the fields the client filters and
-   sorts on, agree them, *then* write the migration. Guessing here means a
-   migration that backfills the wrong columns.
-3. **07 — authentication:** the largest gap. `/api/*` is open to anyone who
-   can reach the port; deliberate for an internal network, and the first
-   thing a wider audience needs.
+The plan runs as six tracks — one per module and a shared spine — and the
+roadmap names the next phase of each ([where each track stands](05-roadmap.md#where-each-track-stands-and-its-next-phase)).
+In the order the roadmap [argues for](05-roadmap.md#why-this-order):
+
+1. **SH-1 — module names:** *Chemical Registry*, *Sample Management*,
+   *Screening Data* in the sidebar, the pages and the documents. Hours; no
+   data touched.
+2. **SD-1 agreed, then R-2:** the registry-first rule is
+   [specified](09-chemical-identification.md#the-next-rule-registry-first--specification);
+   once its ten decisions are agreed, the registry is emptied (R-2, behind
+   a backup and a go).
+3. **CR-3 — every way in:** JSON upload and one terminal command, so the
+   empty registry can be refilled from a curated file by any route.
+4. **SD-1 build, then CR-5:** the rule in code, with the command that
+   re-attaches the rows already loaded, and the unregistered-compounds
+   notice and review table.
+5. **CR-1, CR-2, CR-4:** sort and filter per column, the three views, and
+   the incomplete-entries notice with the PubChem review step.
+6. **SH-2 — schema normalisation:** list the fields people filter on, agree
+   them, *then* write the migration.
+7. **SH-3 — authentication:** the largest gap. `/api/*` is open to anyone
+   who can reach the port; deliberate for an internal network, and the
+   first thing a wider audience needs.
 
 ---
 
@@ -537,4 +566,4 @@ the symptom / cause / fix table (SELinux, rootless ports, proxies, systemd).
   StableSeg and ImagingAgent all carry a numbered document set and a handbook
   like this one, so the five read as one body of work.
 
-**Last Updated:** September 7, 2026
+**Last Updated:** September 8, 2026

@@ -146,9 +146,17 @@ histories pair one commit to one commit.
 
 Versions follow **semantic versioning** and are recorded in
 [`NEWS.md`](NEWS.md): a fix bumps PATCH, a new capability that breaks nothing
-bumps MINOR, a change that would break existing users bumps MAJOR. There are
-no release tags yet; the version lives in the release notes, and tagging
-known-good releases is on the roadmap.
+bumps MINOR, a change that would break existing users bumps MAJOR.
+
+**Every version that reaches production is tagged**, in both repositories,
+since v2.10.1. A **tag** is a permanent name for one commit (`v2.10.1`), so
+that anyone can ask for exactly that version a year later; a **release** is
+the tag plus a page on the repository host carrying the `NEWS.md` entry.
+The two repositories have different commit identifiers, so the tag is made
+twice, once on each side, on the commits that carry the same content. The
+exact commands are Step 4c and Step 8 of
+[`docs/03-git-workflow.md`](docs/03-git-workflow.md#step-4c---tag-the-release).
+Versions before v2.10.1 have no tags; their commits are named in `NEWS.md`.
 
 A release commit carries, in the same commit:
 

@@ -10,6 +10,39 @@ change you are getting.
 
 ---
 
+## v2.10.1 — 2026-09-08 — "Underline the line and date it"
+
+**The first tagged release**, `v2.10.1`, on both repositories. It marks
+everything built since the Python rewrite: the public-repository hygiene,
+the platform verification, real laboratory data through a template that is
+data, two-stage identification and the registry audit, the numbered
+document set and the handbook, reproducible builds and CI, the registry
+reset's tools and buttons (R-1 done on production), the plan as six tracks,
+the registry-first specification, the module names, and the authentication
+plan. Every version before this one is named in this file with its
+commit; none was tagged.
+
+**Changed**
+- Tagging is a step of the workflow from now on: every version that
+  reaches production is tagged in both repositories, with a Release page
+  carrying its entry from this file ([`03-git-workflow.md` Step 4c and 8b](docs/03-git-workflow.md#step-4c---tag-the-release), the contributing
+  guide's release flow, the cheat sheet).
+- **The package decision:** the project's package is the container image,
+  published to a registry so machines pull instead of build — recorded as
+  *recommended later* with its trigger in the product roadmap and as SH-10
+  in the roadmap. Not a Python package: Crucible is run, not imported.
+- **The licence is on hold:** the owner is asking the organisation whether
+  the public repository may carry an open-source licence and in whose name;
+  SH-8 says so.
+- Two glossary entries: release tag; package and container registry.
+
+**Deliberately not done**
+- No retroactive tags for v2.0.0 to v2.10.0; their commits are named here,
+  and a tag that guesses would be worse than none.
+- No image published, no registry chosen; the trigger has not fired.
+
+---
+
 ## v2.10.0 — 2026-09-08 — "A lock this week, the badge reader when it arrives"
 
 A planning release: no application code changed. The owner asked how a

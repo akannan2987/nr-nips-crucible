@@ -247,6 +247,32 @@ private repository after Step 8; there it skips the gate, because that
 repository carries the six real workbooks by design and the gate would
 refuse them.
 
+### Step 4c - Tag the release
+
+**What:** give the commit a permanent name, `vX.Y.Z`, the version at the top
+of `NEWS.md`. **Why:** a branch moves; a tag does not. A year from now
+"the version that was on production in September 2026" is answerable only
+if it was tagged. *Everyday version:* the branch is the running total in the
+ledger; the tag is the line you underline and date.
+
+```bash
+# ▶ MAC — after Step 4's push, on the same commit
+git tag -a v2.10.1 -m "v2.10.1 — <the NEWS.md subtitle>"
+git push origin v2.10.1
+git tag -l "v2.*"          # you should see the new tag in the list
+```
+
+Then, on the repository host, *Releases → Draft a new release → choose the
+tag → title `v2.10.1 — <subtitle>` → paste the `NEWS.md` entry as the body →
+Publish*. The page is the same text as `NEWS.md`; it exists so that people
+who never open the repository still find the notes.
+
+**If instead** `git push origin v2.10.1` says `already exists`, the tag was
+pushed before: check `git show v2.10.1 --stat` points at the commit you
+mean, and if not, delete it on both sides (`git tag -d v2.10.1 && git push
+origin :refs/tags/v2.10.1`) and tag again. Never move a tag that a release
+page already uses.
+
 ### Step 5 - Level your local master
 
 ```bash
@@ -308,6 +334,19 @@ everything else.
 git commit -m "<what changed>"
 git push origin develop develop:beta develop:master
 ```
+
+### Step 8b - Tag the mirror's commit with the same version
+
+```bash
+# ▶ VM (mirror folder) — on the commit Step 8 just pushed
+git tag -a v2.10.1 -m "v2.10.1 — <the same subtitle>"
+git push origin v2.10.1
+```
+
+The private commit has a different identifier from the public one (the
+histories differ, §7), so the tag is created here separately; the *name*
+is the same, and so is the content it points at. Then draft the release on
+the private host the same way as Step 4c.
 
 ### Step 9 - Level the mirror's local master
 

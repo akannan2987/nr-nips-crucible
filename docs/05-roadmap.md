@@ -183,8 +183,10 @@ attached to a registered compound only when the registry says so.
 | SH-5 | Remove the sixteen one-line stubs left at the old document paths by phase 05 | Due since v2.4 | nothing | 🔜 |
 | SH-6 | Walk the Windows guide on a real PC, then a Windows CI runner | The guide is written and says *untested* | a Windows machine | ⏸ |
 | SH-7 | Export from every module in the four formats (the screening table has it) | Convenience; the API already returns the data | nothing | 🔜 |
-| SH-8 | A `LICENSE` file | Public on GitHub without one legally means all rights reserved | the owner's decision | ⏸ |
+| SH-8 | A `LICENSE` file — MIT, like the four sibling projects, or Apache-2.0 if the organisation prefers its patent clause; the file is one commit once the name and year are known | Public on GitHub without one legally means all rights reserved | **on hold 2026-09-08:** the owner is asking the organisation whether the public repository may carry an open-source licence, and in whose name — the copyright is the employer's to grant | ⏸ |
 | SH-9 | `container-py.sh rebuild` and `restart` wait until the app answers before returning | A probe in the first two seconds after a rebuild fails with an SSL error and looks like a fault (seen on 2026-09-08) | nothing | 🔜 |
+| SH-10 | **The container image as the package.** CI builds the image on a release tag and pushes it to a container registry, with the version as its label; the server and any other machine `pull` instead of building from source; the setup guides gain the pull path beside the build path | Deploys become pull-and-restart; the image on the server is provably the one CI tested; a second machine or the Windows walk gets the identical build. About a day. Verdict and trigger in [`06-product-and-technology-roadmap.md`](06-product-and-technology-roadmap.md#publishing-the-image-to-a-registry-the-package) | **decided 2026-09-08: later** — trigger: a second deployment, or the Windows guide walk finding the build painful; plus a registry chosen with the organisation (the same conversation as the licence) | ⏸ |
+| — | Release tags | Every version that reaches production is tagged in both repositories, from v2.10.1 — a workflow step, not a phase ([`03-git-workflow.md` Step 4c](03-git-workflow.md#step-4c---tag-the-release)) | — | ✅ 2026-09-08 |
 
 ---
 

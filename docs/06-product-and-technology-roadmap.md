@@ -363,6 +363,31 @@ hand from the registry.
 *Verdict:* **Required now** — in place. One image, two runtimes, three
 platforms; the isolation layer everything else relies on.
 
+### Publishing the image to a registry (the package)
+
+*What it is:* a **package** is the finished, installable form of a program.
+For a library that is a file on a package index (`pip install segaudit`);
+for an application like Crucible it is the **container image**, published
+to a **container registry** — a shelf where built images are kept by name
+and version, from which any machine pulls the exact same bytes.
+*Analogy:* today every machine bakes the cake from the recipe; a registry
+is the bakery that bakes it once and delivers identical cakes.
+*Required now?* **No.** *Why:* one production machine, which builds from
+source in three minutes, after a backup, with a deploy check afterwards;
+the build is already reproducible from the lock file.
+*Benefit:* deploys become pull-and-restart; the image on the server is
+provably the one CI tested; a second deployment, a colleague's laptop or
+the Windows guide walk gets the identical build. *Cost:* a registry to
+choose (the public host's own, or the organisation's), a login secret for
+CI, a CI job that builds and pushes on a release tag, a version label in
+the image, and the setup guides gaining a pull path beside the build path
+— about a day.
+*Verdict:* **Recommended later** — *decided 2026-09-08.* *Trigger:* a second
+deployment, or the Windows walk finding the build painful; and a registry
+agreed with the organisation. Planned as [SH-10](05-roadmap.md#sh--shared-spine).
+Not a Python package on an index: Crucible is an application people run,
+not a library people import.
+
 ### Kubernetes, serverless, or the current single VM
 
 *What they are:* **Kubernetes** runs many containers across many machines
@@ -443,6 +468,7 @@ marketed.
 | Desktop packaging | Not needed | Field site with no runtime allowed |
 | Licensing and payments | Not needed | An external customer |
 | Authentication — a ladder: token gate → local accounts → SSO ([plan](13-authentication.md)) | **Required now** (SH-3a/b/c) | SH-3a: the owner's go · SH-3c: the identity team's registration |
+| The container image published to a registry (the package) | Recommended later (SH-10) | A second deployment or the Windows walk; a registry agreed with the organisation |
 | Role-based access control | Recommended later | Authentication + a second user class |
 | Audit trail and version history | Recommended later | Authentication |
 | Rate limiting | Optional | Authentication + a misbehaving client |

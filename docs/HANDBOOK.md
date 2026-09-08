@@ -45,7 +45,7 @@ specialised pages; this page tells you which one to read, when, and why.
 
 | | |
 |---|---|
-| **Version** | 2.10.0 (2026-09-08) |
+| **Version** | 2.10.1 (2026-09-08) — **the first tagged release**, `v2.10.1`, on both repositories |
 | **Status date** | 2026-09-08 |
 | **Tests** | 105 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | SH-1 — Module names ✅ (2026-09-08): the sidebar, pages, dashboard and documents say *Chemical Registry*, *Sample Management*, *Screening Data*; every address unchanged — [phase SH-1](04-phase-tutorials/phase-sh-1-module-names.md) |
@@ -121,6 +121,7 @@ does not record a date, it says so rather than guessing.
 | 2026-09-08 | **v2.8.0.** The plan reorganised into six tracks, one per module and a shared spine; the registry-first rule specified from the owner's description, to be agreed before the registry is emptied. |
 | 2026-09-08 | **v2.9.0.** SH-1: the modules renamed to say what they are — Chemical Registry, Sample Management, Screening Data; addresses unchanged. |
 | 2026-09-08 | **v2.10.0.** The authentication plan: a ladder from an open port to single sign-on, every method explained and judged, the first decision record. |
+| 2026-09-08 | **v2.10.1.** The first tagged release, on both repositories; tagging becomes a step of the workflow; the container image named as the project's package, for later. |
 
 ---
 
@@ -537,6 +538,7 @@ machines; they auto-detect podman or Docker.
 | Status, logs | `./container-py.sh status` · `logs` | same |
 | The gate, before every push | `git add -A && ./check-public-safe.sh` → `✓ SAFE TO PUSH` · `python3 check-links.py` | — |
 | Publish | `git push origin develop develop:beta develop:master` | — |
+| Tag the release (every version that reaches production) | `git tag -a vX.Y.Z -m "vX.Y.Z — <NEWS subtitle>" && git push origin vX.Y.Z`, then the Release page | mirror folder: the same tag on the mirror's commit, then the Release page on the private host |
 | Mirror public → private | — | mirror folder: `git fetch public && git checkout public/develop -- .` → commit → push three branches |
 | Deploy | — | production folder: `git switch master && git pull --ff-only origin master`, rebuild only if code changed |
 | Confirm the two repos agree | — | mirror folder: `git diff --stat public/develop develop` → only the private-only files |

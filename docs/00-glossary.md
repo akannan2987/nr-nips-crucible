@@ -369,6 +369,10 @@ is one; the moving dots follow the same curves as the drawn arrows.
 
 **Redirect URI, client ID, client secret, claim** — the four words the identity team will use when registering Crucible for single sign-on: where to send the user back after login; the application's own identifier; the application's own secret (into `.env.local`, never git); and one fact the provider states about the user (name, e-mail, groups). All four are explained with the flow in [`13-authentication.md`](13-authentication.md#rung-3--single-sign-on).
 
+**Release tag** — a permanent name for one commit, `v2.10.1`, made with `git tag` and pushed; a branch moves, a tag does not. A **release** is the tag plus a page on the repository host carrying the `NEWS.md` entry. Both repositories get the same tag name on their own commit, because their histories differ. *Everyday version:* the branch is the running total in the ledger; the tag is the line you underline and date.
+
+**Package / container registry** — a *package* is the finished, installable form of a program; for Crucible that is the container image, not a Python library. A *container registry* is the shelf where built images are kept by name and version so any machine can pull the identical bytes instead of building from source. Planned for later as SH-10; the verdict and trigger are in [`06-product-and-technology-roadmap.md`](06-product-and-technology-roadmap.md#publishing-the-image-to-a-registry-the-package).
+
 **Architecture decision record (ADR)** — a one-page note recording one design decision: context, decision, alternatives, consequences; never edited afterwards, only superseded. Kept in [`docs/adr/`](adr/README.md), as in my other projects. *Everyday version:* the minutes of the meeting where the choice was made.
 
 **Role-based access control (RBAC)** — what each identity may do: read, upload, delete, administer. Meaningless without a login, which is why it waits on authentication.

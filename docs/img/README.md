@@ -26,6 +26,7 @@ is defined once and means the same thing in every document.
 | `fig_change_travels.svg` | The seven-step loop after setup, Mac then VM | handbook §6, `03-git-workflow.md` |
 | `fig_two_stage_identification.svg` | Stage 1 (either identifier) versus stage 2 (both must agree) | handbook §9, `09-chemical-identification.md`, playbook Part 4 |
 | `fig_registry_first.svg` | The registry as a gate: a row needs both keys, name and CAS, to match one registered entry; otherwise it waits on the unregistered list | `09-chemical-identification.md` (the specification), `05-roadmap.md` |
+| `fig_module_names.svg` | The sidebar before and after the renames; addresses unchanged | phase SH-1 tutorial, playbook Part 3 |
 | `fig_tracks.svg` | The six tracks of the plan, one per module and the shared spine, each with its next phase | `05-roadmap.md`, handbook §10 |
 | `fig_container_lunchbox.svg` | The same image on three platforms; what is mounted in and what comes out | the three setup guides, handbook §3 |
 | `fig_setup_flow.svg` | Set up once, then the loop | the three setup guides, handbook §3 |

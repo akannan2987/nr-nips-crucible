@@ -344,6 +344,34 @@ def fig_registry_first() -> None:
     write("fig_registry_first.svg", svg(W, H, "A screening row reaches the registry with two keys, its name and its CAS number; both must fit one registered entry or the row waits, unlinked, on the unregistered list", b))
 
 
+def fig_module_names() -> None:
+    W, H = 940, 330
+    b = text(W/2, 34, "The sidebar before and after SH-1: the modules say what they are", 16, INK, "middle", "bold")
+    def sidebar(x, title, items, col):
+        b = box(x, 60, 300, 200, PAPER, col, 10)
+        b += text(x + 150, 84, title, 12, col, "middle", "bold")
+        y = 108
+        for label, kind, new in items:
+            if kind:
+                b += symbol(kind, x + 28, y - 4, 8)
+            else:
+                b += text(x + 28, y, "▸", 12, MUTED)
+            b += text(x + 48, y, label, 12, INK, "start", "bold" if new else "normal")
+            y += 26
+        return b
+    old = [("Dashboard", None, False), ("Chemicals", "chemical", False), ("Samples", "sample", False),
+           ("Screening", "screening", False), ("Query", None, False), ("Toxicology", "toxicology", False)]
+    new = [("Dashboard", None, False), ("Chemical Registry", "chemical", True), ("Sample Management", "sample", True),
+           ("Screening Data", "screening", True), ("Query", None, False), ("Toxicology", "toxicology", False)]
+    b += sidebar(60, "before v2.9.0", old, LINE)
+    b += arrow(372, 160, 560, 160, ACCENT)
+    b += text(466, 150, "labels only", 11, MUTED)
+    b += sidebar(580, "from v2.9.0", new, COLOURS["chemical"])
+    b += text(W/2, 288, "the web addresses (/chemicals, /samples, /screening) and every API path are unchanged — bookmarks and scripts keep working", 11, INK)
+    b += text(W/2, 310, "everyday version: the shop's departments got signs that say what they sell; the aisles did not move", 11, MUTED)
+    write("fig_module_names.svg", svg(W, H, "The sidebar before and after: Chemicals, Samples and Screening become Chemical Registry, Sample Management and Screening Data; addresses unchanged", b))
+
+
 def fig_container_lunchbox() -> None:
     W, H = 940, 320
     b = text(W/2, 34, "The container is the isolation — the same sealed lunchbox on every platform", 16, INK, "middle", "bold")
@@ -475,6 +503,6 @@ def logo() -> None:
 
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
-              fig_two_stage, fig_tracks, fig_registry_first, fig_container_lunchbox, fig_setup_flow, fig_timeline,
+              fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_container_lunchbox, fig_setup_flow, fig_timeline,
               fig_requirements_lock, cover, logo):
         f()

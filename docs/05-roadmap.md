@@ -63,8 +63,8 @@ which is the only place the *history* of phases is kept. This page holds the
 ## The six tracks
 
 One track per module the user sees in the sidebar, plus one for everything
-the modules share. The module names are the ones the interface will carry
-after phase SH-1 (today's names in brackets).
+the modules share. The module names are the ones the interface carries
+since phase SH-1 (v2.9.0); the labels used before it are in brackets.
 
 | Code | Track | What it covers | Why it is a track of its own |
 |---|---|---|---|
@@ -89,7 +89,7 @@ codes, the way phase R (the registry reset) is CR and SD at once.
 | SM | SLIMS three-row-header upload, table, detail view | **SM-1 · Sort, search, filter and views**, after CR-1 proves the pattern | 🔜 |
 | TX | XLSX upload, table | **TX-1 · A real study export as a template spec** | ⏸ a file |
 | QC | Read-only console, the query cookbook | **QC-1 · Saved queries and download** | 🔜 |
-| SH | Phases 00–05b: the Python backend, PostgreSQL option, public-repository hygiene, platform verification, the document set, reproducible builds and CI | **SH-1 · Module names** (hours), then **SH-2 · Schema normalisation** (was phase 06) | 🔜 |
+| SH | Phases 00–05b: the Python backend, PostgreSQL option, public-repository hygiene, platform verification, the document set, reproducible builds and CI; SH-1 module names ✅ (2026-09-08) | **SH-2 · Schema normalisation** (was phase 06), after the tables have their filters | 🔜 |
 
 ---
 
@@ -174,7 +174,7 @@ attached to a registered compound only when the registry says so.
 | Phase | What it adds | Why it matters | Waits on | Status |
 |---|---|---|---|---|
 | 00–05b | The Python backend, the PostgreSQL option, public-repository hygiene, platform verification, the document set, reproducible builds and CI | — [build log](HANDBOOK.md#7-the-build-phase-by-phase) | — | ✅ |
-| **SH-1** | **Module names.** *Chemicals* → **Chemical Registry**, *Samples* → **Sample Management**, *Screening* → **Screening Data** in the sidebar, page headings, upload pages, dashboard tiles, the browser tab title and every document that names them | The names should say what the modules are | nothing — one commit, no data touched | 🔜 |
+| SH-1 | **Module names.** *Chemicals* → **Chemical Registry**, *Samples* → **Sample Management**, *Screening* → **Screening Data** in the sidebar, page headings, dashboard tiles, the interactive architecture page and every document that names them; every address unchanged — [phase SH-1](04-phase-tutorials/phase-sh-1-module-names.md) | The names should say what the modules are | — | ✅ v2.9.0 (2026-09-08) |
 | **SH-2** | **Schema normalisation** (was phase 06): the frequently filtered and sorted fields promoted from the JSON document into indexed columns, without changing the API. Read the design rule first: [`02-architecture.md`](02-architecture.md#the-one-design-rule-everything-else-follows-from) | Per-column filters (CR-1, SM-1) read every row's JSON; measurable now | the list of hot fields, proposed from the client's filters and `store.py`, signed off before any migration | 🔜 |
 | **SH-3** | **Authentication** (was phase 07): a login in front of `/api/*`, behind a feature flag | The largest gap; deliberate for an internal network, first thing a wider audience needs | a decision between corporate SSO/OIDC and a token scheme | ⏸ |
 | SH-4 | Role-based access, audit trail and version history, rate limiting | Meaningless without identity | SH-3 | ⏸ |
@@ -189,7 +189,7 @@ attached to a registered compound only when the registry says so.
 
 ```mermaid
 flowchart LR
-    SH1["SH-1 module names<br/>hours, no data"] --> SD1s["SD-1 spec agreed<br/>this release"]
+    SH1["SH-1 module names ✅<br/>v2.9.0"] --> SD1s["SD-1 spec agreed<br/>awaiting the owner"]
     SD1s --> R2["R-2 empty the registry<br/>backup + go"]
     R2 --> CR3["CR-3 every way in<br/>refill from a curated file"]
     CR3 --> SD1["SD-1 build<br/>the registry-first rule + re-identify"]
@@ -199,8 +199,8 @@ flowchart LR
     CR4 --> SH2["SH-2 schema normalisation"] --> SH3["SH-3 authentication"]
 ```
 
-1. **SH-1 first** because it is hours of work, touches no data, and every
-   later document then uses the final names.
+1. **SH-1 first** because it was hours of work, touched no data, and every
+   later document now uses the final names. Done, v2.9.0.
 2. **SD-1 is agreed before R-2 runs.** Emptying the registry only makes sense
    once we know the rule the refilled registry must satisfy. The
    specification is written; R-2 waits on the owner's agreement and go.

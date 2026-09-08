@@ -82,7 +82,7 @@ That is exactly this:
 |---|---|
 | Ten conversations, one person | Ten spellings, one compound |
 | Their phone number | The **CAS number** — a compound's internationally agreed identifier, the same in every laboratory on earth |
-| Saving them as a contact | Registering the compound in the Chemicals module |
+| Saving them as a contact | Registering the compound in the Chemical Registry module |
 | Photo, address, birthday | Molecular formula, weight, structure |
 | Your address book | **PubChem**, a free public chemical database run by the US National Library of Medicine |
 
@@ -531,7 +531,7 @@ podman cp crucible-py:/app/backend/proposed.xlsx ./proposed.xlsx
 > ester was expected. A compound registered with somebody else's molecular
 > weight is worse than one left unidentified.
 
-Then upload through **Chemicals → Upload**, and re-link:
+Then upload through **Chemical Registry → Upload Chemicals (ELN)**, and re-link:
 
 ```bash
 podman exec crucible-py python /app/backend/scripts/link_pubchem.py --apply

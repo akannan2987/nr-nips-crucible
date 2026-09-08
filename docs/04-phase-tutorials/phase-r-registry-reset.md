@@ -1,4 +1,4 @@
-[← README](../../README.md) · [Handbook](../HANDBOOK.md) · [Glossary](../00-glossary.md) · [← Phase 05b](phase-05b-reproducible-builds-and-ci.md)
+[← README](../../README.md) · [Handbook](../HANDBOOK.md) · [Glossary](../00-glossary.md) · [← Phase 05b](phase-05b-reproducible-builds-and-ci.md) · [Phase SH-1 →](phase-sh-1-module-names.md)
 
 # Phase R — The registry reset: unlink everything, empty the registry, start again
 
@@ -87,7 +87,7 @@ today, but the script treats all three the same way.
 | `run(argv, db)` | The script's logic callable from a test with a supplied session, so it can be exercised without a container | same |
 | A latent crash fixed | A sample links through a list of chemical identifiers in its document, not a column; the script assumed a column and would have failed on the first sample. Found by the first test (lesson 30) | same |
 | First tests | Six cases: the report writes nothing; removing one entry unlinks only its rows; `--unlink-all` clears column *and* document and keeps chemicals; `--all` empties the registry and the rows keep their source names; the job-only selector; nothing matching is an error | `backend/tests/test_remove_chemicals.py` |
-| Buttons on the Screening page | A link or unlink icon on each row, *Link to a chemical…* and *Unlink* for ticked rows or for every row matching the filters, a name-and-CAS confirmation before a link, *Unlink all rows…* with typed confirmation; backed by `POST /api/screening/link` and `/unlink`, whose answers say how many rows of which chemical | `client/src/pages/ScreeningView.jsx`, `backend/app/routers/screening.py` |
+| Buttons on the Screening Data page | A link or unlink icon on each row, *Link to a chemical…* and *Unlink* for ticked rows or for every row matching the filters, a name-and-CAS confirmation before a link, *Unlink all rows…* with typed confirmation; backed by `POST /api/screening/link` and `/unlink`, whose answers say how many rows of which chemical | `client/src/pages/ScreeningView.jsx`, `backend/app/routers/screening.py` |
 | `--unlink-only` | Detach the rows of named chemicals and keep the entries; every mode prints rows per chemical, most first | `backend/scripts/remove_chemicals.py` |
 | The procedure | Below, and in [`09-chemical-identification.md` → Resetting the registry](../09-chemical-identification.md#resetting-the-registry) | — |
 
@@ -148,7 +148,7 @@ buttons, then ran the terminal command, which found and detached exactly that
 page. The registry's 664 entries are untouched; the backup from before R-1
 holds the original links.
 
-**The same step from the browser:** on the Screening page, next to the count
+**The same step from the browser:** on the Screening Data page, next to the count
 of linked rows, **Unlink all rows…** opens a confirmation that asks you to
 type `UNLINK ALL`, then calls `POST /api/screening/unlink` with `all: true`
 — the same operation, the same outcome, no terminal needed. Take the backup

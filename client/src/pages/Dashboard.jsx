@@ -63,7 +63,7 @@ export default function Dashboard() {
 
   const cards = [
     {
-      name: 'Chemicals',
+      name: 'Chemical Registry',
       count: stats?.counts?.chemicals || 0,
       max: null,
       icon: BeakerIcon,
@@ -72,7 +72,7 @@ export default function Dashboard() {
       uploadHref: '/chemicals/upload',
     },
     {
-      name: 'Samples',
+      name: 'Sample Management',
       count: stats?.counts?.samples || 0,
       max: null,
       icon: CubeIcon,
@@ -81,7 +81,7 @@ export default function Dashboard() {
       uploadHref: '/samples/upload',
     },
     {
-      name: 'Screening Records',
+      name: 'Screening Data',
       count: stats?.counts?.screening || 0,
       max: null,
       icon: ChartBarIcon,
@@ -294,7 +294,7 @@ export default function Dashboard() {
             className="flex flex-col items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
           >
             <ChartBarIcon className="h-8 w-8 text-purple-600 mb-2" />
-            <span className="text-sm font-medium text-gray-700">Upload Screening</span>
+            <span className="text-sm font-medium text-gray-700">Upload Screening Data</span>
             <span className="text-xs text-gray-500">Linked to Chemicals</span>
           </Link>
           <Link

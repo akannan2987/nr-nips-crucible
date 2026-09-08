@@ -10,6 +10,32 @@ change you are getting.
 
 ---
 
+## v2.9.0 — 2026-09-08 — "Signs that say what the department is"
+
+Phase SH-1, the first phase named by its track code. Tutorial:
+[`docs/04-phase-tutorials/phase-sh-1-module-names.md`](docs/04-phase-tutorials/phase-sh-1-module-names.md).
+
+**Changed**
+- **The three data modules are renamed** in the sidebar, the page headings,
+  the dashboard tiles and the interactive architecture page: *Chemicals* →
+  **Chemical Registry**, *Samples* → **Sample Management**, *Screening* →
+  **Screening Data**. The sidebar entries under them follow (*View Chemical
+  Registry*, *Upload Screening Data (ELN)*). Every document that told the
+  reader where to click now uses the new names.
+- **Nothing else moved.** The web addresses (`/chemicals`, `/samples`,
+  `/screening`) and every API path are unchanged, so bookmarks and scripts
+  keep working and the API tests did not change. *Query* and *Toxicology*
+  keep their labels. The counts on the dashboard's capacity bars still say
+  what they count.
+- A glossary entry, **Module**, names all five with the labels they had
+  before; a figure shows the sidebar before and after.
+
+**Deploy note**
+- The web client changed, so the server needs a **rebuild** (with a backup
+  first), not just a pull.
+
+---
+
 ## v2.8.0 — 2026-09-08 — "Six tracks, and the rule written down first"
 
 A planning release: no application code changed. Two things the owner asked

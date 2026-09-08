@@ -1,0 +1,57 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 330' width='940' height='330' role='img' aria-label='The sidebar before and after: Chemicals, Samples and Screening become Chemical Registry, Sample Management and Screening Data; addresses unchanged' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='329' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>The sidebar before and after SH-1: the modules say what they are</text>
+<rect x='60' y='60' width='300' height='200' rx='10' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='210' y='84' font-size='12' fill='#9ca3af' text-anchor='middle' font-weight='bold'>before v2.9.0</text>
+<text x='88' y='108' font-size='12' fill='#6b7280' text-anchor='middle' font-weight='normal'>▸</text>
+<text x='108' y='108' font-size='12' fill='#1f2937' text-anchor='start' font-weight='normal'>Dashboard</text>
+<polygon points='88,122 94.928,126.0 94.928,134.0 88,138 81.072,134.0 81.072,126.0' fill='#4f46e5' fill-opacity='0.15' stroke='#4f46e5' stroke-width='2'/>
+<text x='108' y='134' font-size='12' fill='#1f2937' text-anchor='start' font-weight='normal'>Chemicals</text>
+<rect x='84.4' y='151.20000000000002' width='7.2' height='12.399999999999999' rx='2.4' fill='#0d9488' fill-opacity='0.15' stroke='#0d9488' stroke-width='2'/>
+<rect x='85.6' y='148.4' width='4.8' height='3.2' fill='#0d9488'/>
+<text x='108' y='160' font-size='12' fill='#1f2937' text-anchor='start' font-weight='normal'>Samples</text>
+<rect x='81.56' y='175.56' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='81.56' y='180.52' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='81.56' y='185.48' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='86.52' y='175.56' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='86.52' y='180.52' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='86.52' y='185.48' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='91.48' y='175.56' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='91.48' y='180.52' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='91.48' y='185.48' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<text x='108' y='186' font-size='12' fill='#1f2937' text-anchor='start' font-weight='normal'>Screening</text>
+<text x='88' y='212' font-size='12' fill='#6b7280' text-anchor='middle' font-weight='normal'>▸</text>
+<text x='108' y='212' font-size='12' fill='#1f2937' text-anchor='start' font-weight='normal'>Query</text>
+<rect x='80.0' y='227.6' width='16' height='12.8' rx='4' fill='#be123c' fill-opacity='0.12' stroke='#be123c' stroke-width='2'/>
+<path d='M 83.0 236.4 C 87.2 236.4, 88.8 231.6, 93.0 231.6' fill='none' stroke='#be123c' stroke-width='2.2'/>
+<text x='108' y='238' font-size='12' fill='#1f2937' text-anchor='start' font-weight='normal'>Toxicology</text>
+<line x1='372' y1='160' x2='560' y2='160' stroke='#374151' stroke-width='1.6' marker-end='url(#arrow)'/>
+<text x='466' y='150' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>labels only</text>
+<rect x='580' y='60' width='300' height='200' rx='10' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='730' y='84' font-size='12' fill='#4f46e5' text-anchor='middle' font-weight='bold'>from v2.9.0</text>
+<text x='608' y='108' font-size='12' fill='#6b7280' text-anchor='middle' font-weight='normal'>▸</text>
+<text x='628' y='108' font-size='12' fill='#1f2937' text-anchor='start' font-weight='normal'>Dashboard</text>
+<polygon points='608,122 614.928,126.0 614.928,134.0 608,138 601.072,134.0 601.072,126.0' fill='#4f46e5' fill-opacity='0.15' stroke='#4f46e5' stroke-width='2'/>
+<text x='628' y='134' font-size='12' fill='#1f2937' text-anchor='start' font-weight='bold'>Chemical Registry</text>
+<rect x='604.4' y='151.20000000000002' width='7.2' height='12.399999999999999' rx='2.4' fill='#0d9488' fill-opacity='0.15' stroke='#0d9488' stroke-width='2'/>
+<rect x='605.6' y='148.4' width='4.8' height='3.2' fill='#0d9488'/>
+<text x='628' y='160' font-size='12' fill='#1f2937' text-anchor='start' font-weight='bold'>Sample Management</text>
+<rect x='601.56' y='175.56' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='601.56' y='180.52' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='601.56' y='185.48' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='606.52' y='175.56' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='606.52' y='180.52' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='606.52' y='185.48' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='611.4799999999999' y='175.56' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='611.4799999999999' y='180.52' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='611.4799999999999' y='185.48' width='2.96' height='2.96' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<text x='628' y='186' font-size='12' fill='#1f2937' text-anchor='start' font-weight='bold'>Screening Data</text>
+<text x='608' y='212' font-size='12' fill='#6b7280' text-anchor='middle' font-weight='normal'>▸</text>
+<text x='628' y='212' font-size='12' fill='#1f2937' text-anchor='start' font-weight='normal'>Query</text>
+<rect x='600.0' y='227.6' width='16' height='12.8' rx='4' fill='#be123c' fill-opacity='0.12' stroke='#be123c' stroke-width='2'/>
+<path d='M 603.0 236.4 C 607.2 236.4, 608.8 231.6, 613.0 231.6' fill='none' stroke='#be123c' stroke-width='2.2'/>
+<text x='628' y='238' font-size='12' fill='#1f2937' text-anchor='start' font-weight='normal'>Toxicology</text>
+<text x='470.0' y='288' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>the web addresses (/chemicals, /samples, /screening) and every API path are unchanged — bookmarks and scripts keep working</text>
+<text x='470.0' y='310' font-size='11' fill='#6b7280' text-anchor='middle' font-weight='normal'>everyday version: the shop&apos;s departments got signs that say what they sell; the aisles did not move</text>
+</svg>

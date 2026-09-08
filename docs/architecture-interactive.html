@@ -205,7 +205,7 @@
     (function(){
       var scenarioData = {
         read:   { labels: ['👁️ View list','📡 GET /api/chemicals','📖 Read crucible.db','📋 Table renders'],
-                  descs:  ['User clicks "View Chemicals" in the sidebar','Axios fires GET request','SQLAlchemy loads matching records from SQLite','React renders rows into the table'] },
+                  descs:  ['User clicks "View Chemical Registry" in the sidebar','Axios fires GET request','SQLAlchemy loads matching records from SQLite','React renders rows into the table'] },
         write:  { labels: ['✏️ Save form','📡 POST /api/chemicals','✅ Validate + write','🎉 Toast: Saved!'],
                   descs:  ['User fills out the form and clicks Save','Axios POSTs the JSON payload','FastAPI validates then commits to crucible.db','Success toast appears, table refreshes'] },
         upload: { labels: ['📂 Pick Excel','📡 POST upload/excel','🧮 Parse + bulk insert','📊 Summary report'],
@@ -472,7 +472,7 @@
             <p class="text-slate-300 text-sm">A <b>React 18 Single Page Application</b> bundled by Vite and styled with Tailwind CSS. It runs entirely in the user's browser — no server-side rendering.</p>
             <ul class="text-slate-400 text-xs mt-2 space-y-1 list-disc pl-5">
               <li><b>Dashboard</b> — summary cards showing record counts, recent activity, and system health.</li>
-              <li><b>ELN (Electronic Lab Notebook)</b> — upload forms for Chemicals, Samples, Screening, and Toxicology. Supports manual entry, Excel bulk upload, and SDF chemical structure files.</li>
+              <li><b>ELN (Electronic Lab Notebook)</b> — upload forms for the Chemical Registry, Sample Management, Screening Data, and Toxicology. Supports manual entry, Excel bulk upload, and SDF chemical structure files.</li>
               <li><b>Viewer</b> — paginated data tables with search, sort, inline editing, bulk select/delete, and molecular structure preview.</li>
               <li><b>React Router</b> handles navigation without page reloads; <b>Axios</b> handles all HTTP calls; <b>React Hot Toast</b> provides user feedback.</li>
             </ul>
@@ -912,7 +912,7 @@
         <g transform="translate(360,60)">
           <rect width="180" height="100" rx="16" fill="#3b0764" stroke="#a78bfa" stroke-width="2"/>
           <text x="90" y="40" text-anchor="middle" font-size="30">🧪</text>
-          <text x="90" y="68" text-anchor="middle" fill="#ede9fe" font-weight="700" font-size="14">Chemicals</text>
+          <text x="90" y="68" text-anchor="middle" fill="#ede9fe" font-weight="700" font-size="14">Chemical Registry</text>
           <text x="90" y="86" text-anchor="middle" fill="#c4b5fd" font-size="11">up to 50,000 records</text>
         </g>
 
@@ -920,7 +920,7 @@
         <g transform="translate(90,310)">
           <rect width="180" height="90" rx="14" fill="#0c4a6e" stroke="#38bdf8" stroke-width="2"/>
           <text x="90" y="36" text-anchor="middle" font-size="24">🧫</text>
-          <text x="90" y="60" text-anchor="middle" fill="#e0f2fe" font-weight="700" font-size="13">Samples</text>
+          <text x="90" y="60" text-anchor="middle" fill="#e0f2fe" font-weight="700" font-size="13">Sample Management</text>
           <text x="90" y="78" text-anchor="middle" fill="#7dd3fc" font-size="10">up to 50,000 records</text>
         </g>
 
@@ -928,7 +928,7 @@
         <g transform="translate(360,310)">
           <rect width="180" height="90" rx="14" fill="#7c2d12" stroke="#fb923c" stroke-width="2"/>
           <text x="90" y="36" text-anchor="middle" font-size="24">🔬</text>
-          <text x="90" y="60" text-anchor="middle" fill="#fed7aa" font-weight="700" font-size="13">Screening</text>
+          <text x="90" y="60" text-anchor="middle" fill="#fed7aa" font-weight="700" font-size="13">Screening Data</text>
           <text x="90" y="78" text-anchor="middle" fill="#fdba74" font-size="10">up to 50,000 records</text>
         </g>
 
@@ -949,7 +949,7 @@
       <div class="mt-6 grid md:grid-cols-2 gap-4 text-sm">
         <div class="glass rounded-xl p-4">
           <p class="font-semibold mb-1">📚 The ELN module</p>
-          <p class="text-slate-400 text-xs">Lab notebook for uploading Chemicals, Samples, Screening, and Toxicology — manually or by Excel/SDF file.</p>
+          <p class="text-slate-400 text-xs">Lab notebook for uploading to the Chemical Registry, Sample Management, Screening Data, and Toxicology — manually or by Excel/SDF file.</p>
         </div>
         <div class="glass rounded-xl p-4">
           <p class="font-semibold mb-1">🔍 The Viewer module</p>

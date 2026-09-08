@@ -657,6 +657,17 @@ Its export has an unusual **three-row header** (machine field names on row
 2, human labels on row 3, data from row 4), which is why the sample
 template looks odd and must not be flattened.
 
+**Module** — one section of the application, one entry in the sidebar, one
+kind of record: **Chemical Registry** (the compounds, the anchor for
+everything else), **Sample Management** (the physical vials), **Screening
+Data** (the assay results), **Toxicology** (the studies) and **Query** (the
+read-only SQL console). Until v2.9.0 the first three were labelled
+*Chemicals*, *Samples* and *Screening*; the web addresses (`/chemicals`,
+`/samples`, `/screening`) and the API paths did not change, so old
+bookmarks and scripts still work. Each module is also a track of the plan
+([`05-roadmap.md`](05-roadmap.md)). *Everyday version:* the departments of
+one shop, each with its own door and its own stock.
+
 **ELN (Electronic Lab Notebook)** — the digital replacement for a paper lab
 notebook; the module of this app where uploads happen.
 

@@ -16,15 +16,15 @@ import {
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
   {
-    name: 'Chemicals',
+    name: 'Chemical Registry',
     icon: BeakerIcon,
     children: [
-      { name: 'View Chemicals', href: '/chemicals', icon: EyeIcon },
+      { name: 'View Chemical Registry', href: '/chemicals', icon: EyeIcon },
       { name: 'Upload Chemicals (ELN)', href: '/chemicals/upload', icon: DocumentPlusIcon },
     ],
   },
   {
-    name: 'Samples',
+    name: 'Sample Management',
     icon: CubeIcon,
     children: [
       { name: 'View Samples', href: '/samples', icon: EyeIcon },
@@ -32,11 +32,11 @@ const navigation = [
     ],
   },
   {
-    name: 'Screening',
+    name: 'Screening Data',
     icon: ChartBarIcon,
     children: [
       { name: 'View Screening Data', href: '/screening', icon: EyeIcon },
-      { name: 'Upload Screening (ELN)', href: '/screening/upload', icon: DocumentPlusIcon },
+      { name: 'Upload Screening Data (ELN)', href: '/screening/upload', icon: DocumentPlusIcon },
     ],
   },
   { name: 'Query', href: '/query', icon: CommandLineIcon },

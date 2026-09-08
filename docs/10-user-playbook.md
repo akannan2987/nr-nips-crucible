@@ -232,7 +232,7 @@ them apart.
 
 ## Uploading
 
-In the browser: **Screening → Upload Screening (ELN)**, choose your file.
+In the browser: **Screening Data → Upload Screening Data (ELN)**, choose your file.
 
 **You should see** a summary when it finishes:
 
@@ -264,7 +264,7 @@ configuration setting.
 
 # Part 3 — Look at what arrived
 
-Open **Screening → View Screening Data**.
+Open **Screening Data → View Screening Data**.
 
 ## The table is built from your file
 
@@ -469,7 +469,7 @@ for reason, n in collections.Counter(
 ## Linking and unlinking by hand
 
 The job links by rule; you can also decide for a row yourself, on the
-Screening page:
+Screening Data page:
 
 | You want to… | Do this |
 |---|---|
@@ -481,7 +481,7 @@ Screening page:
 | Detach every row from every compound | **Unlink all rows…** next to the count of linked rows. It asks you to type `UNLINK ALL`, because the only undo is a backup. This is the first step of a registry reset — [phase R](04-phase-tutorials/phase-r-registry-reset.md). |
 
 A compound that is not registered yet cannot be picked: register it in the
-Chemicals module first. None of these buttons ever deletes a compound, and
+Chemical Registry module first. None of these buttons ever deletes a compound, and
 every unlink tells you how many rows of which chemical it detached.
 
 **The same from the terminal** (inside the container on the VM; `docker` for
@@ -528,7 +528,7 @@ by side.
 > antioxidant holding nicotine's formula. Finding and undoing that took most of
 > a day.
 
-Then upload via **Chemicals → Upload Chemicals (ELN)**, and re-link:
+Then upload via **Chemical Registry → Upload Chemicals (ELN)**, and re-link:
 
 ```bash
 podman exec crucible-py python /app/backend/scripts/link_pubchem.py --apply

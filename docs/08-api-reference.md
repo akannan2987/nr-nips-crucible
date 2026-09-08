@@ -1110,7 +1110,7 @@ identifier, stored on the row twice on purpose: inside the stored document
 (the truth) and in an indexed column (for fast lookup). These two endpoints
 change that link and nothing else; a row keeps every value it had, including
 the compound name its source file recorded. They are what the *Link* and
-*Unlink* buttons on the Screening page call.
+*Unlink* buttons on the Screening Data page call.
 
 **Link rows to one chemical**
 

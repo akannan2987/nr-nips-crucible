@@ -95,7 +95,7 @@ flowchart TB
     subgraph browser["Client browser"]
         direction TB
         R["React application (SPA) — built by Vite, served as static files"]
-        R --- D["Dashboard"] --- C["Chemicals"] --- SS["Samples · Screening · Toxicology"] --- Q["Query tab"]
+        R --- D["Dashboard"] --- C["Chemical Registry"] --- SS["Sample Management · Screening Data · Toxicology"] --- Q["Query tab"]
     end
     subgraph container["Container crucible-py — one Python process (uvicorn)"]
         direction TB

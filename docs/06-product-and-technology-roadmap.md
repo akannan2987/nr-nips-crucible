@@ -74,7 +74,7 @@ flowchart LR
 |---|---|---|---|
 | Ingest | Upload pages; a template spec per laboratory format; the first real export loaded (49,000 rows) | ✅ | An upload endpoint per customer; watched folders or object storage; per-laboratory isolation |
 | Parse + validate | Cleaning primitives for null tokens, formula errors, dates, mixed CAS cells, header echoes; rows reported rather than dropped | ✅ | Whole-file validation reports; a template editor instead of a Python spec |
-| Identify | Two-stage identification; a registry of 664 compounds; audit and maintenance scripts | ✅ | Name normalisation and synonyms; scheduled identification over new arrivals; InChIKey as the canonical key |
+| Identify | Two-stage identification (being replaced by the registry-first rule); a registry that was reset on 2026-09-08 to be refilled by a person; audit and maintenance scripts | 🔨 | Name normalisation and synonyms; scheduled identification over new arrivals; InChIKey as the canonical key |
 | Store | SQLite by default, PostgreSQL optional, Alembic-owned schema; the hybrid document pattern | ✅ | PostgreSQL as default; hot fields normalised (phase 06); object storage for the original files |
 | Serve | React client; REST API with a locked contract; read-only SQL console; export in four formats | ✅ | Authentication and roles; rate limiting; an agent interface for other tools |
 | Audit | None — records can change with no record of who | ❌ | An audit trail and version history, which authentication makes possible |

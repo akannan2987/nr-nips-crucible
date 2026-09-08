@@ -15,6 +15,10 @@ long-running jobs flagged where they appear.
 > The other guides answer *"how does X work?"*. This one answers **"what do I do,
 > and in what order?"** — the whole sequence, once, with the reasoning attached.
 > Where a topic has its own guide, this points at it rather than repeating it.
+> Two neighbours: the [handbook](HANDBOOK.md) says where the project stands
+> and what to read when; the [registry tasks page](10-registry-tasks.md) is
+> the quick reference for one routine job by browser, API or terminal. This
+> playbook is the course in between: learn it once, then keep the tasks page.
 >
 > **Grey boxes are commands.** Type or paste them into a terminal.
 > **You should see** is roughly what appears. **What it means** is one sentence
@@ -168,6 +172,9 @@ curl --noproxy '*' -sSk https://localhost:49160/api/stats
 ```json
 {"chemicals":{"total":664,...},"screening":{"total":49065},...}
 ```
+
+The counts are whatever *your* instance holds — on production after the
+2026-09-08 reset, `chemicals` is 0 by design until the registry is refilled.
 
 **What it means:** the application is running and can read its database. This is
 the single most useful check in the whole system — if it answers, everything

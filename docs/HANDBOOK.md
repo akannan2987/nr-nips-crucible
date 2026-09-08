@@ -15,6 +15,17 @@ date. If it ever disagrees with reality, that is a bug worth reporting.
 **What it is not:** a copy of the other documents. Details live in the
 specialised pages; this page tells you which one to read, when, and why.
 
+**Three pages people confuse, and what each is for:**
+
+| Page | Question it answers | Open it when |
+|---|---|---|
+| **This handbook** | *Where are we, what was built, in what order do I read the rest, what comes next?* | You are new, or coming back after a break, or want the plan |
+| [The user playbook](10-user-playbook.md) | *How do I use the application, from nothing, start to finish, and why each step?* | You are learning to run it: load a file, check it, identify, correct, ask questions |
+| [Chemical Registry tasks](10-registry-tasks.md) | *How do I do this one routine job, right now, from the browser, the API or the terminal?* | You already know the system and need the command or the button |
+
+*Everyday version:* the handbook is the map of the building, the playbook is
+the induction course, the tasks page is the laminated card by the machine.
+
 **Status legend used throughout:** ✅ done and verified · 🔨 in progress ·
 🔜 planned (approach written, not built) · ⏸ waiting on a decision or a window.
 
@@ -471,9 +482,10 @@ Follow the playbook in order; it was written for exactly this sequence:
 Day to day, the registry's routine tasks are one page, every route side by
 side: [`10-registry-tasks.md`](10-registry-tasks.md).
 
-**You are done when** the identification report shows more rows linked than
-unlinked, the audit reports nothing it can measure, and you can write a query
-that joins one compound's measurements to its registry entry.
+**You are done when** you can say which rows are linked and why (today, on
+production: none, by design, until the registry is refilled under the
+registry-first rule), the audit reports nothing it can measure, and you can
+write a query that joins one compound's measurements to its registry entry.
 
 ---
 

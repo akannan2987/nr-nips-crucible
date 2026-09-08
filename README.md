@@ -121,11 +121,16 @@ exercised at; see [About the data](#about-the-data-honesty-notes) for what that
 does and does not promise.
 
 **In practice**, one deployment holds 49,065 screening records from a single
-packaging-migration export, covering 3,500 distinct compounds. 664 of those are
-identified against a chemical registry, linking 43,399 rows (88%) to a compound
-entry. The remainder show the compound name their source file recorded —
-overwhelmingly because that file carries no CAS number for them, which no
-software can work around.
+packaging-migration export, covering 3,500 distinct compounds. Under the first
+identification rule, 664 of those were registered and 43,399 rows (88%) linked
+to a compound entry. On 2026-09-08 that registry was deliberately emptied —
+every row unlinked, every entry removed, backups held — so that it can be
+refilled under a stricter rule in which a person registers every compound and
+a row attaches only when both its name and its CAS number match
+([the registry-first rule](docs/09-chemical-identification.md#the-next-rule-registry-first--specification)).
+Until that refill, every row shows the compound name its source file recorded.
+Around 2,278 compounds carry no CAS number in the file at all, which no
+software can work around; those can be linked by hand.
 
 ---
 
@@ -162,12 +167,34 @@ real laboratory data, what comes next.
 
 | I want to… | Read |
 |---|---|
-| Load a file, check it, identify compounds, correct mistakes, ask questions, publish a change | [The user playbook](docs/10-user-playbook.md) |
+| Know where the project stands, what was built, what comes next | [Handbook](docs/HANDBOOK.md) §0, §7, §10 |
+| Learn to use the application from nothing: load a file, check it, identify compounds, correct mistakes, ask questions | [The user playbook](docs/10-user-playbook.md) |
+| Do a routine registry job right now — add, load, edit, link, remove, export | [Chemical Registry tasks](docs/10-registry-tasks.md) |
 | Take an edit from my Mac to production safely | [Git workflow](docs/03-git-workflow.md) · [Handbook §6](docs/HANDBOOK.md#6-how-a-change-travels) |
 | Update, back up, rotate a certificate, monitor, troubleshoot, uninstall | [Operations](docs/07-operations.md) |
 | Develop against the backend, run the checks CI runs | [backend/README.md](backend/README.md) · [Contributing → the loop](CONTRIBUTING.md#3-the-day-to-day-loop) · [Architecture → Testing](docs/02-architecture.md#testing) |
 | Call the API from a script | [API cookbook](docs/08-api-cookbook.md) · [API reference](docs/08-api-reference.md) |
 | Understand a word | [Glossary](docs/00-glossary.md) |
+
+---
+
+## Where to start, by who you are
+
+Three documents do three different jobs, and the rest hang off them. Pick
+the row that describes you; it names the one page to open first and what to
+do in it. Nothing else needs reading before that page says so.
+
+| You are… | Open first | What to do there | Then |
+|---|---|---|---|
+| **New to the project**, or coming back after a break | **[The Handbook](docs/HANDBOOK.md)** | Read §0 for where things stand today, §2 for the words, §3 to set your machine up once | It sends you to the playbook when the application is running |
+| **Going to use the application** — load a laboratory file, check it, identify compounds, correct mistakes, ask questions | **[The user playbook](docs/10-user-playbook.md)** | Follow it once, in order, Part 0 to Part 10; every step says what, how, why, and what you should see | Keep the tasks page open afterwards |
+| **Doing one routine registry job now** — add, load, edit, link, remove, merge, audit, export, reset | **[Chemical Registry tasks](docs/10-registry-tasks.md)** | Find the task's table; pick the browser, API or terminal column; follow the link for the detail | — |
+| **Changing the code or the documents** | [Handbook §5 and §6](docs/HANDBOOK.md#5-understand-how-it-is-built), then [Contributing](CONTRIBUTING.md) | The one design rule, then the loop: edit, test, gate, publish, mirror, deploy | The phase tutorials for how each piece was built |
+| **Running the server** — update, back up, certificates, monitoring | [Operations](docs/07-operations.md) | The runbook for the job at hand | [Handbook §8](docs/HANDBOOK.md#8-operate-it) for the short version |
+
+*Everyday version:* the handbook is the map of the building, the playbook is
+the induction course, the tasks page is the laminated card by the machine,
+and the rest are the manuals on the shelf behind it.
 
 ---
 

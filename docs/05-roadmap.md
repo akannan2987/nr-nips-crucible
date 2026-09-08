@@ -38,7 +38,7 @@ registry starts again, in two deliberate steps, each behind a backup:
 
 | Step | What | How | Waits on |
 |---|---|---|---|
-| R-1 | **Unlink every screening row from every chemical.** Rows keep the compound name their source file recorded; nothing else changes | `--unlink-all` on `backend/scripts/remove_chemicals.py`, gated on `--apply`, run after `./container-py.sh backup` — **built and tested, v2.5.0** | the owner's go, on the VM |
+| R-1 | **Unlink every screening row from every chemical.** Rows keep the compound name their source file recorded; nothing else changes | `--unlink-all` on `backend/scripts/remove_chemicals.py`, or *Unlink all rows…* in the browser — **done on production 2026-09-08** (0 rows linked, 664 entries kept, backup held outside the repository) | — |
 | R-2 | **Remove every chemical**, so the registry is empty and the new logic starts clean | `--all` on the same script (unlink first, delete second), gated on `--apply`, after a second backup — **built and tested, v2.5.0** | R-1 and the owner's explicit go |
 | R-3 | **The new identification logic**, as the owner describes it | to be designed with the owner before any code | the owner's description |
 
@@ -50,7 +50,7 @@ points at anything.
 |---|---|---|---|
 | 05 | Documentation consolidation ✅ | The numbered document set, the handbook, one tutorial per phase, the roadmaps, the lessons file, the Windows guide, figures | done 2026-09-07 (v2.3.0) |
 | 05b | Reproducible builds and CI ✅ | A lock file generated inside the image, the linter, and a workflow on the public repository that runs every check on Linux and macOS | done 2026-09-07 (v2.4.0) |
-| R | Registry reset 🔨 | Unlink every row, remove every chemical, then the new identification logic — tools built ([phase R](04-phase-tutorials/phase-r-registry-reset.md)) | the owner's go, then the owner's description of the new logic |
+| R | Registry reset 🔨 | R-1 done 2026-09-08; R-2 (empty the registry) built, awaiting the owner's go; R-3 (the new identification logic) awaiting the owner's description ([phase R](04-phase-tutorials/phase-r-registry-reset.md)) | the owner's go, then the owner's description of the new logic |
 | 06 | Schema normalisation 🔜 | Promote the frequently filtered and sorted fields out of the JSON document into indexed columns, without changing the API | agreeing the list of "hot" fields first, from the client's filters and the query patterns in `store.py` |
 | 07 | Authentication 🔜 | A login in front of `/api/*` | a decision between corporate SSO/OIDC and a simpler token scheme, plus a feature flag |
 

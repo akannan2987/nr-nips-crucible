@@ -840,6 +840,16 @@ operating systems proves.
 run the workflow on a push: here one Linux and one macOS runner. Anything
 that works only on your own laptop fails there, which is the point.
 
+**Link (row → chemical)** — the pointer from a measurement to the registry
+entry it belongs to: the registry identifier (`CHEM-000042`) stored on the
+row, twice on purpose — inside the stored document (the truth) and in an
+indexed column (for speed). **Unlinking** clears both; the row keeps every
+value its source file had, including the compound name.
+
+**Registry reset** — detaching every measurement from every compound and
+emptying the registry, so that a new identification logic starts clean. Two
+gated steps of the removal script; [phase R](04-phase-tutorials/phase-r-registry-reset.md).
+
 **Something missing?** If you met a word in this project that isn't here,
 that's a gap worth filling — the whole point of this file is that nobody
 should have to already know the vocabulary to follow the documentation.

@@ -573,6 +573,27 @@ compound ids is **not** a duplicate — those are different substances carrying
 one label, such as isomers or a name truncated in the source, and merging them
 would destroy a real distinction.
 
+### Resetting the registry
+
+When the identification logic itself changes, correcting entries one by one
+is the wrong tool: the registry starts again. Two steps, each behind a backup
+and run first as a report that writes nothing:
+
+```bash
+./container-py.sh backup                     # the undo button — copy it outside the repository too
+podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --unlink-all          # report
+podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --unlink-all --apply  # R-1: every row unlinked, chemicals kept
+./container-py.sh backup
+podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --all --apply         # R-2: every chemical removed
+./verify-deploy.sh https://localhost:49160
+```
+
+Rows keep the compound name their source file recorded; only the pointer
+to a registry entry is cleared, in both places it lives (the indexed column
+and the stored document). The full procedure, with expected output at each
+step and the reasoning, is
+[phase R](04-phase-tutorials/phase-r-registry-reset.md).
+
 ### Confirming afterwards
 
 ```bash

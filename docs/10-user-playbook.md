@@ -622,6 +622,10 @@ Use the script. It unlinks first, deletes second, and reports before it writes.
 
 ## Removing wrong entries
 
+> To start the whole registry again — every row unlinked, every entry
+> removed — see [phase R](04-phase-tutorials/phase-r-registry-reset.md); the
+> same script does it in two gated steps.
+
 ```bash
 cd ~/work/Pandora_toolbox/nr-nips-crucible
 ./container-py.sh backup

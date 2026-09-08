@@ -10,6 +10,41 @@ change you are getting.
 
 ---
 
+## v2.5.0 — 2026-09-08 — "Taking every card out of the drawer"
+
+The tools for the registry reset. No data changed in this release; the reset
+itself is an operation the owner runs, twice-gated, on production.
+
+**Added**
+- **Two reset modes on the removal script**, `backend/scripts/remove_chemicals.py`:
+  `--unlink-all` clears the link on every screening, sample and toxicology
+  row and keeps every chemical entry; `--all` unlinks everything and then
+  removes every chemical. Both write nothing without `--apply`, commit in
+  batches of 5,000 rows with a progress line, and clear the link in both
+  places it lives — the indexed column and the stored document.
+- **The removal script's first tests** (`backend/tests/test_remove_chemicals.py`,
+  six cases): the report mode is provably dry; removing one entry unlinks
+  only its rows; `--unlink-all` keeps every chemical; `--all` empties the
+  registry and rows keep their source names; the job-only selector; nothing
+  matching is an error. The suite is 96 tests.
+- The procedure, with expected output at each step:
+  [phase R](docs/04-phase-tutorials/phase-r-registry-reset.md) and
+  [chemical identification → Resetting the registry](docs/09-chemical-identification.md#resetting-the-registry).
+
+**Fixed**
+- The removal script would have crashed on the first sample it met: a sample
+  has no `chemical_id` column and links through a list inside its document.
+  Found by the script's first test; the script now unlinks samples through
+  that list (lesson 30).
+
+**Known limitations (deliberate)**
+- The reset is not reversible by the script; the backup taken before each
+  step is the undo button, and the procedure says where to copy it.
+- The new identification logic (R-3) is not designed yet; it is written down
+  and agreed before any code.
+
+---
+
 ## v2.4.1 — 2026-09-08 — "The gate knows which repository it is in"
 
 A one-step fix to the workflow shipped in v2.4.0, found by its first run in

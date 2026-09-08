@@ -221,6 +221,16 @@ repository name, and everything else runs on both sides. *Lesson: a sentence
 that describes what another system will do is a claim, and a claim about a
 system you can push to is one push away from being tested.*
 
+
+**30. A script that had only ever met the data it had.** The removal script
+read a `chemical_id` column on every kind of row. Samples have no such
+column — a sample points at *many* chemicals, through a list inside its
+document — so the script would have crashed on the first sample it met. It
+never had, because production holds no samples. The script's first
+automated test seeded one, and found it in a minute. *Lesson: a tool
+exercised only on the data you happen to have has been tested for the
+absence of the data you do not.*
+
 ---
 
 ## The one rule they add up to

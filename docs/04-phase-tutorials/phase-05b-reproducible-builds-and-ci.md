@@ -1,4 +1,4 @@
-[← README](../../README.md) · [Handbook](../HANDBOOK.md) · [Glossary](../00-glossary.md) · [← Phase 05](phase-05-docs-consolidation.md)
+[← README](../../README.md) · [Handbook](../HANDBOOK.md) · [Glossary](../00-glossary.md) · [← Phase 05](phase-05-docs-consolidation.md) · [Phase R →](phase-r-registry-reset.md)
 
 # Phase 05b — Reproducible builds and continuous integration
 

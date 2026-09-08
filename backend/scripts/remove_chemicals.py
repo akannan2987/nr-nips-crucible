@@ -21,7 +21,18 @@ compound whose identity is not established.
     # from a file, one identifier per line
     .venv/bin/python scripts/remove_chemicals.py --from-file bad-ids.txt --apply
 
-Nothing is written without `--apply`.
+    # the registry reset, step 1: unlink EVERY row from EVERY chemical,
+    # keeping the chemical entries themselves
+    .venv/bin/python scripts/remove_chemicals.py --unlink-all --apply
+
+    # the registry reset, step 2: unlink every row AND remove every chemical
+    .venv/bin/python scripts/remove_chemicals.py --all --apply
+
+Nothing is written without `--apply`. Back up first: ./container-py.sh backup
+
+A link lives in two places on a row — the indexed `chemical_id` column and
+the `chemical_id` key inside the stored document — and unlinking clears both,
+because the document is the truth and the column is derived from it.
 """
 
 import argparse
@@ -38,21 +49,88 @@ from app.models import Chemical, Sample, Screening, Toxicology  # noqa: E402
 from app.store import all_rows  # noqa: E402
 
 LINKED_MODELS = (("screening", Screening), ("samples", Sample), ("toxicology", Toxicology))
+BATCH = 5000  # rows per commit when unlinking: one transaction per row on a 116 MB file looked like a hang (lesson 18)
+PUBCHEM_TAG = "pubchem name+cas agree"
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("ids", nargs="*", help="chemical identifiers to remove")
     parser.add_argument("--from-file", help="a file of identifiers, one per line")
     parser.add_argument(
         "--pubchem-registered",
         action="store_true",
-        help="every entry created by the identification job (identification='pubchem name+cas agree')",
+        help=f"every entry created by the identification job (identification='{PUBCHEM_TAG}')",
+    )
+    parser.add_argument(
+        "--unlink-all",
+        action="store_true",
+        help="unlink EVERY screening, sample and toxicology row from EVERY chemical; keep the chemical entries",
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="unlink every row AND remove every chemical entry — the registry starts empty",
     )
     parser.add_argument("--apply", action="store_true", help="write changes (default: report)")
-    args = parser.parse_args()
+    return parser
 
-    db = SessionLocal()
+
+def links_of(row) -> set[str]:
+    """The chemical identifiers a row points at.
+
+    Screening and toxicology rows point at ONE chemical, stored twice (the
+    indexed column and the document). A sample points at MANY, stored only in
+    its document as a list under `chemical_ids` — there is no column, which
+    is why an earlier version of this script crashed on the first sample.
+    """
+    doc = row.doc or {}
+    ids: set[str] = set()
+    if getattr(row, "chemical_id", None):
+        ids.add(row.chemical_id)
+    if doc.get("chemical_id"):
+        ids.add(doc["chemical_id"])
+    ids.update(x for x in (doc.get("chemical_ids") or []) if x)
+    return ids
+
+
+def unlink_rows(db, rows: list, apply: bool, targets: set[str] | None = None) -> int:
+    """Clear the link on each row — column and document — in batches. Returns rows changed.
+
+    `targets` limits the unlinking to those identifiers; None means every link
+    the row has (the reset modes).
+    """
+    changed = 0
+    for row in rows:
+        doc = dict(row.doc)
+        if targets is None or doc.get("chemical_id") in targets:
+            doc.pop("chemical_id", None)
+        if "chemical_ids" in doc:
+            doc["chemical_ids"] = [] if targets is None else [x for x in doc["chemical_ids"] if x not in targets]
+        row.doc = doc
+        if hasattr(row, "chemical_id") and (targets is None or row.chemical_id in targets):
+            row.chemical_id = None
+        changed += 1
+        if apply and changed % BATCH == 0:
+            db.commit()
+            print(f"  … {changed} rows unlinked", flush=True)
+    if apply:
+        db.commit()
+    return changed
+
+
+def run(argv: list[str] | None = None, db=None) -> int:
+    args = build_parser().parse_args(argv)
+    own_session = db is None
+    db = db or SessionLocal()
+    try:
+        return _run(args, db)
+    finally:
+        if own_session:
+            db.close()
+
+
+def _run(args, db) -> int:
     chemicals = all_rows(db, Chemical)
 
     wanted = set(args.ids)
@@ -63,40 +141,50 @@ def main() -> int:
             if line.strip() and not line.startswith("#")
         }
 
-    targets = [
-        row
-        for row in chemicals
-        if row.doc.get("chemical_id") in wanted
-        or (args.pubchem_registered and row.doc.get("identification") == "pubchem name+cas agree")
-    ]
+    if args.all:
+        targets = list(chemicals)
+    else:
+        targets = [
+            row
+            for row in chemicals
+            if row.doc.get("chemical_id") in wanted
+            or (args.pubchem_registered and row.doc.get("identification") == PUBCHEM_TAG)
+        ]
 
-    if not targets:
-        print("Nothing matched. Check the identifiers, or use --pubchem-registered.")
+    if not targets and not args.unlink_all:
+        print("Nothing matched. Check the identifiers, or use --pubchem-registered, --unlink-all or --all.")
         return 1
 
     target_ids = {row.doc["chemical_id"] for row in targets}
 
-    # Which rows point at them, per module.
+    # Which rows will be unlinked, per module: every linked row for the two
+    # reset modes, otherwise only the rows pointing at the targets.
     users: dict[str, list] = defaultdict(list)
     counts: dict[str, int] = defaultdict(int)
     for label, model in LINKED_MODELS:
         for row in all_rows(db, model):
-            if row.chemical_id in target_ids:
+            links = links_of(row)
+            if links and (args.unlink_all or args.all or links & target_ids):
                 users[label].append(row)
                 counts[label] += 1
-
-    print(f"{len(targets)} chemical entries to remove\n")
-    for row in targets[:20]:
-        doc = row.doc
-        print(
-            f"  {doc['chemical_id']}  {str(doc.get('name'))[:38]:40} "
-            f"cas={doc.get('cas_number') or '-'}"
-        )
-    if len(targets) > 20:
-        print(f"  … and {len(targets) - 20} more")
-
     total = sum(counts.values())
-    print(f"\n{total} rows point at them and will be unlinked:")
+
+    if args.unlink_all and not args.all:
+        print(f"REGISTRY RESET, step 1 — unlink every row; keep all {len(chemicals)} chemical entries\n")
+    elif args.all:
+        print(f"REGISTRY RESET, step 2 — unlink every row AND remove all {len(targets)} chemical entries\n")
+    else:
+        print(f"{len(targets)} chemical entries to remove\n")
+        for row in targets[:20]:
+            doc = row.doc
+            print(
+                f"  {doc['chemical_id']}  {str(doc.get('name'))[:38]:40} "
+                f"cas={doc.get('cas_number') or '-'}"
+            )
+        if len(targets) > 20:
+            print(f"  … and {len(targets) - 20} more")
+
+    print(f"{total} rows will be unlinked:")
     for label, _ in LINKED_MODELS:
         if counts[label]:
             print(f"  {label:12} {counts[label]}")
@@ -104,27 +192,33 @@ def main() -> int:
 
     if not args.apply:
         db.rollback()
-        print("\nReport only — nothing written. Re-run with --apply.")
+        print("\nReport only — nothing written. Back up (./container-py.sh backup), then re-run with --apply.")
         return 0
 
     # Unlink first. If this half succeeds and the delete does not, the data is
     # still consistent: rows simply show their source names.
+    unlinked = 0
+    everything = args.unlink_all or args.all
     for rows in users.values():
-        for row in rows:
-            doc = dict(row.doc)
-            doc.pop("chemical_id", None)
-            row.doc = doc
-            row.chemical_id = None
-    db.commit()
+        unlinked += unlink_rows(db, rows, apply=True, targets=None if everything else target_ids)
+
+    if args.unlink_all and not args.all:
+        print(f"\nUnlinked {unlinked} rows. All {len(chemicals)} chemical entries kept.")
+        print("Run ./verify-deploy.sh to confirm no dangling links were left.")
+        return 0
 
     for row in targets:
         db.delete(row)
     db.commit()
 
     remaining = db.query(Chemical).count()
-    print(f"\nRemoved {len(targets)} entries, unlinked {total} rows. {remaining} chemicals remain.")
+    print(f"\nRemoved {len(targets)} entries, unlinked {unlinked} rows. {remaining} chemicals remain.")
     print("Run ./verify-deploy.sh to confirm no dangling links were left.")
     return 0
+
+
+def main() -> int:
+    return run()
 
 
 if __name__ == "__main__":

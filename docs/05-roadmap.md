@@ -89,7 +89,7 @@ codes, the way phase R (the registry reset) is CR and SD at once.
 | SM | SLIMS three-row-header upload, table, detail view | **SM-1 · Sort, search, filter and views**, after CR-1 proves the pattern | 🔜 |
 | TX | XLSX upload, table | **TX-1 · A real study export as a template spec** | ⏸ a file |
 | QC | Read-only console, the query cookbook | **QC-1 · Saved queries and download** | 🔜 |
-| SH | Phases 00–05b: the Python backend, PostgreSQL option, public-repository hygiene, platform verification, the document set, reproducible builds and CI; SH-1 module names ✅ (2026-09-08) | **SH-2 · Schema normalisation** (was phase 06), after the tables have their filters | 🔜 |
+| SH | Phases 00–05b: the Python backend, PostgreSQL option, public-repository hygiene, platform verification, the document set, reproducible builds and CI; SH-1 module names ✅ (2026-09-08) | **SH-3a · Token gate**, the first rung of the [authentication ladder](13-authentication.md), as soon as its decisions are agreed; **SH-2 · Schema normalisation** after the tables have their filters | 📝 SH-3a · 🔜 SH-2 |
 
 ---
 
@@ -176,12 +176,15 @@ attached to a registered compound only when the registry says so.
 | 00–05b | The Python backend, the PostgreSQL option, public-repository hygiene, platform verification, the document set, reproducible builds and CI | — [build log](HANDBOOK.md#7-the-build-phase-by-phase) | — | ✅ |
 | SH-1 | **Module names.** *Chemicals* → **Chemical Registry**, *Samples* → **Sample Management**, *Screening* → **Screening Data** in the sidebar, page headings, dashboard tiles, the interactive architecture page and every document that names them; every address unchanged — [phase SH-1](04-phase-tutorials/phase-sh-1-module-names.md) | The names should say what the modules are | — | ✅ v2.9.0 (2026-09-08) |
 | **SH-2** | **Schema normalisation** (was phase 06): the frequently filtered and sorted fields promoted from the JSON document into indexed columns, without changing the API. Read the design rule first: [`02-architecture.md`](02-architecture.md#the-one-design-rule-everything-else-follows-from) | Per-column filters (CR-1, SM-1) read every row's JSON; measurable now | the list of hot fields, proposed from the client's filters and `store.py`, signed off before any migration | 🔜 |
-| **SH-3** | **Authentication** (was phase 07): a login in front of `/api/*`, behind a feature flag | The largest gap; deliberate for an internal network, first thing a wider audience needs | a decision between corporate SSO/OIDC and a token scheme | ⏸ |
-| SH-4 | Role-based access, audit trail and version history, rate limiting | Meaningless without identity | SH-3 | ⏸ |
+| **SH-3a** | **Token gate** — the first rung of the authentication ladder (was phase 07, now three rungs, planned in [`13-authentication.md`](13-authentication.md)): one feature flag `AUTH_MODE`, one guard on every route, one open health route, a login page, `verify-deploy.sh --token`; a shared secret closes the open port this week | The largest gap; needs nothing from anyone else; tokens remain for scripts on every later rung | decisions A2, A4, A7 in the plan | 📝 |
+| **SH-3b** | **Local accounts** — usernames, Argon2-hashed passwords, a signed session cookie, three roles, `manage_users.py`; in full, or only one break-glass admin (decision A3) | Gives *who*, which unlocks the audit trail and per-person revocation | SH-3a; decision A3 | 📝 |
+| **SH-3c** | **Single sign-on** — OpenID Connect against the organisation's identity provider, roles from a group claim; the destination | Leavers lose access the day they leave; no password held here | SH-3a; an application registration from the identity team — [ask for it now](13-authentication.md#what-to-ask-the-organisation-for-now); decisions A1, A5, A6, A8 | ⏸ the registration |
+| SH-4 | Role-based access everywhere, audit trail and version history, rate limiting | Meaningless without identity | SH-3b or SH-3c | ⏸ |
 | SH-5 | Remove the sixteen one-line stubs left at the old document paths by phase 05 | Due since v2.4 | nothing | 🔜 |
 | SH-6 | Walk the Windows guide on a real PC, then a Windows CI runner | The guide is written and says *untested* | a Windows machine | ⏸ |
 | SH-7 | Export from every module in the four formats (the screening table has it) | Convenience; the API already returns the data | nothing | 🔜 |
 | SH-8 | A `LICENSE` file | Public on GitHub without one legally means all rights reserved | the owner's decision | ⏸ |
+| SH-9 | `container-py.sh rebuild` and `restart` wait until the app answers before returning | A probe in the first two seconds after a rebuild fails with an SSL error and looks like a fault (seen on 2026-09-08) | nothing | 🔜 |
 
 ---
 
@@ -196,7 +199,8 @@ flowchart LR
     SD1 --> CR5["CR-5 unregistered review"]
     CR5 --> CR1["CR-1 sort · filter"] --> CR2["CR-2 views"]
     CR2 --> CR4["CR-4 incomplete entries + PubChem review"]
-    CR4 --> SH2["SH-2 schema normalisation"] --> SH3["SH-3 authentication"]
+    CR4 --> SH2["SH-2 schema normalisation"]
+    SD1s -.-> SH3a["SH-3a token gate<br/>any time, two days"] --> SH3c["SH-3c single sign-on<br/>when the registration arrives"]
 ```
 
 1. **SH-1 first** because it was hours of work, touched no data, and every
@@ -218,6 +222,11 @@ flowchart LR
    loop; they need real registered entries to be worth testing against.
 6. **SH-2 after the tables have their filters**, because the hot-field list
    is read off the filters people actually use.
+7. **The authentication ladder runs beside the rest, not after it.** SH-3a
+   is two days and needs nothing from anyone; it can go in between any two
+   phases above once its decisions are agreed. The registration request for
+   single sign-on is made now because it is the long pole; SH-3c follows
+   whenever it arrives ([`13-authentication.md`](13-authentication.md)).
 
 ---
 

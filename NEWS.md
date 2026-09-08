@@ -10,6 +10,39 @@ change you are getting.
 
 ---
 
+## v2.10.0 — 2026-09-08 — "A lock this week, the badge reader when it arrives"
+
+A planning release: no application code changed. The owner asked how a
+login could be added, what the ways in are, and how each is built, with
+single sign-on as the destination.
+
+**Added**
+- **The authentication plan**,
+  [`docs/13-authentication.md`](docs/13-authentication.md): what a login is
+  (three ideas people run together), where the system stands today, and a
+  ladder of three rungs behind one feature flag — a shared token gate in
+  days, local accounts with hashed passwords and roles, then single sign-on
+  through the organisation's identity provider. Each rung is explained with
+  its flow, its pieces, its effort, what it protects against and what it
+  does not; seven other ways in are judged with a verdict and a trigger;
+  the rules that hold on every rung; how a person and a script log in at
+  each; a checklist of what to ask the identity team for **now**, because
+  the registration is the long pole; eight decisions for the owner; and the
+  three phases SH-3a, SH-3b, SH-3c with what "done" means.
+- **Decision records.** A `docs/adr/` folder in the shape my other projects
+  use, with [ADR 0001](docs/adr/0001-authentication-ladder.md) recording
+  the ladder decision, its alternatives and its consequences.
+- The roadmap's shared spine now carries SH-3a/b/c and a small SH-9
+  (the rebuild command should wait until the app answers); the product
+  roadmap's verdict, the architecture and operations security sections,
+  the README index and nine glossary entries point at the plan; one figure.
+
+**Deliberately not done**
+- No code, no dependency, no setting. The token gate is two days of work
+  once decisions A2, A4 and A7 are agreed.
+
+---
+
 ## v2.9.0 — 2026-09-08 — "Signs that say what the department is"
 
 Phase SH-1, the first phase named by its track code. Tutorial:

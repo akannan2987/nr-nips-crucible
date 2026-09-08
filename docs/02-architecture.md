@@ -639,8 +639,10 @@ uvicorn `--workers N`, and a caching layer if ever needed.
 
 ### Future Enhancements
 
-- [ ] Authentication (SSO)
-- [ ] Authorization (role-based access)
+- [ ] Authentication — planned as a ladder (token gate → local accounts →
+      single sign-on), one guard dependency on every route, one open health
+      route: [`13-authentication.md`](13-authentication.md), [ADR 0001](adr/0001-authentication-ladder.md)
+- [ ] Authorization (role-based access) — after identity, see the same plan
 - [ ] Rate limiting
 - [ ] Audit logging
 

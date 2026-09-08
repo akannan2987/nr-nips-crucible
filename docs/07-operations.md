@@ -808,7 +808,7 @@ client/dist/       # build output
 
 ### Known gaps / future enhancements
 
-- [ ] **SSO / authentication** — none yet (HTTPS is transport encryption only). A FastAPI dependency or an authenticating reverse proxy is the natural hook; plan before wider rollout.
+- [ ] **Authentication** — none yet (HTTPS is transport encryption only). Planned as three rungs behind one flag, `AUTH_MODE`: a token gate (days), local accounts, then single sign-on through the organisation's identity provider. What each rung needs, how the operator turns it on, and what to ask the identity team for now: [`13-authentication.md`](13-authentication.md). When SH-3a ships, this section gains the runbook and the environment-variable table gains `AUTH_MODE` and `CRUCIBLE_TOKEN`.
 - [ ] Role-based access control (RBAC)
 - [ ] Rate limiting and audit logging
 - [x] Certificate-expiry monitoring — done: `./cert-expiry-check.sh` (see [Certificate-expiry monitoring](#certificate-expiry-monitoring))

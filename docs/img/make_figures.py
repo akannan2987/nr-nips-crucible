@@ -372,6 +372,36 @@ def fig_module_names() -> None:
     write("fig_module_names.svg", svg(W, H, "The sidebar before and after: Chemicals, Samples and Screening become Chemical Registry, Sample Management and Screening Data; addresses unchanged", b))
 
 
+def fig_auth_ladder() -> None:
+    W, H = 940, 440
+    b = text(W/2, 34, "Authentication as a ladder: three rungs, one flag, single sign-on at the top", 16, INK, "middle", "bold")
+    # a lock symbol: body + shackle
+    def lock(cx, cy, s, col, open_=False):
+        body = f"<rect x='{cx-s*0.6}' y='{cy-s*0.1}' width='{s*1.2}' height='{s*0.9}' rx='{s*0.15}' fill='{col}' fill-opacity='0.18' stroke='{col}' stroke-width='2'/>\n"
+        dx = s*0.55 if open_ else 0
+        shackle = f"<path d='M {cx-s*0.35+dx} {cy-s*0.1} V {cy-s*0.45} A {s*0.35} {s*0.35} 0 0 1 {cx+s*0.35+dx} {cy-s*0.45} V {cy-s*0.1}' fill='none' stroke='{col}' stroke-width='2.4'/>\n"
+        return body + shackle
+    rungs = [
+        (60,  "rung 0 · today", "open port", ["HTTPS only", "no login, nobody recorded"], LINE, True),
+        (280, "rung 1 · SH-3a", "token gate", ["one shared secret", "scripts use it forever"], COLOURS["screening"], False),
+        (500, "rung 2 · SH-3b", "local accounts", ["username + hashed password", "roles: viewer · editor · admin"], COLOURS["sample"], False),
+        (720, "rung 3 · SH-3c", "single sign-on", ["the corporate login vouches", "no password held here"], COLOURS["chemical"], False),
+    ]
+    for i, (x, code, title, rows, col, open_) in enumerate(rungs):
+        top = 190 - i * 40
+        b += box(x, top, 170, 160, PAPER, col, 10)
+        b += text(x + 85, top + 20, code, 10.5, MUTED)
+        b += lock(x + 85, top + 56, 24, col, open_)
+        b += text(x + 85, top + 104, title, 13, col, "middle", "bold")
+        b += lines(x + 85, top + 124, rows, 10, INK, "middle", 14)
+        if i < 3:
+            b += arrow(x + 172, top + 80, x + 218, top + 80 - 40, ACCENT)
+    b += box(60, 362, 830, 30, PANEL, ACCENT, 6)
+    b += text(475, 382, "one flag, AUTH_MODE = off · token · local · sso — and one open route, /api/health, so the monitor keeps working", 11, INK, "middle", "bold", "ui-monospace,Menlo,Consolas,monospace")
+    b += text(W/2, 412, "each rung keeps what the one below gave: tokens for scripts on every rung, a break-glass admin under single sign-on", 11, INK)
+    b += text(W/2, 430, "everyday version: fit a lock this week, keep the key for the cleaners, and install the badge reader when the badge office delivers", 10.5, MUTED)
+    write("fig_auth_ladder.svg", svg(W, H, "Three rungs from an open port to single sign-on: a token gate, local accounts, then the corporate identity provider; one feature flag; each rung keeps what the one below gave", b))
+
 def fig_container_lunchbox() -> None:
     W, H = 940, 320
     b = text(W/2, 34, "The container is the isolation — the same sealed lunchbox on every platform", 16, INK, "middle", "bold")
@@ -503,6 +533,6 @@ def logo() -> None:
 
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
-              fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_container_lunchbox, fig_setup_flow, fig_timeline,
+              fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_container_lunchbox, fig_setup_flow, fig_timeline,
               fig_requirements_lock, cover, logo):
         f()

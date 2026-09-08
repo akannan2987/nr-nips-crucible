@@ -351,7 +351,25 @@ is one; the moving dots follow the same curves as the drawn arrows.
 
 **Strangler fig** — a way of replacing a running system: build the new one to behave identically, prove it, swap it in behind the same front end, then remove the old one. Named after a plant that grows around a host tree until the host can go. *Everyday version:* replacing a car's engine while keeping the dashboard and the key.
 
-**SSO / OIDC** — *single sign-on*: the organisation's existing identity service vouches for a user, so there is no separate password. *OpenID Connect* is the standard protocol it speaks. *Everyday version:* the building's badge system. The alternative, a **token scheme**, is a long secret in a request header — a key cut per person.
+**SSO / OIDC** — *single sign-on*: the organisation's existing identity service vouches for a user, so there is no separate password. *OpenID Connect* is the standard protocol it speaks. *Everyday version:* the building's badge system. The alternative, a **token scheme**, is a long secret in a request header — a key cut per person. Crucible's plan uses both, as rungs of one ladder: [`13-authentication.md`](13-authentication.md).
+
+**Authentication vs authorisation** — *authentication* is proving who you are (showing the badge); *authorisation* is what you may then do (which doors it opens). Crucible has neither yet; the plan adds the first in three rungs and the second as roles.
+
+**Identity provider** — the organisation's central login service, which already knows every employee and vouches for them to applications. *Everyday version:* the badge office. Single sign-on is an application trusting it instead of keeping its own passwords.
+
+**Token (API key)** — a long random string sent in a request header; whoever holds it is trusted. The first rung of the authentication ladder, and the way scripts log in on every rung. *Everyday version:* a key cut for a door — useful, but it does not say who is holding it.
+
+**Session and cookie** — after a login the server remembers *this browser* for a while (the session) by giving it a small signed note it sends back with every request (the cookie). *Everyday version:* the visitor sticker you wear all day after signing in at reception. Flags on the cookie (`HttpOnly`, `Secure`, `SameSite`) stop scripts, plain-HTTP connections and other websites from using it.
+
+**Password hashing** — storing a scrambled, one-way version of a password so that the database can check one but never reveal it. *Everyday version:* keeping a fingerprint of the key rather than the key. The plan uses Argon2id, the current recommendation, through a library — never home-made.
+
+**Feature flag** — a setting that turns a capability on or off without changing code. `AUTH_MODE` (`off`, `token`, `local`, `sso`) is one; it lets the login be introduced without locking anyone out mid-week and lets tests run with it off.
+
+**Break-glass account** — one local administrator login kept for the day the identity provider is unreachable or a role mapping is wrong. *Everyday version:* the physical key in the box marked *emergency*.
+
+**Redirect URI, client ID, client secret, claim** — the four words the identity team will use when registering Crucible for single sign-on: where to send the user back after login; the application's own identifier; the application's own secret (into `.env.local`, never git); and one fact the provider states about the user (name, e-mail, groups). All four are explained with the flow in [`13-authentication.md`](13-authentication.md#rung-3--single-sign-on).
+
+**Architecture decision record (ADR)** — a one-page note recording one design decision: context, decision, alternatives, consequences; never edited afterwards, only superseded. Kept in [`docs/adr/`](adr/README.md), as in my other projects. *Everyday version:* the minutes of the meeting where the choice was made.
 
 **Role-based access control (RBAC)** — what each identity may do: read, upload, delete, administer. Meaningless without a login, which is why it waits on authentication.
 

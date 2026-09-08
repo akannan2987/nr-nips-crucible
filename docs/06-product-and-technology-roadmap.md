@@ -149,9 +149,15 @@ knowing who. *Cost:* SSO means integrating with a corporate identity
 provider (an external dependency and a support relationship); a token scheme
 means issuing and rotating secrets by hand. Either needs a **feature flag**
 so that internal users are not locked out mid-week.
-*Verdict:* **Required now** (phase 07) — *decision pending:* SSO/OIDC if the
-identity provider is reachable from the VM; otherwise tokens first, SSO as
-the trigger for a wider rollout.
+*Verdict:* **Required now**, as a ladder — *decided in principle on
+2026-09-08, details pending the owner's answers:* a token gate first (SH-3a,
+days, needs nothing from anyone), local accounts only as far as needed
+(SH-3b), and **single sign-on as the destination** (SH-3c, when the identity
+team's application registration arrives — requested now, because it is the
+long pole). The full plan, with every method explained, the ones rejected,
+and what to ask the organisation for, is
+[`13-authentication.md`](13-authentication.md); the decision is
+[ADR 0001](adr/0001-authentication-ladder.md).
 
 ### Role-based access control
 
@@ -436,7 +442,7 @@ marketed.
 | Multi-user hosted deployment | Recommended later | A second laboratory |
 | Desktop packaging | Not needed | Field site with no runtime allowed |
 | Licensing and payments | Not needed | An external customer |
-| Authentication (SSO/OIDC or tokens) | **Required now** (phase 07) | Decision on the identity provider |
+| Authentication — a ladder: token gate → local accounts → SSO ([plan](13-authentication.md)) | **Required now** (SH-3a/b/c) | SH-3a: the owner's go · SH-3c: the identity team's registration |
 | Role-based access control | Recommended later | Authentication + a second user class |
 | Audit trail and version history | Recommended later | Authentication |
 | Rate limiting | Optional | Authentication + a misbehaving client |

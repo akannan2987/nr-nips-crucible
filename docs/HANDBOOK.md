@@ -45,12 +45,12 @@ specialised pages; this page tells you which one to read, when, and why.
 
 | | |
 |---|---|
-| **Version** | 2.9.0 (2026-09-08) |
+| **Version** | 2.10.0 (2026-09-08) |
 | **Status date** | 2026-09-08 |
 | **Tests** | 105 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | SH-1 — Module names ✅ (2026-09-08): the sidebar, pages, dashboard and documents say *Chemical Registry*, *Sample Management*, *Screening Data*; every address unchanged — [phase SH-1](04-phase-tutorials/phase-sh-1-module-names.md) |
 | **Phase in progress** | **R — the registry reset** 🔨 (tracks CR + SD): **R-1 done on production 2026-09-08** (every row unlinked, 664 entries kept, backup held); R-2 runs only on the owner's go, after the new rule is agreed; R-3 is now **SD-1, specified 📝** — the registry-first rule, written from the owner's description on 2026-09-08 and awaiting agreement — [phase R](04-phase-tutorials/phase-r-registry-reset.md) · [the specification](09-chemical-identification.md#the-next-rule-registry-first--specification) |
-| **Plan** | Six **tracks**, one per module and a shared spine, each with its next phase — [`05-roadmap.md`](05-roadmap.md). Next in order: SD-1 agreed 📝 → R-2 → CR-3 every way in 🔜 → SD-1 build → CR-5 unregistered review → CR-1/CR-2 table → CR-4 incomplete entries → SH-2 schema normalisation → SH-3 authentication |
+| **Plan** | Six **tracks**, one per module and a shared spine, each with its next phase — [`05-roadmap.md`](05-roadmap.md). Next in order: SD-1 agreed 📝 → R-2 → CR-3 every way in 🔜 → SD-1 build → CR-5 unregistered review → CR-1/CR-2 table → CR-4 incomplete entries → SH-2 schema normalisation; beside them, the **authentication ladder** SH-3a token gate 📝 → SH-3b local accounts → SH-3c single sign-on ⏸ the identity team's registration — [`13-authentication.md`](13-authentication.md) |
 | **Production** | one RHEL 8 VM, one container, one SQLite file: 49,065 screening rows, 664 registered chemicals, **0 rows linked** since R-1 on 2026-09-08 (by design; the reset is in progress) |
 
 **Open items, none blocking:**
@@ -120,6 +120,7 @@ does not record a date, it says so rather than guessing.
 | 2026-09-08 | **v2.6.0–2.7.0.** Link and unlink buttons on the screening table, select all matching rows, a confirmation before a link, per-chemical summaries. R-1 run on production: every row unlinked, the entries kept. |
 | 2026-09-08 | **v2.8.0.** The plan reorganised into six tracks, one per module and a shared spine; the registry-first rule specified from the owner's description, to be agreed before the registry is emptied. |
 | 2026-09-08 | **v2.9.0.** SH-1: the modules renamed to say what they are — Chemical Registry, Sample Management, Screening Data; addresses unchanged. |
+| 2026-09-08 | **v2.10.0.** The authentication plan: a ladder from an open port to single sign-on, every method explained and judged, the first decision record. |
 
 ---
 
@@ -370,7 +371,7 @@ code (`phase-cr-3-every-way-in.md`). What each track does next is
 | R | CR · SD | Registry reset | `--unlink-all` and `--all` on the removal script, batched and gated, with the script's first six tests; the two-step procedure on production; then the new identification logic | [`phase-r-registry-reset.md`](04-phase-tutorials/phase-r-registry-reset.md) | 2026-09-08 (v2.5.0 tools · v2.6.0 buttons · v2.7.0 match, confirm, summaries) | 🔨 R-1 done 2026-09-08 · R-2 awaiting go after SD-1 is agreed · R-3 written as the SD-1 specification 📝 (2026-09-08) |
 | SH-1 | SH | Module names | *Chemicals*, *Samples*, *Screening* become *Chemical Registry*, *Sample Management*, *Screening Data* in the sidebar, the page headings, the dashboard tiles, the interactive architecture page and every document; no address or API path changed | [`phase-sh-1-module-names.md`](04-phase-tutorials/phase-sh-1-module-names.md) | 2026-09-08 (v2.9.0) | ✅ |
 | 06 (SH-2) | SH | Schema normalisation | The frequently-filtered fields promoted from JSON into indexed columns, without changing the API or breaking the design rule | `04-phase-tutorials/phase-06-schema-normalisation.md` | — | 🔜 |
-| 07 (SH-3) | SH | Authentication | A login in front of `/api/*`, behind a feature flag so internal users are not locked out mid-week | `04-phase-tutorials/phase-07-authentication.md` | — | 🔜 |
+| 07 (SH-3a/b/c) | SH | Authentication, as a ladder | A token gate (SH-3a), local accounts (SH-3b), single sign-on through the organisation's identity provider (SH-3c) — one flag, one guard on every route, one open health route; planned in [`13-authentication.md`](13-authentication.md), decided in [ADR 0001](adr/0001-authentication-ladder.md) | `04-phase-tutorials/phase-sh-3a-token-gate.md` and siblings | — | 📝 SH-3a · ⏸ SH-3c on the registration |
 
 Version-by-version detail, including what each release deliberately did *not*
 fix, is in [`NEWS.md`](../NEWS.md).
@@ -399,6 +400,12 @@ repeating it.
 | Survive a reboot | the systemd user unit and lingering | [Auto-start on boot](07-operations.md#auto-start-on-boot-systemd) |
 | Reclaim disk after rebuilds | `podman image prune -f` | [Maintenance](07-operations.md#maintenance-and-operational-tasks) |
 | Remove it | `./uninstall.sh --dry-run`, then the mode you mean | [`01-uninstall-macos.md`](01-uninstall-macos.md) · [`01-uninstall-rhel8.md`](01-uninstall-rhel8.md) |
+
+There is no login yet, by design while the system was built on one
+internal network. The plan to add one — a token gate in days, single
+sign-on as the destination, and what to ask the identity team for now — is
+[`13-authentication.md`](13-authentication.md); when its first rung ships,
+this table gains a *turn the login on* row.
 
 Three habits the runbooks assume: back up before any rebuild or bulk write;
 never copy a live database file with `cp` (use the backup command, which uses
@@ -491,9 +498,16 @@ In the order the roadmap [argues for](05-roadmap.md#why-this-order):
    the incomplete-entries notice with the PubChem review step.
 6. **SH-2 — schema normalisation:** list the fields people filter on, agree
    them, *then* write the migration.
-7. **SH-3 — authentication:** the largest gap. `/api/*` is open to anyone
-   who can reach the port; deliberate for an internal network, and the
-   first thing a wider audience needs.
+7. **SH-3a, b, c — authentication, as a ladder:** the largest gap. `/api/*`
+   is open to anyone who can reach the port; deliberate for an internal
+   network, and the first thing a wider audience needs. A token gate in
+   days, local accounts only as far as needed, single sign-on as the
+   destination when the identity team's registration arrives — requested
+   now. The plan, every method explained, and what to ask for:
+   [`13-authentication.md`](13-authentication.md). This runs beside the
+   phases above, not after them.
+
+   ![Three rungs from an open port to single sign-on](img/fig_auth_ladder.svg)
 
 ---
 

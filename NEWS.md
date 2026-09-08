@@ -10,6 +10,33 @@ change you are getting.
 
 ---
 
+## v2.10.3 — 2026-09-08 — "An empty registry, on purpose"
+
+**Recorded**
+- **R-2 run on production.** After a backup copied outside the repository,
+  every one of the 664 registry entries was removed: `Removed 664 entries,
+  unlinked 0 rows. 0 chemicals remain.` The 49,065 screening rows are
+  untouched, no row is linked, and all 16 deploy checks pass. The registry
+  stays empty by design until CR-3 gives it a way to be refilled from a
+  curated file and SD-1 attaches rows under the agreed rule
+  ([phase R](docs/04-phase-tutorials/phase-r-registry-reset.md)).
+
+**Changed**
+- **Removing a compound is documented for every route**, side by side —
+  browser, API, terminal — for one, several, every job-created and every
+  compound, with the rule *unlink before you delete* and a decision diagram
+  ([playbook, Part 6](docs/10-user-playbook.md#removing-a-compound-every-route)).
+  The old "never delete through the interface" is gone; the browser is a
+  first-class route, with the caveat until CR-6 ships.
+- **CR-6 specified from the owner's description**: in the browser a
+  compound with linked rows cannot be deleted and the person is told to
+  unlink first; the plain API refuses likewise; the API with `force` and
+  the terminal script unlink automatically, then delete, always in that
+  order ([the specification](docs/09-chemical-identification.md#how-deletion-will-work-after-cr-6--specification)).
+  Scheduled right after R-2, one day.
+
+---
+
 ## v2.10.2 — 2026-09-08 — "Same name, its own commit; and the decisions"
 
 **Recorded**

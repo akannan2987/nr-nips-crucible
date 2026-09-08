@@ -2,7 +2,7 @@
 
 # Phase R — The registry reset: unlink everything, empty the registry, start again
 
-**Version shipped:** 2.5.0 (the tools), 2.6.0 (the buttons), 2.7.0 (select-all-matching, confirmation, per-chemical summaries) · **Date:** 2026-09-08 · **Status:** in progress — **R-1 done on production on 2026-09-08** (the owner, from the browser, then the terminal for a re-linked page); R-2 waits on the owner's go; R-3 was described on 2026-09-08 and is now the **SD-1 specification, agreed the same day**
+**Version shipped:** 2.5.0 (the tools), 2.6.0 (the buttons), 2.7.0 (select-all-matching, confirmation, per-chemical summaries) · **Date:** 2026-09-08 · **Status:** in progress — **R-1 done on production on 2026-09-08** (the owner, from the browser, then the terminal for a re-linked page); **R-2 done on production on 2026-09-08** (the owner, from the terminal, after a backup); R-3 was described on 2026-09-08 and is now the **SD-1 specification, agreed the same day**
 **Prerequisites:** [Phase 04](phase-04-template-ingestion.md) for what identification is; the [playbook](../10-user-playbook.md) Parts 4–6 for the registry as it stands; on the VM, a backup you have copied outside the repository.
 **Learning goal:** you understand what a link between a measurement and a compound is, where it is stored, why removing it is safe and reversible while deleting a compound is not, and how a data operation is made *provably dry* before it is made real.
 **Deliverable:** two new modes on the removal script — `--unlink-all` and `--all` — each gated on `--apply`, batched, and covered by the script's first automated tests; a written procedure for the two steps on production; the registry emptied so that the new identification logic starts clean.
@@ -177,6 +177,16 @@ curl --noproxy '*' -sSk https://localhost:49160/api/stats | head -c 60; echo
 **You should see:** `Removed 664 entries, unlinked 0 rows. 0 chemicals remain.`
 (zero unlinked because R-1 already did that), `{"chemicals":{"total":0,…`,
 and the post-deploy checks passing, including "no dangling chemical links".
+
+**What actually happened on 2026-09-08.** Exactly that. The backup
+(`crucible-20260908-154942.db`, 118 MB) was copied to
+`~/data-backup-20260908-before-R2.db`; the report listed 664 entries and
+0 rows to unlink; the apply run printed `Removed 664 entries, unlinked 0
+rows. 0 chemicals remain.`; the stats endpoint answered chemicals 0,
+screening 49,065; all 16 deploy checks passed. Five minutes, no surprises.
+The registry now stays empty until [CR-3](../05-roadmap.md#cr--chemical-registry)
+gives it a way to be refilled from a curated file and SD-1 attaches the
+rows under the agreed rule.
 
 ---
 

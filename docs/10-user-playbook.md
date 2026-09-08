@@ -653,13 +653,52 @@ anyone offering to relax it.
 
 ## The rule that matters
 
-**Never delete a compound through the web interface or the API.**
+**Unlink before you delete.** A compound's entry can be removed from the
+browser, from the API or from the terminal; what must never happen is
+deleting an entry while measurements still point at it. Those rows are
+then left pointing at something that no longer exists — a page reference
+to a page that has been torn out. It is called a **dangling link**, the
+deploy check reports it, and it has happened once, to 1,897 rows.
 
-Neither unlinks the measurements first. You end up with rows pointing at
-something that no longer exists — a page reference to a page that has been torn
-out. This has already happened once, to 1,897 rows.
+The terminal script does the unlinking for you. The browser does not yet
+check, so in the browser you unlink first, then delete. Roadmap item
+[CR-6](05-roadmap.md#cr--chemical-registry) makes the browser *refuse* to
+delete a compound while rows are linked and tell you how many — and makes
+the forced routes (the API with `force`, the script) unlink automatically
+before deleting; the rule is written out in
+[`09-chemical-identification.md`](09-chemical-identification.md#how-deletion-will-work-after-cr-6--specification). Since the reset (R-1) no row is
+linked to any compound, so today either route is safe; the habit matters
+for when the registry is refilled.
 
-Use the script. It unlinks first, deletes second, and reports before it writes.
+```mermaid
+flowchart LR
+    A["I want to remove a compound"] --> Q{"are any rows<br/>linked to it?"}
+    Q -- "no" --> D["delete it: browser, API or script"]
+    Q -- "yes, or not sure" --> U["unlink its rows first:<br/>Screening Data → search its name →<br/>tick all matching → Unlink"]
+    U --> D
+    S["the terminal script does<br/>both steps in one, with a report first"] -.-> D
+```
+
+## Removing a compound: every route
+
+| You want to… | From the browser | From the terminal (inside the container) |
+|---|---|---|
+| Remove **one** compound | **Chemical Registry** → find it (search by name, identifier or CAS) → the **bin icon** at the end of its row → confirm. If rows are linked to it, first: **Screening Data** → type its name in the search box → tick the header box → *Select all N matching rows* → **Unlink** | `remove_chemicals.py CHEM-000374` to see the report, then the same with `--apply` |
+| Remove **several** | **Chemical Registry** → tick their boxes → **Delete Selected** in the bar above the table → confirm. Unlink their rows first, as above, one compound at a time | `remove_chemicals.py CHEM-000374 CHEM-000375 --apply`, or `--from-file ids.txt --apply` for a long list |
+| Remove **every compound the identification job created** | not in the browser | `remove_chemicals.py --pubchem-registered --apply` |
+| Remove **every compound** (the registry reset, R-2) | **Chemical Registry** → **Clear All** → confirm; unlink everything first with **Unlink all rows…** on the Screening Data page | `remove_chemicals.py --all --apply` — [phase R](04-phase-tutorials/phase-r-registry-reset.md) |
+| Detach rows but **keep** the entry | **Screening Data** → search → select all matching → **Unlink** | `remove_chemicals.py CHEM-000374 --unlink-only --apply` |
+
+Every terminal command is `podman exec crucible-py python /app/backend/scripts/…`
+(`docker exec` on a Mac with Docker), reports first and writes nothing
+without `--apply`, and prints rows per chemical before and after. What the
+script does, with expected output, is in
+[`09-chemical-identification.md`](09-chemical-identification.md#removing-entries-that-are-wrong).
+
+*Everyday version:* before you throw away a folder from the filing cabinet,
+you move the documents inside it somewhere else. The script is the
+colleague who checks the folder for you; in the browser, you check it
+yourself.
 
 ## Removing wrong entries
 

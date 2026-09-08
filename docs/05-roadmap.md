@@ -84,7 +84,7 @@ codes, the way phase R (the registry reset) is CR and SD at once.
 
 | Track | Shipped so far | Next phase | Status |
 |---|---|---|---|
-| CR | Registry CRUD and uploads (CSV, TSV, XLSX, SDF); PubChem linking and enrichment scripts; audit, merge and removal scripts; R-1 unlinked every row (2026-09-08) | **CR-3 · Every way in** (JSON upload, one terminal command), then **CR-1 · Sort, search and filter per column** | 🔨 phase R; 🔜 CR-3 |
+| CR | Registry CRUD and uploads (CSV, TSV, XLSX, SDF); PubChem linking and enrichment scripts; audit, merge and removal scripts; R-1 and R-2 done: the registry is empty by design (2026-09-08) | **CR-6 · Deletion refuses or forces** (specified, one day), then **CR-3 · Every way in** (JSON upload, one terminal command) | 📝 CR-6 · 🔜 CR-3 |
 | SD | Template ingestion of the Cergy export as data; the table built from the file; export in four formats; link and unlink buttons with select-all-matching and a confirmation | **SD-1 · The registry-first rule** — [specified and agreed](09-chemical-identification.md#the-next-rule-registry-first--specification) 2026-09-08; built after R-2 and CR-3 | ✅ agreed · 🔜 build |
 | SM | SLIMS three-row-header upload, table, detail view | **SM-1 · Sort, search, filter and views**, after CR-1 proves the pattern | 🔜 |
 | TX | XLSX upload, table | **TX-1 · A real study export as a template spec** | ⏸ a file |
@@ -100,13 +100,13 @@ route the data arrives on, with nothing silently missing.
 
 | Phase | What it adds | Why it matters | Waits on | Status |
 |---|---|---|---|---|
-| R (with SD) | Registry reset: R-1 unlink every row ✅ · R-2 remove every chemical · R-3 the new attachment rule (became SD-1, agreed) | The identification rule is changing; correcting 664 entries one by one is the wrong tool — [phase R](04-phase-tutorials/phase-r-registry-reset.md) | R-2: a backup and the owner's go — SD-1 was agreed 2026-09-08, so nothing else | 🔨 |
+| R (with SD) | Registry reset: R-1 unlink every row ✅ · R-2 remove every chemical ✅ (2026-09-08) · R-3 the new attachment rule (became SD-1, agreed) | The identification rule is changing; correcting 664 entries one by one is the wrong tool — [phase R](04-phase-tutorials/phase-r-registry-reset.md) | — | ✅ R-1, R-2 · SD-1 to build |
 | **CR-3** | **Every way in.** Register compounds from the browser *and* from a terminal on the server, in JSON as well as today's CSV, TSV, XLSX and SDF: a JSON upload endpoint and page; one command inside the container, `import_file.py chemicals <file>`, that uses the same parsers as the upload page so both routes behave identically; the playbook and the cookbook show all three routes (browser, `curl`, terminal) side by side | After R-2 the registry is empty and must be refilled from a curated file. Today JSON is accepted one record at a time only, and the terminal route is `curl` against the API | nothing — first after R-2 | 🔜 |
 | **CR-1** | **Sort, search and filter per column.** Click a column header to sort; a search box under every header filters that column; a page-size chooser; the parameters go on the existing list endpoint (additive, contract kept), following the screening table's `_apply_filters` pattern | The registry table today has one free-text box, fixed twenty-row pages and no ordering | nothing | 🔜 |
 | **CR-2** | **Three views.** *Compact* (today's columns, the default), *Complete* (every field the records hold, including the spreadsheet's extra columns kept under `metadata`, discovered from the data as the screening table does), *PubChem* (the identifier, title, IUPAC name, formula, weight, SMILES, InChI, InChIKey and how the match was made); a column chooser underneath, remembered per browser | Different questions need different columns: a chemist wants structure fields, a data manager wants provenance | CR-1 (shares the column machinery) | 🔜 |
 | **CR-5** | **Unregistered compounds from screening data.** A notice in the registry, always visible while any exist: *N compounds in the screening data are not registered — review them*. It opens a table of every distinct name + CAS pair with no registry entry, with the row count, source file and dates; download as CSV or XLSX; tick some or all and **Register** them with the basic information the screening data carries (name, CAS, provenance), which also links their rows — never asking PubChem | The other half of the registry-first rule: rows that could not attach must be visible somewhere, and the decision to register is the user's | SD-1 (defines the unregistered set) | 🔜 |
 | **CR-4** | **Incomplete entries.** A definition of *complete* (a named set of fields, signed off first — a missing CAS is **not** by itself incomplete, since a compound may validly have none; *Mark as complete* covers such entries); a notice in the registry, always visible while any entry is incomplete: *N registered compounds are missing metadata — review them*; a table of those entries and what each lacks; download; **Mark as complete** for entries that will never have more; **Fetch from PubChem** for the ticked entries, by name + CAS agreement, producing a review table that shows, per compound, each missing field and the value PubChem offers, so the user ticks what to accept before anything is written to the registry | Entries registered from screening data carry a name and a CAS number and nothing else; the gaps must be visible and filled deliberately, with a person deciding | CR-5 (produces the incomplete entries) and the field-set sign-off | 🔜 |
-| CR-6 | Deleting a chemical through the API unlinks its rows first (the removal script does; the endpoint does not) | Orphaned pointers are the failure mode lesson 22 records | nothing; the response shape is kept, the behaviour is announced | 🔜 |
+| **CR-6** | **Deletion refuses or forces, by who is asking** — [specified](09-chemical-identification.md#how-deletion-will-work-after-cr-6--specification): in the browser a compound with linked rows **cannot** be deleted; the person is told how many rows and sent to unlink them first; the plain API answers 409 with the count; the API with `force=true` and the terminal script **unlink automatically, then delete**, always in that order, and report both counts | Orphaned pointers are the failure mode lesson 22 records; a person must not delete by accident, a script that says *force* has said it knows | nothing — specified 2026-09-09; the plain API's refusal is a contract change announced in the release note; **right after R-2** (one day) | 📝 next after R-2 |
 | CR-7 | Compound-name normalisation: hold house-style names (`tertiobutyl` for `tert-butyl`) as synonyms so the strict PubChem match in CR-4 finds them | Around 456 compounds carry a valid CAS and a name external databases do not recognise | CR-4 | 🔜 |
 | CR-8 | Merge duplicate entries from the browser (the script exists) | A registry rebuilt by hand will acquire duplicates | CR-1 | 🔜 |
 
@@ -195,8 +195,8 @@ attached to a registered compound only when the registry says so.
 ```mermaid
 flowchart LR
     SH1["SH-1 module names ✅<br/>v2.9.0"] --> SD1s["SD-1 spec agreed ✅<br/>2026-09-08"]
-    SD1s --> R2["R-2 empty the registry<br/>backup + go"]
-    R2 --> CR3["CR-3 every way in<br/>refill from a curated file"]
+    SD1s --> R2["R-2 empty the registry ✅<br/>2026-09-08"]
+    R2 --> CR6["CR-6 delete unlinks first<br/>one day"] --> CR3["CR-3 every way in<br/>refill from a curated file"]
     CR3 --> SD1["SD-1 build<br/>the registry-first rule + re-identify"]
     SD1 --> CR5["CR-5 unregistered review"]
     CR5 --> CR1["CR-1 sort · filter"] --> CR2["CR-2 views"]
@@ -209,22 +209,25 @@ flowchart LR
    later document now uses the final names. Done, v2.9.0.
 2. **SD-1 is agreed before R-2 runs.** Emptying the registry only makes sense
    once we know the rule the refilled registry must satisfy. Agreed on
-   2026-09-08; R-2 now waits only on the owner's go, after the demo.
-3. **CR-3 before the SD-1 build.** Under the new rule nothing attaches until
+   2026-09-08; R-2 run the same day, after a backup: 664 entries removed,
+   registry empty by design.
+3. **CR-6 right after R-2**, one day, so that removing a compound from the
+   browser is safe on its own before the registry is refilled.
+4. **CR-3 before the SD-1 build.** Under the new rule nothing attaches until
    a compound is registered, so the empty registry has to be refillable from
    a curated file by every route first. The pre-R-1 backup on the server
    still holds the 664 old entries; exported as JSON and reviewed, they are a
    candidate first file.
-4. **SD-1 then CR-5** because they are two halves of one behaviour: the rule
+5. **SD-1 then CR-5** because they are two halves of one behaviour: the rule
    decides what is unregistered; the review table lets a person act on it.
    The re-identify command in SD-1 is what attaches the 49,065 rows already
    loaded once the registry is refilled — there is no need to upload the
    export again.
-5. **CR-1, CR-2, CR-4** are the registry's conveniences and its completeness
+6. **CR-1, CR-2, CR-4** are the registry's conveniences and its completeness
    loop; they need real registered entries to be worth testing against.
-6. **SH-2 after the tables have their filters**, because the hot-field list
+7. **SH-2 after the tables have their filters**, because the hot-field list
    is read off the filters people actually use.
-7. **The authentication ladder runs beside the rest, not after it.** SH-3a
+8. **The authentication ladder runs beside the rest, not after it.** SH-3a
    is two days and needs nothing from anyone; it can go in between any two
    phases above once its decisions are agreed. The registration request for
    single sign-on is made now because it is the long pole; SH-3c follows

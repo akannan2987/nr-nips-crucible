@@ -682,10 +682,16 @@ prevented the whole episode.
 
 ### Removing entries that are wrong
 
-**Never delete a chemical through the interface or `DELETE /api/chemicals/…`.**
-Neither unlinks the rows that point at it, so they are left referencing
-something that no longer exists — rendering as links to nowhere, and reported by
-`verify-deploy.sh` as dangling. That has happened once, to 1,897 rows.
+**Unlink first, then delete.** The browser's delete buttons and
+`DELETE /api/chemicals/…` remove the entry but do not unlink the rows that
+point at it, so those rows are left referencing something that no longer
+exists — links to nowhere, reported by `verify-deploy.sh` as dangling. That
+has happened once, to 1,897 rows. From the browser, unlink the compound's
+rows on the Screening Data page first (the routes, side by side, are in the
+[playbook](10-user-playbook.md#removing-a-compound-every-route)); the
+script below does both steps in one, with a report first. Roadmap item
+[CR-6](05-roadmap.md#cr--chemical-registry) makes the endpoint unlink first,
+after which the browser is safe on its own.
 
 ```bash
 # By identifier — report first
@@ -706,6 +712,38 @@ podman exec crucible-py python /app/backend/scripts/remove_chemicals.py \
 to showing the compound name their source file recorded, which is the honest
 state for a compound whose identity is not established. Registering it again
 later re-links them.
+
+### How deletion will work after CR-6 — specification
+
+> **Status: specified 2026-09-09 from the owner's description, not built.**
+> Phase [CR-6](05-roadmap.md#cr--chemical-registry), one day, right after R-2.
+
+Two rules, one for a person and one for the machine:
+
+| Who is deleting | What happens when rows are still linked to the compound |
+|---|---|
+| **A person, in the browser** | The delete is **refused**. The dialog says *N screening rows are linked to this compound — unlink them first* and offers a link to the Screening Data page with the compound's rows already selected. Nothing is deleted. Once no row is linked, the delete goes ahead after the usual confirmation. The same for *Delete Selected* and *Clear All*: refused while anything is linked, with the counts. |
+| **The API, plain** | `DELETE /api/chemicals/{id}`, `bulk/delete` and `all/clear` answer **409** with the count of linked rows and do nothing — the browser's behaviour, because the browser calls these. |
+| **The API, forced** | The same calls with `force=true` **unlink every linked row first, then delete**, automatically and always in that order, and answer with both counts: rows unlinked, entries deleted. |
+| **The terminal script** | `remove_chemicals.py` already behaves as the forced route: unlink, then delete, with a report first and `--apply` to write. Unchanged. |
+
+*Everyday version:* the filing clerk (the browser) will not let you throw
+away a folder that still has documents in it — you empty it first. The
+archivist with the master key (the forced API, the script) empties it for
+you, always before the folder goes.
+
+**Why two rules and not one.** A person clicking delete may not know rows
+are linked; refusing and saying so is the safe default. A script that asks
+to force has said, in its own code, that it knows. Making the plain API
+refuse is also what makes the browser refuse, without the browser having
+to check anything itself.
+
+**What "done" means:** the four cases above have a test each; the API
+contract tests still pass (with no rows linked, the plain calls behave
+exactly as today); the API reference documents `force` and the 409; the
+playbook's [removal table](10-user-playbook.md#removing-a-compound-every-route)
+loses its "unlink first" caveat for the browser and gains the refusal
+message; a note beside the delete buttons says what the rule is.
 
 ### Merging entries that describe one substance
 
@@ -750,6 +788,9 @@ mode prints the rows per chemical it touches, most first. The full procedure,
 with expected output at each step and the reasoning, is
 [phase R](04-phase-tutorials/phase-r-registry-reset.md); the same actions
 from the browser are in the [playbook](10-user-playbook.md#linking-and-unlinking-by-hand).
+
+**Done on production on 2026-09-08**, both steps, after a backup each;
+the output at each step is recorded in [phase R](04-phase-tutorials/phase-r-registry-reset.md).
 
 ### Confirming afterwards
 

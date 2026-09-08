@@ -18,7 +18,7 @@
 5. [Step 2 — R-1: unlink every row, on production](#step-2--r-1-unlink-every-row-on-production)
 6. [Step 3 — R-2: remove every chemical, on production](#step-3--r-2-remove-every-chemical-on-production)
 7. [Step 4 — R-3: the new identification logic](#step-4--r-3-the-new-identification-logic)
-8. [Checkpoint](#checkpoint)
+8. [How to test it, by every route](#how-to-test-it-by-every-route)
 9. [What this phase deliberately did not do](#what-this-phase-deliberately-did-not-do)
 10. [Publish](#publish)
 
@@ -221,15 +221,103 @@ specification records it. R-2 now waits only on the owner's go.
 
 ---
 
-## Checkpoint
+## How to test it, by every route
 
-For the tools (this commit):
+A phase is not done when the command has run; it is done when the result
+has been checked from every direction a user or a script could look at it.
+Five routes, each with the exact thing to look for. Run them on the machine
+where the phase happened — for R-1 and R-2, the server. *Everyday version:*
+after the removal company has emptied the storeroom, you look through the
+door, you check the inventory list, you ask the caretaker, and you count
+the boxes in the van.
+
+### 1. In the browser
+
+**What:** open the application and look at the three pages the reset
+touched.
+
+**How:** `https://<vm-hostname>:49160` (on a Mac, `http://localhost:49160`).
+
+| Page | What to look at | You should see |
+|---|---|---|
+| Dashboard | the *Chemical Registry* tile | **0** |
+| Chemical Registry | the count above the table | *Showing 0 of 0 chemicals*, an empty table |
+| Screening Data | the row count and the *identified* count beside it | **49,065** rows, **0** identified; every row still shows its compound name from the file |
+| Screening Data → the link icon on any row | the chooser | an empty list: there is nothing registered to link to |
+
+**If instead** the registry still shows entries, the browser is showing a
+cached page: reload with the cache bypassed (Shift-reload). If the
+Screening Data count is not 49,065, stop — rows were lost, and the answer
+is the restore in Step 3.
+
+### 2. Through the API
+
+**What:** ask the same questions a script would.
+
+**How, on the server** (`-k` because the certificate names the full host,
+not `localhost`; on a Mac drop `-k` and use `http://`):
 
 ```bash
-cd backend && .venv/bin/pytest -q tests/test_remove_chemicals.py && cd ..   # expect: 6 passed
+curl --noproxy '*' -sSk https://localhost:49160/api/stats | head -c 90; echo
+curl --noproxy '*' -sSk "https://localhost:49160/api/chemicals?limit=1"
+curl --noproxy '*' -sSk https://localhost:49160/api/screening/columns | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['total'], d['identified'], d['unidentified'])"
 ```
 
-For R-1 and R-2, the outputs quoted in Steps 2 and 3, on production.
+**You should see:** `{"chemicals":{"total":0,…"screening":{"total":49065`;
+an empty `data` list with `total: 0`; and `49065 0 49065`.
+
+**If instead** `python3` is missing or old on the machine (the server's
+system Python is 3.6, which is fine for this), pipe through
+`grep -o '"identified":[0-9]*'` instead.
+
+### 3. From the terminal, with the tools
+
+**What:** the script's own report and the deploy check.
+
+```bash
+podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --all      # report only
+./verify-deploy.sh https://localhost:49160
+```
+
+**You should see:** `REGISTRY RESET, step 2 — unlink every row AND remove
+all 0 chemical entries`, `0 rows will be unlinked`, `Report only — nothing
+written`; and `16 passed, 0 failed`, including *no dangling chemical
+links* and *identification progress reported (0 rows linked)*.
+
+### 4. In the database itself
+
+**What:** count the rows directly, bypassing the application, through the
+read-only SQL console (Query page in the browser, or the endpoint).
+
+```bash
+curl --noproxy '*' -sSk -X POST https://localhost:49160/api/query -H 'Content-Type: application/json' \
+  -d '{"sql": "SELECT (SELECT COUNT(*) FROM chemicals) AS chemicals, (SELECT COUNT(*) FROM screening) AS rows, (SELECT COUNT(*) FROM screening WHERE chemical_id IS NOT NULL) AS linked"}'
+```
+
+**You should see** one row: `chemicals 0, rows 49065, linked 0`. The same
+SQL pasted into the Query page gives the same row. **Why this route
+matters:** the pages and the API read through the same code; the database
+is the one place that cannot agree with them by accident.
+
+### 5. The automated tests, on the Mac
+
+**What:** the script's own tests, which cover unlink-all and remove-all on
+a throwaway database.
+
+```bash
+cd ~/Documents/Work/pandora_toolbox/nr-nips-crucible/backend && .venv/bin/pytest -q tests/test_remove_chemicals.py && cd ..
+```
+
+**You should see:** `8 passed`. On Windows the same command runs under Git
+Bash with `.venv/Scripts/` in place of `.venv/bin/`.
+
+### And the undo
+
+The test of a reversible operation includes knowing the way back. The
+backups from before R-1 and before R-2 are outside the repository on the
+server; `./container-py.sh restore <file>` stops the app, swaps the
+database file and restarts. Not run on 2026-09-08, because every route
+above agreed.
 
 ---
 

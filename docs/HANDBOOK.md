@@ -239,7 +239,10 @@ until you have seen what comes out of them.
    row can be linked to a registered compound or unlinked again by hand —
    [playbook, linking by hand](10-user-playbook.md#linking-and-unlinking-by-hand).
    [Playbook Part 3](10-user-playbook.md#part-3--look-at-what-arrived) explains
-   the two views, the filters and the coloured rows.
+   the two views, the filters and the coloured rows. For the registry's
+   routine jobs — add, load, edit, link, remove, export — one table per
+   task with browser, API and terminal side by side:
+   [`10-registry-tasks.md`](10-registry-tasks.md).
 3. **Ask the API the same question.** The web pages are the API's first
    client, not its only one. Run the first two recipes in
    [`08-api-cookbook.md`](08-api-cookbook.md#getting-your-bearings); every
@@ -347,7 +350,11 @@ folder shows only the private-only files.
 **This is the only build log in the repository.** One row per phase: what it
 delivered, when, and where the tutorial is. Each tutorial follows the same
 shape — why the phase exists, what it built, numbered steps with expected
-output, a checkpoint, what it deliberately did not do, and the publish block.
+output, **how to test it by every route** (browser, API, terminal, the
+database, the automated tests — the owner's rule since 2026-09-08: a phase
+is done when its result has been checked from every direction a user or a
+script could look at it), what it deliberately did not do, and the publish
+block.
 Phases shipped before the tutorials existed are *reconstructed* from the
 release notes and the git log, and say "not recorded" where the history is
 silent rather than inventing a command.
@@ -460,6 +467,9 @@ Follow the playbook in order; it was written for exactly this sequence:
 4. [Part 7 — ask your own questions](10-user-playbook.md#part-7--ask-your-own-questions)
    and [`09-query-cookbook.md`](09-query-cookbook.md): read-only SQL against a
    schema where most fields live inside a JSON column.
+
+Day to day, the registry's routine tasks are one page, every route side by
+side: [`10-registry-tasks.md`](10-registry-tasks.md).
 
 **You are done when** the identification report shows more rows linked than
 unlinked, the audit reports nothing it can measure, and you can write a query

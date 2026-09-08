@@ -48,7 +48,7 @@ per trade is what lets you see, at a glance, what each one is doing next.
 
 | Symbol | Meaning |
 |---|---|
-| ✅ | done and verified on production |
+| ✅ | done and verified on production, by every route — browser, API, terminal, database, tests (the tutorial's *How to test it* section) |
 | 🔨 | in progress — some of it shipped, the rest agreed |
 | 📝 | specified — written down and agreed, no code yet |
 | 🔜 | planned — the approach is written; nothing built |

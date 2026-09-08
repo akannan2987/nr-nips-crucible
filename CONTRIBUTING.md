@@ -222,8 +222,13 @@ last section; the ones every change must respect:
 - **The handbook changes in the same commit** as the work it describes.
 - **Every phase has a tutorial** in `docs/04-phase-tutorials/`, in the shape
   the existing ones use: why it exists, what it built, numbered steps with
-  *what / how / why / you should see / if instead*, a checkpoint, what it
-  deliberately did not do, and the publish block.
+  *what / how / why / you should see / if instead*, a **how to test it, by
+  every route** section (browser, API, terminal, the database, the automated
+  tests — each with the exact thing to look for; the shape is in
+  [phase R](docs/04-phase-tutorials/phase-r-registry-reset.md#how-to-test-it-by-every-route)),
+  what it deliberately did not do, and the publish block. A phase is done
+  when its result has been checked from every direction, not when the
+  command has run.
 - **Every jargon term is explained where it first appears** — bold term, a
   dash, an everyday comparison — and added to
   [`docs/00-glossary.md`](docs/00-glossary.md). A missing term is a bug.

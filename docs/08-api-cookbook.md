@@ -408,6 +408,8 @@ changed by any of them; removing compounds is [a separate, gated script](09-chem
 ## Cleaning up
 
 These commands remove data. Read the caveat on each one before running it.
+Unlink the rows that point at a chemical first — every route for that, and
+for every other registry task, is in [`10-registry-tasks.md`](10-registry-tasks.md).
 
 **How do I delete one chemical?**
 

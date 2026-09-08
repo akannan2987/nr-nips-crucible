@@ -201,6 +201,7 @@ get, and likely mistakes get a named fix.
 | 09 | **[Chemical identification](docs/09-chemical-identification.md)** | Why compound names need identifying; the two-stage rule; maintaining the registry |
 | 09 | **[Query cookbook](docs/09-query-cookbook.md)** | Read-only SQL against the hybrid schema — why queries look unusual here, and recipes that work |
 | 10 | **[The user playbook](docs/10-user-playbook.md)** | **Hands-on start.** Load a file, check it, identify compounds, correct mistakes, ask questions, publish a change — every concept explained from scratch |
+| 10 | **[Chemical Registry tasks](docs/10-registry-tasks.md)** | **Routine registry work, one table per task**, in the order tasks come up: look up, add, load, edit, link, remove, merge, audit, PubChem, export, reset — browser, API and terminal side by side |
 | 11 | **[Lessons learned](docs/11-lessons-learned.md)** | Every bug that real verification found, and what each taught |
 | 12 | **[History](docs/12-history.md)** | The Node → Python migration and other retired decisions |
 | 13 | **[Authentication](docs/13-authentication.md)** | The ladder from an open port to single sign-on: what a login is, three secure ways to add one, why in that order, what to ask the organisation for |

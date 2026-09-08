@@ -22,7 +22,7 @@
 6. [Step 3 — Change the documents that name them](#step-3--change-the-documents-that-name-them)
 7. [Step 4 — Build the client and see it](#step-4--build-the-client-and-see-it)
 8. [Step 5 — Run the checks](#step-5--run-the-checks)
-9. [Checkpoint](#checkpoint)
+9. [How to test it, by every route](#how-to-test-it-by-every-route)
 10. [What this phase deliberately did not do](#what-this-phase-deliberately-did-not-do)
 11. [Publish](#publish)
 
@@ -221,15 +221,17 @@ the intentionally changed figures listed, and `✓ SAFE TO PUSH`.
 
 ---
 
-## Checkpoint
+## How to test it, by every route
 
-```bash
-grep -c "Chemical Registry\|Sample Management\|Screening Data" client/src/components/Layout.jsx   # expect: 8: six sidebar lines, plus the two product-name lines that already said "Sample Management"
-grep -rn "'Chemicals'\|'Samples'\|'Screening'" client/src | wc -l                                  # expect: 0
-```
-
-And in the browser, the sidebar reads *Dashboard · Chemical Registry ·
-Sample Management · Screening Data · Query · Toxicology*.
+| Route | How | You should see |
+|---|---|---|
+| Browser | open the application, read the sidebar; open each renamed page and the dashboard | *Dashboard · Chemical Registry · Sample Management · Screening Data · Query · Toxicology*; the page headings and the dashboard tiles match |
+| Browser, addresses | type `/chemicals`, `/samples`, `/screening` after the host | the same pages open — nothing moved |
+| API | `curl --noproxy '*' -sSk https://localhost:49160/api/chemicals?limit=1` | answers exactly as before the phase: no API path changed |
+| Terminal, the built bundle | `grep -o "Chemical Registry" client/dist/assets/*.js \| head -1` after `npm run build` | one match |
+| Terminal, the source | `grep -rn "'Chemicals'\|'Samples'\|'Screening'" client/src \| wc -l` | `0` |
+| Automated tests | `cd backend && .venv/bin/pytest -q` | `105 passed` — the contract tests prove the addresses are untouched |
+| Deploy check | `./verify-deploy.sh https://localhost:49160` on the server | `16 passed` |
 
 ---
 

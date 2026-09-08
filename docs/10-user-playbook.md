@@ -681,24 +681,10 @@ flowchart LR
 
 ## Removing a compound: every route
 
-| You want to… | From the browser | From the terminal (inside the container) |
-|---|---|---|
-| Remove **one** compound | **Chemical Registry** → find it (search by name, identifier or CAS) → the **bin icon** at the end of its row → confirm. If rows are linked to it, first: **Screening Data** → type its name in the search box → tick the header box → *Select all N matching rows* → **Unlink** | `remove_chemicals.py CHEM-000374` to see the report, then the same with `--apply` |
-| Remove **several** | **Chemical Registry** → tick their boxes → **Delete Selected** in the bar above the table → confirm. Unlink their rows first, as above, one compound at a time | `remove_chemicals.py CHEM-000374 CHEM-000375 --apply`, or `--from-file ids.txt --apply` for a long list |
-| Remove **every compound the identification job created** | not in the browser | `remove_chemicals.py --pubchem-registered --apply` |
-| Remove **every compound** (the registry reset, R-2) | **Chemical Registry** → **Clear All** → confirm; unlink everything first with **Unlink all rows…** on the Screening Data page | `remove_chemicals.py --all --apply` — [phase R](04-phase-tutorials/phase-r-registry-reset.md) |
-| Detach rows but **keep** the entry | **Screening Data** → search → select all matching → **Unlink** | `remove_chemicals.py CHEM-000374 --unlink-only --apply` |
-
-Every terminal command is `podman exec crucible-py python /app/backend/scripts/…`
-(`docker exec` on a Mac with Docker), reports first and writes nothing
-without `--apply`, and prints rows per chemical before and after. What the
-script does, with expected output, is in
-[`09-chemical-identification.md`](09-chemical-identification.md#removing-entries-that-are-wrong).
-
-*Everyday version:* before you throw away a folder from the filing cabinet,
-you move the documents inside it somewhere else. The script is the
-colleague who checks the folder for you; in the browser, you check it
-yourself.
+The routes side by side — one, several or every compound; browser, API and
+terminal — are one table in [`10-registry-tasks.md` → Remove a compound](10-registry-tasks.md#7-remove-a-compound),
+with the other routine registry tasks around it. This Part keeps the
+reasoning and the recovery steps.
 
 ## Removing wrong entries
 

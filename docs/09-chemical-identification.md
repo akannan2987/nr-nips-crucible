@@ -506,6 +506,11 @@ stays readable.
 
 ## Maintaining the registry
 
+> **Looking for the routine tasks — add, load, edit, link, remove, merge,
+> audit, export — by browser, API and terminal side by side?** That is one
+> page: [`10-registry-tasks.md`](10-registry-tasks.md). This section is the
+> detail behind its maintenance rows.
+
 Four scripts, all living inside the container image — so changing any of them
 means rebuilding, not just pulling. Each **reports before it writes**: run it
 without `--apply` first and read what it intends to do.

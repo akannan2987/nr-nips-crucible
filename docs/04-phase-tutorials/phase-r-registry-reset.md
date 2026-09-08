@@ -2,7 +2,7 @@
 
 # Phase R — The registry reset: unlink everything, empty the registry, start again
 
-**Version shipped:** 2.5.0 (the tools; the reset itself is an operation, run by the owner) · **Date:** 2026-09-08 · **Status:** in progress — R-1 built and tested; R-1 and R-2 wait on the owner's go; R-3 waits on the owner's description
+**Version shipped:** 2.5.0 (the tools), 2.6.0 (the buttons), 2.7.0 (select-all-matching, confirmation, per-chemical summaries) · **Date:** 2026-09-08 · **Status:** in progress — **R-1 done on production on 2026-09-08** (the owner, from the browser, then the terminal for a re-linked page); R-2 waits on the owner's go; R-3 waits on the owner's description
 **Prerequisites:** [Phase 04](phase-04-template-ingestion.md) for what identification is; the [playbook](../10-user-playbook.md) Parts 4–6 for the registry as it stands; on the VM, a backup you have copied outside the repository.
 **Learning goal:** you understand what a link between a measurement and a compound is, where it is stored, why removing it is safe and reversible while deleting a compound is not, and how a data operation is made *provably dry* before it is made real.
 **Deliverable:** two new modes on the removal script — `--unlink-all` and `--all` — each gated on `--apply`, batched, and covered by the script's first automated tests; a written procedure for the two steps on production; the registry emptied so that the new identification logic starts clean.
@@ -87,7 +87,8 @@ today, but the script treats all three the same way.
 | `run(argv, db)` | The script's logic callable from a test with a supplied session, so it can be exercised without a container | same |
 | A latent crash fixed | A sample links through a list of chemical identifiers in its document, not a column; the script assumed a column and would have failed on the first sample. Found by the first test (lesson 30) | same |
 | First tests | Six cases: the report writes nothing; removing one entry unlinks only its rows; `--unlink-all` clears column *and* document and keeps chemicals; `--all` empties the registry and the rows keep their source names; the job-only selector; nothing matching is an error | `backend/tests/test_remove_chemicals.py` |
-| Buttons on the Screening page | A link or unlink icon on each row, *Link to a chemical…* and *Unlink* for ticked rows, *Unlink all rows…* with typed confirmation; backed by `POST /api/screening/link` and `/unlink` | `client/src/pages/ScreeningView.jsx`, `backend/app/routers/screening.py` |
+| Buttons on the Screening page | A link or unlink icon on each row, *Link to a chemical…* and *Unlink* for ticked rows or for every row matching the filters, a name-and-CAS confirmation before a link, *Unlink all rows…* with typed confirmation; backed by `POST /api/screening/link` and `/unlink`, whose answers say how many rows of which chemical | `client/src/pages/ScreeningView.jsx`, `backend/app/routers/screening.py` |
+| `--unlink-only` | Detach the rows of named chemicals and keep the entries; every mode prints rows per chemical, most first | `backend/scripts/remove_chemicals.py` |
 | The procedure | Below, and in [`09-chemical-identification.md` → Resetting the registry](../09-chemical-identification.md#resetting-the-registry) | — |
 
 ---
@@ -135,10 +136,17 @@ curl --noproxy '*' -sSk https://localhost:49160/api/screening/columns | python3 
 **Why:** the backup outside the repository is the undo button; the report
 has already been proven dry; the two checks afterwards say what changed.
 
-**You should see:** progress lines every 5,000 rows, then
-`Unlinked 43399 rows. All 664 chemical entries kept.`; `identified: 0`; and
-`16 passed, 0 failed` — the "identification progress reported" check reports
-`0 rows linked`, which is now the intended state.
+**You should see:** the rows-per-chemical breakdown (most first), progress
+lines every 5,000 rows, then `Unlinked 43399 rows. All 664 chemical entries
+kept.`; `identified: 0`; and `16 passed, 0 failed` — the "identification
+progress reported" check reports `0 rows linked`, which is now the intended
+state.
+
+**What actually happened on 2026-09-08:** the owner ran this step from the
+browser (*Unlink all rows…*), re-linked one page of a compound to try the
+buttons, then ran the terminal command, which found and detached exactly that
+page. The registry's 664 entries are untouched; the backup from before R-1
+holds the original links.
 
 **The same step from the browser:** on the Screening page, next to the count
 of linked rows, **Unlink all rows…** opens a confirmation that asks you to

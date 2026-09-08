@@ -10,6 +10,34 @@ change you are getting.
 
 ---
 
+## v2.7.0 — 2026-09-08 — "Which rows, which chemical, are you sure"
+
+Three things the first hands-on use of the link buttons asked for.
+
+**Added**
+- **Act on every matching row, not one page.** Tick the page, then *Select
+  all N matching rows*; link and unlink then apply to every row matching the
+  table's current search and filters, across all pages. The endpoints accept
+  the same filters as the table (`match`), so one request does what the
+  screen shows.
+- **A confirmation before a link is written.** After picking a compound, the
+  chooser shows its name, CAS number, formula and identifier from the
+  registry entry itself, and asks *Yes, link N row(s)*. The registry list is
+  unchanged; the details come from the compound's own record.
+- **Every unlink says what it touched.** The API answers with rows per
+  chemical, most first; the removal script prints the same breakdown in every
+  mode, before and after writing, instead of a bare row count.
+- **`--unlink-only`** on the removal script: detach the rows of named
+  chemicals and keep their entries.
+- Five more tests; the suite is 105.
+
+**Recorded**
+- R-1 of the registry reset was run on production on 2026-09-08 by the owner,
+  from the browser: every screening row unlinked, the 664 registry entries
+  kept, a backup from before it held outside the repository.
+
+---
+
 ## v2.6.1 — 2026-09-08 — "Verify with the curl you have"
 
 **Fixed**

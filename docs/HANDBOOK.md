@@ -45,13 +45,13 @@ specialised pages; this page tells you which one to read, when, and why.
 
 | | |
 |---|---|
-| **Version** | 2.6.1 (2026-09-08) |
+| **Version** | 2.7.0 (2026-09-08) |
 | **Status date** | 2026-09-07 |
-| **Tests** | 100 passing (`cd backend && .venv/bin/pytest`) |
+| **Tests** | 105 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | 05b — Reproducible builds and CI ✅ (2026-09-07): a lock file generated inside the image, the linter, a workflow on the public repository running every check on Linux and macOS |
-| **Phase in progress** | **R — the registry reset** 🔨: the tools are built and tested (`--unlink-all`, `--all`); R-1 and R-2 run on production only on the owner's go; R-3, the new identification logic, waits on the owner's description — [phase R](04-phase-tutorials/phase-r-registry-reset.md) |
+| **Phase in progress** | **R — the registry reset** 🔨: **R-1 done on production 2026-09-08** (every row unlinked, 664 entries kept, backup held); R-2 runs only on the owner's go; R-3, the new identification logic, waits on the owner's description — [phase R](04-phase-tutorials/phase-r-registry-reset.md) |
 | **Next** | 06 — Schema normalisation 🔜 · 07 — Authentication 🔜 |
-| **Production** | one RHEL 8 VM, one container, one SQLite file: 49,065 screening rows, 664 registered chemicals, 88 % of rows linked to a registry entry |
+| **Production** | one RHEL 8 VM, one container, one SQLite file: 49,065 screening rows, 664 registered chemicals, **0 rows linked** since R-1 on 2026-09-08 (by design; the reset is in progress) |
 
 **Open items, none blocking:**
 

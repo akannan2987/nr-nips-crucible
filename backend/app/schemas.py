@@ -131,14 +131,24 @@ class LinkChemicals(_LenientModel):
 
 
 class ScreeningLinkIn(_LenientModel):
-    """Body of POST /api/screening/link: point these rows at one registered chemical."""
+    """Body of POST /api/screening/link: point rows at one registered chemical.
+
+    Rows are named either by `record_ids`, or by `match` — the same filters the
+    table uses (search, chemical_id, tag, filters {column: text}, duplicates),
+    so "every row matching what I am looking at" is one request.
+    """
 
     record_ids: list[str] = []
+    match: dict[str, Any] | None = None
     chemical_id: str | None = None
 
 
 class ScreeningUnlinkIn(_LenientModel):
-    """Body of POST /api/screening/unlink: detach these rows — or every row — from their chemical."""
+    """Body of POST /api/screening/unlink: detach rows from their chemical.
+
+    `record_ids`, or `match` (as above), or `all: true` for every linked row.
+    """
 
     record_ids: list[str] = []
+    match: dict[str, Any] | None = None
     all: bool = False

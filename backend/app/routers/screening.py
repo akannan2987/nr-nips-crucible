@@ -608,26 +608,60 @@ async def upload_excel(
     return response
 
 
+def _resolve_rows(db: Session, record_ids: list[str], match: dict[str, Any] | None, linked_only: bool):
+    """The rows a link/unlink request names: by id, or by the table's filters.
+
+    Returns (rows, not_found). `match` reuses `_apply_filters`, so a request
+    built from what the table shows selects exactly the rows the table shows.
+    """
+    if match is not None:
+        filters = {str(k): str(v) for k, v in (match.get("filters") or {}).items() if v}
+        statement = _apply_filters(
+            select(Screening), match.get("search"), match.get("chemical_id"), match.get("tag"), filters, match.get("duplicates")
+        )
+        if statement is None:
+            statement = select(Screening)
+        if linked_only:
+            statement = statement.where(Screening.chemical_id.is_not(None))
+        return list(db.scalars(statement)), []
+    wanted = set(record_ids)
+    rows = list(db.scalars(select(Screening).where(Screening.id.in_(wanted))))
+    return rows, sorted(wanted - {row.id for row in rows})
+
+
+def _by_chemical(db: Session, rows: list, limit: int = 25) -> tuple[list[dict[str, Any]], int]:
+    """Rows per chemical, most first — the summary a person wants after a bulk unlink."""
+    counts: dict[str, int] = {}
+    for row in rows:
+        cid = row.chemical_id or row.doc.get("chemical_id")
+        if cid:
+            counts[cid] = counts.get(cid, 0) + 1
+    names = _chemical_name_map(db)
+    ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    return [{"chemical_id": cid, "name": names.get(cid) or "Unknown", "rows": n} for cid, n in ranked[:limit]], len(counts)
+
+
 @router.post("/link")
 def link_screening(body: ScreeningLinkIn, db: Session = Depends(get_db)) -> dict[str, Any]:
-    """POST /api/screening/link — point the given rows at one registered chemical.
+    """POST /api/screening/link — point rows at one registered chemical.
 
-    Body: {"record_ids": [...], "chemical_id": "CHEM-000042"}. The chemical must
-    exist; rows that do not are reported back rather than failing the whole
-    request. A link is written in both places it lives (document and column).
+    Body: {"record_ids": [...] | "match": {...}, "chemical_id": "CHEM-000042"}.
+    The chemical must exist; rows named by id that do not are reported back
+    rather than failing the request. A link is written in both places it lives
+    (document and column).
     """
-    if not body.record_ids:
-        raise HTTPException(status_code=400, detail="record_ids is required")
-    if not body.chemical_id or not find_row(db, Chemical, "chemical_id", body.chemical_id):
+    if not body.record_ids and body.match is None:
+        raise HTTPException(status_code=400, detail="record_ids or match is required")
+    chemical = find_row(db, Chemical, "chemical_id", body.chemical_id) if body.chemical_id else None
+    if not chemical:
         raise HTTPException(status_code=404, detail="Chemical not found")
-    wanted = set(body.record_ids)
-    rows = [row for row in db.scalars(select(Screening).where(Screening.id.in_(wanted)))]
-    found = {row.id for row in rows}
+    rows, not_found = _resolve_rows(db, body.record_ids, body.match, linked_only=False)
     linked = set_links(db, rows, body.chemical_id)
+    name = chemical.doc.get("name") or body.chemical_id
     return {
-        "message": f"Linked {linked} screening record(s) to {body.chemical_id}",
+        "message": f"Linked {linked} screening record(s) to {name} ({body.chemical_id})",
         "linked": linked,
-        "not_found": sorted(wanted - found),
+        "not_found": not_found,
     }
 
 
@@ -635,23 +669,31 @@ def link_screening(body: ScreeningLinkIn, db: Session = Depends(get_db)) -> dict
 def unlink_screening(body: ScreeningUnlinkIn, db: Session = Depends(get_db)) -> dict[str, Any]:
     """POST /api/screening/unlink — detach rows from their chemical.
 
-    Body: {"record_ids": [...]} for chosen rows, or {"all": true} for every
-    linked row — the registry reset's first step, from the browser. Rows keep
-    every value they had, including the compound name their source file
-    recorded; only the pointer to a registry entry is cleared, in both places
-    it lives. Nothing is deleted.
+    Body: {"record_ids": [...]} for chosen rows, {"match": {...}} for every row
+    matching the table's filters, or {"all": true} for every linked row — the
+    registry reset's first step, from the browser. Rows keep every value they
+    had, including the compound name their source file recorded; only the
+    pointer to a registry entry is cleared, in both places it lives. Nothing
+    is deleted. The response says how many rows of which chemical were
+    detached (`by_chemical`, most first).
     """
     if body.all:
-        rows = [row for row in db.scalars(select(Screening).where(Screening.chemical_id.is_not(None)))]
+        rows = list(db.scalars(select(Screening).where(Screening.chemical_id.is_not(None))))
         not_found: list[str] = []
     else:
-        if not body.record_ids:
-            raise HTTPException(status_code=400, detail="record_ids is required, or all: true")
-        wanted = set(body.record_ids)
-        rows = [row for row in db.scalars(select(Screening).where(Screening.id.in_(wanted)))]
-        not_found = sorted(wanted - {row.id for row in rows})
+        if not body.record_ids and body.match is None:
+            raise HTTPException(status_code=400, detail="record_ids, match, or all: true is required")
+        rows, not_found = _resolve_rows(db, body.record_ids, body.match, linked_only=True)
+    rows = [row for row in rows if row.chemical_id or row.doc.get("chemical_id")]
+    by_chemical, n_chemicals = _by_chemical(db, rows)
     unlinked = set_links(db, rows, None)
-    return {"message": f"Unlinked {unlinked} screening record(s)", "unlinked": unlinked, "not_found": not_found}
+    return {
+        "message": f"Unlinked {unlinked} screening record(s) from {n_chemicals} chemical(s)",
+        "unlinked": unlinked,
+        "chemicals": n_chemicals,
+        "by_chemical": by_chemical,
+        "not_found": not_found,
+    }
 
 
 @router.get("/{record_id}")

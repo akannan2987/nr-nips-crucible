@@ -358,6 +358,24 @@ curl --noproxy '*' -sS -X POST http://localhost:49160/api/screening/link \
 Row ids come from the list endpoint (`id` on every row) or the record's
 detail view in the browser.
 
+**How do I act on every row of one compound name, not one page of it?** Send
+the table's filters instead of ids; the server resolves them the way the
+table does, across every page:
+
+```bash
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/screening/unlink \
+  -H "Content-Type: application/json" \
+  -d '{"match": {"search": "Phenol, 2,4-di-tertiobutyl"}}'
+```
+
+```json
+{"message":"Unlinked 441 screening record(s) from 1 chemical(s)","unlinked":441,"chemicals":1,"by_chemical":[{"chemical_id":"CHEM-000374","name":"Phenol, 2,4-di-tertiobutyl","rows":441}],"not_found":[]}
+```
+
+`match` takes the same keys the table uses: `search`, `chemical_id`, `tag`,
+`filters` (a column name to the text it must contain), `duplicates`. The same
+shape works for `/link`, with a `chemical_id`.
+
 **How do I detach a row that was linked wrongly?**
 
 ```bash
@@ -375,12 +393,14 @@ curl --noproxy '*' -sS -X POST http://localhost:49160/api/screening/unlink \
 ```
 
 ```json
-{"message":"Unlinked 43399 screening record(s)","unlinked":43399,"not_found":[]}
+{"message":"Unlinked 43399 screening record(s) from 664 chemical(s)","unlinked":43399,"chemicals":664,"by_chemical":[{"chemical_id":"CHEM-000374","name":"Phenol, 2,4-di-tertiobutyl","rows":441},"…"],"not_found":[]}
 ```
 
-The same three actions are buttons on the Screening page: a link or unlink
-icon on each row, *Link to a chemical…* and *Unlink* for ticked rows, and
-*Unlink all rows…*, which asks you to type the words. The registry is never
+The same actions are buttons on the Screening page: a link or unlink icon on
+each row, *Link to a chemical…* and *Unlink* for ticked rows or for every row
+matching your filters, a confirmation showing the compound's name and CAS
+number before a link is written, and *Unlink all rows…*, which asks you to
+type the words. The registry is never
 changed by any of them; removing compounds is [a separate, gated script](09-chemical-identification.md#resetting-the-registry).
 
 ---

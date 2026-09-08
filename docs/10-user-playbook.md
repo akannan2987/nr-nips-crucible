@@ -465,13 +465,31 @@ Screening page:
 
 | You want to… | Do this |
 |---|---|
-| Point one row at the right compound | Click the **link icon** at the end of its row, then pick the compound from the registry list (type part of a name or identifier to filter). |
-| Point many rows at one compound | Tick them, then **Link to a chemical…** in the bar that appears above the table. |
+| Point one row at the right compound | Click the **link icon** at the end of its row, pick the compound from the registry list (type part of a name or identifier to filter), then **confirm**: the chooser shows the compound's name, CAS number, formula and identifier before anything is written. |
+| Point a page of rows at one compound | Tick them, then **Link to a chemical…** in the bar that appears above the table. |
+| Point *every* row of one compound name at a registered compound | Type the name in the search box, tick the box in the table header, then click **Select all N matching rows** in the bar — N is every row matching your search, across all pages — then **Link to a chemical…**. |
 | Detach a row that was linked wrongly | Click the **unlink icon** at the end of its row. The row and its values stay; only the pointer goes. |
+| Detach every row of one compound | Search for it, tick the header box, **Select all N matching rows**, **Unlink**. The confirmation states the count. |
 | Detach every row from every compound | **Unlink all rows…** next to the count of linked rows. It asks you to type `UNLINK ALL`, because the only undo is a backup. This is the first step of a registry reset — [phase R](04-phase-tutorials/phase-r-registry-reset.md). |
 
 A compound that is not registered yet cannot be picked: register it in the
-Chemicals module first. None of these buttons ever deletes a compound.
+Chemicals module first. None of these buttons ever deletes a compound, and
+every unlink tells you how many rows of which chemical it detached.
+
+**The same from the terminal** (inside the container on the VM; `docker` for
+`podman` on a Mac with Docker):
+
+```bash
+# every row of one or more chemicals, keeping the entries — report first, then --apply
+podman exec crucible-py python /app/backend/scripts/remove_chemicals.py CHEM-000374 --unlink-only
+podman exec crucible-py python /app/backend/scripts/remove_chemicals.py CHEM-000374 --unlink-only --apply
+
+# every row of every chemical (the reset's first step)
+podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --unlink-all --apply
+```
+
+Every run prints the rows per chemical it will touch, most first, before
+and after writing.
 
 ## Recovering the ones rejected on their name
 

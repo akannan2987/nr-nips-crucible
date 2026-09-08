@@ -21,6 +21,7 @@ import {
   getDuplicatesSummary,
   screeningExportUrl,
   getChemicalsDropdown,
+  getChemical,
   linkScreening,
   unlinkScreening,
   unlinkAllScreening,
@@ -79,6 +80,8 @@ export default function ScreeningView() {
   // `selected` is the set of row ids ticked on the current page. `linkTarget`
   // is the list of row ids a chooser is open for (one row, or the selection).
   const [selected, setSelected] = useState(() => new Set())
+  // true = act on EVERY row matching the current filters, not only this page
+  const [matchAll, setMatchAll] = useState(false)
   const [linkTarget, setLinkTarget] = useState(null)
   const [chemOptions, setChemOptions] = useState(null)
   const [confirmUnlinkAll, setConfirmUnlinkAll] = useState(false)
@@ -141,7 +144,24 @@ export default function ScreeningView() {
   // The page's tick boxes never outlive the page they were ticked on.
   useEffect(() => {
     setSelected(new Set())
+    setMatchAll(false)
   }, [rows])
+
+  // The filters the table is showing, in the shape the link/unlink endpoints
+  // accept — so "all matching rows" means exactly the rows on screen and on
+  // the pages after it.
+  const currentMatch = useMemo(
+    () => ({
+      search,
+      chemical_id: chemicalFilter,
+      tag,
+      filters: Object.fromEntries(Object.entries(colFilters).filter(([, v]) => v)),
+      duplicates,
+    }),
+    [search, chemicalFilter, tag, colFilters, duplicates]
+  )
+  const target = () => (matchAll ? { match: currentMatch } : { record_ids: [...selected] })
+  const targetCount = () => (matchAll ? pagination.total : selected.size)
 
   const refreshIdentity = useCallback(() => {
     getScreeningColumns()
@@ -158,6 +178,7 @@ export default function ScreeningView() {
     })
 
   const openLinkChooser = (ids) => {
+    // ids: an array for chosen rows, or 'match' for every row matching the filters
     setLinkTarget(ids)
     if (!chemOptions) {
       getChemicalsDropdown()
@@ -167,10 +188,10 @@ export default function ScreeningView() {
   }
 
   const doLink = async (chemicalId) => {
-    const ids = linkTarget || []
+    const t = linkTarget === 'match' ? { match: currentMatch } : { record_ids: linkTarget || [] }
     setLinkTarget(null)
     try {
-      const { data } = await linkScreening(ids, chemicalId)
+      const { data } = await linkScreening(t, chemicalId)
       toast.success(data.message)
       loadScreening()
       refreshIdentity()
@@ -179,10 +200,10 @@ export default function ScreeningView() {
     }
   }
 
-  const doUnlink = async (ids) => {
-    if (!window.confirm(`Unlink ${ids.length} row(s) from their chemical? The rows stay; only the link is cleared.`)) return
+  const doUnlink = async (t, count) => {
+    if (!window.confirm(`Unlink ${count.toLocaleString()} row(s) from their chemical? The rows stay; only the link is cleared.`)) return
     try {
-      const { data } = await unlinkScreening(ids)
+      const { data } = await unlinkScreening(t)
       toast.success(data.message)
       loadScreening()
       refreshIdentity()
@@ -655,20 +676,36 @@ mg_kg_food        5.9481    42.1798        <- DIFFERENT`}
       {/* ---- bulk actions on ticked rows ------------------------------ */}
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-3 bg-purple-50 border border-purple-200 rounded-xl px-4 py-2 text-sm">
-          <span className="font-medium text-purple-800">{selected.size} row(s) ticked on this page</span>
+          <span className="font-medium text-purple-800">
+            {matchAll
+              ? `All ${pagination.total.toLocaleString()} rows matching your filters selected`
+              : `${selected.size} row(s) ticked on this page`}
+          </span>
+          {/* A page is ticked: offer the whole result set, across every page. */}
+          {!matchAll && selected.size === rows.length && pagination.total > rows.length && (
+            <button onClick={() => setMatchAll(true)} className="text-purple-700 underline">
+              Select all {pagination.total.toLocaleString()} matching rows
+            </button>
+          )}
           <button
-            onClick={() => openLinkChooser([...selected])}
+            onClick={() => openLinkChooser(matchAll ? 'match' : [...selected])}
             className="inline-flex items-center gap-1 px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
           >
             <LinkIcon className="h-4 w-4" /> Link to a chemical…
           </button>
           <button
-            onClick={() => doUnlink([...selected])}
+            onClick={() => doUnlink(target(), targetCount())}
             className="inline-flex items-center gap-1 px-3 py-1 border border-red-300 text-red-700 rounded-lg hover:bg-red-50"
           >
             <LinkSlashIcon className="h-4 w-4" /> Unlink
           </button>
-          <button onClick={() => setSelected(new Set())} className="text-gray-500 hover:underline">
+          <button
+            onClick={() => {
+              setSelected(new Set())
+              setMatchAll(false)
+            }}
+            className="text-gray-500 hover:underline"
+          >
             Clear
           </button>
         </div>
@@ -807,7 +844,7 @@ mg_kg_food        5.9481    42.1798        <- DIFFERENT`}
                         </button>
                         {record.chemical_id ? (
                           <button
-                            onClick={() => doUnlink([record.id])}
+                            onClick={() => doUnlink({ record_ids: [record.id] }, 1)}
                             className="text-gray-400 hover:text-red-600"
                             title="Unlink from its chemical — the row stays, only the link is cleared"
                           >
@@ -877,7 +914,7 @@ mg_kg_food        5.9481    42.1798        <- DIFFERENT`}
 
       {linkTarget && (
         <ChemicalChooser
-          count={linkTarget.length}
+          count={linkTarget === 'match' ? pagination.total : linkTarget.length}
           options={chemOptions}
           onPick={doLink}
           onClose={() => setLinkTarget(null)}
@@ -903,6 +940,15 @@ mg_kg_food        5.9481    42.1798        <- DIFFERENT`}
  */
 function ChemicalChooser({ count, options, onPick, onClose }) {
   const [query, setQuery] = useState('')
+  // Step two: the chosen chemical's own record, so the person confirms the
+  // name AND the CAS number before anything is written.
+  const [candidate, setCandidate] = useState(null)
+  const choose = (chemicalId) => {
+    setCandidate({ chemical_id: chemicalId, loading: true })
+    getChemical(chemicalId)
+      .then(({ data }) => setCandidate({ ...data, loading: false }))
+      .catch(() => setCandidate({ chemical_id: chemicalId, loading: false, error: true }))
+  }
   const shown = useMemo(() => {
     if (!options) return []
     const q = query.trim().toLowerCase()
@@ -928,6 +974,41 @@ function ChemicalChooser({ count, options, onPick, onClose }) {
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
+        {candidate ? (
+          <div className="p-5 space-y-4">
+            {candidate.loading ? (
+              <p className="text-sm text-gray-500">Reading the registry entry…</p>
+            ) : (
+              <>
+                <p className="text-sm text-gray-700">
+                  Link <span className="font-semibold">{count.toLocaleString()}</span> row(s) to this registered compound?
+                </p>
+                <dl className="text-sm border border-gray-200 rounded-lg divide-y divide-gray-100">
+                  <div className="flex gap-3 px-3 py-2"><dt className="w-28 text-gray-500">Name</dt><dd className="font-medium text-gray-900">{candidate.name || '—'}</dd></div>
+                  <div className="flex gap-3 px-3 py-2"><dt className="w-28 text-gray-500">CAS number</dt><dd className="font-mono text-gray-900">{candidate.cas_number || '— (none recorded)'}</dd></div>
+                  <div className="flex gap-3 px-3 py-2"><dt className="w-28 text-gray-500">Formula</dt><dd className="font-mono text-gray-900">{candidate.molecular_formula || '—'}</dd></div>
+                  <div className="flex gap-3 px-3 py-2"><dt className="w-28 text-gray-500">Identifier</dt><dd className="font-mono text-gray-900">{candidate.chemical_id}</dd></div>
+                </dl>
+                {candidate.error && (
+                  <p className="text-sm text-amber-700">The registry entry could not be read; check it in the Chemicals module before linking.</p>
+                )}
+              </>
+            )}
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setCandidate(null)} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg">
+                Choose another
+              </button>
+              <button
+                onClick={() => onPick(candidate.chemical_id)}
+                disabled={candidate.loading}
+                className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg disabled:opacity-40"
+              >
+                Yes, link {count.toLocaleString()} row(s)
+              </button>
+            </div>
+          </div>
+        ) : (
+        <>
         <div className="p-4 border-b border-gray-100">
           <input
             autoFocus
@@ -948,7 +1029,7 @@ function ChemicalChooser({ count, options, onPick, onClose }) {
             shown.map((c) => (
               <button
                 key={c.chemical_id}
-                onClick={() => onPick(c.chemical_id)}
+                onClick={() => choose(c.chemical_id)}
                 className="w-full text-left px-4 py-2 text-sm hover:bg-purple-50 border-b border-gray-50"
               >
                 <span className="font-medium text-gray-900">{c.name}</span>
@@ -957,6 +1038,8 @@ function ChemicalChooser({ count, options, onPick, onClose }) {
             ))
           )}
         </div>
+        </>
+        )}
       </div>
     </div>
   )

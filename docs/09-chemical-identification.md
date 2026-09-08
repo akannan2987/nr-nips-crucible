@@ -590,9 +590,13 @@ podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --all --
 
 Rows keep the compound name their source file recorded; only the pointer
 to a registry entry is cleared, in both places it lives (the indexed column
-and the stored document). The full procedure, with expected output at each
-step and the reasoning, is
-[phase R](04-phase-tutorials/phase-r-registry-reset.md).
+and the stored document). To detach the rows of *particular* chemicals while
+keeping their entries, name them with `--unlink-only` instead:
+`remove_chemicals.py CHEM-000374 CHEM-000375 --unlink-only --apply`. Every
+mode prints the rows per chemical it touches, most first. The full procedure,
+with expected output at each step and the reasoning, is
+[phase R](04-phase-tutorials/phase-r-registry-reset.md); the same actions
+from the browser are in the [playbook](10-user-playbook.md#linking-and-unlinking-by-hand).
 
 ### Confirming afterwards
 

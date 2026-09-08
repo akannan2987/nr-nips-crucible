@@ -28,6 +28,11 @@ compound whose identity is not established.
     # the registry reset, step 2: unlink every row AND remove every chemical
     .venv/bin/python scripts/remove_chemicals.py --all --apply
 
+    # unlink the rows of particular chemicals WITHOUT removing the entries
+    .venv/bin/python scripts/remove_chemicals.py CHEM-000374 --unlink-only --apply
+
+Every mode prints how many rows of WHICH chemical are affected, most first.
+
 Nothing is written without `--apply`. Back up first: ./container-py.sh backup
 
 A link lives in two places on a row — the indexed `chemical_id` column and
@@ -72,8 +77,32 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="unlink every row AND remove every chemical entry — the registry starts empty",
     )
+    parser.add_argument(
+        "--unlink-only",
+        action="store_true",
+        help="with identifiers / --from-file / --pubchem-registered: unlink their rows but KEEP the entries",
+    )
     parser.add_argument("--apply", action="store_true", help="write changes (default: report)")
     return parser
+
+
+def print_breakdown(rows_by_module: dict, chemicals: list, limit: int = 20) -> None:
+    """Rows per chemical, most first, so a run says what it touched, not just how much."""
+    names = {row.doc.get("chemical_id"): row.doc.get("name") for row in chemicals}
+    counts: dict[str, int] = {}
+    for rows in rows_by_module.values():
+        for row in rows:
+            for cid in links_of(row):
+                counts[cid] = counts.get(cid, 0) + 1
+    if not counts:
+        return
+    ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    print(f"\nrows per chemical ({len(counts)} chemicals), most first:")
+    for cid, n in ranked[:limit]:
+        print(f"  {n:6}  {cid:14}  {str(names.get(cid) or 'Unknown')[:50]}")
+    if len(ranked) > limit:
+        rest = sum(n for _, n in ranked[limit:])
+        print(f"  … and {len(ranked) - limit} more chemicals ({rest} rows)")
 
 
 def links_of(row) -> set[str]:
@@ -173,8 +202,11 @@ def _run(args, db) -> int:
         print(f"REGISTRY RESET, step 1 — unlink every row; keep all {len(chemicals)} chemical entries\n")
     elif args.all:
         print(f"REGISTRY RESET, step 2 — unlink every row AND remove all {len(targets)} chemical entries\n")
+    elif args.unlink_only:
+        print(f"UNLINK ONLY — detach the rows of {len(targets)} chemical entries; the entries themselves are kept\n")
     else:
         print(f"{len(targets)} chemical entries to remove\n")
+    if not (args.unlink_all or args.all):
         for row in targets[:20]:
             doc = row.doc
             print(
@@ -183,11 +215,13 @@ def _run(args, db) -> int:
             )
         if len(targets) > 20:
             print(f"  … and {len(targets) - 20} more")
+        print()
 
     print(f"{total} rows will be unlinked:")
     for label, _ in LINKED_MODELS:
         if counts[label]:
             print(f"  {label:12} {counts[label]}")
+    print_breakdown(users, chemicals)
     print("\nUnlinked rows keep the compound name their source file recorded.")
 
     if not args.apply:
@@ -202,7 +236,7 @@ def _run(args, db) -> int:
     for rows in users.values():
         unlinked += unlink_rows(db, rows, apply=True, targets=None if everything else target_ids)
 
-    if args.unlink_all and not args.all:
+    if (args.unlink_all and not args.all) or args.unlink_only:
         print(f"\nUnlinked {unlinked} rows. All {len(chemicals)} chemical entries kept.")
         print("Run ./verify-deploy.sh to confirm no dangling links were left.")
         return 0

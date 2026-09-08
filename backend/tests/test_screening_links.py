@@ -74,3 +74,39 @@ def test_link_refuses_an_unknown_chemical_and_an_empty_selection(seeded_client):
     res = seeded_client.post("/api/screening/unlink", json={"record_ids": []})
     assert res.status_code == 400
     assert _links()[ids[0]] == ("CHEM-TEST-001", "CHEM-TEST-001"), "a refused request changes nothing"
+
+
+def test_match_selects_every_row_the_table_would_show(seeded_client):
+    """A request built from the table's filters acts on ALL matching rows, not one page."""
+    for i in range(7):
+        assert seeded_client.post("/api/screening", json={"chemical_id": "CHEM-TEST-001", "assay_name": f"cyto {i}"}).status_code == 201
+    assert seeded_client.post("/api/screening", json={"chemical_id": "CHEM-TEST-001", "assay_name": "other"}).status_code == 201
+    res = seeded_client.post("/api/screening/unlink", json={"match": {"filters": {"assay_name": "cyto"}}})
+    assert res.status_code == 200
+    assert res.json()["unlinked"] == 7 and res.json()["chemicals"] == 1
+    assert res.json()["by_chemical"] == [{"chemical_id": "CHEM-TEST-001", "name": "Caffeine", "rows": 7}]
+    left = [v for v in _links().values() if v != (None, None)]
+    assert len(left) == 1, "the row that did not match keeps its link"
+
+
+def test_unlink_summary_names_each_chemical_most_rows_first(seeded_client):
+    assert seeded_client.post("/api/chemicals", json=CHEM_B).status_code == 201
+    ids = _rows(seeded_client, 2)
+    seeded_client.post("/api/screening", json={"chemical_id": "CHEM-TEST-002", "assay_name": "x"})
+    res = seeded_client.post("/api/screening/unlink", json={"all": True}).json()
+    assert res["chemicals"] == 2
+    assert [b["name"] for b in res["by_chemical"]] == ["Caffeine", "Aspirin"]
+    assert [b["rows"] for b in res["by_chemical"]] == [2, 1]
+    assert res["message"] == "Unlinked 3 screening record(s) from 2 chemical(s)"
+    assert ids  # the rows still exist
+    assert seeded_client.get("/api/stats").json()["screening"]["total"] == 3
+
+
+def test_link_by_match_reports_the_chemical_name(seeded_client):
+    assert seeded_client.post("/api/chemicals", json=CHEM_B).status_code == 201
+    _rows(seeded_client, 3)
+    seeded_client.post("/api/screening/unlink", json={"all": True})
+    res = seeded_client.post("/api/screening/link", json={"match": {"filters": {"assay_name": "assay 1"}}, "chemical_id": "CHEM-TEST-002"})
+    assert res.status_code == 200 and res.json()["linked"] == 1
+    assert res.json()["message"] == "Linked 1 screening record(s) to Aspirin (CHEM-TEST-002)"
+

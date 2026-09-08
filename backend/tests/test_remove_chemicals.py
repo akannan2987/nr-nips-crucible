@@ -139,3 +139,23 @@ def test_nothing_matching_is_an_error(client):
     seed(client)
     assert run("CHEM-NOPE") == 1
     assert run("CHEM-NOPE", "--apply") == 1
+
+
+def test_unlink_only_detaches_one_chemical_s_rows_and_keeps_every_entry(client):
+    seed(client)
+    assert run("CHEM-A", "--unlink-only", "--apply") == 0
+    chems, links, samples = state()
+    assert chems == ["CHEM-A", "CHEM-B"], "unlink-only never deletes"
+    assert (None, None) in links and ("CHEM-B", "CHEM-B") in links
+    assert all(link != ("CHEM-A", "CHEM-A") for link in links)
+
+
+def test_every_mode_says_which_chemicals_and_how_many_rows(client, capsys):
+    seed(client)
+    run("--unlink-all")
+    out = capsys.readouterr().out
+    assert "rows per chemical (2 chemicals), most first:" in out
+    assert "Caffeine" in out and "Aspirin" in out
+    line = next(line for line in out.splitlines() if "CHEM-A" in line and "Caffeine" in line)
+    assert line.split()[0] == "2", "CHEM-A has two linked rows: one screening row and one sample"
+

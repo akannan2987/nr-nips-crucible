@@ -1123,13 +1123,14 @@ Content-Type: application/json
 
 | Field | Meaning |
 |---|---|
-| `record_ids` | The rows to link, by their `id`. Required, at least one. |
+| `record_ids` | The rows to link, by their `id`. |
+| `match` | Instead of ids: the table's own filters — `{"search": "…", "chemical_id": "…", "tag": "…", "filters": {"<column>": "<text>"}, "duplicates": "all\|unique\|identical\|repeat\|flagged"}` — so one request acts on every matching row across every page. One of `record_ids` or `match` is required. |
 | `chemical_id` | A registered chemical. Must exist. |
 
 Response `200`:
 
 ```json
-{"message": "Linked 2 screening record(s) to CHEM-000042", "linked": 2, "not_found": []}
+{"message": "Linked 2 screening record(s) to Caffeine (CHEM-000042)", "linked": 2, "not_found": []}
 ```
 
 Rows whose id does not exist are listed in `not_found` rather than failing
@@ -1142,18 +1143,20 @@ registered; `400` if `record_ids` is empty.
 POST /api/screening/unlink
 Content-Type: application/json
 
-{"record_ids": ["<row id>"]}        // chosen rows
-{"all": true}                       // every linked row — the registry reset's first step
+{"record_ids": ["<row id>"]}                       // chosen rows
+{"match": {"search": "Phenol, 2,4-di-tertiobutyl"}} // every row matching the table's filters
+{"all": true}                                      // every linked row — the registry reset's first step
 ```
 
-Response `200`:
+Response `200`, saying how many rows of which chemical were detached, most first (up to 25 listed):
 
 ```json
-{"message": "Unlinked 43399 screening record(s)", "unlinked": 43399, "not_found": []}
+{"message": "Unlinked 441 screening record(s) from 1 chemical(s)", "unlinked": 441, "chemicals": 1,
+ "by_chemical": [{"chemical_id": "CHEM-000374", "name": "Phenol, 2,4-di-tertiobutyl", "rows": 441}], "not_found": []}
 ```
 
-Nothing is deleted, and the chemical registry is untouched. `400` if neither
-`record_ids` nor `all` is given. Back up before `all: true`; the backup is
+Nothing is deleted, and the chemical registry is untouched. `400` if none of
+`record_ids`, `match` or `all` is given. Back up before `all: true`; the backup is
 the only undo. Procedure and reasoning: [phase R](04-phase-tutorials/phase-r-registry-reset.md).
 
 ## Toxicology

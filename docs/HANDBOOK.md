@@ -49,7 +49,7 @@ specialised pages; this page tells you which one to read, when, and why.
 | **Status date** | 2026-09-07 |
 | **Tests** | 90 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | 05b — Reproducible builds and CI ✅ (2026-09-07): a lock file generated inside the image, the linter, a workflow on the public repository running every check on Linux and macOS |
-| **Phase in progress** | none — next is the owner's pick: the 22 compounds, the removal-script test, the delete endpoint, or 06 |
+| **Phase in progress** | none — **next is the registry reset** decided 2026-09-08 (unlink every row, remove every chemical, then the new identification logic), see [§10](#10-what-comes-next) |
 | **Next** | 06 — Schema normalisation 🔜 · 07 — Authentication 🔜 |
 | **Production** | one RHEL 8 VM, one container, one SQLite file: 49,065 screening rows, 664 registered chemicals, 88 % of rows linked to a registry entry |
 
@@ -450,9 +450,11 @@ Two documents, two horizons:
 
 The next three phases, in order:
 
-1. **The registry housekeeping:** re-propose the 22 removed compounds with a
-   row-by-row review, a test for the removal script, and the delete endpoint
-   unlinking rows first.
+1. **The registry reset** ([roadmap](05-roadmap.md#the-next-three-phases)):
+   unlink every screening row from every chemical, then remove every
+   chemical, each step behind a backup and an explicit go, then the new
+   identification logic the owner will describe. The removal script gets
+   its first test on the way.
 2. **06 — schema normalisation:** list the fields the client filters and
    sorts on, agree them, *then* write the migration. Guessing here means a
    migration that backfills the wrong columns.

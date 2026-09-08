@@ -45,7 +45,7 @@ specialised pages; this page tells you which one to read, when, and why.
 
 | | |
 |---|---|
-| **Version** | 2.6.0 (2026-09-08) |
+| **Version** | 2.6.1 (2026-09-08) |
 | **Status date** | 2026-09-07 |
 | **Tests** | 100 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | 05b — Reproducible builds and CI ✅ (2026-09-07): a lock file generated inside the image, the linter, a workflow on the public repository running every check on Linux and macOS |

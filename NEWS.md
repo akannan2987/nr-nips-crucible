@@ -10,6 +10,17 @@ change you are getting.
 
 ---
 
+## v2.6.1 — 2026-09-08 — "Verify with the curl you have"
+
+**Fixed**
+- `verify-deploy.sh` used a curl option that exists only from curl 7.71; run
+  with RHEL 8's system curl it failed every request and reported thirteen
+  failures against a working deployment. It had passed before only because
+  the shell it ran from had a conda environment with a newer curl. The script
+  now retries by hand and runs with the oldest curl in use (lesson 31).
+
+---
+
 ## v2.6.0 — 2026-09-08 — "Link and unlink, by hand"
 
 **Added**

@@ -21,7 +21,20 @@ DB="${2:-data/crucible.db}"
 # Retry transient network faults. A background job writing to the database can
 # briefly reset a connection; without a retry that shows up as a FAIL against a
 # feature that is in fact working, which is worse than no check at all.
-C(){ curl --noproxy '*' -sSk -m 30 --retry 3 --retry-delay 2 --retry-all-errors "$@"; }
+# Retry by hand rather than with --retry-all-errors: that option needs curl 7.71
+# or newer, and RHEL 8's system curl is 7.61. A verification script must run
+# with the oldest curl on any machine it is meant for, or its failures say
+# nothing about the deployment (lesson 31).
+C(){
+  local attempt out
+  for attempt in 1 2 3; do
+    if out=$(curl --noproxy '*' -sSk -m 30 "$@"); then
+      printf '%s' "$out"; return 0
+    fi
+    sleep 2
+  done
+  return 1
+}
 pass=0; fail=0
 ok(){ printf '  \033[0;32m PASS \033[0m %s\n' "$1"; pass=$((pass+1)); }
 no(){ printf '  \033[0;31m FAIL \033[0m %s\n     -> %s\n' "$1" "$2"; fail=$((fail+1)); }

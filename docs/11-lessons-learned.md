@@ -231,6 +231,19 @@ automated test seeded one, and found it in a minute. *Lesson: a tool
 exercised only on the data you happen to have has been tested for the
 absence of the data you do not.*
 
+
+**31. A check that passed only in the shell it was written in.** The
+post-deploy verification used a curl option added in curl 7.71. On the VM it
+passed for weeks — because the shell it ran from had a conda environment
+active, with a newer curl. Run from a plain login shell, RHEL 8's system curl
+(7.61) rejected the option, every request failed, and the script reported
+thirteen failures against a deployment that was fine, including "a write was
+not refused". The script now retries by hand and works with the oldest curl
+in use. *Lesson: a verification script must run with the tools the machine
+actually has, not the ones your shell happens to add; and a check whose
+failure mode looks like a security failure must fail loudly about itself
+first.*
+
 ---
 
 ## The one rule they add up to

@@ -15,8 +15,8 @@ from ..compat import js_or, now_iso, parse_int_or, total_pages
 from ..database import get_db
 from ..ingest import load_screening
 from ..models import Chemical, Screening
-from ..schemas import ScreeningIn
-from ..store import all_docs, delete_row, find_row, insert_doc, replace_doc
+from ..schemas import ScreeningIn, ScreeningLinkIn, ScreeningUnlinkIn
+from ..store import all_docs, delete_row, find_row, insert_doc, replace_doc, set_links
 from ..utils.excel import sheet_rows_as_dicts
 from ..utils.templates import (
     describe_column,
@@ -606,6 +606,52 @@ async def upload_excel(
     if errors:
         response["errors"] = errors
     return response
+
+
+@router.post("/link")
+def link_screening(body: ScreeningLinkIn, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """POST /api/screening/link — point the given rows at one registered chemical.
+
+    Body: {"record_ids": [...], "chemical_id": "CHEM-000042"}. The chemical must
+    exist; rows that do not are reported back rather than failing the whole
+    request. A link is written in both places it lives (document and column).
+    """
+    if not body.record_ids:
+        raise HTTPException(status_code=400, detail="record_ids is required")
+    if not body.chemical_id or not find_row(db, Chemical, "chemical_id", body.chemical_id):
+        raise HTTPException(status_code=404, detail="Chemical not found")
+    wanted = set(body.record_ids)
+    rows = [row for row in db.scalars(select(Screening).where(Screening.id.in_(wanted)))]
+    found = {row.id for row in rows}
+    linked = set_links(db, rows, body.chemical_id)
+    return {
+        "message": f"Linked {linked} screening record(s) to {body.chemical_id}",
+        "linked": linked,
+        "not_found": sorted(wanted - found),
+    }
+
+
+@router.post("/unlink")
+def unlink_screening(body: ScreeningUnlinkIn, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """POST /api/screening/unlink — detach rows from their chemical.
+
+    Body: {"record_ids": [...]} for chosen rows, or {"all": true} for every
+    linked row — the registry reset's first step, from the browser. Rows keep
+    every value they had, including the compound name their source file
+    recorded; only the pointer to a registry entry is cleared, in both places
+    it lives. Nothing is deleted.
+    """
+    if body.all:
+        rows = [row for row in db.scalars(select(Screening).where(Screening.chemical_id.is_not(None)))]
+        not_found: list[str] = []
+    else:
+        if not body.record_ids:
+            raise HTTPException(status_code=400, detail="record_ids is required, or all: true")
+        wanted = set(body.record_ids)
+        rows = [row for row in db.scalars(select(Screening).where(Screening.id.in_(wanted)))]
+        not_found = sorted(wanted - {row.id for row in rows})
+    unlinked = set_links(db, rows, None)
+    return {"message": f"Unlinked {unlinked} screening record(s)", "unlinked": unlinked, "not_found": not_found}
 
 
 @router.get("/{record_id}")

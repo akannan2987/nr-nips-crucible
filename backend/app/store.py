@@ -15,6 +15,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from .compat import now_iso
 from .database import Base
 
 # The column each model uses as its business key, mirrored from doc on write.
@@ -123,6 +124,32 @@ def replace_doc(db: Session, row, doc: dict[str, Any]) -> None:
     row.doc = doc
     _sync_columns(row, doc)
     db.commit()
+
+
+def set_links(db: Session, rows: list, chemical_id: str | None, batch: int = 5000) -> int:
+    """Point every row at `chemical_id` (or at nothing, when None), in batches.
+
+    A link lives twice on a row — inside the document, which is the truth, and
+    in the indexed column, which is derived from it — so both are written.
+    Committing every `batch` rows rather than every row is what keeps a
+    49,000-row change to seconds instead of minutes (lesson 18). Returns the
+    number of rows changed.
+    """
+    changed = 0
+    for row in rows:
+        doc = dict(row.doc)
+        if chemical_id is None:
+            doc.pop("chemical_id", None)
+        else:
+            doc["chemical_id"] = chemical_id
+        doc["updated_at"] = now_iso()
+        row.doc = doc
+        row.chemical_id = chemical_id
+        changed += 1
+        if changed % batch == 0:
+            db.commit()
+    db.commit()
+    return changed
 
 
 def delete_row(db: Session, row) -> None:

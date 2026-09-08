@@ -87,6 +87,7 @@ today, but the script treats all three the same way.
 | `run(argv, db)` | The script's logic callable from a test with a supplied session, so it can be exercised without a container | same |
 | A latent crash fixed | A sample links through a list of chemical identifiers in its document, not a column; the script assumed a column and would have failed on the first sample. Found by the first test (lesson 30) | same |
 | First tests | Six cases: the report writes nothing; removing one entry unlinks only its rows; `--unlink-all` clears column *and* document and keeps chemicals; `--all` empties the registry and the rows keep their source names; the job-only selector; nothing matching is an error | `backend/tests/test_remove_chemicals.py` |
+| Buttons on the Screening page | A link or unlink icon on each row, *Link to a chemical…* and *Unlink* for ticked rows, *Unlink all rows…* with typed confirmation; backed by `POST /api/screening/link` and `/unlink` | `client/src/pages/ScreeningView.jsx`, `backend/app/routers/screening.py` |
 | The procedure | Below, and in [`09-chemical-identification.md` → Resetting the registry](../09-chemical-identification.md#resetting-the-registry) | — |
 
 ---
@@ -138,6 +139,12 @@ has already been proven dry; the two checks afterwards say what changed.
 `Unlinked 43399 rows. All 664 chemical entries kept.`; `identified: 0`; and
 `16 passed, 0 failed` — the "identification progress reported" check reports
 `0 rows linked`, which is now the intended state.
+
+**The same step from the browser:** on the Screening page, next to the count
+of linked rows, **Unlink all rows…** opens a confirmation that asks you to
+type `UNLINK ALL`, then calls `POST /api/screening/unlink` with `all: true`
+— the same operation, the same outcome, no terminal needed. Take the backup
+first either way.
 
 **If instead:** the run stops part-way — it is safe to re-run; rows already
 unlinked are simply reported as not linked. **If instead:** you want it back —

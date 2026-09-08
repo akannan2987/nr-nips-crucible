@@ -336,6 +336,55 @@ row — what you want when reconciling against the original file.
 
 ---
 
+## Linking rows to a chemical by hand
+
+The identification job links rows in bulk by rule; these two requests are
+for the cases a person decides. They only move the pointer from a row to a
+registry entry; the row and its values are untouched.
+
+**How do I point a few rows at the right compound?** (the chemical must be
+registered — check with `/api/chemicals/list/dropdown`)
+
+```bash
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/screening/link \
+  -H "Content-Type: application/json" \
+  -d '{"record_ids": ["<row id>", "<row id>"], "chemical_id": "CHEM-000042"}'
+```
+
+```json
+{"message":"Linked 2 screening record(s) to CHEM-000042","linked":2,"not_found":[]}
+```
+
+Row ids come from the list endpoint (`id` on every row) or the record's
+detail view in the browser.
+
+**How do I detach a row that was linked wrongly?**
+
+```bash
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/screening/unlink \
+  -H "Content-Type: application/json" \
+  -d '{"record_ids": ["<row id>"]}'
+```
+
+**How do I detach every row from every chemical? (a registry reset — back up first)**
+
+```bash
+./container-py.sh backup
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/screening/unlink \
+  -H "Content-Type: application/json" -d '{"all": true}'
+```
+
+```json
+{"message":"Unlinked 43399 screening record(s)","unlinked":43399,"not_found":[]}
+```
+
+The same three actions are buttons on the Screening page: a link or unlink
+icon on each row, *Link to a chemical…* and *Unlink* for ticked rows, and
+*Unlink all rows…*, which asks you to type the words. The registry is never
+changed by any of them; removing compounds is [a separate, gated script](09-chemical-identification.md#resetting-the-registry).
+
+---
+
 ## Cleaning up
 
 These commands remove data. Read the caveat on each one before running it.

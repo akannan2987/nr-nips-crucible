@@ -458,6 +458,21 @@ for reason, n in collections.Counter(
 > `cut` does not understand quoting — it will turn `Phenol, 2,4-di-tertiobutyl`
 > into fragments and give you a meaningless summary. Use the Python above.
 
+## Linking and unlinking by hand
+
+The job links by rule; you can also decide for a row yourself, on the
+Screening page:
+
+| You want to… | Do this |
+|---|---|
+| Point one row at the right compound | Click the **link icon** at the end of its row, then pick the compound from the registry list (type part of a name or identifier to filter). |
+| Point many rows at one compound | Tick them, then **Link to a chemical…** in the bar that appears above the table. |
+| Detach a row that was linked wrongly | Click the **unlink icon** at the end of its row. The row and its values stay; only the pointer goes. |
+| Detach every row from every compound | **Unlink all rows…** next to the count of linked rows. It asks you to type `UNLINK ALL`, because the only undo is a backup. This is the first step of a registry reset — [phase R](04-phase-tutorials/phase-r-registry-reset.md). |
+
+A compound that is not registered yet cannot be picked: register it in the
+Chemicals module first. None of these buttons ever deletes a compound.
+
 ## Recovering the ones rejected on their name
 
 The `name not in PubChem` group are real compounds with correct identifiers,

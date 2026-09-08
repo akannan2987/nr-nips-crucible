@@ -10,6 +10,31 @@ change you are getting.
 
 ---
 
+## v2.6.0 — 2026-09-08 — "Link and unlink, by hand"
+
+**Added**
+- **Buttons on the Screening page** to link a row to a registered chemical
+  (a chooser over the registry, filtered as you type), to unlink it, to do
+  either for a set of ticked rows, and **Unlink all rows…**, which asks for
+  the words to be typed because the only undo is a backup. None of them ever
+  deletes a chemical.
+- **Two endpoints behind them**: `POST /api/screening/link`
+  (`record_ids`, `chemical_id`) and `POST /api/screening/unlink`
+  (`record_ids`, or `all: true`). A link is written in both places it lives.
+  Four tests; the suite is 100. Documented in the
+  [API reference](docs/08-api-reference.md#link-or-unlink-screening-records)
+  and the [cookbook](docs/08-api-cookbook.md#linking-rows-to-a-chemical-by-hand).
+- A batched `set_links` verb in the data-access layer, so a 43,000-row unlink
+  takes seconds, not minutes.
+
+**Known limitations (deliberate)**
+- The chooser lists registered chemicals only; a compound that is not in the
+  registry is registered in the Chemicals module first, on purpose.
+- Tick boxes cover the current page; use a filter and a larger page size to
+  act on more rows at once.
+
+---
+
 ## v2.5.0 — 2026-09-08 — "Taking every card out of the drawer"
 
 The tools for the registry reset. No data changed in this release; the reset

@@ -128,3 +128,17 @@ class BulkDeleteSamples(_LenientModel):
 
 class LinkChemicals(_LenientModel):
     chemical_ids: Any | None = None
+
+
+class ScreeningLinkIn(_LenientModel):
+    """Body of POST /api/screening/link: point these rows at one registered chemical."""
+
+    record_ids: list[str] = []
+    chemical_id: str | None = None
+
+
+class ScreeningUnlinkIn(_LenientModel):
+    """Body of POST /api/screening/unlink: detach these rows — or every row — from their chemical."""
+
+    record_ids: list[str] = []
+    all: bool = False

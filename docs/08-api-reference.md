@@ -1103,6 +1103,59 @@ Records are addressed by their `id` (UUID, returned on create).
 
 ---
 
+### Link or unlink screening records
+
+A screening row *links* to a registered chemical through the chemical's
+identifier, stored on the row twice on purpose: inside the stored document
+(the truth) and in an indexed column (for fast lookup). These two endpoints
+change that link and nothing else; a row keeps every value it had, including
+the compound name its source file recorded. They are what the *Link* and
+*Unlink* buttons on the Screening page call.
+
+**Link rows to one chemical**
+
+```http
+POST /api/screening/link
+Content-Type: application/json
+
+{"record_ids": ["<row id>", "<row id>"], "chemical_id": "CHEM-000042"}
+```
+
+| Field | Meaning |
+|---|---|
+| `record_ids` | The rows to link, by their `id`. Required, at least one. |
+| `chemical_id` | A registered chemical. Must exist. |
+
+Response `200`:
+
+```json
+{"message": "Linked 2 screening record(s) to CHEM-000042", "linked": 2, "not_found": []}
+```
+
+Rows whose id does not exist are listed in `not_found` rather than failing
+the request. `404 {"error": "Chemical not found"}` if the chemical is not
+registered; `400` if `record_ids` is empty.
+
+**Unlink rows, or every row**
+
+```http
+POST /api/screening/unlink
+Content-Type: application/json
+
+{"record_ids": ["<row id>"]}        // chosen rows
+{"all": true}                       // every linked row — the registry reset's first step
+```
+
+Response `200`:
+
+```json
+{"message": "Unlinked 43399 screening record(s)", "unlinked": 43399, "not_found": []}
+```
+
+Nothing is deleted, and the chemical registry is untouched. `400` if neither
+`record_ids` nor `all` is given. Back up before `all: true`; the backup is
+the only undo. Procedure and reasoning: [phase R](04-phase-tutorials/phase-r-registry-reset.md).
+
 ## Toxicology
 
 Toxicology records are always linked to an existing chemical (`chemical_id`).

@@ -45,9 +45,9 @@ specialised pages; this page tells you which one to read, when, and why.
 
 | | |
 |---|---|
-| **Version** | 2.5.0 (2026-09-08) |
+| **Version** | 2.6.0 (2026-09-08) |
 | **Status date** | 2026-09-07 |
-| **Tests** | 96 passing (`cd backend && .venv/bin/pytest`) |
+| **Tests** | 100 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | 05b — Reproducible builds and CI ✅ (2026-09-07): a lock file generated inside the image, the linter, a workflow on the public repository running every check on Linux and macOS |
 | **Phase in progress** | **R — the registry reset** 🔨: the tools are built and tested (`--unlink-all`, `--all`); R-1 and R-2 run on production only on the owner's go; R-3, the new identification logic, waits on the owner's description — [phase R](04-phase-tutorials/phase-r-registry-reset.md) |
 | **Next** | 06 — Schema normalisation 🔜 · 07 — Authentication 🔜 |
@@ -229,7 +229,9 @@ until you have seen what comes out of them.
    explains each column. Follow [playbook Part 2](10-user-playbook.md#part-2--put-a-laboratory-file-in)
    for what happens to your file on the way in.
 2. **Look at what arrived.** The Data Viewer shows the rows; the Dashboard
-   counts them and refreshes every five seconds.
+   counts them and refreshes every five seconds. On the Screening page each
+   row can be linked to a registered compound or unlinked again by hand —
+   [playbook, linking by hand](10-user-playbook.md#linking-and-unlinking-by-hand).
    [Playbook Part 3](10-user-playbook.md#part-3--look-at-what-arrived) explains
    the two views, the filters and the coloured rows.
 3. **Ask the API the same question.** The web pages are the API's first

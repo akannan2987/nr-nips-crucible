@@ -10,6 +10,8 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowDownTrayIcon,
   XMarkIcon,
+  LinkIcon,
+  LinkSlashIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import {
@@ -18,6 +20,10 @@ import {
   getScreeningColumns,
   getDuplicatesSummary,
   screeningExportUrl,
+  getChemicalsDropdown,
+  linkScreening,
+  unlinkScreening,
+  unlinkAllScreening,
 } from '../services/api'
 
 /**
@@ -68,6 +74,14 @@ export default function ScreeningView() {
   const [sort, setSort] = useState({ key: null, dir: 'asc', numeric: false })
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 })
   const [selectedRecord, setSelectedRecord] = useState(null)
+
+  // ---- linking rows to a registered chemical, by hand -------------------
+  // `selected` is the set of row ids ticked on the current page. `linkTarget`
+  // is the list of row ids a chooser is open for (one row, or the selection).
+  const [selected, setSelected] = useState(() => new Set())
+  const [linkTarget, setLinkTarget] = useState(null)
+  const [chemOptions, setChemOptions] = useState(null)
+  const [confirmUnlinkAll, setConfirmUnlinkAll] = useState(false)
 
   // ---- column metadata -------------------------------------------------
   useEffect(() => {
@@ -123,6 +137,71 @@ export default function ScreeningView() {
   useEffect(() => {
     loadScreening()
   }, [loadScreening])
+
+  // The page's tick boxes never outlive the page they were ticked on.
+  useEffect(() => {
+    setSelected(new Set())
+  }, [rows])
+
+  const refreshIdentity = useCallback(() => {
+    getScreeningColumns()
+      .then(({ data }) => setIdentity({ identified: data.identified, unidentified: data.unidentified }))
+      .catch(() => {})
+  }, [])
+
+  const toggleSelected = (id) =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  const openLinkChooser = (ids) => {
+    setLinkTarget(ids)
+    if (!chemOptions) {
+      getChemicalsDropdown()
+        .then(({ data }) => setChemOptions(data))
+        .catch(() => toast.error('Could not load the chemical registry'))
+    }
+  }
+
+  const doLink = async (chemicalId) => {
+    const ids = linkTarget || []
+    setLinkTarget(null)
+    try {
+      const { data } = await linkScreening(ids, chemicalId)
+      toast.success(data.message)
+      loadScreening()
+      refreshIdentity()
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Linking failed')
+    }
+  }
+
+  const doUnlink = async (ids) => {
+    if (!window.confirm(`Unlink ${ids.length} row(s) from their chemical? The rows stay; only the link is cleared.`)) return
+    try {
+      const { data } = await unlinkScreening(ids)
+      toast.success(data.message)
+      loadScreening()
+      refreshIdentity()
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Unlinking failed')
+    }
+  }
+
+  const doUnlinkAll = async () => {
+    setConfirmUnlinkAll(false)
+    try {
+      const { data } = await unlinkAllScreening()
+      toast.success(data.message)
+      loadScreening()
+      refreshIdentity()
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Unlinking failed')
+    }
+  }
 
   // ---- which columns are on screen ------------------------------------
   // Coverage stats take a moment to compute on a large table, so until they
@@ -246,6 +325,16 @@ export default function ScreeningView() {
               </span>{' '}
               of {(identity.identified + identity.unidentified).toLocaleString()} rows link
               to a registered compound.
+              {identity.identified > 0 && (
+                <button
+                  onClick={() => setConfirmUnlinkAll(true)}
+                  className="ml-2 inline-flex items-center gap-1 text-xs text-red-700 border border-red-200 rounded px-2 py-0.5 hover:bg-red-50"
+                  title="Detach every row from its chemical. Nothing is deleted; the registry itself is untouched."
+                >
+                  <LinkSlashIcon className="h-3.5 w-3.5" />
+                  Unlink all rows…
+                </button>
+              )}
               {identity.identified === 0 && (
                 <span className="ml-1 text-amber-700">
                   Identification has not been run on this instance yet — compound names are
@@ -563,6 +652,28 @@ mg_kg_food        5.9481    42.1798        <- DIFFERENT`}
         )}
       </div>
 
+      {/* ---- bulk actions on ticked rows ------------------------------ */}
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 bg-purple-50 border border-purple-200 rounded-xl px-4 py-2 text-sm">
+          <span className="font-medium text-purple-800">{selected.size} row(s) ticked on this page</span>
+          <button
+            onClick={() => openLinkChooser([...selected])}
+            className="inline-flex items-center gap-1 px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
+            <LinkIcon className="h-4 w-4" /> Link to a chemical…
+          </button>
+          <button
+            onClick={() => doUnlink([...selected])}
+            className="inline-flex items-center gap-1 px-3 py-1 border border-red-300 text-red-700 rounded-lg hover:bg-red-50"
+          >
+            <LinkSlashIcon className="h-4 w-4" /> Unlink
+          </button>
+          <button onClick={() => setSelected(new Set())} className="text-gray-500 hover:underline">
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* ---- table --------------------------------------------------- */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {loading ? (
@@ -577,6 +688,14 @@ mg_kg_food        5.9481    42.1798        <- DIFFERENT`}
             <table className="min-w-full text-sm border-collapse">
               <thead className="bg-gray-50 sticky top-0">
                 <tr>
+                  <th className="px-2 py-2 border-b border-gray-200">
+                    <input
+                      type="checkbox"
+                      aria-label="tick every row on this page"
+                      checked={rows.length > 0 && selected.size === rows.length}
+                      onChange={(e) => setSelected(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())}
+                    />
+                  </th>
                   <th className="px-3 py-2 text-left font-semibold text-gray-700 whitespace-nowrap border-b border-gray-200">
                     Chemical
                   </th>
@@ -615,6 +734,7 @@ mg_kg_food        5.9481    42.1798        <- DIFFERENT`}
                 {/* per-column filter row, the way a spreadsheet filters */}
                 <tr>
                   <th className="px-2 py-1 border-b border-gray-200 bg-white" />
+                  <th className="px-2 py-1 border-b border-gray-200 bg-white" />
                   {shownColumns.map((col) => (
                     <th key={col.key} className="px-2 py-1 border-b border-gray-200 bg-white">
                       <input
@@ -635,6 +755,14 @@ mg_kg_food        5.9481    42.1798        <- DIFFERENT`}
                     className={`border-b border-gray-100 ${duplicateShade(record)}`}
                     title={duplicateTitle(record)}
                   >
+                    <td className="px-2 py-1.5">
+                      <input
+                        type="checkbox"
+                        aria-label="tick this row"
+                        checked={selected.has(record.id)}
+                        onChange={() => toggleSelected(record.id)}
+                      />
+                    </td>
                     <td className="px-3 py-1.5 whitespace-nowrap">
                       {/* A compound identified in PubChem (its name and CAS
                           number agreeing) is registered in the Chemicals
@@ -677,6 +805,23 @@ mg_kg_food        5.9481    42.1798        <- DIFFERENT`}
                         >
                           <EyeIcon className="h-4 w-4" />
                         </button>
+                        {record.chemical_id ? (
+                          <button
+                            onClick={() => doUnlink([record.id])}
+                            className="text-gray-400 hover:text-red-600"
+                            title="Unlink from its chemical — the row stays, only the link is cleared"
+                          >
+                            <LinkSlashIcon className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => openLinkChooser([record.id])}
+                            className="text-gray-400 hover:text-purple-600"
+                            title="Link to a registered chemical"
+                          >
+                            <LinkIcon className="h-4 w-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDelete(record.id)}
                           className="text-gray-400 hover:text-red-600"
@@ -729,6 +874,134 @@ mg_kg_food        5.9481    42.1798        <- DIFFERENT`}
       {selectedRecord && (
         <RecordDetail record={selectedRecord} onClose={() => setSelectedRecord(null)} />
       )}
+
+      {linkTarget && (
+        <ChemicalChooser
+          count={linkTarget.length}
+          options={chemOptions}
+          onPick={doLink}
+          onClose={() => setLinkTarget(null)}
+        />
+      )}
+
+      {confirmUnlinkAll && (
+        <UnlinkAllConfirm
+          count={identity ? identity.identified : 0}
+          onConfirm={doUnlinkAll}
+          onClose={() => setConfirmUnlinkAll(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+/**
+ * Pick one registered chemical for the rows being linked. The list is the
+ * registry's dropdown (identifier + name), filtered as you type; nothing is
+ * created here — a compound that is not registered yet is registered in the
+ * Chemicals module first.
+ */
+function ChemicalChooser({ count, options, onPick, onClose }) {
+  const [query, setQuery] = useState('')
+  const shown = useMemo(() => {
+    if (!options) return []
+    const q = query.trim().toLowerCase()
+    const list = q
+      ? options.filter(
+          (c) => (c.name || '').toLowerCase().includes(q) || (c.chemical_id || '').toLowerCase().includes(q)
+        )
+      : options
+    return list.slice(0, 200)
+  }, [options, query])
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <div className="bg-white rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between p-5 border-b border-gray-200">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Link {count} row(s) to a chemical</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Choose the registered compound these measurements belong to.
+            </p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+        <div className="p-4 border-b border-gray-100">
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Type a name or identifier…"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+          />
+        </div>
+        <div className="overflow-y-auto">
+          {!options ? (
+            <p className="p-4 text-sm text-gray-500">Loading the registry…</p>
+          ) : shown.length === 0 ? (
+            <p className="p-4 text-sm text-gray-500">
+              No registered chemical matches. Register it in the Chemicals module first.
+            </p>
+          ) : (
+            shown.map((c) => (
+              <button
+                key={c.chemical_id}
+                onClick={() => onPick(c.chemical_id)}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-purple-50 border-b border-gray-50"
+              >
+                <span className="font-medium text-gray-900">{c.name}</span>
+                <span className="ml-2 text-xs text-gray-500 font-mono">{c.chemical_id}</span>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * "Unlink all" detaches every row from every chemical. It is the first step
+ * of a registry reset and cannot be undone from the browser, so it asks for
+ * the words to be typed rather than a click.
+ */
+function UnlinkAllConfirm({ count, onConfirm, onClose }) {
+  const [typed, setTyped] = useState('')
+  const phrase = 'UNLINK ALL'
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <div className="bg-white rounded-xl max-w-md w-full p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-lg font-bold text-gray-900">Unlink every row?</h2>
+        <p className="text-sm text-gray-700">
+          {count.toLocaleString()} rows currently point at a registered chemical. This clears every one of
+          those links. The rows and their values stay, showing the compound name their source file recorded,
+          and the chemical registry itself is untouched.
+        </p>
+        <p className="text-sm text-gray-700">
+          Take a backup first (<code className="text-xs bg-gray-100 px-1 rounded">./container-py.sh backup</code>);
+          the backup is the only undo. Type <span className="font-mono font-semibold">{phrase}</span> to continue.
+        </p>
+        <input
+          autoFocus
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono"
+        />
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg">
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={typed.trim() !== phrase}
+            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg disabled:opacity-40"
+          >
+            Unlink all rows
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

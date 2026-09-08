@@ -62,6 +62,12 @@ export const screeningExportUrl = (params) => {
   return `${API_BASE}/screening/export?${qs}`;
 };
 export const getScreeningRecord = (id) => api.get(`/screening/${id}`);
+// Point rows at a registered chemical, or detach them. `unlinkAllScreening`
+// is the registry reset's first step, from the browser.
+export const linkScreening = (record_ids, chemical_id) =>
+  api.post('/screening/link', { record_ids, chemical_id });
+export const unlinkScreening = (record_ids) => api.post('/screening/unlink', { record_ids });
+export const unlinkAllScreening = () => api.post('/screening/unlink', { all: true });
 export const getScreeningByChemical = (chemicalId) => api.get(`/screening/chemical/${chemicalId}`);
 export const createScreening = (data) => api.post('/screening', data);
 export const updateScreening = (id, data) => api.put(`/screening/${id}`, data);

@@ -10,6 +10,31 @@ change you are getting.
 
 ---
 
+## v2.10.2 — 2026-09-08 — "Same name, its own commit; and the decisions"
+
+**Recorded**
+- **The registry-first rule is agreed**, D1 to D11 as recommended, and the
+  specification now says plainly that a compound may be registered without
+  a CAS number (that was always valid; D3 was corrected to match, and D11
+  added: a person-registered compound with no CAS attaches rows with the
+  same name and no CAS). R-2 now waits only on the owner's go.
+- **The authentication ladder is agreed**, A1 to A8 as recommended; the
+  decision record is accepted; the token gate (SH-3a) is ready to start.
+  The registration request to the identity team is drafted in the plan,
+  ready to send, with the licence question in the same message.
+
+**Fixed**
+- **The mirror no longer copies the public repository's tags.** The first
+  release tag, made on the Mac and fetched into the mirror folder along with
+  the commits, took the name before the mirror's own commit could be tagged,
+  and was pushed into the private repository pointing at the public commit.
+  The mirror's setup now fetches the public remote with tags switched off,
+  Step 8b of the workflow checks which commit a tag points at before pushing
+  and says what to do when the name is already taken; lesson 32 records it.
+  The private tag was deleted and remade on the private commit.
+
+---
+
 ## v2.10.1 — 2026-09-08 — "Underline the line and date it"
 
 **The first tagged release**, `v2.10.1`, on both repositories. It marks

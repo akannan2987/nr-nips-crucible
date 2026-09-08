@@ -2,7 +2,7 @@
 
 # ADR 0001 — Authentication as a ladder, with single sign-on as the destination
 
-**Status:** proposed (awaiting the owner's decisions A1–A8 in [`13-authentication.md`](../13-authentication.md#decisions-to-agree)) · **Date:** 2026-09-08
+**Status:** accepted 2026-09-08 (decisions A1–A8 agreed as recommended; log in [`13-authentication.md`](../13-authentication.md#decision-log)) · **Date:** 2026-09-08
 
 ## Context
 

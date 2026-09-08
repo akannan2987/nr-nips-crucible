@@ -246,6 +246,26 @@ first.*
 
 ---
 
+**32. A tag with the right name on the wrong commit.** The first release tag
+was made on the Mac and pushed to the public repository. On the VM, the
+mirror's `git fetch public` copied that tag along with the commits, so
+`git tag -a v2.10.1` on the mirror's own commit failed with "already
+exists" — and the next command pushed the *copied* tag, pointing at the
+public commit, into the private repository, dragging 839 objects of public
+history with it. The private release page then showed a commit on no
+private branch and "71 commits since this release", a comparison between
+two unrelated histories. Nothing secret moved, because public content is a
+subset of private, but the tag was wrong and had to be deleted, on the
+host and in git, and remade on the private commit. *Lesson:* the two
+repositories share tag *names* and nothing else; the mirror now fetches
+the public remote with tags switched off (`remote.public.tagOpt
+--no-tags`), Step 8b checks which commit the tag points at before pushing,
+and the setup section says why. *The shape:* an instruction that worked on
+one machine, given for the other without asking what else the same
+command does there.
+
+---
+
 ## The one rule they add up to
 
 Documentation detailed enough to be followed literally is documentation

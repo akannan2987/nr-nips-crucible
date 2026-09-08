@@ -5,7 +5,7 @@
 **Prerequisites:** none. Every term is explained here with an everyday comparison. [`02-architecture.md`](02-architecture.md) helps for *where* the pieces go; [`07-operations.md`](07-operations.md) for how the server is run today.
 **Learning goal:** you understand what a login actually is (three separate ideas people run together), why Crucible has none yet and what that exposes, the three secure ways to add one, why they are built in that order, what each one needs from the organisation, and how a person and a script log in at each step.
 **Deliverable of this page:** the plan for phases **SH-3a**, **SH-3b** and **SH-3c** of the shared spine ([roadmap](05-roadmap.md#sh--shared-spine)): three rungs of one ladder, each secure on its own, the last one **single sign-on**, which is the destination. The decision itself is recorded in [ADR 0001](adr/0001-authentication-ladder.md).
-**Status:** 📝 planned, nothing built. The decisions at the end are the owner's.
+**Status:** ✅ agreed 2026-09-08 (decision log at the end), nothing built yet. SH-3a is ready to start.
 
 ![Three rungs: a shared token gate, local accounts with passwords, and single sign-on through the corporate identity provider; each rung keeps what the one below gave](img/fig_auth_ladder.svg)
 
@@ -390,6 +390,45 @@ Put the answers, except the secret, in this page's decision table when
 they arrive; the secret goes into `.env.local` and its backup, following
 the certificate's rule in [`07-operations.md`](07-operations.md#security).
 
+### The request, ready to send
+
+Placeholders in angle brackets are the server's real name and your own
+details, which this public page does not carry.
+
+> **Subject:** OpenID Connect application registration for Crucible (internal laboratory registry)
+>
+> Hello,
+>
+> I run Crucible, an internal web application for our laboratory's chemical
+> and sample records, hosted on `<vm-hostname>`. I would like to put it behind
+> our corporate single sign-on. Could you please register it as an OpenID
+> Connect application with the following details?
+>
+> - Application name: Crucible — internal laboratory registry
+> - Type: web application, authorization code flow with PKCE
+> - Redirect URI: `https://<vm-hostname>:49160/api/auth/callback`
+> - Post-logout redirect URI: `https://<vm-hostname>:49160/`
+> - Optional, for development only: `http://localhost:49160/api/auth/callback`, if policy allows a localhost URI
+>
+> I would need back: the client ID; the client secret through a secure
+> channel rather than e-mail; the issuer or discovery URL; and, if possible,
+> a group claim in the ID token with two or three groups I can map to
+> viewer, editor and administrator roles. Two test users in different
+> groups would let me verify the mapping.
+>
+> Could you also confirm that outbound HTTPS from `<vm-hostname>` to the
+> identity provider is allowed, or what proxy it should use?
+>
+> Separately, and only if you are the right team: the application's source
+> is mirrored to a public repository under my name with all internal
+> identifiers and data removed. May it carry an open-source licence (MIT,
+> like my other public projects, or Apache-2.0 if preferred), and in whose
+> name should the copyright line be?
+>
+> Thank you,
+> `<your name>`
+
+
 ---
 
 ## Decisions to agree
@@ -406,6 +445,14 @@ the certificate's rule in [`07-operations.md`](07-operations.md#security).
 | A8 | Who may hold a token for scripts under SSO? | Issued by an admin per service, listed by `manage_users.py list`, revocable individually | A token is a key; keys are signed out by name |
 
 ---
+
+### Decision log
+
+| # | Answer | Date |
+|---|---|---|
+| A1–A8 | **All agreed as written** — token gate now; from rung 2 only the break-glass admin unless the registration takes over six weeks; the image defaults to `off`, the server sets `token`; roles from the provider's group claim; ten-hour sliding sessions; the cross-origin policy tightened in SH-3a; service tokens issued per service by an admin | 2026-09-08 |
+| Registration request | the owner sends it this week, from the draft above | 2026-09-08 |
+| Licence question | on hold with the organisation | 2026-09-08 |
 
 ## The phases
 

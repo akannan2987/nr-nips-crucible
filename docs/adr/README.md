@@ -16,7 +16,7 @@ supersedes the old one.
 
 | # | Decision | Status |
 |---|---|---|
-| [0001](0001-authentication-ladder.md) | Authentication is added as a ladder — token gate, local accounts, single sign-on — behind one feature flag, with single sign-on as the destination | proposed |
+| [0001](0001-authentication-ladder.md) | Authentication is added as a ladder — token gate, local accounts, single sign-on — behind one feature flag, with single sign-on as the destination | accepted |
 
 Decisions made before this folder existed live in the documents that made
 them: the one design rule in [`02-architecture.md`](../02-architecture.md#the-one-design-rule-everything-else-follows-from),

@@ -97,6 +97,10 @@ git switch develop
 # Add the PUBLIC repo as a second remote named "public".
 # This is the step that makes `git fetch public` work later.
 git remote add public https://github.com/akannan2987/nr-nips-crucible.git
+# Never copy the public repo's TAGS into this folder: a tag named v2.10.1
+# must point at the PRIVATE commit here, and a fetched public tag would
+# take the name first (lesson 32).
+git config remote.public.tagOpt --no-tags
 git fetch public
 
 # Confirm both remotes are present
@@ -341,7 +345,26 @@ git push origin develop develop:beta develop:master
 # ▶ VM (mirror folder) — on the commit Step 8 just pushed
 git tag -a v2.10.1 -m "v2.10.1 — <the same subtitle>"
 git push origin v2.10.1
+git show v2.10.1 --stat | head -3      # the commit line must be the one Step 8 printed, not a public commit
 ```
+
+**If instead** `git tag -a` says `fatal: tag 'v2.10.1' already exists`, the
+public repository's tag was fetched into this folder — `git fetch public`
+copies tags unless the remote is configured not to (§2.2). **Do not push
+it:** it points at the *public* commit and would carry the public history
+into the private repository. Instead:
+
+```bash
+# ▶ VM (mirror folder)
+git config remote.public.tagOpt --no-tags       # once; stops it happening again
+git tag -d v2.10.1                               # drop the copied public tag
+git tag -a v2.10.1 -m "v2.10.1 — <subtitle>"    # now tag the private commit
+git push origin v2.10.1
+```
+
+If the wrong tag was already pushed, delete the release page on the private
+host first, then `git push origin :refs/tags/v2.10.1`, then tag and push
+again and recreate the page. What went wrong the first time is lesson 32.
 
 The private commit has a different identifier from the public one (the
 histories differ, §7), so the tag is created here separately; the *name*

@@ -911,8 +911,9 @@ decisions and what "done" means, and agreed *before* any code. Status 📝 in
 the roadmap. The safeguard against changing a data rule by reasoning alone
 (lesson 25).
 
-**Unregistered compound** — a compound named in the screening data (a name +
-CAS pair) that has no entry in the registry, so its rows cannot attach. Not
+**Unregistered compound** — a compound named in the screening data (a name,
+with or without a CAS number) that has no entry in the registry, so its rows
+cannot attach. A compound *may* be registered without a CAS; that is valid. Not
 stored as a list: worked out from the data whenever asked. Planned: a notice
 in the Chemical Registry and a review table to register some or all (CR-5).
 

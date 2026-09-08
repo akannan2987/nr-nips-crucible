@@ -45,12 +45,12 @@ specialised pages; this page tells you which one to read, when, and why.
 
 | | |
 |---|---|
-| **Version** | 2.10.1 (2026-09-08) — **the first tagged release**, `v2.10.1`, on both repositories |
+| **Version** | 2.10.2 (2026-09-08); **the first tagged release is `v2.10.1`**, on both repositories, each tag on its own repository's commit |
 | **Status date** | 2026-09-08 |
 | **Tests** | 105 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | SH-1 — Module names ✅ (2026-09-08): the sidebar, pages, dashboard and documents say *Chemical Registry*, *Sample Management*, *Screening Data*; every address unchanged — [phase SH-1](04-phase-tutorials/phase-sh-1-module-names.md) |
-| **Phase in progress** | **R — the registry reset** 🔨 (tracks CR + SD): **R-1 done on production 2026-09-08** (every row unlinked, 664 entries kept, backup held); R-2 runs only on the owner's go, after the new rule is agreed; R-3 is now **SD-1, specified 📝** — the registry-first rule, written from the owner's description on 2026-09-08 and awaiting agreement — [phase R](04-phase-tutorials/phase-r-registry-reset.md) · [the specification](09-chemical-identification.md#the-next-rule-registry-first--specification) |
-| **Plan** | Six **tracks**, one per module and a shared spine, each with its next phase — [`05-roadmap.md`](05-roadmap.md). Next in order: SD-1 agreed 📝 → R-2 → CR-3 every way in 🔜 → SD-1 build → CR-5 unregistered review → CR-1/CR-2 table → CR-4 incomplete entries → SH-2 schema normalisation; beside them, the **authentication ladder** SH-3a token gate 📝 → SH-3b local accounts → SH-3c single sign-on ⏸ the identity team's registration — [`13-authentication.md`](13-authentication.md) |
+| **Phase in progress** | **R — the registry reset** 🔨 (tracks CR + SD): **R-1 done on production 2026-09-08** (every row unlinked, 664 entries kept, backup held); R-2 runs on the owner's go, after the demo; R-3 is now **SD-1, agreed ✅ 2026-09-08** — the registry-first rule, written from the owner's description and agreed the same day, D1–D11 as recommended — [phase R](04-phase-tutorials/phase-r-registry-reset.md) · [the specification](09-chemical-identification.md#the-next-rule-registry-first--specification) |
+| **Plan** | Six **tracks**, one per module and a shared spine, each with its next phase — [`05-roadmap.md`](05-roadmap.md). Next in order: R-2 (go) → CR-3 every way in 🔜 → SD-1 build → CR-5 unregistered review → CR-1/CR-2 table → CR-4 incomplete entries → SH-2 schema normalisation; beside them, the **authentication ladder**, agreed 2026-09-08: SH-3a token gate 🔜 ready → SH-3b break-glass admin → SH-3c single sign-on ⏸ the identity team's registration, requested this week — [`13-authentication.md`](13-authentication.md) |
 | **Production** | one RHEL 8 VM, one container, one SQLite file: 49,065 screening rows, 664 registered chemicals, **0 rows linked** since R-1 on 2026-09-08 (by design; the reset is in progress) |
 
 **Open items, none blocking:**
@@ -372,7 +372,7 @@ code (`phase-cr-3-every-way-in.md`). What each track does next is
 | R | CR · SD | Registry reset | `--unlink-all` and `--all` on the removal script, batched and gated, with the script's first six tests; the two-step procedure on production; then the new identification logic | [`phase-r-registry-reset.md`](04-phase-tutorials/phase-r-registry-reset.md) | 2026-09-08 (v2.5.0 tools · v2.6.0 buttons · v2.7.0 match, confirm, summaries) | 🔨 R-1 done 2026-09-08 · R-2 awaiting go after SD-1 is agreed · R-3 written as the SD-1 specification 📝 (2026-09-08) |
 | SH-1 | SH | Module names | *Chemicals*, *Samples*, *Screening* become *Chemical Registry*, *Sample Management*, *Screening Data* in the sidebar, the page headings, the dashboard tiles, the interactive architecture page and every document; no address or API path changed | [`phase-sh-1-module-names.md`](04-phase-tutorials/phase-sh-1-module-names.md) | 2026-09-08 (v2.9.0) | ✅ |
 | 06 (SH-2) | SH | Schema normalisation | The frequently-filtered fields promoted from JSON into indexed columns, without changing the API or breaking the design rule | `04-phase-tutorials/phase-06-schema-normalisation.md` | — | 🔜 |
-| 07 (SH-3a/b/c) | SH | Authentication, as a ladder | A token gate (SH-3a), local accounts (SH-3b), single sign-on through the organisation's identity provider (SH-3c) — one flag, one guard on every route, one open health route; planned in [`13-authentication.md`](13-authentication.md), decided in [ADR 0001](adr/0001-authentication-ladder.md) | `04-phase-tutorials/phase-sh-3a-token-gate.md` and siblings | — | 📝 SH-3a · ⏸ SH-3c on the registration |
+| 07 (SH-3a/b/c) | SH | Authentication, as a ladder (agreed 2026-09-08) | A token gate (SH-3a), local accounts (SH-3b), single sign-on through the organisation's identity provider (SH-3c) — one flag, one guard on every route, one open health route; planned in [`13-authentication.md`](13-authentication.md), decided in [ADR 0001](adr/0001-authentication-ladder.md) | `04-phase-tutorials/phase-sh-3a-token-gate.md` and siblings | — | 🔜 SH-3a ready · ⏸ SH-3c on the registration |
 
 Version-by-version detail, including what each release deliberately did *not*
 fix, is in [`NEWS.md`](../NEWS.md).
@@ -486,10 +486,10 @@ roadmap names the next phase of each ([where each track stands](05-roadmap.md#wh
 In the order the roadmap [argues for](05-roadmap.md#why-this-order):
 
 1. ~~SH-1 — module names~~ done, v2.9.0.
-2. **SD-1 agreed, then R-2:** the registry-first rule is
-   [specified](09-chemical-identification.md#the-next-rule-registry-first--specification);
-   once its ten decisions are agreed, the registry is emptied (R-2, behind
-   a backup and a go).
+2. ~~SD-1 agreed~~ 2026-09-08, **then R-2:** the registry-first rule is
+   [specified and agreed](09-chemical-identification.md#the-next-rule-registry-first--specification);
+   the registry is emptied next (R-2, behind a backup and a go, after the
+   demo).
 3. **CR-3 — every way in:** JSON upload and one terminal command, so the
    empty registry can be refilled from a curated file by any route.
 4. **SD-1 build, then CR-5:** the rule in code, with the command that

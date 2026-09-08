@@ -2,7 +2,7 @@
 
 # Phase R — The registry reset: unlink everything, empty the registry, start again
 
-**Version shipped:** 2.5.0 (the tools), 2.6.0 (the buttons), 2.7.0 (select-all-matching, confirmation, per-chemical summaries) · **Date:** 2026-09-08 · **Status:** in progress — **R-1 done on production on 2026-09-08** (the owner, from the browser, then the terminal for a re-linked page); R-2 waits on the owner's go, after the new rule is agreed; R-3 was described on 2026-09-08 and is now the **SD-1 specification**, awaiting agreement
+**Version shipped:** 2.5.0 (the tools), 2.6.0 (the buttons), 2.7.0 (select-all-matching, confirmation, per-chemical summaries) · **Date:** 2026-09-08 · **Status:** in progress — **R-1 done on production on 2026-09-08** (the owner, from the browser, then the terminal for a re-linked page); R-2 waits on the owner's go; R-3 was described on 2026-09-08 and is now the **SD-1 specification, agreed the same day**
 **Prerequisites:** [Phase 04](phase-04-template-ingestion.md) for what identification is; the [playbook](../10-user-playbook.md) Parts 4–6 for the registry as it stands; on the VM, a backup you have copied outside the repository.
 **Learning goal:** you understand what a link between a measurement and a compound is, where it is stored, why removing it is safe and reversible while deleting a compound is not, and how a data operation is made *provably dry* before it is made real.
 **Deliverable:** two new modes on the removal script — `--unlink-all` and `--all` — each gated on `--apply`, batched, and covered by the script's first automated tests; a written procedure for the two steps on production; the registry emptied so that the new identification logic starts clean.
@@ -206,8 +206,8 @@ has to be refillable from a curated file first — the 664 entries in the
 pre-R-1 backup, exported and reviewed, are the candidate first file (decision
 D10 in the specification).
 
-**You should see,** when the specification is agreed: the status box in the
-handbook moves SD-1 from *specified* to *in progress*, and R-2 gets its go.
+**Agreed on 2026-09-08**, D1–D11 as recommended; the decision log in the
+specification records it. R-2 now waits only on the owner's go.
 
 ---
 

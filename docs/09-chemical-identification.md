@@ -359,8 +359,9 @@ cut -d, -f3 unlinked.csv | sort | uniq -c | sort -rn
 
 ## The next rule: registry-first — specification
 
-> **Status: specified, not built.** Written on 2026-09-08 from the owner's
-> description, as phase **SD-1** of the [roadmap](05-roadmap.md#sd--screening-data).
+> **Status: agreed, not yet built.** Written on 2026-09-08 from the owner's
+> description and agreed the same day (decision log below), as phase **SD-1**
+> of the [roadmap](05-roadmap.md#sd--screening-data). R-2 may now run.
 > Everything above this heading describes the rule that runs *today*; this
 > section is the rule that replaces it, written down and agreed **before any
 > code**, because the last rule was changed once by reasoning alone and
@@ -376,6 +377,13 @@ cut -d, -f3 unlinked.csv | sort | uniq -c | sort -rn
 when the registry already holds that compound, recognised by *both* its name
 *and* its CAS number; nothing in the upload path invents a compound or asks
 an outside database.
+
+**A compound may be registered without a CAS number.** That is valid and
+normal — many substances, mixtures and house materials have none — and the
+registry accepts such entries by every route (the browser form, the
+uploads, the API) today and after this rule. The rule above governs only
+*automatic attachment of screening rows*, which needs both identifiers; an
+entry without a CAS receives rows by hand (Rule 5) or under decision D11.
 
 *Everyday version:* a members-only building. A visitor gives a name and a
 membership number; the receptionist looks both up in the members' book and
@@ -418,9 +426,9 @@ holds exactly what the file can vouch for and nothing inferred:
 | Field | From |
 |---|---|
 | `name` | the row's compound name, as written in the file |
-| `cas_number` | the first well-formed CAS number in the row's CAS cell |
+| `cas_number` | the first well-formed CAS number in the row's CAS cell, or empty when the row has none — an entry without a CAS is valid |
 | `cas_alternatives` | any further CAS numbers found in the same cell |
-| `chemical_id` | generated, `CAS-<number>`, so the same compound registered twice gets the same identifier |
+| `chemical_id` | generated, `CAS-<number>` when there is a CAS, otherwise `NAME-<stable hash of the name>` as today, so the same compound registered twice gets the same identifier either way |
 | `identification` | `"registered from screening data"` — the provenance tag every entry carries |
 | `source` | the upload's provenance tag (`Cergy_data` for the first template) |
 | `created_at`, `updated_at` | now |
@@ -452,7 +460,7 @@ is what the code will do unless the owner says otherwise.
 |---|---|---|---|
 | D1 | How is a *name match* judged? | Exact after normalisation: lower-case, whitespace collapsed, the same key function used today (`_name_key`). No fuzzy or partial matching. | Fuzzy matching is inference, and inference is what the rule removes |
 | D2 | A CAS cell holding two numbers (`96-76-4; 128-39-2`)? | The row matches an entry if the name matches **and** *any* of the row's well-formed CAS numbers equals the entry's `cas_number`. The first number is the row's CAS for registration; the others go to `cas_alternatives`. | The cell is the laboratory's evidence; either number is a genuine claim |
-| D3 | Rows with no CAS number (2,278 compounds)? | Never attached automatically. They may be linked by hand to a registered compound (Rule 5 holds: the target is registered). They appear on the unregistered table with an empty CAS and cannot be registered from it. | Registering a compound on a name alone is exactly the failure the rule prevents |
+| D3 | Rows with no CAS number (2,278 compounds)? | Never attached automatically by Rule 1, which needs both identifiers. They may be linked by hand to any registered compound (Rule 5 holds: the target is registered). They appear on the unregistered table with an empty CAS and **can be registered from it**, as a compound without a CAS — valid, per the owner — with the person choosing to do so. | The rule stops the *system* from inferring an identity from a name alone; it does not stop a *person* from registering a compound they know has no CAS |
 | D4 | Two registry entries with the same name **and** CAS? | No automatic link; the pair is reported as a duplicate for the audit and the merge tool. | A link must be unambiguous |
 | D5 | The default when the API or the terminal adds screening data? | Do **not** register (`register_unregistered=false`); the response lists the unregistered pairs and counts. The browser asks; scripts must ask explicitly. | An unattended route must never widen the registry by default |
 | D6 | The upload page's question (Rule 3): before or after the rows are written? | **After.** Rows are written unlinked, then the dialog offers *Register these N compounds and link their rows* / *Not now*. | One upload endpoint for every route; the *yes* is the same action the review table uses; nothing is lost if the browser closes |
@@ -460,12 +468,27 @@ is what the code will do unless the owner says otherwise.
 | D8 | What becomes of stage 2 and the PubChem scripts? | `link_pubchem.py` no longer runs against screening rows; `propose_chemicals.py` is superseded by the review table; `enrich_pubchem.py` becomes the engine behind CR-4's *Fetch from PubChem* with a review step. The scripts stay in the image until CR-4 ships, then are retired in one commit with their documentation. | Nothing is deleted before its replacement exists |
 | D9 | Do the samples and toxicology modules follow the same rule? | Yes, when their tracks reach it (SM-3). Until then their upload paths are unchanged. | One rule for every record type that links; but each module's change is its own phase |
 | D10 | The 664 entries in the pre-R-1 backup? | Export them as JSON, review, and load the good ones through CR-3 as the first curated file. | Most were registered under the strict PubChem rule and carry correct chemistry; the review is the safeguard |
+| D11 | **A registered compound with no CAS, and a screening row with the same name and no CAS — do they attach automatically?** | **Recommendation: yes, but only when the registered entry was created by a person** (registered by hand, from a curated file, or from the review table — not by an old inference job) **and the row's CAS cell is empty**: the two identifiers then agree on both counts, name equal and CAS absent on both sides. A row *with* a CAS never attaches to an entry *without* one, and the reverse. | Otherwise the 2,278 no-CAS rows could never attach except one by one by hand, even after the person has deliberately registered the compound; the "created by a person" condition keeps inference out. If the owner prefers strictness, answer "no": then those rows attach by hand only, in bulk with *select all matching rows* |
+
+### Decision log
+
+The owner's answers, as they arrive. A row that says *recommendation* means
+the recommendation above stands as the answer; a changed answer is written
+out in full, dated, and the row above is left as it was so the reasoning
+stays readable.
+
+| # | Answer | Date |
+|---|---|---|
+| D1–D11 | **All agreed as written** — every recommendation above is the answer, including D11 (a person-registered compound with no CAS attaches rows with the same name and no CAS) | 2026-09-08 |
 
 ### What "done" means for SD-1
 
 - The upload path links on name **and** CAS, and the parity tests for the
   Cergy template are updated to show it (a name-only match no longer links; a
-  CAS-only match no longer links; a both-match links).
+  CAS-only match no longer links; a both-match links; a no-CAS row against a
+  person-registered no-CAS entry follows D11).
+- A compound can still be registered without a CAS by every route, and a
+  test proves it.
 - Every route that adds screening data reports unregistered pairs; none of
   them touches PubChem (a test asserts no network call).
 - *Register from screening data* exists as one action behind the upload

@@ -210,6 +210,17 @@ workbook code in an example row. The gate now searches untracked files too.
 *Lesson: a check that runs before `git add` must look at the working tree,
 not the index; otherwise "new" is exactly the case it misses.*
 
+
+**29. A comment stated what a platform does, without checking.** The first
+CI workflow said in its header that the private repository "does not run
+workflows", and ran the publication gate unconditionally. The private
+repository does run workflows; its first run failed at the gate, which
+refused the six real workbooks that repository carries on purpose. The gate
+was right; the assumption was wrong. The gate is now conditional on the
+repository name, and everything else runs on both sides. *Lesson: a sentence
+that describes what another system will do is a claim, and a claim about a
+system you can push to is one push away from being tested.*
+
 ---
 
 ## The one rule they add up to

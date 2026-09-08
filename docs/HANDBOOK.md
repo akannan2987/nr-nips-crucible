@@ -45,7 +45,7 @@ specialised pages; this page tells you which one to read, when, and why.
 
 | | |
 |---|---|
-| **Version** | 2.4.0 (2026-09-07) |
+| **Version** | 2.4.1 (2026-09-08) |
 | **Status date** | 2026-09-07 |
 | **Tests** | 90 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | 05b — Reproducible builds and CI ✅ (2026-09-07): a lock file generated inside the image, the linter, a workflow on the public repository running every check on Linux and macOS |
@@ -319,8 +319,9 @@ cd backend && .venv/bin/pytest -q && cd ..               # expect: 90 passed
 
 and ends with the gates — the linter, the tests, the link check,
 `./check-public-safe.sh` printing `✓ SAFE TO PUSH` after `git add`, and a
-rebuild if code changed — before anything is pushed. After the push, the
-public repository's CI runs the same checks on a Linux and a macOS machine
+rebuild if code changed — before anything is pushed. After the push, CI
+runs the same checks on a Linux and a macOS machine, in the public
+repository and again in the private one after the mirror
 ([phase 05b](04-phase-tutorials/phase-05b-reproducible-builds-and-ci.md));
 mirror only a green commit.
 A fix discovered on the VM travels back as a patch, never a push:

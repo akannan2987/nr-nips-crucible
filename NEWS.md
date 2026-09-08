@@ -10,6 +10,24 @@ change you are getting.
 
 ---
 
+## v2.4.1 — 2026-09-08 — "The gate knows which repository it is in"
+
+A one-step fix to the workflow shipped in v2.4.0, found by its first run in
+the private repository.
+
+**Fixed**
+- **The safety gate now runs only in the public repository.** The v2.4.0
+  workflow assumed the private repository runs no workflows; it does, and
+  its first run failed at the gate, which refused the six real workbooks the
+  private repository carries on purpose. That is the gate doing its job in
+  the wrong place. Every other check — linter, tests on Linux and macOS,
+  client build, figure determinism, links — runs in both repositories, so the
+  deployed content is tested too; the gate is conditional on the repository
+  name. The workflow's comment, the tutorial, the git-workflow guide and the
+  contributing guide say so; lesson 29 records the assumption.
+
+---
+
 ## v2.4.0 — 2026-09-07 — "The same build, every time"
 
 A build-and-checks release. The application's behaviour is unchanged; what
@@ -31,7 +49,8 @@ changed is how surely two builds are the same, and who checks a push.
   install from the lock on Python 3.12, run the linter and the 90 tests,
   regenerate the figures and expect no diff, check every documentation link,
   and run the safety gate; a second job builds the client with Node 18 from
-  its own lockfile. The private repository, a content mirror, runs nothing.
+  its own lockfile. (v2.4.1: the workflow runs in both repositories; the
+  gate only in the public one.)
 - **`check-links.py`** — the documentation link checker as a tracked,
   cross-platform script, so CI and a laptop run the same one.
 - Tutorial: [phase 05b](docs/04-phase-tutorials/phase-05b-reproducible-builds-and-ci.md).

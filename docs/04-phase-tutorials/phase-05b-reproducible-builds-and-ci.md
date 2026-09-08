@@ -67,7 +67,7 @@ it at yours.
 | Dockerfile installs from the lock | `RUN pip install -r backend/requirements.lock` — the image gets what the lock says, nothing newer | `backend/Dockerfile` |
 | `backend/ruff.toml` | The linter's explicit rule set — real errors, unused names, import order, modern syntax, common bugs — so a laptop and CI agree | `backend/ruff.toml` |
 | A clean codebase | 182 findings fixed: 180 automatically (import order, `Optional[X]` → `X \| None`), two by hand | `backend/app/`, `backend/scripts/` |
-| `.github/workflows/ci.yml` | Two jobs. *backend* on Linux and macOS: Python 3.12, install from the lock, `ruff`, `pytest`, figure determinism, link check, safety gate. *client*: Node 18, `npm ci`, build | `.github/workflows/ci.yml` |
+| `.github/workflows/ci.yml` | Two jobs. *backend* on Linux and macOS: Python 3.12, install from the lock, `ruff`, `pytest`, figure determinism, link check, and — in the public repository only — the safety gate. *client*: Node 18, `npm ci`, build. The same file runs in both repositories | `.github/workflows/ci.yml` |
 | `check-links.py` | The documentation link checker as a tracked, cross-platform script, so CI and a laptop run the same one | `check-links.py` |
 | An RDKit cap | `rdkit<2025.9.4` in `requirements.txt`: the newest release with pre-built packages for *every* machine this project uses — the Linux image and VM, the macOS CI runner, and the Intel Mac the code is developed on. The comment beside it says how to check the next release before lifting the cap | `backend/requirements.txt` |
 
@@ -76,11 +76,11 @@ flowchart LR
     subgraph push["a push to develop, beta or master"]
         P["git push"]
     end
-    subgraph ci["CI on the public repository"]
+    subgraph ci["CI — the same workflow in both repositories"]
         direction TB
         L["Linux runner<br/>Python 3.12"] --> S["install from requirements.lock"]
         M["macOS runner<br/>Python 3.12"] --> S
-        S --> R["ruff check"] --> T["pytest — 90 tests"] --> F["make_figures.py, expect no diff"] --> K["check-links.py"] --> G["check-public-safe.sh"]
+        S --> R["ruff check"] --> T["pytest — 90 tests"] --> F["make_figures.py, expect no diff"] --> K["check-links.py"] --> G["check-public-safe.sh<br/>(public repository only)"]
         N["Linux runner<br/>Node 18"] --> C["npm ci → npm run build"]
     end
     P --> ci
@@ -224,7 +224,8 @@ it, as with any tool that edits code.
 ## Step 6 — Read the workflow, then watch it run
 
 **What:** open `.github/workflows/ci.yml`, then the *Actions* tab of the
-public repository after your next push.
+public repository after your next push — and of the private one after the
+mirror; both run it.
 
 **Why:** the workflow is short and commented; every step is one of the
 checks you have just run by hand. The point of reading it is to know that a
@@ -260,9 +261,12 @@ And, after the push, a green tick on the commit in the public repository's
 
 - **Pin the client the same way.** `client/package-lock.json` already is a
   lock; `npm ci` in CI installs exactly what it says. Nothing to add.
-- **Run CI on the private repository.** It is a content mirror; the checks
-  have already passed on the same content publicly. The VM's own proof is
-  `./verify-deploy.sh` after a deploy.
+- **Run the safety gate on the private repository.** The workflow itself
+  runs there too — the first push proved it, by failing: the gate refused the
+  six real workbooks the private repository carries on purpose. Everything
+  else runs on both sides, which means the *deployed* content gets its tests
+  run as well; the gate is limited to the public repository, where it has a
+  job. The VM's own proof after a deploy remains `./verify-deploy.sh`.
 - **Add a Windows runner.** The Windows guide is untested; a runner would
   test the backend on Windows before a person has, and its failures would
   be hard to tell from the guide's. It is the natural next step after the

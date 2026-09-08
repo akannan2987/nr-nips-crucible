@@ -238,10 +238,11 @@ last section; the ones every change must respect:
 
 ## 8. Review norms
 
-- **CI must be green** on the public repository before a push is mirrored:
-  the linter, the tests on Linux and macOS, the client build, the figure
-  determinism check, the link check and the safety gate. A red run is read
-  before anything else is done.
+- **CI must be green** on the public repository before a push is mirrored,
+  and it runs again on the private one afterwards: the linter, the tests on
+  Linux and macOS, the client build, the figure determinism check, the link
+  check, and — public side only — the safety gate. A red run is read before
+  anything else is done.
 - **Pull requests are for `feature/* → develop` only.** `develop → beta →
   master` is promoted by fast-forward from the command line, never by a
   button.

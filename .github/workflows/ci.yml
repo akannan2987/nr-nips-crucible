@@ -1,20 +1,23 @@
 # ---------------------------------------------------------------------------
-# Continuous integration (CI) for the PUBLIC repository.
+# Continuous integration (CI).
 #
 # Every time a commit is pushed, the host rents two fresh machines — one Linux,
 # one macOS — installs the backend exactly the way the setup guides say to
 # (from the lock file, on Python 3.12, the same version the container image
 # uses), runs the linter and the 90 tests, builds the React client, regenerates
-# the figures to prove they are deterministic, checks every documentation link,
-# and runs the publication safety gate. Green means the checks a person runs by
-# hand before a push all passed on machines that are not that person's.
+# the figures to prove they are deterministic, and checks every documentation
+# link. Green means the checks a person runs by hand before a push all passed
+# on machines that are not that person's.
 #
 # Everyday analogy: a driving test taken on two different cars every time you
 # change anything about how you drive.
 #
-# This workflow is for the public repository. The private repository is a
-# content mirror and does not run workflows; its deploy is verified on the VM
-# by ./verify-deploy.sh instead (docs/07-operations.md).
+# The same file runs in BOTH repositories. One step differs: the publication
+# safety gate runs only in the public repository, because its job is to refuse
+# real laboratory data — and the private repository carries the six real
+# workbooks on purpose, so there the gate would (correctly) fail every time.
+# The private deploy is additionally verified on the VM by ./verify-deploy.sh
+# (docs/07-operations.md).
 # ---------------------------------------------------------------------------
 name: CI
 
@@ -64,7 +67,8 @@ jobs:
       - name: Documentation links resolve
         run: python3 check-links.py
 
-      - name: Publication safety gate
+      - name: Publication safety gate (public repository only — the private one holds real workbooks by design)
+        if: github.repository == 'akannan2987/nr-nips-crucible'
         run: ./check-public-safe.sh
 
   client:

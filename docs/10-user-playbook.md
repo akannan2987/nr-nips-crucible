@@ -405,7 +405,7 @@ cd ~/work/Pandora_toolbox/nr-nips-crucible
 ./container-py.sh backup
 
 # 2. Preview. Writes nothing.
-podman exec crucible-py python /app/backend/scripts/link_pubchem.py --limit 60
+./container-py.sh script link_pubchem.py --limit 60
 ```
 
 **You should see** progress every five compounds, then a breakdown by reason.
@@ -496,11 +496,11 @@ every unlink tells you how many rows of which chemical it detached.
 
 ```bash
 # every row of one or more chemicals, keeping the entries — report first, then --apply
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py CHEM-000374 --unlink-only
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py CHEM-000374 --unlink-only --apply
+./container-py.sh script remove_chemicals.py CHEM-000374 --unlink-only
+./container-py.sh script remove_chemicals.py CHEM-000374 --unlink-only --apply
 
 # every row of every chemical (the reset's first step)
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --unlink-all --apply
+./container-py.sh script remove_chemicals.py --unlink-all --apply
 ```
 
 Every run prints the rows per chemical it will touch, most first, before
@@ -514,7 +514,7 @@ judgement:
 
 ```bash
 podman cp unlinked.csv crucible-py:/app/backend/unlinked.csv
-podman exec crucible-py python /app/backend/scripts/propose_chemicals.py \
+./container-py.sh script propose_chemicals.py \
   /app/backend/unlinked.csv -o /app/backend/proposed.xlsx
 podman cp crucible-py:/app/backend/proposed.xlsx ./proposed.xlsx
 ```
@@ -538,7 +538,7 @@ by side.
 Then upload via **Chemical Registry → Upload Chemicals (ELN)**, and re-link:
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/link_pubchem.py --apply
+./container-py.sh script link_pubchem.py --apply
 ```
 
 **You should see** `Re-linked N rows to compounds registered by an earlier run.`
@@ -567,7 +567,7 @@ photo and address. The name looks right in your contacts list. Everything you do
 ## Run the audit
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/audit_chemicals.py
+./container-py.sh script audit_chemicals.py
 ```
 
 **You should see:**
@@ -620,7 +620,7 @@ Two exemptions stop it crying wolf:
 > reading the pairs by eye. To read them all:
 >
 > ```bash
-> podman exec crucible-py python /app/backend/scripts/audit_chemicals.py --all | less
+> ./container-py.sh script audit_chemicals.py --all | less
 > ```
 
 ## Why this happened at all
@@ -716,7 +716,7 @@ Then report, read, and only then apply:
 
 ```bash
 podman cp bad-ids.txt crucible-py:/app/backend/bad-ids.txt
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py \
+./container-py.sh script remove_chemicals.py \
   --from-file /app/backend/bad-ids.txt
 ```
 
@@ -734,7 +734,7 @@ Report only — nothing written. Re-run with --apply.
 **Check the names are the ones you meant**, then:
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py \
+./container-py.sh script remove_chemicals.py \
   --from-file /app/backend/bad-ids.txt --apply
 ```
 
@@ -748,8 +748,8 @@ Two different CAS numbers can point at one compound — a substance and a varian
 of it. Production held `1-Docosanol` twice.
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/merge_duplicate_chemicals.py
-podman exec crucible-py python /app/backend/scripts/merge_duplicate_chemicals.py --apply
+./container-py.sh script merge_duplicate_chemicals.py
+./container-py.sh script merge_duplicate_chemicals.py --apply
 ```
 
 It keeps the older entry, copies over any detail only the duplicate had,
@@ -763,7 +763,7 @@ would destroy a real distinction, so the tool does not.
 ## Confirming
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/audit_chemicals.py
+./container-py.sh script audit_chemicals.py
 ./verify-deploy.sh https://localhost:49160
 ```
 

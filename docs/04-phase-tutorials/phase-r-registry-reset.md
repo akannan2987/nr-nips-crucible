@@ -102,8 +102,8 @@ that nothing changed.
 
 ```bash
 curl --noproxy '*' -sSk https://localhost:49160/api/stats | head -c 120; echo
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --unlink-all
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --all
+./container-py.sh script remove_chemicals.py --unlink-all
+./container-py.sh script remove_chemicals.py --all
 curl --noproxy '*' -sSk https://localhost:49160/api/stats | head -c 120; echo
 ```
 
@@ -128,7 +128,7 @@ of rows it *would* unlink (`screening 43399` on production today), and
 cd ~/work/Pandora_toolbox/nr-nips-crucible
 ./container-py.sh backup
 cp "$(ls -t backups/crucible-*.db | head -1)" ~/data-backup-$(date +%Y%m%d)-before-R1.db
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --unlink-all --apply
+./container-py.sh script remove_chemicals.py --unlink-all --apply
 curl --noproxy '*' -sSk https://localhost:49160/api/screening/columns | python3 -c "import sys,json; d=json.load(sys.stdin); print('identified:', d.get('identified'))"
 ./verify-deploy.sh https://localhost:49160
 ```
@@ -169,7 +169,7 @@ unlinked are simply reported as not linked. **If instead:** you want it back —
 ```bash
 ./container-py.sh backup
 cp "$(ls -t backups/crucible-*.db | head -1)" ~/data-backup-$(date +%Y%m%d)-before-R2.db
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --all --apply
+./container-py.sh script remove_chemicals.py --all --apply
 curl --noproxy '*' -sSk https://localhost:49160/api/stats | head -c 60; echo
 ./verify-deploy.sh https://localhost:49160
 ```
@@ -275,7 +275,7 @@ system Python is 3.6, which is fine for this), pipe through
 **What:** the script's own report and the deploy check.
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --all      # report only
+./container-py.sh script remove_chemicals.py --all      # report only
 ./verify-deploy.sh https://localhost:49160
 ```
 

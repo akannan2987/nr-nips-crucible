@@ -221,14 +221,60 @@ to deploy now and matters later, when the registry is refilled.
 | API, plain | `curl --noproxy '*' -sSk -X DELETE https://localhost:49160/api/chemicals/<id>` on a linked compound | HTTP 409, `{"error":"N screening rows linked to <id>; unlink them first …"}`, nothing changed |
 | API, forced | the same with `?force=true` | `{"message":"Chemical deleted successfully","unlinked":{"screening":N,"total":N}}`; those rows now show their source name and no chemical |
 | API, bulk and clear-all | `POST /api/chemicals/bulk/delete` with and without `"force": true`; `DELETE /api/chemicals/all/clear` with and without `?force=true` | refused with the counts, then done with `unlinked` |
-| Terminal, the script | `podman exec crucible-py python /app/backend/scripts/remove_chemicals.py <id>` then `--apply` | the report, then `Removed 1 entries, unlinked N rows` — unchanged behaviour, now from the shared module |
+| Terminal, the script | `./container-py.sh script remove_chemicals.py <id>` then `--apply` | the report, then `Removed 1 entries, unlinked N rows` — unchanged behaviour, now from the shared module |
 | Database | Query page: `SELECT COUNT(*) FROM screening WHERE chemical_id IS NOT NULL AND chemical_id NOT IN (SELECT chemical_id FROM chemicals)` | `0` — no dangling link, before and after any of the above |
 | Deploy check | `./verify-deploy.sh https://localhost:49160` | `16 passed`, including *no dangling chemical links* |
 | Automated tests | `cd backend && .venv/bin/pytest -q` | `111 passed` |
 
+### The exact commands, on the server
+
+On a Mac replace `https://localhost` with `http://localhost` and drop `-k`.
+To try them on a registry with nothing linked, first add a test compound
+and link one row to it from the Screening Data page:
+
+```bash
+curl --noproxy '*' -sSk -X POST https://localhost:49160/api/chemicals -H 'Content-Type: application/json' \
+  -d '{"chemical_id":"CHEM-TEST-DEL","name":"Test compound for CR-6"}'
+```
+
+**One compound.** `force` is a query parameter; the quotes matter because of the `?`:
+
+```bash
+curl --noproxy '*' -sSk -X DELETE https://localhost:49160/api/chemicals/CHEM-TEST-DEL                  # refused: 409 + the count
+curl --noproxy '*' -sSk -X DELETE "https://localhost:49160/api/chemicals/CHEM-TEST-DEL?force=true"     # unlinks, then deletes
+```
+
+**Several.** `force` is a field in the JSON body:
+
+```bash
+curl --noproxy '*' -sSk -X POST https://localhost:49160/api/chemicals/bulk/delete -H 'Content-Type: application/json' \
+  -d '{"chemical_ids":["CHEM-TEST-DEL","CHEM-TEST-OTHER"]}'                    # refused if any is linked
+curl --noproxy '*' -sSk -X POST https://localhost:49160/api/chemicals/bulk/delete -H 'Content-Type: application/json' \
+  -d '{"chemical_ids":["CHEM-TEST-DEL","CHEM-TEST-OTHER"],"force":true}'       # unlinks, then deletes
+```
+
+**Every compound.** Query parameter again; no undo, so back up first:
+
+```bash
+curl --noproxy '*' -sSk -X DELETE https://localhost:49160/api/chemicals/all/clear                     # refused while anything is linked
+curl --noproxy '*' -sSk -X DELETE "https://localhost:49160/api/chemicals/all/clear?force=true"        # unlinks everything, then clears
+```
+
+**The script**, which needs no force — it always unlinks first, and
+`--apply` is its confirmation:
+
+```bash
+./container-py.sh script remove_chemicals.py CHEM-TEST-DEL                  # report only
+./container-py.sh script remove_chemicals.py CHEM-TEST-DEL --apply          # one
+./container-py.sh script remove_chemicals.py CHEM-TEST-DEL CHEM-TEST-OTHER --apply   # several
+podman cp ids.txt crucible-py:/app/backend/ids.txt
+./container-py.sh script remove_chemicals.py --from-file /app/backend/ids.txt --apply   # a list
+```
+
 On production today every route answers as if nothing were linked, because
 nothing is. The refusal becomes visible the first time a compound with rows
-is deleted from the browser after the registry is refilled.
+is deleted from the browser after the registry is refilled — or the moment
+you link one row to the test compound above.
 
 ---
 

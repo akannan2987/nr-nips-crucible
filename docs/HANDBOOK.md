@@ -56,7 +56,7 @@ the induction course, the tasks page is the laminated card by the machine.
 
 | | |
 |---|---|
-| **Version** | 2.11.0 (2026-09-09); the first tagged release was `v2.10.1` |
+| **Version** | 2.12.0 (2026-09-09); the first tagged release was `v2.10.1` |
 | **Status date** | 2026-09-09 |
 | **Tests** | 105 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | CR-6 — Deletion refuses or forces ✅ (2026-09-09): a compound with linked rows cannot be deleted from the browser or the plain API; the forced API and the script unlink first, then delete; the link logic in one module — [phase CR-6](04-phase-tutorials/phase-cr-6-delete-unlinks-first.md) |
@@ -561,6 +561,7 @@ machines; they auto-detect podman or Docker.
 | Rebuild after a code change | `./container-py.sh rebuild` | `./container-py.sh backup && ./container-py.sh rebuild` |
 | Is it up? | `curl --noproxy '*' -sS http://localhost:49160/api/stats` | `curl --noproxy '*' -sSk https://localhost:49160/api/stats` |
 | Status, logs | `./container-py.sh status` · `logs` | same |
+| Run a maintenance script (audit, remove, merge…) | `./container-py.sh script <name.py> [args]` — no name lists them; the scripts always report first and write only with `--apply` | same |
 | The gate, before every push | `git add -A && ./check-public-safe.sh` → `✓ SAFE TO PUSH` · `python3 check-links.py` | — |
 | Publish | `git push origin develop develop:beta develop:master` | — |
 | Tag the release (every version that reaches production) | `git tag -a vX.Y.Z -m "vX.Y.Z — <NEWS subtitle>" && git push origin vX.Y.Z`, then the Release page | mirror folder: the same tag on the mirror's commit, then the Release page on the private host |

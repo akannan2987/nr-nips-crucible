@@ -148,6 +148,8 @@ show_help() {
     echo "  lock        Regenerate backend/requirements.lock inside the base image"
     echo "  logs        Show container logs (follow)"
     echo "  status      Show container status + /api/stats healthcheck"
+    echo "  script <name> [args]  Run a maintenance script inside the container"
+    echo "              e.g. ./container-py.sh script remove_chemicals.py CHEM-000042 --apply"
     echo "  shell       Open a shell in the container"
     echo "  clean       Remove container and image"
     echo "  db-start    Start the PostgreSQL container (for USE_POSTGRES=true)"
@@ -476,6 +478,23 @@ show_status() {
     fi
 }
 
+run_script() {
+    # The maintenance scripts need the application's Python and packages,
+    # which live only inside the image — so this is the one-line form of
+    # `$RUNTIME exec crucible-py python /app/backend/scripts/<name> …`.
+    check_podman_machine
+    local name="$1"
+    if [ -z "$name" ]; then
+        echo "Usage: $0 script <name.py> [args...]   (scripts in backend/scripts/)"
+        echo "Available:"
+        ls backend/scripts/*.py 2>/dev/null | sed 's|.*/|  |'
+        return 1
+    fi
+    shift
+    case "$name" in */*) ;; *) name="/app/backend/scripts/${name}" ;; esac
+    $RUNTIME exec ${CONTAINER_NAME} python "$name" "$@"
+}
+
 open_shell() {
     check_podman_machine
     echo -e "${YELLOW}Opening shell in container...${NC}"
@@ -582,6 +601,7 @@ case "$1" in
     logs)     show_logs ;;
     status)   show_status ;;
     shell)    open_shell ;;
+    script)   shift; run_script "$@" ;;
     clean)    clean_up ;;
     db-start) db_start ;;
     db-stop)  db_stop ;;

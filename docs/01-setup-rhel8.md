@@ -1157,7 +1157,7 @@ line literally. `<vm-hostname>` is a placeholder; substitute your real FQDN
 # V2. Container is up and (after ~30 s) healthy. `status` detects HTTP vs
 #     HTTPS mode and prints the stats JSON for whichever is in use.
 ./container-py.sh status
-podman exec crucible-py python /app/backend/scripts/healthcheck.py && echo healthy
+./container-py.sh script healthcheck.py && echo healthy
 ```
 
 `podman exec` runs a command *inside* the running container — reaching into the

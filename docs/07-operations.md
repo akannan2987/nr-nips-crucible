@@ -196,6 +196,7 @@ avoid clashes on shared machines).
 ./container-py.sh logs        # View logs
 ./container-py.sh stop        # Stop container
 ./container-py.sh rebuild     # Rebuild image + restart, preserving HTTP/HTTPS mode
+./container-py.sh script remove_chemicals.py CHEM-000042   # Run a maintenance script inside the container; no name = list them
 ./container-py.sh shell       # Shell inside the container
 ./container-py.sh clean       # Remove container and image
 ./container-py.sh backup      # Consistent snapshot → backups/ (safe while running)
@@ -333,7 +334,7 @@ openssl rsa  -noout -modulus -in certs/server.key | openssl md5
 
 # 4. Restart in HTTPS mode to load the new cert, then verify
 ./container-py.sh start-ssl
-podman exec crucible-py python /app/backend/scripts/healthcheck.py && echo healthy
+./container-py.sh script healthcheck.py && echo healthy
 curl --noproxy '*' -kv https://localhost:49160/api/stats 2>&1 | grep -iE 'subject:|issuer:|expire'
 ```
 

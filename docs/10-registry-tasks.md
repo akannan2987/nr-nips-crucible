@@ -15,7 +15,7 @@ those pages; it tells you which one to open.
 |---|---|---|
 | **Browser** | The web pages, at `https://<vm-hostname>:49160` on the server or `http://localhost:49160` on your own machine | Day-to-day work, one thing at a time, with confirmations |
 | **API** | The same actions as web requests, sent with `curl` from any machine that can reach the server. `-k` is needed on the server because the certificate names the full host, not `localhost`; on a Mac use `http://` and drop `-k` | Scripts, bulk work, anything you want repeatable |
-| **Terminal** | The maintenance scripts that run *inside* the container and talk to the database directly: `podman exec crucible-py python /app/backend/scripts/<script>` on the server, `docker exec` on a Mac with Docker | Bulk maintenance: audit, merge, remove, reset. The scripts that change data (remove, merge) report first and write only with `--apply`; the audit only reports; the PubChem scripts write as they go, in batches |
+| **Terminal** | The maintenance scripts that run *inside* the container and talk to the database directly: `./container-py.sh script <name.py> [arguments]` from the repository folder, on any platform (it finds podman or Docker for you; `./container-py.sh script` alone lists the scripts). On a Mac with the test environment they also run directly: `cd backend && .venv/bin/python scripts/<name.py> …` | Bulk maintenance: audit, merge, remove, reset. The scripts that change data (remove, merge) report first and write only with `--apply`; the audit only reports; the PubChem scripts write as they go, in batches |
 
 *Everyday version:* the shop counter, the order form, and the stockroom
 door. Same stock, three ways to reach it.

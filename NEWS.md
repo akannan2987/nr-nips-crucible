@@ -10,6 +10,30 @@ change you are getting.
 
 ---
 
+## v2.12.0 — 2026-09-09 — "Hand the job in at the hatch"
+
+**Added**
+- **`./container-py.sh script <name.py> [arguments]`** runs a maintenance
+  script inside the container in one line — `./container-py.sh script
+  remove_chemicals.py CHEM-000042 --apply` — instead of the runtime's
+  `exec` command with the container name and the full path. With no name it
+  lists the scripts. Same command on every platform; it finds podman or
+  Docker itself. Every document now uses it; the long form still works.
+- The CR-6 tutorial's test section spells out the exact `curl` and script
+  commands for one, several and every compound, plain and forced.
+
+**Why the scripts cannot simply be run on the server**
+- They need the application's Python 3.12 and packages, which exist only
+  inside the image; the server's own Python is 3.6 with none of them. On a
+  developer's Mac with the test environment they do run directly:
+  `cd backend && .venv/bin/python scripts/<name.py> …` against the local
+  database.
+
+**Deploy note**
+- Only the helper script and documents changed: pull, no rebuild.
+
+---
+
 ## v2.11.0 — 2026-09-09 — "The clerk refuses; the archivist empties the folder first"
 
 Phase CR-6, from the owner's rule. Tutorial:

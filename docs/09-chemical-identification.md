@@ -291,7 +291,7 @@ cd ~/work/Pandora_toolbox/nr-nips-crucible
 ./container-py.sh backup
 
 # 2. Preview. Writes nothing; prints what it would do.
-podman exec crucible-py python /app/backend/scripts/link_pubchem.py --limit 60
+./container-py.sh script link_pubchem.py --limit 60
 ```
 
 **You should see** progress every five compounds, then a breakdown by reason.
@@ -537,10 +537,10 @@ compound alongside PubChem's, so you can compare them.
 ```bash
 podman cp unlinked.csv crucible-py:/app/backend/unlinked.csv
 
-podman exec crucible-py python /app/backend/scripts/propose_chemicals.py \
+./container-py.sh script propose_chemicals.py \
   /app/backend/unlinked.csv -o /app/backend/proposed.xlsx --limit 20   # sample first
 
-podman exec crucible-py python /app/backend/scripts/propose_chemicals.py \
+./container-py.sh script propose_chemicals.py \
   /app/backend/unlinked.csv -o /app/backend/proposed.xlsx             # the full set
 
 podman cp crucible-py:/app/backend/proposed.xlsx ./proposed.xlsx
@@ -562,7 +562,7 @@ podman cp crucible-py:/app/backend/proposed.xlsx ./proposed.xlsx
 Then upload through **Chemical Registry → Upload Chemicals (ELN)**, and re-link:
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/link_pubchem.py --apply
+./container-py.sh script link_pubchem.py --apply
 ```
 
 **You should see** `Re-linked N rows to compounds registered by an earlier run.`
@@ -585,7 +585,7 @@ source file were correct; the fault was in how they were looked up (see
 [When something goes wrong](#when-something-goes-wrong)).
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/audit_chemicals.py
+./container-py.sh script audit_chemicals.py
 ```
 
 **You should see:**
@@ -638,14 +638,14 @@ Two exemptions stop the checks crying wolf:
 > them all:
 >
 > ```bash
-> podman exec crucible-py python /app/backend/scripts/audit_chemicals.py --all | less
+> ./container-py.sh script audit_chemicals.py --all | less
 > ```
 
 #### Acting on the result
 
 ```bash
 # Write the flagged identifiers to a file
-podman exec crucible-py python /app/backend/scripts/audit_chemicals.py \
+./container-py.sh script audit_chemicals.py \
   -o /app/backend/suspect.txt
 podman cp crucible-py:/app/backend/suspect.txt ./suspect.txt
 ```
@@ -660,7 +660,7 @@ below.
 Afterwards, re-run the audit to confirm:
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/audit_chemicals.py
+./container-py.sh script audit_chemicals.py
 ./verify-deploy.sh https://localhost:49160
 ```
 
@@ -673,7 +673,7 @@ the *lookup* that failed, not the source data. Re-proposing it now returns the
 right chemistry:
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/propose_chemicals.py \
+./container-py.sh script propose_chemicals.py \
   /app/backend/unlinked.csv -o /app/backend/proposed-v2.xlsx
 ```
 
@@ -697,16 +697,16 @@ every route side by side in [`10-registry-tasks.md`](10-registry-tasks.md#7-remo
 
 ```bash
 # By identifier — report first
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py CHEM-000123
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py CHEM-000123 --apply
+./container-py.sh script remove_chemicals.py CHEM-000123
+./container-py.sh script remove_chemicals.py CHEM-000123 --apply
 
 # From a list
 podman cp bad-ids.txt crucible-py:/app/backend/bad-ids.txt
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py \
+./container-py.sh script remove_chemicals.py \
   --from-file /app/backend/bad-ids.txt --apply
 
 # Everything the identification job created, to rebuild the registry
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py \
+./container-py.sh script remove_chemicals.py \
   --pubchem-registered --apply
 ```
 
@@ -755,8 +755,8 @@ Two CAS numbers can legitimately point at one compound. Production held
 `1-Docosanol` twice, as `30303-65-2` and `661-19-8`, both PubChem 12620.
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/merge_duplicate_chemicals.py
-podman exec crucible-py python /app/backend/scripts/merge_duplicate_chemicals.py --apply
+./container-py.sh script merge_duplicate_chemicals.py
+./container-py.sh script merge_duplicate_chemicals.py --apply
 ```
 
 It keeps the **oldest** entry, copies over any field only the duplicate carried,
@@ -776,10 +776,10 @@ and run first as a report that writes nothing:
 
 ```bash
 ./container-py.sh backup                     # the undo button — copy it outside the repository too
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --unlink-all          # report
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --unlink-all --apply  # R-1: every row unlinked, chemicals kept
+./container-py.sh script remove_chemicals.py --unlink-all          # report
+./container-py.sh script remove_chemicals.py --unlink-all --apply  # R-1: every row unlinked, chemicals kept
 ./container-py.sh backup
-podman exec crucible-py python /app/backend/scripts/remove_chemicals.py --all --apply         # R-2: every chemical removed
+./container-py.sh script remove_chemicals.py --all --apply         # R-2: every chemical removed
 ./verify-deploy.sh https://localhost:49160
 ```
 
@@ -851,7 +851,7 @@ with an internal root that Python does not trust by default. Point at the host's
 bundle:
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/link_pubchem.py \
+./container-py.sh script link_pubchem.py \
   --ca-bundle /etc/pki/tls/certs/ca-bundle.crt --limit 20
 ```
 

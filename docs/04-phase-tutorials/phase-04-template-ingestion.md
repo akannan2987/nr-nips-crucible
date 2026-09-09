@@ -151,7 +151,7 @@ appropriate):**
 
 ```bash
 ./container-py.sh backup
-podman exec crucible-py python /app/backend/scripts/link_pubchem.py --limit 20
+./container-py.sh script link_pubchem.py --limit 20
 ```
 
 **Why:** a preview *must* write nothing. Lessons entry 17 records the day it
@@ -202,7 +202,7 @@ own name.
 **How:**
 
 ```bash
-podman exec crucible-py python /app/backend/scripts/audit_chemicals.py
+./container-py.sh script audit_chemicals.py
 ```
 
 **Why:** two earlier heuristics were thrown away because they flagged correct

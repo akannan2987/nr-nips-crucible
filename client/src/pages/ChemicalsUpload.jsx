@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CloudArrowUpIcon, DocumentIcon, XMarkIcon, CheckCircleIcon, TableCellsIcon, BeakerIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-import { uploadChemicalsSDF, uploadChemicalsExcel, createChemical } from '../services/api'
+import { uploadChemicalsSDF, uploadChemicalsExcel, uploadChemicalsJSON, createChemical } from '../services/api'
 
 export default function ChemicalsUpload() {
   const navigate = useNavigate()
@@ -27,17 +27,22 @@ export default function ChemicalsUpload() {
   })
 
   const getAcceptedExtensions = () => {
-    if (uploadMode === 'excel') return '.xlsx,.xls,.csv'
+    if (uploadMode === 'excel') return '.xlsx,.xls,.csv,.tsv'
     if (uploadMode === 'sdf') return '.sdf'
+    if (uploadMode === 'json') return '.json'
     return ''
   }
 
   const isValidFile = (fileName) => {
+    const lower = fileName.toLowerCase()
     if (uploadMode === 'excel') {
-      return fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv')
+      return lower.endsWith('.xlsx') || lower.endsWith('.xls') || lower.endsWith('.csv') || lower.endsWith('.tsv')
     }
     if (uploadMode === 'sdf') {
-      return fileName.endsWith('.sdf')
+      return lower.endsWith('.sdf')
+    }
+    if (uploadMode === 'json') {
+      return lower.endsWith('.json')
     }
     return false
   }
@@ -63,7 +68,7 @@ export default function ChemicalsUpload() {
         setFile(droppedFile)
         setUploadResult(null)
       } else {
-        toast.error(`Please upload a valid ${uploadMode === 'excel' ? 'Excel (.xlsx, .xls, .csv)' : 'SDF'} file`)
+        toast.error(`Please upload a valid ${uploadMode === 'excel' ? 'Excel/CSV (.xlsx, .xls, .csv, .tsv)' : uploadMode === 'json' ? 'JSON (.json)' : 'SDF'} file`)
       }
     }
   }, [uploadMode])
@@ -75,7 +80,7 @@ export default function ChemicalsUpload() {
         setFile(selectedFile)
         setUploadResult(null)
       } else {
-        toast.error(`Please upload a valid ${uploadMode === 'excel' ? 'Excel (.xlsx, .xls, .csv)' : 'SDF'} file`)
+        toast.error(`Please upload a valid ${uploadMode === 'excel' ? 'Excel/CSV (.xlsx, .xls, .csv, .tsv)' : uploadMode === 'json' ? 'JSON (.json)' : 'SDF'} file`)
       }
     }
   }
@@ -93,7 +98,9 @@ export default function ChemicalsUpload() {
     try {
       const response = uploadMode === 'excel'
         ? await uploadChemicalsExcel(formData)
-        : await uploadChemicalsSDF(formData)
+        : uploadMode === 'json'
+          ? await uploadChemicalsJSON(formData)
+          : await uploadChemicalsSDF(formData)
       setUploadResult(response.data)
       const msg = response.data.updated
         ? `Successfully processed ${response.data.total} chemicals (${response.data.inserted} new, ${response.data.updated} updated)`
@@ -161,6 +168,14 @@ export default function ChemicalsUpload() {
           SDF Upload
         </button>
         <button
+          onClick={() => handleModeChange('json')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${uploadMode === 'json' ? 'bg-pandora-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+        >
+          <DocumentIcon className="h-5 w-5" />
+          JSON Upload
+        </button>
+        <button
           onClick={() => handleModeChange('manual')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${uploadMode === 'manual' ? 'bg-pandora-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
@@ -173,12 +188,14 @@ export default function ChemicalsUpload() {
         /* File Upload Section */
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            {uploadMode === 'excel' ? 'Upload Excel File' : 'Upload SDF File'}
+            {uploadMode === 'excel' ? 'Upload Excel or CSV File' : uploadMode === 'json' ? 'Upload JSON File' : 'Upload SDF File'}
           </h2>
           <p className="text-sm text-gray-500 mb-4">
             {uploadMode === 'excel'
-              ? 'Upload your chemicals in Excel format (.xlsx, .xls, .csv). No upload limit — optimized for 15,000+ chemicals.'
-              : 'Upload your chemicals in SDF (Structure Data File) format. No upload limit — optimized for 15,000+ chemicals.'}
+              ? 'Upload your chemicals in Excel or CSV format (.xlsx, .xls, .csv, .tsv). No upload limit — optimized for 15,000+ chemicals.'
+              : uploadMode === 'json'
+                ? 'Upload a JSON file: a list of chemicals with the API\'s own field names (chemical_id, name, cas_number, …), or {"chemicals": [...]} — the format the export writes, so a reviewed export loads straight back. A record without a CAS number is a valid entry.'
+                : 'Upload your chemicals in SDF (Structure Data File) format. No upload limit — optimized for 15,000+ chemicals.'}
           </p>
 
           {/* Drop Zone */}

@@ -106,7 +106,7 @@ adding a field later breaks nothing. The reasoning, and what it costs, is in
 
 | Module | What it holds | Accepts | Optimised for | Linked to |
 |---|---|---|---|---|
-| **Chemical Registry** | The substance: name, CAS number, formula, molecular weight, supplier reference | `.xlsx` · `.csv` · `.sdf` | 15,000+ records | — (the anchor everything else hangs from) |
+| **Chemical Registry** | The substance: name, CAS number, formula, molecular weight, supplier reference | `.xlsx` · `.csv` · `.tsv` · `.sdf` · `.json` — browser, API or terminal, one parser | 15,000+ records | — (the anchor everything else hangs from) |
 | **Sample Management** | The physical vial: batch, concentration, location, expiry | `.xlsx` (SLIMS three-row header) | 1,000+ records | a chemical |
 | **Screening Data** | Assay results: the fast, broad first pass | `.xlsx` | — | a chemical |
 | **Toxicology** | Study data: doses, endpoints, NOAEL | `.xlsx` | — | a chemical |
@@ -219,7 +219,7 @@ get, and likely mistakes get a named fix.
 | 02 | **[Architecture](docs/02-architecture.md)** | How the boxes fit; the one design rule everything else follows from; the interactive architecture page |
 | 02 | **[Database schema](docs/02-database-schema.md)** | The hybrid document pattern; SQLite and PostgreSQL; Alembic |
 | 03 | **[Git workflow](docs/03-git-workflow.md)** | Two repositories, three folders; how a change travels from your Mac to the server; the safety gate that stops secrets escaping |
-| 04 | **[Phase tutorials](docs/04-phase-tutorials/phase-00-node-to-python.md)** | One tutorial per build phase, 00 to 05b, R, SH-1 and CR-6: why it existed, what it built, steps with expected output, a checkpoint, what it deliberately did not do |
+| 04 | **[Phase tutorials](docs/04-phase-tutorials/phase-00-node-to-python.md)** | One tutorial per build phase, 00 to 05b, R, SH-1, CR-6 and CR-3: why it existed, what it built, steps with expected output, a checkpoint, what it deliberately did not do |
 | 05 | **[Roadmap](docs/05-roadmap.md)** | Six tracks, one per module and a shared spine: what each builds next, why, and what it waits on |
 | 06 | **[Product and technology roadmap](docs/06-product-and-technology-roadmap.md)** | From one VM to a product: every candidate technology with a verdict and the trigger that would change it |
 | 07 | **[Operations](docs/07-operations.md)** | The deep runbook: certificate rotation, PostgreSQL, systemd, backups, monitoring, troubleshooting |

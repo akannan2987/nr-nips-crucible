@@ -85,6 +85,25 @@ chem_rows = [CHEM_HEADER] + [list(c[:7]) for c in CHEMICALS]
 write_csv(TPL / "chemicals" / "chemicals_template.csv", chem_rows)
 write_sheet(TPL / "chemicals" / "chemicals_template.xlsx", chem_rows, "chemicals")
 
+# ── Chemicals JSON ──────────────────────────────────────────────────────
+# The API's own field names — what chemicals.upload_json() reads and what
+# scripts/export_chemicals.py writes, so an export loads straight back. The
+# fifth record deliberately has no CAS number: that is a valid entry.
+import json  # noqa: E402
+
+chem_json = [
+    {
+        "chemical_id": cid, "nestle_id": nid, "name": name,
+        "cas_number": (None if i == 4 else cas),
+        "molecular_weight": float(mw), "molecular_formula": formula,
+        "supplier": supplier, "smiles": smiles,
+    }
+    for i, (cid, nid, name, cas, mw, formula, supplier, smiles) in enumerate(CHEMICALS)
+]
+json_path = TPL / "chemicals" / "chemicals_template.json"
+json_path.write_text(json.dumps(chem_json, indent=2) + "\n", encoding="utf-8")
+print(f"  wrote {json_path.relative_to(ROOT)}  ({len(chem_json)} records)")
+
 
 # ── Chemicals SDF ───────────────────────────────────────────────────────
 # Built with RDKit from the SMILES above; field names match the ones

@@ -10,6 +10,50 @@ change you are getting.
 
 ---
 
+## v2.13.0 — 2026-09-09 — "One stockroom, three doors"
+
+Phase CR-3. Tutorial:
+[`docs/04-phase-tutorials/phase-cr-3-every-way-in.md`](docs/04-phase-tutorials/phase-cr-3-every-way-in.md).
+
+**Added**
+- **One door.** `backend/app/imports.py` holds the parsers for every
+  chemicals format; the upload page, the API and the terminal all call it,
+  so a file behaves identically whichever way it arrives. The spreadsheet
+  and structure uploads moved there unchanged — their contract tests did
+  not move.
+- **JSON, everywhere.** A **JSON Upload** mode on the upload page;
+  `POST /api/chemicals/upload/json` for a file and `POST /api/chemicals/import`
+  for records in the request body. A record upserts by `chemical_id`, gets
+  the next identifier if it has none, keeps every field it carries, and may
+  have no CAS number. A synthetic `chemicals_template.json`, one record
+  deliberately without a CAS.
+- **From the terminal:** `import_file.py chemicals <file>` for any of the
+  five formats and `export_chemicals.py -o <file> [--db <url>]`, with
+  `./container-py.sh import chemicals <file>` and
+  `./container-py.sh export chemicals <file.json>` doing the copying in and
+  out through the mounted `data/` folder — no runtime `cp`, so the same on
+  podman and Docker, on every platform.
+- **The review loop**, decision D10 made real: export the 664 pre-reset
+  entries from the backup, review the file, load back what you trust
+  ([`09-chemical-identification.md`](docs/09-chemical-identification.md#refilling-the-registry-the-review-loop)).
+  The playbook gains *Loading your chemicals list*, the gap the roadmap
+  carried since phase 05.
+- Six tests; the suite is 117. One figure; three glossary entries.
+
+**Fixed**
+- `remove_chemicals.py --all` on an empty registry says *already empty* and
+  exits 0, instead of *Nothing matched* and 1.
+
+**Deliberately not done**
+- Screening and sample files from the terminal (SD-2, SM-2); attaching rows
+  to the refilled entries (SD-1); whole-file validation (SD-4); the review
+  itself, which is the owner's.
+
+**Deploy note**
+- Backend, client and scripts changed: the server **rebuilds**, after a backup.
+
+---
+
 ## v2.12.0 — 2026-09-09 — "Hand the job in at the hatch"
 
 **Added**

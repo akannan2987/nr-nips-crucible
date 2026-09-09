@@ -139,6 +139,9 @@ def _run(args, db) -> int:
         ]
 
     if not targets and not args.unlink_all:
+        if args.all and not chemicals:
+            print("The registry is already empty: nothing to remove, nothing to unlink.")
+            return 0
         print("Nothing matched. Check the identifiers, or use --pubchem-registered, --unlink-all or --all.")
         return 1
 

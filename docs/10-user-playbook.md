@@ -384,6 +384,28 @@ contacts that a website suggested.
 Everything it covers links instantly, with no network and no strict rule to
 satisfy, because you vouched for it.
 
+## Loading your chemicals list
+
+Four formats, three routes, one door. The file can be a spreadsheet
+(`.xlsx`, `.xls`, `.csv`, `.tsv` — the columns are in
+[`excel-templates/README.md`](excel-templates/README.md#chemicals)), a
+structure file (`.sdf`), or JSON with the API's own field names — the
+format the export writes, so a reviewed export loads straight back. A
+compound without a CAS number is a valid entry.
+
+| Route | Do this |
+|---|---|
+| Browser | **Chemical Registry → Upload Chemicals** → pick **Excel Upload**, **SDF Upload** or **JSON Upload** → drop the file → **Upload** |
+| API | `curl --noproxy '*' -sSk -X POST https://localhost:49160/api/chemicals/upload/json -F "file=@registry.json"` (or `…/upload/excel`, `…/upload/sdf`) |
+| Terminal | `./container-py.sh import chemicals ~/registry.json` from the repository folder |
+
+**You should see** `Successfully processed N chemicals (N new, 0 updated)`,
+and the same file loaded twice says `(0 new, N updated)` — nothing is ever
+duplicated. Every route reads the file with the same code
+([phase CR-3](04-phase-tutorials/phase-cr-3-every-way-in.md)); the tasks
+page has the routes side by side
+([`10-registry-tasks.md` → task 3](10-registry-tasks.md#3-load-many-compounds-from-a-file)).
+
 > **This rule is changing.** The registry-first rule — a row attaches only
 > when *both* its name *and* its CAS number match a compound you have already
 > registered, stage 2 is retired for screening rows, and unregistered

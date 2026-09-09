@@ -149,6 +149,8 @@ show_help() {
     echo "  logs        Show container logs (follow)"
     echo "  status      Show container status + /api/stats healthcheck"
     echo "  script <name> [args]  Run a maintenance script inside the container"
+    echo "  import chemicals <file>   Load a .json/.csv/.tsv/.xlsx/.xls/.sdf file into the registry"
+    echo "  export chemicals <file>   Write every registry entry to a JSON file (reviewable, re-importable)"
     echo "              e.g. ./container-py.sh script remove_chemicals.py CHEM-000042 --apply"
     echo "  shell       Open a shell in the container"
     echo "  clean       Remove container and image"
@@ -495,6 +497,38 @@ run_script() {
     $RUNTIME exec ${CONTAINER_NAME} python "$name" "$@"
 }
 
+import_file() {
+    # Put the host file where the container can see it — data/ is the one
+    # mounted folder — run the import script on it, then tidy up. No
+    # runtime `cp` involved, so it behaves the same with podman and Docker
+    # on every platform.
+    check_podman_machine
+    local module="$1" src="$2"
+    if [ -z "$module" ] || [ -z "$src" ]; then
+        echo "Usage: $0 import chemicals <file>   (.json .csv .tsv .xlsx .xls .sdf)"; return 1
+    fi
+    if [ ! -f "$src" ]; then echo "No such file: $src"; return 1; fi
+    local base; base="$(basename "$src")"
+    mkdir -p "${DATA_DIR}/.import"
+    cp "$src" "${DATA_DIR}/.import/${base}"
+    $RUNTIME exec ${CONTAINER_NAME} python /app/backend/scripts/import_file.py "$module" "/app/data/.import/${base}"
+    local rc=$?
+    rm -f "${DATA_DIR}/.import/${base}"
+    return $rc
+}
+
+export_file() {
+    # The export script writes into the mounted data/ folder; the file is
+    # then moved to the path given. Same reasoning as import_file.
+    check_podman_machine
+    local module="$1" dest="$2"
+    if [ "$module" != "chemicals" ] || [ -z "$dest" ]; then
+        echo "Usage: $0 export chemicals <file.json>"; return 1
+    fi
+    $RUNTIME exec ${CONTAINER_NAME} python /app/backend/scripts/export_chemicals.py -o /app/data/.export.json || return 1
+    mv "${DATA_DIR}/.export.json" "$dest" && echo "Copied to $dest"
+}
+
 open_shell() {
     check_podman_machine
     echo -e "${YELLOW}Opening shell in container...${NC}"
@@ -602,6 +636,8 @@ case "$1" in
     status)   show_status ;;
     shell)    open_shell ;;
     script)   shift; run_script "$@" ;;
+    import)   import_file "$2" "$3" ;;
+    export)   export_file "$2" "$3" ;;
     clean)    clean_up ;;
     db-start) db_start ;;
     db-stop)  db_stop ;;

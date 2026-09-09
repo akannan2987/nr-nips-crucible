@@ -74,15 +74,19 @@ optional**: a compound without one is a valid entry. Detail:
 
 | Browser | API | Terminal |
 |---|---|---|
-| **Chemical Registry** → **Upload Chemicals** → **Excel/CSV** (`.xlsx`, `.xls`, `.csv`, `.tsv`) or **SDF** (`.sdf`, structures) → choose the file → upload | `curl --noproxy '*' -sSk -X POST https://localhost:49160/api/chemicals/upload/excel -F "file=@chemicals.csv"` — or `…/upload/sdf -F "file=@compounds.sdf"` | The same `curl` from the server's shell, with the file on the server |
+| **Chemical Registry** → **Upload Chemicals** → **Excel Upload** (`.xlsx`, `.xls`, `.csv`, `.tsv`), **SDF Upload** (`.sdf`, structures) or **JSON Upload** (`.json`, the API's own field names — what the export writes) → choose the file → upload | `curl --noproxy '*' -sSk -X POST https://localhost:49160/api/chemicals/upload/json -F "file=@registry.json"` — or `…/upload/excel -F "file=@chemicals.csv"`, `…/upload/sdf -F "file=@compounds.sdf"`; records built in a script: `POST …/api/chemicals/import` with `{"chemicals": [...]}` | `./container-py.sh import chemicals ~/registry.json` — any of the five formats; copies the file in and runs `import_file.py` on it. On a Mac with the test environment, directly: `cd backend && .venv/bin/python scripts/import_file.py chemicals ../registry.json` |
 
 **You should see** `Successfully processed N chemicals (N new, 0 updated)`.
-Loading the same file twice updates rather than duplicates. The columns each
-format needs are in [`excel-templates/README.md`](excel-templates/README.md);
-the API detail in [Upload Chemicals (Excel)](08-api-reference.md#upload-chemicals-excel)
-and [(SDF)](08-api-reference.md#upload-chemicals-sdf). Planned: a JSON
-upload and one terminal command that shares the same parsers
-([CR-3](05-roadmap.md#cr--chemical-registry)).
+Loading the same file twice updates rather than duplicates; every route
+reads the file with the same code, so they cannot disagree
+([phase CR-3](04-phase-tutorials/phase-cr-3-every-way-in.md)). The columns
+each format needs are in [`excel-templates/README.md`](excel-templates/README.md);
+the API detail in [Upload Chemicals (JSON)](08-api-reference.md#upload-chemicals-json),
+[(Excel)](08-api-reference.md#upload-chemicals-excel) and [(SDF)](08-api-reference.md#upload-chemicals-sdf).
+To refill the registry from the pre-reset backup — export, review, load
+back — follow [the review loop](09-chemical-identification.md#refilling-the-registry-the-review-loop).
+
+![Browser, API, terminal and the export loop all reach the registry through one import module](img/fig_every_way_in.svg)
 
 ## 4. See everything about one compound
 
@@ -174,7 +178,7 @@ registered, and only on request; never during a screening upload
 
 | Browser | API | Terminal |
 |---|---|---|
-| **Query** page → `SELECT * FROM chemicals` (or a narrower select) → **Download CSV**. The registry page itself has no export button yet ([SH-7](05-roadmap.md#sh--shared-spine)) | `curl --noproxy '*' -sSk "https://localhost:49160/api/chemicals?limit=1000&page=1" > chemicals-page1.json` — JSON, a page at a time | `./container-py.sh backup` gives the whole database as one file; a copy outside the repository is the real export |
+| **Query** page → `SELECT * FROM chemicals` (or a narrower select) → **Download CSV**. The registry page itself has no export button yet ([SH-7](05-roadmap.md#sh--shared-spine)) | `curl --noproxy '*' -sSk "https://localhost:49160/api/chemicals?limit=1000&page=1" > chemicals-page1.json` — JSON, a page at a time | `./container-py.sh export chemicals ~/registry-export.json` — every entry, every field, re-importable with task 3; `./container-py.sh backup` gives the whole database as one file |
 
 ## 12. Reset the registry
 
@@ -203,7 +207,6 @@ from every route afterwards: [the phase's test section](04-phase-tutorials/phase
 |---|---|---|
 | 1 look up | sort by column, filter per column, page size | [CR-1](05-roadmap.md#cr--chemical-registry) |
 | 1, 4 | Compact, Complete and PubChem views | CR-2 |
-| 3 load many | JSON upload; one terminal command for every file type | CR-3 |
 | 8 merge | from the browser | CR-8 |
 | 10 PubChem | notice of incomplete entries, fetch with a review table, mark as complete | CR-4 |
 | 6 link | the registry-first rule; unregistered compounds notice and review | SD-1, CR-5 |

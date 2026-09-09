@@ -159,3 +159,9 @@ def test_every_mode_says_which_chemicals_and_how_many_rows(client, capsys):
     line = next(line for line in out.splitlines() if "CHEM-A" in line and "Caffeine" in line)
     assert line.split()[0] == "2", "CHEM-A has two linked rows: one screening row and one sample"
 
+
+
+def test_all_on_an_empty_registry_says_so_and_succeeds(client, capsys):
+    """CR-3 fix: --all with nothing registered is not an error — the reset has already happened."""
+    assert run("--all") == 0
+    assert "already empty" in capsys.readouterr().out

@@ -197,6 +197,8 @@ avoid clashes on shared machines).
 ./container-py.sh stop        # Stop container
 ./container-py.sh rebuild     # Rebuild image + restart, preserving HTTP/HTTPS mode
 ./container-py.sh script remove_chemicals.py CHEM-000042   # Run a maintenance script inside the container; no name = list them
+./container-py.sh import chemicals ~/registry.json         # Load a chemicals file (json, csv, tsv, xlsx, xls, sdf) through the same code as the upload page
+./container-py.sh export chemicals ~/registry-export.json  # Write every registry entry to a re-importable JSON file
 ./container-py.sh shell       # Shell inside the container
 ./container-py.sh clean       # Remove container and image
 ./container-py.sh backup      # Consistent snapshot → backups/ (safe while running)

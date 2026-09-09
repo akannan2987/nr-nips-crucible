@@ -435,6 +435,31 @@ def fig_delete_gate() -> None:
     write("fig_delete_gate.svg", svg(W, H, "Deleting a compound with linked rows: the browser and the plain API refuse with 409 and send the person to unlink first; the forced API and the script unlink first, then delete", b))
 
 
+def fig_every_way_in() -> None:
+    W, H = 940, 400
+    b = text(W/2, 34, "Every way into the Chemical Registry goes through one door", 16, INK, "middle", "bold")
+    doors = [
+        (60, "the browser", "screening", ["Chemical Registry →", "Upload Chemicals →", "JSON Upload (or Excel/CSV, SDF)"]),
+        (290, "the API", "sample", ["curl -F file=@… to", "/upload/excel · /upload/sdf", "/upload/json · /import (body)"]),
+        (520, "the terminal", "toxicology", ["./container-py.sh import", "chemicals <file>", "or import_file.py directly"]),
+        (750, "the export", "chemical", ["./container-py.sh export", "chemicals <file.json>", "review it, load it back"]),
+    ]
+    for x, title, kind, rows in doors:
+        b += box(x, 70, 160, 120, PAPER, COLOURS[kind], 10)
+        b += text(x + 80, 94, title, 13, COLOURS[kind], "middle", "bold")
+        b += lines(x + 80, 118, rows, 10.5, INK, "middle", 15)
+        if title != "the export":
+            b += path_arrow(f"M {x+80} 192 L {x+80} 222 L 470 222 L 470 244", COLOURS[kind])
+        else:
+            b += path_arrow(f"M 470 330 L 470 340 L {x+80} 340 L {x+80} 192", COLOURS[kind], dash=True)
+    b += box(300, 246, 340, 84, "#eef2ff", COLOURS["chemical"], 10)
+    b += text(470, 270, "backend/app/imports.py — one parser per format", 12.5, COLOURS["chemical"], "middle", "bold")
+    b += lines(470, 292, [".json · .csv/.tsv · .xlsx/.xls · .sdf", "upsert by chemical_id · a missing CAS is a valid entry", "one report shape: inserted, updated, errors"], 10.5, INK, "middle", 14)
+    b += text(W/2, 368, "whichever door a file arrives by, it is read by the same code — so the browser, a script and a curl command cannot disagree", 11, INK)
+    b += text(W/2, 388, "everyday version: the shop has a front door, a delivery hatch and a phone line — but one stockroom, one stock list, one clerk", 10.5, MUTED)
+    write("fig_every_way_in.svg", svg(W, H, "Browser, API, terminal and the export loop all reach the registry through one shared import module with one parser per format", b))
+
+
 def fig_container_lunchbox() -> None:
     W, H = 940, 320
     b = text(W/2, 34, "The container is the isolation — the same sealed lunchbox on every platform", 16, INK, "middle", "bold")
@@ -566,6 +591,6 @@ def logo() -> None:
 
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
-              fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_container_lunchbox, fig_setup_flow, fig_timeline,
+              fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_container_lunchbox, fig_setup_flow, fig_timeline,
               fig_requirements_lock, cover, logo):
         f()

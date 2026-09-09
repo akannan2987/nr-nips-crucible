@@ -84,7 +84,7 @@ codes, the way phase R (the registry reset) is CR and SD at once.
 
 | Track | Shipped so far | Next phase | Status |
 |---|---|---|---|
-| CR | Registry CRUD and uploads (CSV, TSV, XLSX, SDF); PubChem linking and enrichment scripts; audit, merge and removal scripts; R-1 and R-2 done: the registry is empty by design (2026-09-08); CR-6 deletion refuses or forces ✅ (2026-09-09) | **CR-3 · Every way in** (JSON upload, one terminal command), then **CR-1 · Sort, search and filter per column** | 🔜 CR-3 |
+| CR | Registry CRUD and uploads (CSV, TSV, XLSX, SDF, JSON); one import module for every route, import/export scripts and shortcuts (CR-3 ✅ 2026-09-09); PubChem linking and enrichment scripts; audit, merge and removal scripts; R-1 and R-2 done: the registry is empty by design (2026-09-08); CR-6 deletion refuses or forces ✅ (2026-09-09) | **The review loop** (the owner: export the 664, review, load back), then the **SD-1 build**; **CR-1 · Sort, search and filter** after | 🔜 SD-1 build |
 | SD | Template ingestion of the Cergy export as data; the table built from the file; export in four formats; link and unlink buttons with select-all-matching and a confirmation | **SD-1 · The registry-first rule** — [specified and agreed](09-chemical-identification.md#the-next-rule-registry-first--specification) 2026-09-08; built after R-2 and CR-3 | ✅ agreed · 🔜 build |
 | SM | SLIMS three-row-header upload, table, detail view | **SM-1 · Sort, search, filter and views**, after CR-1 proves the pattern | 🔜 |
 | TX | XLSX upload, table | **TX-1 · A real study export as a template spec** | ⏸ a file |
@@ -101,7 +101,7 @@ route the data arrives on, with nothing silently missing.
 | Phase | What it adds | Why it matters | Waits on | Status |
 |---|---|---|---|---|
 | R (with SD) | Registry reset: R-1 unlink every row ✅ · R-2 remove every chemical ✅ (2026-09-08) · R-3 the new attachment rule (became SD-1, agreed) | The identification rule is changing; correcting 664 entries one by one is the wrong tool — [phase R](04-phase-tutorials/phase-r-registry-reset.md) | — | ✅ R-1, R-2 · SD-1 to build |
-| **CR-3** | **Every way in.** Register compounds from the browser *and* from a terminal on the server, in JSON as well as today's CSV, TSV, XLSX and SDF: a JSON upload endpoint and page; one command inside the container, `import_file.py chemicals <file>`, that uses the same parsers as the upload page so both routes behave identically; the playbook and the cookbook show all three routes (browser, `curl`, terminal) side by side | After R-2 the registry is empty and must be refilled from a curated file. Today JSON is accepted one record at a time only, and the terminal route is `curl` against the API | nothing — first after R-2 | 🔜 |
+| CR-3 | **Every way in.** One shared import module; a JSON upload in the browser and the API beside CSV, TSV, XLSX and SDF; a JSON-body endpoint for scripts; `import_file.py` and `export_chemicals.py` with `./container-py.sh import` / `export` shortcuts; the review loop that refills the registry from the pre-reset backup — [phase CR-3](04-phase-tutorials/phase-cr-3-every-way-in.md) | After R-2 the registry is empty and must be refilled from a curated file, by any route, without the routes disagreeing | — | ✅ v2.13.0 (2026-09-09) |
 | **CR-1** | **Sort, search and filter per column.** Click a column header to sort; a search box under every header filters that column; a page-size chooser; the parameters go on the existing list endpoint (additive, contract kept), following the screening table's `_apply_filters` pattern | The registry table today has one free-text box, fixed twenty-row pages and no ordering | nothing | 🔜 |
 | **CR-2** | **Three views.** *Compact* (today's columns, the default), *Complete* (every field the records hold, including the spreadsheet's extra columns kept under `metadata`, discovered from the data as the screening table does), *PubChem* (the identifier, title, IUPAC name, formula, weight, SMILES, InChI, InChIKey and how the match was made); a column chooser underneath, remembered per browser | Different questions need different columns: a chemist wants structure fields, a data manager wants provenance | CR-1 (shares the column machinery) | 🔜 |
 | **CR-5** | **Unregistered compounds from screening data.** A notice in the registry, always visible while any exist: *N compounds in the screening data are not registered — review them*. It opens a table of every distinct name + CAS pair with no registry entry, with the row count, source file and dates; download as CSV or XLSX; tick some or all and **Register** them with the basic information the screening data carries (name, CAS, provenance), which also links their rows — never asking PubChem | The other half of the registry-first rule: rows that could not attach must be visible somewhere, and the decision to register is the user's | SD-1 (defines the unregistered set) | 🔜 |
@@ -127,7 +127,7 @@ attached to a registered compound only when the registry says so.
 | 04 | Template ingestion: the Cergy export as a spec, the table from the data, export, the SQL console | The first real laboratory data — [phase 04](04-phase-tutorials/phase-04-template-ingestion.md) | — | ✅ |
 | R (with CR) | Link and unlink buttons, select all matching rows, the confirmation, per-chemical summaries | The registry reset needed the tools first — [phase R](04-phase-tutorials/phase-r-registry-reset.md) | — | ✅ tools · 🔨 R-2 |
 | **SD-1** | **The registry-first rule.** Five rules, written as a specification in [`09-chemical-identification.md`](09-chemical-identification.md#the-next-rule-registry-first--specification): a row attaches only when **both** its name **and** its CAS number match one registered compound; otherwise the user is told the compound is not registered and offered the choice to register it from the file's own information; declining keeps the rows, unlinked, and the registry shows the unregistered notice (CR-5); ingestion never asks PubChem; linking by hand is only ever to a registered compound, with a clear message when a row's compound is not one. Also: a command and an endpoint to **re-run the rule over rows already loaded**, so a registry refilled after R-2 attaches the 49,065 existing rows without re-uploading the file | Replaces the two-stage rule, whose second stage inferred identity from an outside database and once registered 19 compounds with another substance's chemistry | nothing — agreed 2026-09-08 (D1–D11 as recommended); built after R-2 and CR-3 | ✅ agreed · 🔜 build |
-| **SD-2** | **Every way in.** The same terminal command as CR-3 for screening files (`import_file.py screening <file> [--register-unregistered]`); the template detector reads XLSX as well as CSV; the playbook and cookbook show browser, `curl` and terminal side by side | Today the only route besides the browser is `curl` against the API, and the Cergy template is recognised only from a CSV | CR-3 (shares the command) | 🔜 |
+| **SD-2** | **Every way in.** `import_file.py screening <file> [--register-unregistered]` and `./container-py.sh import screening <file>`, through the same door CR-3 built; the template detector reads XLSX as well as CSV; the playbook and cookbook show browser, `curl` and terminal side by side | Today the only route besides the browser is `curl` against the API, and the Cergy template is recognised only from a CSV | SD-1 (the rule decides what an import does with unregistered compounds) | 🔜 |
 | SD-3 | Further laboratory templates, each a spec, not a parser | The pattern holds; if a template needs new code the design has failed | the files | ⏸ |
 | SD-4 | Batch validation: report every problem in a file at once instead of stopping at the first | Fewer upload round-trips | nothing | 🔜 |
 
@@ -196,7 +196,7 @@ attached to a registered compound only when the registry says so.
 flowchart LR
     SH1["SH-1 module names ✅<br/>v2.9.0"] --> SD1s["SD-1 spec agreed ✅<br/>2026-09-08"]
     SD1s --> R2["R-2 empty the registry ✅<br/>2026-09-08"]
-    R2 --> CR6["CR-6 delete refuses or forces ✅<br/>v2.11.0"] --> CR3["CR-3 every way in<br/>refill from a curated file"]
+    R2 --> CR6["CR-6 delete refuses or forces ✅<br/>v2.11.0"] --> CR3["CR-3 every way in ✅<br/>v2.13.0 — the review loop is the owner's"]
     CR3 --> SD1["SD-1 build<br/>the registry-first rule + re-identify"]
     SD1 --> CR5["CR-5 unregistered review"]
     CR5 --> CR1["CR-1 sort · filter"] --> CR2["CR-2 views"]
@@ -254,8 +254,6 @@ trigger arrives. They are listed so that nobody rediscovers them.
   almost all in the Node build tooling. The multi-stage build discards the
   Node stage, so nothing from `node_modules` ships in the image. Real, not
   urgent; one focused session.
-- **The playbook has no section on uploading a chemicals file** — the
-  instruction is one line inside the recovery section. CR-3 writes it.
 
 ---
 

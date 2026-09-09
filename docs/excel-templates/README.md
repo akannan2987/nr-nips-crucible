@@ -17,7 +17,7 @@ Ready-to-fill upload templates for bulk data import into Crucible.
 
 | Module | File | Accepted upload formats |
 |--------|------|-------------------------|
-| **Chemicals** | [chemicals_template.csv](chemicals/chemicals_template.csv) · [chemicals_template.xlsx](chemicals/chemicals_template.xlsx) · [chemicals_template.sdf](chemicals/chemicals_template.sdf) | `.csv`, `.xlsx`, and `.sdf` |
+| **Chemicals** | [chemicals_template.csv](chemicals/chemicals_template.csv) · [chemicals_template.xlsx](chemicals/chemicals_template.xlsx) · [chemicals_template.sdf](chemicals/chemicals_template.sdf) · [chemicals_template.json](chemicals/chemicals_template.json) | `.csv` · `.tsv` · `.xlsx` · `.xls` · `.sdf` · `.json` — same result by browser, API or terminal |
 | **Samples** | [Upload_Sample_Template.xlsx](samples/Upload_Sample_Template.xlsx) | `.xlsx` only (SLIMS layout) |
 | **Screening** | [screening_template.xlsx](screening/screening_template.xlsx) | `.xlsx` only |
 | **Toxicology** | [toxicology_template.xlsx](toxicology/toxicology_template.xlsx) | `.xlsx` only |
@@ -81,6 +81,20 @@ polymer/mixture detection) are recomputed with RDKit on import; every other
 data field is preserved as metadata. Both V2000 and V3000 are supported.
 
 ---
+
+### JSON upload
+
+`chemicals_template.json` is a list of records with the API's own field
+names — `chemical_id`, `name`, `cas_number`, `molecular_formula`,
+`molecular_weight`, `smiles`, `supplier`, and any other key you want kept.
+This is what `./container-py.sh export chemicals <file>` writes, so an
+export can be reviewed and loaded back without loss. Rules: a record with a
+known `chemical_id` updates that entry; without one it gets the next
+sequential identifier; **`cas_number` may be `null`** — the fifth template
+record shows it — because a compound without a CAS number is a valid entry.
+Load it with **JSON Upload** on the upload page, `POST
+/api/chemicals/upload/json`, or `./container-py.sh import chemicals
+<file>`; the detail is in [phase CR-3](../04-phase-tutorials/phase-cr-3-every-way-in.md).
 
 ## Samples (SLIMS layout)
 

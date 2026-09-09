@@ -5,7 +5,7 @@ shapes, same messages, same status codes — including the quirks (the
 `errors` key is omitted when empty; `|| null` coerces '' and 0 to null).
 """
 
-import time
+import json
 import uuid
 from typing import Any
 
@@ -15,27 +15,29 @@ from sqlalchemy.orm import Session
 from ..compat import (
     js_or,
     now_iso,
-    parse_float_or_none,
     parse_int_or,
     sort_created_desc,
     total_pages,
 )
 from ..database import get_db
+from ..imports import (
+    ImportError_,
+    import_chemicals_file,
+    import_json_records,
+    import_sdf_text,
+    parse_json_records,
+)
 from ..links import count_links, describe_links, unlink_targets
 from ..models import Chemical
 from ..schemas import BulkDeleteChemicals, BulkUpdateChemicals, ChemicalIn
 from ..store import (
     all_docs,
-    all_rows,
     clear_all,
     delete_row,
     find_row,
     insert_doc,
-    next_chemical_id,
     replace_doc,
 )
-from ..utils.excel import parse_csv_rows, sheet_rows_as_dicts
-from ..utils.sdf import map_molecule_to_chemical, parse_sdf
 
 router = APIRouter(prefix="/api/chemicals", tags=["chemicals"])
 
@@ -122,217 +124,63 @@ def add_chemical(body: ChemicalIn, db: Session = Depends(get_db)) -> dict[str, A
 async def upload_sdf(
     file: UploadFile | None = File(default=None), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
-    """POST /api/chemicals/upload/sdf — bulk import from an SDF file."""
+    """POST /api/chemicals/upload/sdf — bulk import from an SDF file (through app.imports)."""
     if file is None:
         raise HTTPException(status_code=400, detail="No file uploaded")
-
-    sdf_content = (await file.read()).decode("utf-8", errors="replace")
-    molecules = parse_sdf(sdf_content)
-
-    if not molecules:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "No valid molecules found in the SDF file. Ensure the file follows "
-                "the V2000/V3000 SDF format with $$$$ record delimiters."
-            ),
-        )
-
-    inserted = 0
-    updated = 0
-    parse_errors: list[dict[str, Any]] = []
-    errors: list[dict[str, Any]] = []
-
-    for idx, mol in enumerate(molecules):
-        if mol.get("_parse_error"):
-            parse_errors.append(
-                {
-                    "molecule": f"Record #{idx + 1}",
-                    "error": "; ".join(mol.get("warnings") or []) or "Failed to parse",
-                }
-            )
-            continue
-
-        try:
-            mapped = map_molecule_to_chemical(mol)
-            # Generate a chemical_id if not found in the SDF properties
-            # (JS used Date.now(); epoch-millis here for the same shape).
-            chemical_id = mapped.get("chemical_id") or f"SDF-{int(time.time() * 1000)}-{idx}"
-
-            existing = find_row(db, Chemical, "chemical_id", chemical_id)
-            old = existing.doc if existing else None
-
-            chemical = {
-                "id": old["id"] if old else str(uuid.uuid4()),
-                "chemical_id": chemical_id,
-                "nestle_id": js_or(mapped.get("nestle_id"), None),
-                "name": js_or(mapped.get("name"), "Unknown"),
-                "cas_number": js_or(mapped.get("cas_number"), None),
-                "molecular_formula": js_or(mapped.get("molecular_formula"), None),
-                "molecular_weight": js_or(mapped.get("molecular_weight"), None),
-                "smiles": js_or(mapped.get("smiles"), None),
-                "inchi": js_or(mapped.get("inchi"), None),
-                "inchi_key": js_or(mapped.get("inchi_key"), None),
-                "supplier": js_or(mapped.get("supplier"), None),
-                "purity": js_or(mapped.get("purity"), None),
-                "storage_conditions": js_or(mapped.get("storage_conditions"), None),
-                "hazard_info": js_or(mapped.get("hazard_info"), None),
-                "description": js_or(mapped.get("description"), None),
-                "mol_block": js_or(mapped.get("mol_block"), None),
-                "metadata": mapped.get("metadata") or {},
-                "dtxsid": js_or(mapped.get("dtxsid"), None),
-                "preferred_name": js_or(mapped.get("preferred_name"), None),
-                "monoisotopic_mass": js_or(mapped.get("monoisotopic_mass"), None),
-                "ms_ready_smiles": js_or(mapped.get("ms_ready_smiles"), None),
-                "inchi_string": js_or(mapped.get("inchi_string"), None),
-                "synonyms": mapped.get("synonyms") or [],
-                "structural": js_or(mapped.get("structural"), None),
-                "created_at": old["created_at"] if old else now_iso(),
-                "updated_at": now_iso(),
-            }
-
-            if existing:
-                replace_doc(db, existing, chemical)
-                updated += 1
-            else:
-                insert_doc(db, Chemical, chemical)
-                inserted += 1
-        except Exception as err:
-            errors.append({"molecule": mol.get("name") or f"Record #{idx + 1}", "error": str(err)})
-
-    all_errors = parse_errors + errors
-
-    response: dict[str, Any] = {
-        "message": (
-            f"Successfully processed {inserted + updated} chemicals from SDF "
-            f"({inserted} new, {updated} updated)"
-        ),
-        "inserted": inserted,
-        "updated": updated,
-        "total": inserted + updated,
-        "totalRecords": len(molecules),
-        "summary": {
-            "recordsInFile": len(molecules),
-            "successfullyProcessed": inserted + updated,
-            "parseErrors": len(parse_errors),
-            "insertErrors": len(errors),
-        },
-    }
-    if all_errors:  # v1 omits the key when empty (undefined)
-        response["errors"] = all_errors
-    return response
+    content = await file.read()
+    try:
+        return import_sdf_text(db, content.decode("utf-8", errors="replace"))
+    except ImportError_ as err:
+        raise HTTPException(status_code=400, detail=str(err)) from None
 
 
 @router.post("/upload/excel")
 async def upload_excel(
     file: UploadFile | None = File(default=None), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
-    """POST /api/chemicals/upload/excel — bulk import from Excel/CSV."""
+    """POST /api/chemicals/upload/excel — bulk import from Excel/CSV (through app.imports)."""
     if file is None:
         raise HTTPException(status_code=400, detail="No file uploaded")
-
     file_name = (file.filename or "").lower()
-    is_csv = file_name.endswith(".csv") or file_name.endswith(".tsv")
     content = await file.read()
+    try:
+        if file_name.endswith(".csv") or file_name.endswith(".tsv"):
+            return import_chemicals_file(db, file_name, content)
+        return import_chemicals_file(db, file_name if file_name.endswith((".xlsx", ".xls")) else "upload.xlsx", content)
+    except ImportError_ as err:
+        raise HTTPException(status_code=400, detail=str(err)) from None
 
-    if is_csv:
-        text = content.decode("utf-8", errors="replace")
-        data = parse_csv_rows(text)
-        if not data:
-            raise HTTPException(status_code=400, detail="CSV file is empty or has no data rows")
-    else:
-        data = sheet_rows_as_dicts(content)
 
-    inserted = 0
-    updated = 0
-    errors: list[dict[str, Any]] = []
+@router.post("/upload/json")
+async def upload_json(
+    file: UploadFile | None = File(default=None), db: Session = Depends(get_db)
+) -> dict[str, Any]:
+    """POST /api/chemicals/upload/json — bulk import from a JSON file (CR-3).
 
-    def col(row: dict[str, str], *names: str) -> str | None:
-        """First non-falsy value among the candidate column names (JS `||` chain)."""
-        for n in names:
-            v = row.get(n)
-            if v not in (None, ""):
-                return v
-        return None
+    The file holds a list of chemicals with the API's own field names, or
+    ``{"chemicals": [...]}`` — the shape ``scripts/export_chemicals.py`` writes.
+    """
+    if file is None:
+        raise HTTPException(status_code=400, detail="No file uploaded")
+    content = await file.read()
+    try:
+        return import_json_records(db, parse_json_records(content))
+    except ImportError_ as err:
+        raise HTTPException(status_code=400, detail=str(err)) from None
 
-    for row in data:
-        try:
-            # DTX_ID is an identifier from an external system, kept as its own
-            # field. It is NOT the chemical's identity here: a compound with no
-            # DTX_ID must show an empty one rather than an invented value.
-            dtx_id = col(row, "DTX_ID", "dtx_id", "Dtx_ID", "DTXSID", "dtxsid")
-            explicit_id = col(row, "chemical_id", "Chemical_ID")
 
-            # Re-uploading matches on whichever identifier the file carries, so
-            # an upload still updates rather than duplicating.
-            existing = None
-            if explicit_id:
-                existing = find_row(db, Chemical, "chemical_id", explicit_id)
-            if existing is None and dtx_id:
-                existing = next(
-                    (r for r in all_rows(db, Chemical) if r.doc.get("dtx_id") == dtx_id),
-                    None,
-                )
-            chemical_id = (
-                existing.doc["chemical_id"]
-                if existing
-                else (explicit_id or next_chemical_id(db, inserted))
-            )
-            nestle_id = col(row, "NESTLE_ID", "Nestle_ID", "nestle_id")
-            cas_number = col(row, "CAS_NO", "CAS_Number", "cas_no", "cas_number", "CAS")
-            name = col(row, "CHEMICAL_NAME", "Chemical_Name", "chemical_name",
-                       "Name", "name") or "Unknown"
-            mol_weight = col(row, "MOL_WEIGHT_ORIG", "MOL_WEIGHT", "Mol_Weight", "mol_weight",
-                             "MW", "molecular_weight", "Molecular_Weight")
-            mol_formula = col(row, "MOL_FORMULA", "MOL_FOR", "Mol_For", "mol_for",
-                              "molecular_formula", "Molecular_Formula", "Formula")
-            supplier_ref = col(row, "Supplier_ref", "SUPPLIER_REF", "supplier_ref",
-                               "Supplier", "supplier")
+@router.post("/import")
+def import_json_body(payload: Any = Body(default=None), db: Session = Depends(get_db)) -> dict[str, Any]:
+    """POST /api/chemicals/import — the same as upload/json, with the records in the request body.
 
-            old = existing.doc if existing else None
-
-            chemical = {
-                "id": old["id"] if old else str(uuid.uuid4()),
-                "chemical_id": chemical_id,
-                "dtx_id": dtx_id,
-                "nestle_id": nestle_id,
-                "name": name,
-                "cas_number": str(cas_number) if cas_number else None,
-                "molecular_formula": mol_formula,
-                "molecular_weight": parse_float_or_none(mol_weight) if mol_weight else None,
-                "smiles": col(row, "SMILES", "smiles"),
-                "inchi": col(row, "InChI", "inchi"),
-                "inchi_key": col(row, "InChIKey", "inchi_key"),
-                "supplier": supplier_ref,
-                "description": col(row, "Description", "description"),
-                "metadata": row,
-                "created_at": old["created_at"] if old else now_iso(),
-                "updated_at": now_iso(),
-            }
-
-            if existing:
-                replace_doc(db, existing, chemical)
-                updated += 1
-            else:
-                insert_doc(db, Chemical, chemical)
-                inserted += 1
-        except Exception as err:
-            errors.append(
-                {"row": row.get("CHEMICAL_NAME") or row.get("Name") or "Unknown", "error": str(err)}
-            )
-
-    response: dict[str, Any] = {
-        "message": (
-            f"Successfully processed {inserted + updated} chemicals "
-            f"({inserted} new, {updated} updated)"
-        ),
-        "inserted": inserted,
-        "updated": updated,
-        "total": inserted + updated,
-    }
-    if errors:
-        response["errors"] = errors
-    return response
+    For scripts that build the list themselves: ``{"chemicals": [...]}`` or a bare list.
+    """
+    if payload is None:
+        raise HTTPException(status_code=400, detail="No chemicals provided")
+    try:
+        return import_json_records(db, parse_json_records(json.dumps(payload)))
+    except ImportError_ as err:
+        raise HTTPException(status_code=400, detail=str(err)) from None
 
 
 def _refuse_or_unlink(db: Session, targets: set[str] | None, force: bool, what: str) -> dict[str, int] | None:

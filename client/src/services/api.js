@@ -30,6 +30,10 @@ export const getChemicalsDropdown = () => api.get('/chemicals/list/dropdown');
 export const bulkDeleteChemicals = (chemical_ids) => api.post('/chemicals/bulk/delete', { chemical_ids });
 export const bulkUpdateChemicals = (chemical_ids, updates) => api.post('/chemicals/bulk/update', { chemical_ids, updates });
 export const clearAllChemicals = () => api.delete('/chemicals/all/clear');
+export const uploadChemicalsJSON = (formData) =>
+  api.post('/chemicals/upload/json', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 
 // Samples
 export const getSamples = (params) => api.get('/samples', { params });

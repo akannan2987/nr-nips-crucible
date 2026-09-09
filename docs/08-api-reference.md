@@ -658,6 +658,64 @@ curl -X POST http://localhost:49160/api/chemicals/upload/sdf \
 
 ---
 
+### Upload Chemicals (JSON)
+
+Bulk import from a JSON file — **since v2.13.0 (phase CR-3)**. The file is a
+list of chemicals with the API's own field names, or `{"chemicals": [...]}`;
+this is exactly what `scripts/export_chemicals.py` writes, so an export can be
+reviewed and loaded back. Every record upserts by `chemical_id`; a record
+without one gets the next sequential identifier; unknown keys are kept; a
+record without a CAS number is a valid entry. The browser's **JSON Upload**
+mode and the terminal's `import_file.py` call the same code
+([`10-registry-tasks.md`](10-registry-tasks.md#3-load-many-compounds-from-a-file)).
+
+**Endpoint:** `POST /chemicals/upload/json` (multipart, field `file`)
+
+**Response:**
+
+```json
+{
+  "message": "Successfully processed 5 chemicals (5 new, 0 updated)",
+  "inserted": 5,
+  "updated": 0,
+  "total": 5
+}
+```
+
+A record that could not be written is listed under `"errors"` and the rest
+are still written. A file that cannot be read at all is `400`:
+`{"error": "Not valid JSON: Expecting value at line 1"}`,
+`{"error": "JSON must be a list of chemicals, or {\"chemicals\": [...]}"}`,
+`{"error": "JSON file has no chemicals"}`.
+
+**cURL Example:**
+
+```bash
+curl -X POST http://localhost:49160/api/chemicals/upload/json \
+  -F "file=@docs/excel-templates/chemicals/chemicals_template.json"
+```
+
+### Import Chemicals (JSON body)
+
+The same import with the records in the request body instead of a file —
+for scripts that build the list in memory.
+
+**Endpoint:** `POST /chemicals/import`
+
+**Request Body:** `{"chemicals": [ {...}, {...} ]}` or a bare list.
+
+**Response:** as *Upload Chemicals (JSON)*.
+
+**cURL Example:**
+
+```bash
+curl -X POST http://localhost:49160/api/chemicals/import \
+  -H "Content-Type: application/json" \
+  -d '{"chemicals": [{"chemical_id": "CHEM-0009", "name": "Test compound", "cas_number": null}]}'
+```
+
+---
+
 ### Bulk Delete Chemicals
 
 Delete multiple chemicals at once. **Since v2.11.0:** refused with `409` while

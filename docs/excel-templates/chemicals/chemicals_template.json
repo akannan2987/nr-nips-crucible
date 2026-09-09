@@ -1,0 +1,52 @@
+[
+  {
+    "chemical_id": "CHEM-0001",
+    "nestle_id": "INT-0001",
+    "name": "Caffeine",
+    "cas_number": "58-08-2",
+    "molecular_weight": 194.19,
+    "molecular_formula": "C8H10N4O2",
+    "supplier": "Example Supplier Cat# 00001",
+    "smiles": "Cn1cnc2c1c(=O)n(C)c(=O)n2C"
+  },
+  {
+    "chemical_id": "CHEM-0002",
+    "nestle_id": "INT-0002",
+    "name": "Vanillin",
+    "cas_number": "121-33-5",
+    "molecular_weight": 152.15,
+    "molecular_formula": "C8H8O3",
+    "supplier": "Example Supplier Cat# 00002",
+    "smiles": "COc1cc(C=O)ccc1O"
+  },
+  {
+    "chemical_id": "CHEM-0003",
+    "nestle_id": "INT-0003",
+    "name": "Citric acid",
+    "cas_number": "77-92-9",
+    "molecular_weight": 192.12,
+    "molecular_formula": "C6H8O7",
+    "supplier": "Example Supplier Cat# 00003",
+    "smiles": "OC(=O)CC(O)(CC(=O)O)C(=O)O"
+  },
+  {
+    "chemical_id": "CHEM-0004",
+    "nestle_id": "INT-0004",
+    "name": "L-Ascorbic acid",
+    "cas_number": "50-81-7",
+    "molecular_weight": 176.12,
+    "molecular_formula": "C6H8O6",
+    "supplier": "Example Supplier Cat# 00004",
+    "smiles": "OC[C@H](O)[C@H]1OC(=O)C(O)=C1O"
+  },
+  {
+    "chemical_id": "CHEM-0005",
+    "nestle_id": "INT-0005",
+    "name": "Acetylsalicylic acid",
+    "cas_number": null,
+    "molecular_weight": 180.16,
+    "molecular_formula": "C9H8O4",
+    "supplier": "Example Supplier Cat# 00005",
+    "smiles": "CC(=O)Oc1ccccc1C(=O)O"
+  }
+]

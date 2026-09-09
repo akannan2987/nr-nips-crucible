@@ -96,6 +96,26 @@ curl --noproxy '*' -sS -X POST http://localhost:49160/api/chemicals/upload/excel
 {"message":"Successfully processed 5 chemicals (5 new, 0 updated)","inserted":5,"updated":0,"total":5}
 ```
 
+**How do I load chemicals from a JSON file, or from a list my script built?**
+
+```bash
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/chemicals/upload/json \
+  -F "file=@docs/excel-templates/chemicals/chemicals_template.json"
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/chemicals/import \
+  -H "Content-Type: application/json" \
+  -d '{"chemicals": [{"chemical_id": "CHEM-0009", "name": "Test compound", "cas_number": null}]}'
+```
+
+```json
+{"message":"Successfully processed 5 chemicals (5 new, 0 updated)","inserted":5,"updated":0,"total":5}
+```
+
+JSON is the format that round-trips: `./container-py.sh export chemicals
+registry.json` writes every entry with these same field names, and the file
+loads straight back. A record without a CAS number is a valid entry. Every
+route — browser, these two endpoints, the terminal — reads the file with the
+same code ([`10-registry-tasks.md`](10-registry-tasks.md#3-load-many-compounds-from-a-file)).
+
 **What if I upload the same chemicals file twice by mistake? (nothing bad happens)**
 
 Run the exact command again and the counts flip:

@@ -52,7 +52,7 @@ fi
 echo ""
 echo "2. Upload templates"
 extra=$(git ls-files -- docs/excel-templates \
-        | grep -vE '/(chemicals_template\.(csv|xlsx|sdf)|screening_template\.xlsx|toxicology_template\.xlsx|Upload_Sample_Template\.xlsx|README\.md|generate_templates\.py)$')
+        | grep -vE '/(chemicals_template\.(csv|xlsx|sdf|json)|screening_template\.xlsx|toxicology_template\.xlsx|Upload_Sample_Template\.xlsx|README\.md|generate_templates\.py)$')
 if [ -n "$extra" ]; then
     echo -e "   ${RED}✗ non-template file(s) tracked — real data must not be published:${NC}"
     echo "$extra" | sed 's/^/       /'

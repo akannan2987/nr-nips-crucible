@@ -796,6 +796,28 @@ from the browser are in the [playbook](10-user-playbook.md#linking-and-unlinking
 **Done on production on 2026-09-08**, both steps, after a backup each;
 the output at each step is recorded in [phase R](04-phase-tutorials/phase-r-registry-reset.md).
 
+### Refilling the registry: the review loop
+
+Decision D10 of the registry-first rule. The 664 entries removed by R-2 are
+in the backup taken before it. Export them as JSON, review the file by
+hand, load back the ones you trust — by any route, since every route reads
+the file with the same code ([phase CR-3](04-phase-tutorials/phase-cr-3-every-way-in.md)).
+
+```bash
+cd ~/work/Pandora_toolbox/nr-nips-crucible
+cp ~/data-backup-20260908-before-R2.db data/review-source.db                                  # a copy the container can see
+./container-py.sh script export_chemicals.py --db sqlite:////app/data/review-source.db -o /app/data/registry-review.json
+#   → Wrote 664 chemicals to /app/data/registry-review.json    (on the host: data/registry-review.json)
+#   … review the file: delete the records whose name or CAS you do not trust; entries without a CAS are fine …
+./container-py.sh script import_file.py chemicals /app/data/registry-review.json
+#   → Successfully processed N chemicals (N new, 0 updated)
+rm data/review-source.db
+```
+
+Rows do not attach to the refilled entries yet: that is the re-identify
+command of [SD-1](05-roadmap.md#sd--screening-data), which attaches every
+row whose name **and** CAS match one of them.
+
 ### Confirming afterwards
 
 ```bash

@@ -1,0 +1,36 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 400' width='940' height='400' role='img' aria-label='Browser, API, terminal and the export loop all reach the registry through one shared import module with one parser per format' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='399' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>Every way into the Chemical Registry goes through one door</text>
+<rect x='60' y='70' width='160' height='120' rx='10' fill='#ffffff' stroke='#d97706' stroke-width='1.2'/>
+<text x='140' y='94' font-size='13' fill='#d97706' text-anchor='middle' font-weight='bold'>the browser</text>
+<text x='140' y='118' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>Chemical Registry →</text>
+<text x='140' y='133' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>Upload Chemicals →</text>
+<text x='140' y='148' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>JSON Upload (or Excel/CSV, SDF)</text>
+<path d='M 140 192 L 140 222 L 470 222 L 470 244' fill='none' stroke='#d97706' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='290' y='70' width='160' height='120' rx='10' fill='#ffffff' stroke='#0d9488' stroke-width='1.2'/>
+<text x='370' y='94' font-size='13' fill='#0d9488' text-anchor='middle' font-weight='bold'>the API</text>
+<text x='370' y='118' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>curl -F file=@… to</text>
+<text x='370' y='133' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>/upload/excel · /upload/sdf</text>
+<text x='370' y='148' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>/upload/json · /import (body)</text>
+<path d='M 370 192 L 370 222 L 470 222 L 470 244' fill='none' stroke='#0d9488' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='520' y='70' width='160' height='120' rx='10' fill='#ffffff' stroke='#be123c' stroke-width='1.2'/>
+<text x='600' y='94' font-size='13' fill='#be123c' text-anchor='middle' font-weight='bold'>the terminal</text>
+<text x='600' y='118' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>./container-py.sh import</text>
+<text x='600' y='133' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>chemicals &lt;file&gt;</text>
+<text x='600' y='148' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>or import_file.py directly</text>
+<path d='M 600 192 L 600 222 L 470 222 L 470 244' fill='none' stroke='#be123c' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='750' y='70' width='160' height='120' rx='10' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='830' y='94' font-size='13' fill='#4f46e5' text-anchor='middle' font-weight='bold'>the export</text>
+<text x='830' y='118' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>./container-py.sh export</text>
+<text x='830' y='133' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>chemicals &lt;file.json&gt;</text>
+<text x='830' y='148' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>review it, load it back</text>
+<path d='M 470 330 L 470 340 L 830 340 L 830 192' fill='none' stroke='#4f46e5' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<rect x='300' y='246' width='340' height='84' rx='10' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='470' y='270' font-size='12.5' fill='#4f46e5' text-anchor='middle' font-weight='bold'>backend/app/imports.py — one parser per format</text>
+<text x='470' y='292' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>.json · .csv/.tsv · .xlsx/.xls · .sdf</text>
+<text x='470' y='306' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>upsert by chemical_id · a missing CAS is a valid entry</text>
+<text x='470' y='320' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>one report shape: inserted, updated, errors</text>
+<text x='470.0' y='368' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>whichever door a file arrives by, it is read by the same code — so the browser, a script and a curl command cannot disagree</text>
+<text x='470.0' y='388' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>everyday version: the shop has a front door, a delivery hatch and a phone line — but one stockroom, one stock list, one clerk</text>
+</svg>

@@ -85,6 +85,10 @@ the API detail in [Upload Chemicals (JSON)](08-api-reference.md#upload-chemicals
 [(Excel)](08-api-reference.md#upload-chemicals-excel) and [(SDF)](08-api-reference.md#upload-chemicals-sdf).
 To refill the registry from the pre-reset backup — export, review, load
 back — follow [the review loop](09-chemical-identification.md#refilling-the-registry-the-review-loop).
+**The laboratory's own files** — the Dotmatics export, the registry structure
+file, the limited list — are recognised by their columns and handled by
+their own rules (batches folded, sources merged, shared identifiers
+flagged): [`09-registry-sources.md`](09-registry-sources.md).
 
 ![Browser, API, terminal and the export loop all reach the registry through one import module](img/fig_every_way_in.svg)
 
@@ -160,7 +164,7 @@ Detail: [`09-chemical-identification.md` → Merging entries](09-chemical-identi
 
 | Browser | API | Terminal |
 |---|---|---|
-| — | `./verify-deploy.sh https://localhost:49160` from the repository folder on the server: no dangling links, sequential identifiers, no duplicates by CAS, PubChem id or name | `audit_chemicals.py` — flags entries whose formula contradicts their own name and other inconsistencies; report only |
+| the banner at the top of the Chemical Registry page: *Needs a person's eye* — entries awaiting an identifier from screening data, entries sharing an identifier with another, compounds whose batches disagree ([what each means](09-registry-sources.md#what-the-notices-mean-and-what-to-do)) | `curl --noproxy '*' -sSk https://localhost:49160/api/chemicals/notices/summary` for the three counts; `./verify-deploy.sh https://localhost:49160` from the repository folder on the server: no dangling links, sequential identifiers, no duplicates by CAS, PubChem id or name (flagged pairs excepted) | `./container-py.sh script audit_chemicals.py` — lists every flagged entry, then the entries whose formula contradicts their own name; report only |
 
 Detail: [`09-chemical-identification.md` → Auditing what is registered](09-chemical-identification.md#auditing-what-is-registered).
 

@@ -179,6 +179,23 @@ def main() -> int:
     flagged = [r for r in rows if r[1]]
     shown = rows if args.all else flagged
 
+    # CR-9 flags: set by the registry imports, listed here so nobody rediscovers them.
+    docs = all_docs(db, Chemical)
+    shared = [d for d in docs if d.get("cas_shared_with") or d.get("dtx_shared_with") or d.get("pubchem_shared_with")]
+    conflicts = [d for d in docs if d.get("batch_conflicts")]
+    pending = [d for d in docs if d.get("nestle_id_pending")]
+    if shared or conflicts or pending:
+        print("Flags set by the registry imports (kept on purpose, for a person to look at):")
+        for d in shared:
+            what = "; ".join(f"{label} {d.get(fld)} also held by {', '.join(d[flag])}" for fld, flag, label in
+                             (("cas_number", "cas_shared_with", "CAS"), ("dtx_id", "dtx_shared_with", "DTXSID"), ("pubchem_cid", "pubchem_shared_with", "PubChem"))
+                             if d.get(flag))
+            print(f"  shared id    {d['chemical_id']}  {what}")
+        for d in conflicts:
+            print(f"  batch conflict {d['chemical_id']}  columns differ between batches: {', '.join(d['batch_conflicts'])}")
+        for d in pending:
+            print(f"  pending id   {d['chemical_id']}  {str(d.get('name'))[:40]}  identifier to come from screening data")
+        print()
     print(f"{len(rows)} entries checked ({skipped} skipped for having no formula).")
     print(f"{len(flagged)} look{'s' if len(flagged) == 1 else ''} doubtful.\n")
 

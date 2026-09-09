@@ -219,13 +219,14 @@ get, and likely mistakes get a named fix.
 | 02 | **[Architecture](docs/02-architecture.md)** | How the boxes fit; the one design rule everything else follows from; the interactive architecture page |
 | 02 | **[Database schema](docs/02-database-schema.md)** | The hybrid document pattern; SQLite and PostgreSQL; Alembic |
 | 03 | **[Git workflow](docs/03-git-workflow.md)** | Two repositories, three folders; how a change travels from your Mac to the server; the safety gate that stops secrets escaping |
-| 04 | **[Phase tutorials](docs/04-phase-tutorials/phase-00-node-to-python.md)** | One tutorial per build phase, 00 to 05b, R, SH-1, CR-6 and CR-3: why it existed, what it built, steps with expected output, a checkpoint, what it deliberately did not do |
+| 04 | **[Phase tutorials](docs/04-phase-tutorials/phase-00-node-to-python.md)** | One tutorial per build phase, 00 to 05b, R, SH-1, CR-6, CR-3 and CR-9: why it existed, what it built, steps with expected output, a checkpoint, what it deliberately did not do |
 | 05 | **[Roadmap](docs/05-roadmap.md)** | Six tracks, one per module and a shared spine: what each builds next, why, and what it waits on |
 | 06 | **[Product and technology roadmap](docs/06-product-and-technology-roadmap.md)** | From one VM to a product: every candidate technology with a verdict and the trigger that would change it |
 | 07 | **[Operations](docs/07-operations.md)** | The deep runbook: certificate rotation, PostgreSQL, systemd, backups, monitoring, troubleshooting |
 | 08 | **[API reference](docs/08-api-reference.md)** | Every endpoint, request and response |
 | 08 | **[API cookbook](docs/08-api-cookbook.md)** | Copy-paste `curl` and Python recipes — every answer captured from a live instance |
 | 09 | **[Chemical identification](docs/09-chemical-identification.md)** | Why compound names need identifying; the two-stage rule; maintaining the registry |
+| 09 | **[Registry sources](docs/09-registry-sources.md)** | The laboratory's three real registry files — the Dotmatics export, the structure file, the limited list — described column by column as template specs; what every flag and notice means |
 | 09 | **[Query cookbook](docs/09-query-cookbook.md)** | Read-only SQL against the hybrid schema — why queries look unusual here, and recipes that work |
 | 10 | **[The user playbook](docs/10-user-playbook.md)** | **Hands-on start.** Load a file, check it, identify compounds, correct mistakes, ask questions, publish a change — every concept explained from scratch |
 | 10 | **[Chemical Registry tasks](docs/10-registry-tasks.md)** | **Routine registry work, one table per task**, in the order tasks come up: look up, add, load, edit, link, remove, merge, audit, PubChem, export, reset — browser, API and terminal side by side |

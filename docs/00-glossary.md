@@ -375,6 +375,16 @@ is one; the moving dots follow the same curves as the drawn arrows.
 
 **`./container-py.sh script`** — the one-line way to run a maintenance script (audit, remove, merge, identify) inside the running container: `./container-py.sh script remove_chemicals.py CHEM-000042 --apply`. Needed because the scripts want the application's Python and packages, which exist only inside the image — the server's own Python is too old and has none of them. Same command on macOS, Windows (Git Bash) and the RHEL 8 server; it finds podman or Docker itself. *Everyday version:* instead of walking into the workshop to find the tool, you hand the job in at the hatch.
 
+**Registry source (template spec)** — one of the laboratory's real files described as data: a fingerprint of column names that recognises it, the column that says which compound a row is about, the columns that become the registry's own fields, and the rule that everything else is kept under `metadata`. Three exist — the Dotmatics export, the registry structure file, the limited list — in [`09-registry-sources.md`](09-registry-sources.md). *Everyday version:* one form per crate type in the stockroom; a fourth supplier means a fourth form, not a new clerk.
+
+**Batch (of a compound)** — one physical lot of a substance. The Dotmatics export has one row per batch, so a compound with three batches is three rows; the import folds them into one entry with a `batches` list, and flags a compound whose batches disagree on a field (`batch_conflicts`).
+
+**DTXSID** — an identifier from a public chemistry database, carried by both the Dotmatics export and the structure file; the key on which those two sources merge into one entry. Stored as `dtx_id`; never used as the entry's own identifier.
+
+**Shared identifier** — two registrations in a source carry the same CAS, DTXSID or PubChem identifier. Kept as two entries, each flagged with the other's identifier (`cas_shared_with`, `dtx_shared_with`, `pubchem_shared_with`), counted on the registry banner, listed by the audit, ignored by the deploy check's duplicate test. A person decides whether they are one substance. *Everyday version:* two folders with the same barcode — you note it, you do not throw one away.
+
+**Pending identifier** — an entry registered from the limited list, whose identifier column said *Coming from screening*: `nestle_id_pending: screening` until the NR screening data supplies it, or another source already knows it. The registry banner counts them.
+
 **JSON upload** — loading chemicals from a `.json` file whose records use the API's own field names (`chemical_id`, `name`, `cas_number`, …), or `{"chemicals": [...]}`. The one format that **round-trips**: `./container-py.sh export chemicals <file>` writes it, a review edits it, `./container-py.sh import chemicals <file>` loads it back with nothing lost. Available in the browser (*JSON Upload*), the API (`/upload/json`, or `/import` with the records in the body) and the terminal since v2.13.0 — all through one shared module, so the routes cannot disagree ([phase CR-3](04-phase-tutorials/phase-cr-3-every-way-in.md)).
 
 **Curated file** — a list a person has reviewed before it is loaded; the opposite of inference. Under the registry-first rule the registry is refilled only from such files. *Everyday version:* the stock list after stocktake, with the pencil corrections.

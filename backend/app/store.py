@@ -115,15 +115,17 @@ def insert_docs_bulk(db: Session, model: type[Base], docs: list[dict[str, Any]])
     return len(rows)
 
 
-def replace_doc(db: Session, row, doc: dict[str, Any]) -> None:
+def replace_doc(db: Session, row, doc: dict[str, Any], commit: bool = True) -> None:
     """Replace a row's document (v1 `.assign(...).write()`).
 
     A NEW dict must be assigned (not mutated in place) so SQLAlchemy's
-    change tracking notices the JSON column changed.
+    change tracking notices the JSON column changed. `commit=False` lets a
+    bulk caller commit once for many rows.
     """
     row.doc = doc
     _sync_columns(row, doc)
-    db.commit()
+    if commit:
+        db.commit()
 
 
 def set_links(db: Session, rows: list, chemical_id: str | None, batch: int = 5000) -> int:

@@ -27,6 +27,7 @@ export const uploadChemicalsExcel = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 export const getChemicalsDropdown = () => api.get('/chemicals/list/dropdown');
+export const getChemicalNotices = () => api.get('/chemicals/notices/summary');
 export const bulkDeleteChemicals = (chemical_ids) => api.post('/chemicals/bulk/delete', { chemical_ids });
 export const bulkUpdateChemicals = (chemical_ids, updates) => api.post('/chemicals/bulk/update', { chemical_ids, updates });
 export const clearAllChemicals = () => api.delete('/chemicals/all/clear');

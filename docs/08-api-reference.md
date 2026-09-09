@@ -695,6 +695,37 @@ curl -X POST http://localhost:49160/api/chemicals/upload/json \
   -F "file=@docs/excel-templates/chemicals/chemicals_template.json"
 ```
 
+### Recognised sources (Dotmatics export, registry SDF, limited list)
+
+Since v2.14.0 (phase CR-9) the Excel and SDF uploads recognise the
+laboratory's own files by their columns and apply their rules — one entry
+per `REG_ID` with the batches folded in, merging on DTXSID, *Coming from
+screening* as a pending identifier, shared identifiers kept and flagged.
+The report then carries more fields:
+
+```json
+{
+  "message": "Successfully processed 6 chemicals from the Dotmatics registry export (6 new, 0 updated)",
+  "inserted": 6, "updated": 0, "total": 6,
+  "template": "dotmatics_export", "compounds": 6, "rows": 7,
+  "batch_conflicts": 0, "pending_identifiers": 0, "cas_shared": 0
+}
+```
+
+`template` is `dotmatics_export`, `registry_sdf` or `limited_list`; an
+unrecognised file has no `template` field and goes through the generic
+route. The sources, column by column: [`09-registry-sources.md`](09-registry-sources.md).
+
+### Registry notices
+
+**Endpoint:** `GET /chemicals/notices/summary`
+
+**Response:** `{"nestle_id_pending": 0, "cas_shared": 0, "batch_conflicts": 0}` —
+entries whose identifier is still to come from the screening data, entries
+sharing a CAS, DTXSID or PubChem identifier with another (flagged, kept),
+compounds whose batches disagree on a field. The Chemical Registry page
+shows them as a banner; the audit script lists the entries.
+
 ### Import Chemicals (JSON body)
 
 The same import with the records in the request body instead of a file —

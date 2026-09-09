@@ -401,7 +401,11 @@ compound without a CAS number is a valid entry.
 
 **You should see** `Successfully processed N chemicals (N new, 0 updated)`,
 and the same file loaded twice says `(0 new, N updated)` — nothing is ever
-duplicated. Every route reads the file with the same code
+duplicated. The laboratory's own files — the Dotmatics export, the
+structure file, the limited list — are recognised by their columns and
+handled by their own rules; the report then says *from the Dotmatics
+registry export* and the registry page may show a banner, *Needs a person's
+eye*, for what a person must decide ([`09-registry-sources.md`](09-registry-sources.md)). Every route reads the file with the same code
 ([phase CR-3](04-phase-tutorials/phase-cr-3-every-way-in.md)); the tasks
 page has the routes side by side
 ([`10-registry-tasks.md` → task 3](10-registry-tasks.md#3-load-many-compounds-from-a-file)).

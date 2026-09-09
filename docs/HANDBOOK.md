@@ -56,12 +56,12 @@ the induction course, the tasks page is the laminated card by the machine.
 
 | | |
 |---|---|
-| **Version** | 2.13.0 (2026-09-09); the first tagged release was `v2.10.1` |
+| **Version** | 2.14.0 (2026-09-09); the first tagged release was `v2.10.1` |
 | **Status date** | 2026-09-09 |
 | **Tests** | 105 passing (`cd backend && .venv/bin/pytest`) |
-| **Last phase done** | CR-3 — Every way in ✅ (2026-09-09): one import module for browser, API and terminal; JSON beside CSV, TSV, XLSX and SDF; import and export scripts with shortcuts; the review loop that refills the registry from the pre-reset backup — [phase CR-3](04-phase-tutorials/phase-cr-3-every-way-in.md) |
+| **Last phase done** | CR-9 — The real registry sources ✅ (2026-09-09): the Dotmatics export, the structure file and the limited list recognised by their columns and loaded by their own rules; batches folded, sources merged on DTXSID, shared identifiers flagged, structures read; a banner and the audit for what a person decides — [phase CR-9](04-phase-tutorials/phase-cr-9-real-registry-sources.md) · [the sources](09-registry-sources.md) |
 | **Phase in progress** | **R — the registry reset** 🔨 (tracks CR + SD): **R-1 and R-2 done on production 2026-09-08** — every row unlinked, then every entry removed; the registry is empty by design, the 664 entries held in a backup outside the repository; R-3 is now **SD-1, agreed ✅ 2026-09-08** — the registry-first rule, written from the owner's description and agreed the same day, D1–D11 as recommended — [phase R](04-phase-tutorials/phase-r-registry-reset.md) · [the specification](09-chemical-identification.md#the-next-rule-registry-first--specification) |
-| **Plan** | Six **tracks**, one per module and a shared spine, each with its next phase — [`05-roadmap.md`](05-roadmap.md). Next in order: **the review loop**, yours (export the 664 old entries, review, load back — [how](09-chemical-identification.md#refilling-the-registry-the-review-loop)) → SD-1 build → CR-5 unregistered review → CR-1/CR-2 table → CR-4 incomplete entries → SH-2 schema normalisation; beside them, the **authentication ladder**, agreed 2026-09-08: SH-3a token gate 🔜 ready → SH-3b break-glass admin → SH-3c single sign-on ⏸ the identity team's registration, requested this week — [`13-authentication.md`](13-authentication.md) |
+| **Plan** | Six **tracks**, one per module and a shared spine, each with its next phase — [`05-roadmap.md`](05-roadmap.md). Next in order: **the owner loads the three real files** by any route ([what to expect](04-phase-tutorials/phase-cr-9-real-registry-sources.md#how-to-test-it-by-every-route)) → SD-1 build → CR-5 unregistered review → CR-1/CR-2 table → CR-4 incomplete entries → SH-2 schema normalisation; beside them, the **authentication ladder**, agreed 2026-09-08: SH-3a token gate 🔜 ready → SH-3b break-glass admin → SH-3c single sign-on ⏸ the identity team's registration, requested this week — [`13-authentication.md`](13-authentication.md) |
 | **Production** | one RHEL 8 VM, one container, one SQLite file: 49,065 screening rows, **0 registered chemicals, 0 rows linked** since R-2 on 2026-09-08 (by design: the registry is refilled under the new rule by CR-3 and SD-1; the 664 old entries are in `~/data-backup-20260908-before-R2.db` on the server) |
 
 **Open items, none blocking:**
@@ -133,6 +133,7 @@ does not record a date, it says so rather than guessing.
 | 2026-09-08 | **v2.9.0.** SH-1: the modules renamed to say what they are — Chemical Registry, Sample Management, Screening Data; addresses unchanged. |
 | 2026-09-08 | **v2.10.0.** The authentication plan: a ladder from an open port to single sign-on, every method explained and judged, the first decision record. |
 | 2026-09-08 | **R-2 run on production.** Every registry entry removed after a backup; the registry empty by design until it is refilled under the agreed rule. |
+| 2026-09-09 | **v2.14.0.** CR-9: the laboratory's three real registry files described as data — the master export, the structure file, the limited list — loaded by their own rules; the registry can now be refilled with 12,539 real entries. |
 | 2026-09-09 | **v2.13.0.** CR-3: every way into the registry through one door — JSON beside the spreadsheet and structure formats, import and export from the terminal, and the review loop that refills the registry from the pre-reset backup. |
 | 2026-09-09 | **v2.11.0.** CR-6: deleting a compound with linked rows is refused in the browser and the plain API; forced or from the script it unlinks first, then deletes. |
 | 2026-09-08 | **v2.10.1.** The first tagged release, on both repositories; tagging becomes a step of the workflow; the container image named as the project's package, for later. |
@@ -391,6 +392,7 @@ code (`phase-cr-3-every-way-in.md`). What each track does next is
 | 05 | SH | Documentation consolidation | The numbered document set, this handbook, the phase tutorials, the roadmaps, the lessons file, the Windows guide, figures | [`phase-05-docs-consolidation.md`](04-phase-tutorials/phase-05-docs-consolidation.md) | 2026-09-07 (v2.3.0) | ✅ |
 | 05b | SH | Reproducible builds and CI | `backend/requirements.lock` resolved inside the image by `./container-py.sh lock`; the Dockerfile, CI and the test environment install from it; the linter with an explicit rule set; a workflow on the public repository running every check on Linux and macOS | [`phase-05b-reproducible-builds-and-ci.md`](04-phase-tutorials/phase-05b-reproducible-builds-and-ci.md) | 2026-09-07 (v2.4.0) | ✅ |
 | R | CR · SD | Registry reset | `--unlink-all` and `--all` on the removal script, batched and gated, with the script's first six tests; the two-step procedure on production; then the new identification logic | [`phase-r-registry-reset.md`](04-phase-tutorials/phase-r-registry-reset.md) | 2026-09-08 (v2.5.0 tools · v2.6.0 buttons · v2.7.0 match, confirm, summaries) | 🔨 R-1 and R-2 done 2026-09-08 · R-3 agreed as the SD-1 specification ✅ (2026-09-08), built as SD-1 |
+| CR-9 | CR | The real registry sources | The Dotmatics export (one entry per registration, batches folded, every column kept), the registry structure file (V3000, read by RDKit, merged on DTXSID), the limited list (identifier pending from screening data) as template specs; shared identifiers kept and flagged; the notices banner; the audit lists every flag; the structure parser fixed; seven tests on synthetic files | [`phase-cr-9-real-registry-sources.md`](04-phase-tutorials/phase-cr-9-real-registry-sources.md) | 2026-09-09 (v2.14.0) | ✅ |
 | CR-3 | CR | Every way in | One shared import module; JSON upload in the browser and the API beside CSV, TSV, XLSX and SDF; a JSON-body endpoint; `import_file.py` and `export_chemicals.py` with `./container-py.sh import` / `export`; a JSON template; the review loop for the 664 old entries; six tests | [`phase-cr-3-every-way-in.md`](04-phase-tutorials/phase-cr-3-every-way-in.md) | 2026-09-09 (v2.13.0) | ✅ |
 | CR-6 | CR | Deletion refuses or forces | A compound with linked rows cannot be deleted from the browser or the plain API (409, with the count and where to unlink); with `force`, and from the script, the rows are unlinked first, then the entry deleted; one shared module for where a link lives; six tests, one contract test rewritten for the agreed rule | [`phase-cr-6-delete-unlinks-first.md`](04-phase-tutorials/phase-cr-6-delete-unlinks-first.md) | 2026-09-09 (v2.11.0) | ✅ |
 | SH-1 | SH | Module names | *Chemicals*, *Samples*, *Screening* become *Chemical Registry*, *Sample Management*, *Screening Data* in the sidebar, the page headings, the dashboard tiles, the interactive architecture page and every document; no address or API path changed | [`phase-sh-1-module-names.md`](04-phase-tutorials/phase-sh-1-module-names.md) | 2026-09-08 (v2.9.0) | ✅ |
@@ -517,10 +519,13 @@ In the order the roadmap [argues for](05-roadmap.md#why-this-order):
    [specified and agreed](09-chemical-identification.md#the-next-rule-registry-first--specification);
    the registry is emptied next (R-2, behind a backup and a go, after the
    demo).
-3. ~~CR-6~~ done, v2.11.0. ~~CR-3 — every way in~~ done, v2.13.0. **The
-   review loop, yours:** export the 664 old entries from the pre-reset
-   backup, review the file, load back what you trust
-   ([how](09-chemical-identification.md#refilling-the-registry-the-review-loop)).
+3. ~~CR-6~~ done, v2.11.0. ~~CR-3~~ done, v2.13.0. ~~CR-9~~ done, v2.14.0.
+   **Loading the real files, yours:** the Dotmatics export, the structure
+   file and the limited list, by any route; the phase's test section says
+   exactly what each should report
+   ([how](04-phase-tutorials/phase-cr-9-real-registry-sources.md#how-to-test-it-by-every-route)).
+   The review loop for the 664 old entries stays available but is now
+   optional: the export is the master source.
 4. **SD-1 build, then CR-5:** the rule in code, with the command that
    re-attaches the rows already loaded, and the unregistered-compounds
    notice and review table.

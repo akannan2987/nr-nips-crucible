@@ -26,6 +26,7 @@ from ..imports import (
     import_json_records,
     import_sdf_text,
     parse_json_records,
+    registry_notices,
 )
 from ..links import count_links, describe_links, unlink_targets
 from ..models import Chemical
@@ -275,6 +276,12 @@ def clear_chemicals(
     if unlinked:
         response["unlinked"] = unlinked
     return response
+
+
+@router.get("/notices/summary")
+def notices(db: Session = Depends(get_db)) -> dict[str, int]:
+    """GET /api/chemicals/notices/summary — what the registry page keeps showing until someone acts (CR-9)."""
+    return registry_notices(db)
 
 
 @router.get("/{chemical_id}")

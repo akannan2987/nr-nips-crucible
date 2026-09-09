@@ -110,7 +110,10 @@ curl --noproxy '*' -sS -X POST http://localhost:49160/api/chemicals/import \
 {"message":"Successfully processed 5 chemicals (5 new, 0 updated)","inserted":5,"updated":0,"total":5}
 ```
 
-JSON is the format that round-trips: `./container-py.sh export chemicals
+The laboratory's own files — the Dotmatics export, the structure file, the
+limited list — go through the same two upload endpoints and are recognised
+by their columns ([`09-registry-sources.md`](09-registry-sources.md)); the
+report then names the `template` it applied. JSON is the format that round-trips: `./container-py.sh export chemicals
 registry.json` writes every entry with these same field names, and the file
 loads straight back. A record without a CAS number is a valid entry. Every
 route — browser, these two endpoints, the terminal — reads the file with the

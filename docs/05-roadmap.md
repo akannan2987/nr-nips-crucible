@@ -84,7 +84,7 @@ codes, the way phase R (the registry reset) is CR and SD at once.
 
 | Track | Shipped so far | Next phase | Status |
 |---|---|---|---|
-| CR | Registry CRUD and uploads (CSV, TSV, XLSX, SDF, JSON); one import module for every route, import/export scripts and shortcuts (CR-3 ✅ 2026-09-09); PubChem linking and enrichment scripts; audit, merge and removal scripts; R-1 and R-2 done: the registry is empty by design (2026-09-08); CR-6 deletion refuses or forces ✅ (2026-09-09) | **The review loop** (the owner: export the 664, review, load back), then the **SD-1 build**; **CR-1 · Sort, search and filter** after | 🔜 SD-1 build |
+| CR | Registry CRUD and uploads (CSV, TSV, XLSX, SDF, JSON); one import module for every route, import/export scripts and shortcuts (CR-3 ✅ 2026-09-09); the three real sources as template specs (CR-9 ✅ 2026-09-09); PubChem linking and enrichment scripts; audit, merge and removal scripts; R-1 and R-2 done: the registry is empty by design (2026-09-08); CR-6 deletion refuses or forces ✅ (2026-09-09) | **The owner loads the three real files** (CR-9 decision 4: export, structure file, list — by any route), then the **SD-1 build** against a registry of 12,539 real entries; **CR-1 · Sort, search and filter** after | 🔜 SD-1 build |
 | SD | Template ingestion of the Cergy export as data; the table built from the file; export in four formats; link and unlink buttons with select-all-matching and a confirmation | **SD-1 · The registry-first rule** — [specified and agreed](09-chemical-identification.md#the-next-rule-registry-first--specification) 2026-09-08; built after R-2 and CR-3 | ✅ agreed · 🔜 build |
 | SM | SLIMS three-row-header upload, table, detail view | **SM-1 · Sort, search, filter and views**, after CR-1 proves the pattern | 🔜 |
 | TX | XLSX upload, table | **TX-1 · A real study export as a template spec** | ⏸ a file |
@@ -109,6 +109,7 @@ route the data arrives on, with nothing silently missing.
 | CR-6 | **Deletion refuses or forces, by who is asking**: in the browser a compound with linked rows cannot be deleted; the person is told how many rows and sent to unlink them first; the plain API answers 409 with the count; the API with `force=true` and the terminal script unlink automatically, then delete, always in that order, and report both counts; the link logic in one module — [phase CR-6](04-phase-tutorials/phase-cr-6-delete-unlinks-first.md) | Orphaned pointers are the failure mode lesson 22 records | — | ✅ v2.11.0 (2026-09-09) |
 | CR-7 | Compound-name normalisation: hold house-style names (`tertiobutyl` for `tert-butyl`) as synonyms so the strict PubChem match in CR-4 finds them | Around 456 compounds carry a valid CAS and a name external databases do not recognise | CR-4 | 🔜 |
 | CR-8 | Merge duplicate entries from the browser (the script exists) | A registry rebuilt by hand will acquire duplicates | CR-1 | 🔜 |
+| CR-9 | **The laboratory's real registry sources as template specs**: the Dotmatics export (one entry per registration, batches folded, 115 columns kept), the registry structure file (V3000, read by RDKit, merged on DTXSID), the limited list (identifier pending from screening data); shared identifiers kept and flagged; a banner and the audit for what a person must decide; the structure parser fixed — [phase CR-9](04-phase-tutorials/phase-cr-9-real-registry-sources.md), [the sources](09-registry-sources.md) | The registry is refilled from these three files; without their rules the export would load one entry per batch and no structure could be drawn | — | ✅ v2.14.0 (2026-09-09) |
 
 **The 22 compounds** removed in 2026-08 after a lookup bug are superseded by
 the reset: under the new rule they are registered with everything else, by a
@@ -184,6 +185,7 @@ attached to a registered compound only when the registry says so.
 | SH-6 | Walk the Windows guide on a real PC, then a Windows CI runner | The guide is written and says *untested* | a Windows machine | ⏸ |
 | SH-7 | Export from every module in the four formats (the screening table has it) | Convenience; the API already returns the data | nothing | 🔜 |
 | SH-8 | A `LICENSE` file — MIT, like the four sibling projects, or Apache-2.0 if the organisation prefers its patent clause; the file is one commit once the name and year are known | Public on GitHub without one legally means all rights reserved | **on hold 2026-09-08:** the owner is asking the organisation whether the public repository may carry an open-source licence, and in whose name — the copyright is the employer's to grant | ⏸ |
+| SH-11 | The template generator's spreadsheet output made byte-stable (timestamps inside the files differ between runs), so regenerating templates does not churn the repository | Found while adding the CR-9 templates; the regenerated spreadsheets were restored and only new files committed | nothing | 🔜 |
 | SH-9 | `container-py.sh rebuild` and `restart` wait until the app answers before returning | A probe in the first two seconds after a rebuild fails with an SSL error and looks like a fault (seen on 2026-09-08) | nothing | 🔜 |
 | SH-10 | **The container image as the package.** CI builds the image on a release tag and pushes it to a container registry, with the version as its label; the server and any other machine `pull` instead of building from source; the setup guides gain the pull path beside the build path | Deploys become pull-and-restart; the image on the server is provably the one CI tested; a second machine or the Windows walk gets the identical build. About a day. Verdict and trigger in [`06-product-and-technology-roadmap.md`](06-product-and-technology-roadmap.md#publishing-the-image-to-a-registry-the-package) | **decided 2026-09-08: later** — trigger: a second deployment, or the Windows guide walk finding the build painful; plus a registry chosen with the organisation (the same conversation as the licence) | ⏸ |
 | — | Release tags | Every version that reaches production is tagged in both repositories, from v2.10.1 — a workflow step, not a phase ([`03-git-workflow.md` Step 4c](03-git-workflow.md#step-4c---tag-the-release)) | — | ✅ 2026-09-08 |
@@ -196,7 +198,7 @@ attached to a registered compound only when the registry says so.
 flowchart LR
     SH1["SH-1 module names ✅<br/>v2.9.0"] --> SD1s["SD-1 spec agreed ✅<br/>2026-09-08"]
     SD1s --> R2["R-2 empty the registry ✅<br/>2026-09-08"]
-    R2 --> CR6["CR-6 delete refuses or forces ✅<br/>v2.11.0"] --> CR3["CR-3 every way in ✅<br/>v2.13.0 — the review loop is the owner's"]
+    R2 --> CR6["CR-6 delete refuses or forces ✅<br/>v2.11.0"] --> CR3["CR-3 every way in ✅<br/>v2.13.0"] --> CR9["CR-9 the real sources ✅<br/>v2.14.0 — the owner loads them"]
     CR3 --> SD1["SD-1 build<br/>the registry-first rule + re-identify"]
     SD1 --> CR5["CR-5 unregistered review"]
     CR5 --> CR1["CR-1 sort · filter"] --> CR2["CR-2 views"]
@@ -213,21 +215,24 @@ flowchart LR
    registry empty by design.
 3. **CR-6 right after R-2**, so that removing a compound from the browser is
    safe on its own before the registry is refilled. Done, v2.11.0.
-4. **CR-3 before the SD-1 build.** Under the new rule nothing attaches until
+4. **CR-3, then CR-9, before the SD-1 build.** CR-9 came from the owner's
+   three real files on 2026-09-09: the rule must be tested against a registry
+   of 12,539 real entries, not five synthetic ones.
+5. **CR-3 before the SD-1 build.** Under the new rule nothing attaches until
    a compound is registered, so the empty registry has to be refillable from
    a curated file by every route first. The pre-R-1 backup on the server
    still holds the 664 old entries; exported as JSON and reviewed, they are a
    candidate first file.
-5. **SD-1 then CR-5** because they are two halves of one behaviour: the rule
+6. **SD-1 then CR-5** because they are two halves of one behaviour: the rule
    decides what is unregistered; the review table lets a person act on it.
    The re-identify command in SD-1 is what attaches the 49,065 rows already
    loaded once the registry is refilled — there is no need to upload the
    export again.
-6. **CR-1, CR-2, CR-4** are the registry's conveniences and its completeness
+7. **CR-1, CR-2, CR-4** are the registry's conveniences and its completeness
    loop; they need real registered entries to be worth testing against.
-7. **SH-2 after the tables have their filters**, because the hot-field list
+8. **SH-2 after the tables have their filters**, because the hot-field list
    is read off the filters people actually use.
-8. **The authentication ladder runs beside the rest, not after it.** SH-3a
+9. **The authentication ladder runs beside the rest, not after it.** SH-3a
    is two days and needs nothing from anyone; it can go in between any two
    phases above once its decisions are agreed. The registration request for
    single sign-on is made now because it is the long pole; SH-3c follows

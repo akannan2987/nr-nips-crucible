@@ -18,6 +18,7 @@ Ready-to-fill upload templates for bulk data import into Crucible.
 | Module | File | Accepted upload formats |
 |--------|------|-------------------------|
 | **Chemicals** | [chemicals_template.csv](chemicals/chemicals_template.csv) · [chemicals_template.xlsx](chemicals/chemicals_template.xlsx) · [chemicals_template.sdf](chemicals/chemicals_template.sdf) · [chemicals_template.json](chemicals/chemicals_template.json) | `.csv` · `.tsv` · `.xlsx` · `.xls` · `.sdf` · `.json` — same result by browser, API or terminal |
+| **Chemicals, the laboratory's real sources** | [dotmatics_template.xlsx](chemicals/dotmatics_template.xlsx) · [chemicals_registry_template.sdf](chemicals/chemicals_registry_template.sdf) (V3000) · [chemicals_limited_template.xlsx](chemicals/chemicals_limited_template.xlsx) | the same routes; recognised by their columns and handled by [their own rules](../09-registry-sources.md) — the real files never enter the repository |
 | **Samples** | [Upload_Sample_Template.xlsx](samples/Upload_Sample_Template.xlsx) | `.xlsx` only (SLIMS layout) |
 | **Screening** | [screening_template.xlsx](screening/screening_template.xlsx) | `.xlsx` only |
 | **Toxicology** | [toxicology_template.xlsx](toxicology/toxicology_template.xlsx) | `.xlsx` only |
@@ -81,6 +82,19 @@ polymer/mixture detection) are recomputed with RDKit on import; every other
 data field is preserved as metadata. Both V2000 and V3000 are supported.
 
 ---
+
+### The three real sources, in synthetic form
+
+`dotmatics_template.xlsx`, `chemicals_registry_template.sdf` and
+`chemicals_limited_template.xlsx` carry the laboratory's real column and
+property *names* with invented values, so that the recognition and the
+rules — one entry per `REG_ID` with batches, merge on DTXSID, *Coming from
+screening* as a pending identifier — can be tried on any machine. Which
+columns become registry fields and what happens to the rest, per source:
+[`09-registry-sources.md`](../09-registry-sources.md). Loading them in
+order (export, structure file, list) on an empty registry gives six
+entries, two of them still awaiting an identifier — the expected outputs
+by every route are in [phase CR-9](../04-phase-tutorials/phase-cr-9-real-registry-sources.md#how-to-test-it-by-every-route).
 
 ### JSON upload
 

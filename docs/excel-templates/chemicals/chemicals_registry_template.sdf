@@ -1,0 +1,259 @@
+
+     RDKit          2D
+
+  0  0  0  0  0  0  0  0  0  0999 V3000
+M  V30 BEGIN CTAB
+M  V30 COUNTS 14 15 0 0 0
+M  V30 BEGIN ATOM
+M  V30 1 C 2.775976 0.000000 0.000000 0
+M  V30 2 N 1.275976 0.000000 0.000000 0
+M  V30 3 C 0.394298 1.213525 0.000000 0
+M  V30 4 N -1.032286 0.750000 0.000000 0
+M  V30 5 C -1.032286 -0.750000 0.000000 0
+M  V30 6 C 0.394298 -1.213525 0.000000 0
+M  V30 7 C 0.706166 -2.680747 0.000000 0
+M  V30 8 O 2.132751 -3.144272 0.000000 0
+M  V30 9 N -0.408551 -3.684443 0.000000 0
+M  V30 10 C -0.096684 -5.151664 0.000000 0
+M  V30 11 C -1.835136 -3.220917 0.000000 0
+M  V30 12 O -2.949853 -4.224613 0.000000 0
+M  V30 13 N -2.147004 -1.753696 0.000000 0
+M  V30 14 C -3.573588 -1.290170 0.000000 0
+M  V30 END ATOM
+M  V30 BEGIN BOND
+M  V30 1 1 1 2
+M  V30 2 1 2 3
+M  V30 3 2 3 4
+M  V30 4 1 4 5
+M  V30 5 2 5 6
+M  V30 6 1 6 7
+M  V30 7 2 7 8
+M  V30 8 1 7 9
+M  V30 9 1 9 10
+M  V30 10 1 9 11
+M  V30 11 2 11 12
+M  V30 12 1 11 13
+M  V30 13 1 13 14
+M  V30 14 1 6 2
+M  V30 15 1 13 5
+M  V30 END BOND
+M  V30 END CTAB
+M  END
+>  <DTXSID>  (1) 
+DTXSID000001
+
+>  <PREFERRED_NAME>  (1) 
+Caffeine
+
+>  <CAS Number>  (1) 
+58-08-2
+
+>  <Chemical name>  (1) 
+Caffeine
+
+>  <Synonyms / Composition>  (1) 
+1,3,7-Trimethylxanthine; Guaranine
+
+>  <MOLECULAR_FORMULA>  (1) 
+C8H10N4O2
+
+>  <MONOISOTOPIC_MASS>  (1) 
+194.080376
+
+>  <Exact Molecular Weight>  (1) 
+194.19
+
+>  <INCHI_STRING>  (1) 
+InChI=1S/C8H10N4O2/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2/h4H,1-3H3
+
+>  <SMILES>  (1) 
+Cn1cnc2c1c(=O)n(C)c(=O)n2C
+
+>  <MS_READY_SMILES>  (1) 
+Cn1cnc2c1c(=O)n(C)c(=O)n2C
+
+>  <FOUND_BY>  (1) 
+Example lookup
+
+>  <Present in INK>  (1) 
+Yes
+
+>  <Role / Usage / Source / NIAS>  (1) 
+example role
+
+>  <EU PM substance code>  (1) 
+
+
+>  <log P(o/w) (25°C)>  (1) 
+-0.07
+
+$$$$
+
+     RDKit          2D
+
+  0  0  0  0  0  0  0  0  0  0999 V3000
+M  V30 BEGIN CTAB
+M  V30 COUNTS 11 11 0 0 0
+M  V30 BEGIN ATOM
+M  V30 1 C 3.750000 -1.299038 0.000000 0
+M  V30 2 O 3.000000 0.000000 0.000000 0
+M  V30 3 C 1.500000 0.000000 0.000000 0
+M  V30 4 C 0.750000 -1.299038 0.000000 0
+M  V30 5 C -0.750000 -1.299038 0.000000 0
+M  V30 6 C -1.500000 -2.598076 0.000000 0
+M  V30 7 O -3.000000 -2.598076 0.000000 0
+M  V30 8 C -1.500000 0.000000 0.000000 0
+M  V30 9 C -0.750000 1.299038 0.000000 0
+M  V30 10 C 0.750000 1.299038 0.000000 0
+M  V30 11 O 1.500000 2.598076 0.000000 0
+M  V30 END ATOM
+M  V30 BEGIN BOND
+M  V30 1 1 1 2
+M  V30 2 1 2 3
+M  V30 3 2 3 4
+M  V30 4 1 4 5
+M  V30 5 1 5 6
+M  V30 6 2 6 7
+M  V30 7 2 5 8
+M  V30 8 1 8 9
+M  V30 9 2 9 10
+M  V30 10 1 10 11
+M  V30 11 1 10 3
+M  V30 END BOND
+M  V30 END CTAB
+M  END
+>  <DTXSID>  (2) 
+DTXSID000002
+
+>  <PREFERRED_NAME>  (2) 
+Vanillin
+
+>  <CAS Number>  (2) 
+121-33-5
+
+>  <Chemical name>  (2) 
+Vanillin
+
+>  <Synonyms / Composition>  (2) 
+1,3,7-Trimethylxanthine; Guaranine
+
+>  <MOLECULAR_FORMULA>  (2) 
+C8H8O3
+
+>  <MONOISOTOPIC_MASS>  (2) 
+194.080376
+
+>  <Exact Molecular Weight>  (2) 
+152.15
+
+>  <INCHI_STRING>  (2) 
+InChI=1S/C8H10N4O2/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2/h4H,1-3H3
+
+>  <SMILES>  (2) 
+COc1cc(C=O)ccc1O
+
+>  <MS_READY_SMILES>  (2) 
+COc1cc(C=O)ccc1O
+
+>  <FOUND_BY>  (2) 
+Example lookup
+
+>  <Present in INK>  (2) 
+Yes
+
+>  <Role / Usage / Source / NIAS>  (2) 
+example role
+
+>  <EU PM substance code>  (2) 
+
+
+>  <log P(o/w) (25°C)>  (2) 
+-0.07
+
+$$$$
+
+     RDKit          2D
+
+  0  0  0  0  0  0  0  0  0  0999 V3000
+M  V30 BEGIN CTAB
+M  V30 COUNTS 13 12 0 0 0
+M  V30 BEGIN ATOM
+M  V30 1 O -2.598076 0.000000 0.000000 0
+M  V30 2 C -1.299038 0.750000 0.000000 0
+M  V30 3 O -1.299038 2.250000 0.000000 0
+M  V30 4 C 0.000000 0.000000 0.000000 0
+M  V30 5 C 1.299038 0.750000 0.000000 0
+M  V30 6 O 0.549038 2.049038 0.000000 0
+M  V30 7 C 2.598076 1.500000 0.000000 0
+M  V30 8 C 2.598076 3.000000 0.000000 0
+M  V30 9 O 1.299038 3.750000 0.000000 0
+M  V30 10 O 3.897114 3.750000 0.000000 0
+M  V30 11 C 2.049038 -0.549038 0.000000 0
+M  V30 12 O 1.299038 -1.848076 0.000000 0
+M  V30 13 O 3.549038 -0.549038 0.000000 0
+M  V30 END ATOM
+M  V30 BEGIN BOND
+M  V30 1 1 1 2
+M  V30 2 2 2 3
+M  V30 3 1 2 4
+M  V30 4 1 4 5
+M  V30 5 1 5 6
+M  V30 6 1 5 7
+M  V30 7 1 7 8
+M  V30 8 2 8 9
+M  V30 9 1 8 10
+M  V30 10 1 5 11
+M  V30 11 2 11 12
+M  V30 12 1 11 13
+M  V30 END BOND
+M  V30 END CTAB
+M  END
+>  <DTXSID>  (3) 
+DTXSID000003
+
+>  <PREFERRED_NAME>  (3) 
+Citric acid
+
+>  <CAS Number>  (3) 
+77-92-9
+
+>  <Chemical name>  (3) 
+Citric acid
+
+>  <Synonyms / Composition>  (3) 
+1,3,7-Trimethylxanthine; Guaranine
+
+>  <MOLECULAR_FORMULA>  (3) 
+C6H8O7
+
+>  <MONOISOTOPIC_MASS>  (3) 
+194.080376
+
+>  <Exact Molecular Weight>  (3) 
+192.12
+
+>  <INCHI_STRING>  (3) 
+InChI=1S/C8H10N4O2/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2/h4H,1-3H3
+
+>  <SMILES>  (3) 
+OC(=O)CC(O)(CC(=O)O)C(=O)O
+
+>  <MS_READY_SMILES>  (3) 
+OC(=O)CC(O)(CC(=O)O)C(=O)O
+
+>  <FOUND_BY>  (3) 
+Example lookup
+
+>  <Present in INK>  (3) 
+Yes
+
+>  <Role / Usage / Source / NIAS>  (3) 
+example role
+
+>  <EU PM substance code>  (3) 
+
+
+>  <log P(o/w) (25°C)>  (3) 
+-0.07
+
+$$$$

@@ -110,8 +110,15 @@ if [ -f "$DB" ]; then
   # because the identifiers have different granularity: two CAS numbers can
   # legitimately point at one PubChem compound, so a repeated CID is a
   # duplicate even when the CAS numbers differ.
-  dup_cas=$(sqlite3 "$DB" "SELECT COUNT(*) FROM (SELECT json_extract(doc,'\$.cas_number') c FROM chemicals WHERE c IS NOT NULL GROUP BY c HAVING COUNT(*)>1);" 2>/dev/null)
-  dup_cid=$(sqlite3 "$DB" "SELECT COUNT(*) FROM (SELECT json_extract(doc,'\$.pubchem_cid') c FROM chemicals WHERE c IS NOT NULL GROUP BY c HAVING COUNT(*)>1);" 2>/dev/null)
+  # Entries that share a CAS number ON PURPOSE (two registrations of one
+  # substance in the source system, kept and flagged — CR-9 decision 2) carry
+  # cas_shared_with and are not duplicates here; the audit lists them instead.
+  # An entry flagged as sharing an identifier ON PURPOSE (CR-9 decision 2:
+  # two registrations of one substance in the source system, kept for a
+  # person to judge; the audit lists them) is not a duplicate here.
+  flagged="(json_extract(doc,'\$.cas_shared_with') IS NULL AND json_extract(doc,'\$.dtx_shared_with') IS NULL AND json_extract(doc,'\$.pubchem_shared_with') IS NULL)"
+  dup_cas=$(sqlite3 "$DB" "SELECT COUNT(*) FROM (SELECT json_extract(doc,'\$.cas_number') c FROM chemicals WHERE c IS NOT NULL AND $flagged GROUP BY c HAVING COUNT(*)>1);" 2>/dev/null)
+  dup_cid=$(sqlite3 "$DB" "SELECT COUNT(*) FROM (SELECT json_extract(doc,'\$.pubchem_cid') c FROM chemicals WHERE c IS NOT NULL AND $flagged GROUP BY c HAVING COUNT(*)>1);" 2>/dev/null)
   # A shared name is only evidence of duplication when there is nothing better
   # to go on. Two entries with different CAS numbers AND different PubChem
   # compounds are different substances that happen to carry the same label -
@@ -122,7 +129,7 @@ if [ -f "$DB" ]; then
     SELECT COUNT(*) FROM (
       SELECT LOWER(json_extract(doc,'\$.name')) n
       FROM chemicals
-      WHERE json_extract(doc,'\$.name') IS NOT NULL
+      WHERE json_extract(doc,'\$.name') IS NOT NULL AND $flagged
       GROUP BY n
       HAVING COUNT(*) > 1
          AND COUNT(DISTINCT COALESCE(json_extract(doc,'\$.pubchem_cid'), json_extract(doc,'\$.cas_number'), rowid)) < COUNT(*)

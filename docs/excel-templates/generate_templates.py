@@ -105,6 +105,46 @@ json_path.write_text(json.dumps(chem_json, indent=2) + "\n", encoding="utf-8")
 print(f"  wrote {json_path.relative_to(ROOT)}  ({len(chem_json)} records)")
 
 
+# ── Chemicals: the three real registry sources, in synthetic form (CR-9) ──
+# The column and property NAMES are the laboratory's; every VALUE below is
+# invented. backend/app/utils/registry_templates.py recognises each file by
+# its fingerprint and knows which columns become registry fields.
+
+DOTMATICS_HEADER = [
+    "FORMATTED_BATCH_ID", "REG_ID", "BATCH_ID", "BATCH_NUMBER", "CAS_NO", "SMILES_ORIGINAL",
+    "CHEMICAL_NAME", "OTHER_NAMES", "MOL_FORMULA", "NESTLE_ID", "TYPE_ORIGIN", "SMILES_NEUT",
+    "DTXSID", "SYNONYMS", "FAMILY", "MOL_WEIGHT_ORIG", "MW_NEUT", "XLOGP_ORIG", "VAPOR_PRESSURE",
+    "PUBCHEM_ID", "INCHI", "GC_RI_METHOD", "RI_COMPILATION", "PRESENT_PLASTIC", "PRESENT_INK",
+    "PRESENT_PAPER", "ROLE_USAGE_SOURCE_NIAS", "EU_PM_SUBSTANCE_CODE", "EU_FCM_SUBSTANCE_CODE",
+    "EFSA_OPINIONS", "RESTR_AND_SPECS_SML", "NESTLE_DEPT", "OTHER_INFORMATION",
+]
+# (formatted batch, reg, batch, batch no, cas, smiles, name, other names, formula, nestle id,
+#  origin, smiles neutral, dtxsid, synonyms, family, mw, mw neut, xlogp, vp, pubchem, inchi,
+#  gc ri, ri compilation, plastic, ink, paper, role, eu pm, eu fcm, efsa, sml, dept, other)
+def dm(reg, batch, name, cas, smiles, formula, mw, dtx, pubchem, syn, other="", gc_ri="", nestle=""):
+    return [f"REG-{reg}-{batch}", reg, 900000 + batch, batch, cas, smiles, name, other, formula, nestle,
+            "", smiles, dtx, syn, "example family", mw, mw, 1.0, "", pubchem, "", gc_ri, "",
+            "Yes", "", "Yes", "example role", "", "", "", "", "EXAMPLE DEPT", ""]
+
+DOTMATICS_ROWS = [DOTMATICS_HEADER] + [
+    dm(100001, 1, "Caffeine", "58-08-2", "Cn1cnc2c1c(=O)n(C)c(=O)n2C", "C8H10N4O2", 194.19, "DTXSID0020232", 2519, "1,3,7-Trimethylxanthine; Guaranine", gc_ri="1810"),
+    dm(100001, 2, "Caffeine", "58-08-2", "Cn1cnc2c1c(=O)n(C)c(=O)n2C", "C8H10N4O2", 194.19, "DTXSID0020232", 2519, "1,3,7-Trimethylxanthine; Guaranine", gc_ri="1815"),
+    dm(100002, 1, "Vanillin", "121-33-5", "COc1cc(C=O)ccc1O", "C8H8O3", 152.15, "DTXSID0021976", 1183, "4-Hydroxy-3-methoxybenzaldehyde", nestle="NID-0002"),
+    dm(100003, 1, "Citric acid", "77-92-9", "OC(=O)CC(O)(CC(=O)O)C(=O)O", "C6H8O7", 192.12, "DTXSID3020332", 311, "2-Hydroxypropane-1,2,3-tricarboxylic acid"),
+    dm(100004, 1, "L-Ascorbic acid", "50-81-7", "OC[C@H](O)[C@H]1OC(=O)C(O)=C1O", "C6H8O6", 176.12, "DTXSID5020106", 54670067, "Vitamin C"),
+    dm(100005, 1, "Acetylsalicylic acid", "50-78-2", "CC(=O)Oc1ccccc1C(=O)O", "C9H8O4", 180.16, "DTXSID5020108", 2244, "Aspirin; 2-Acetoxybenzoic acid"),
+    dm(100006, 1, "Example mixture, no CAS", "", "", "", "", "", "", "House material"),
+]
+write_sheet(TPL / "chemicals" / "dotmatics_template.xlsx", DOTMATICS_ROWS, "browser export")
+
+LIMITED_HEADER = ["Supplier_ref", "CAS_NO", "CHEMICAL_NAME", "MOL_WEIGHT_ORIG", "MOL_FORMULA", "NESTLE_ID"]
+LIMITED_ROWS = [LIMITED_HEADER] + [
+    [10001, "58-08-2", "Caffeine", "194.19", "C8H10N4O2", "Coming from screening"],
+    [10002, "121-33-5", "Vanillin", "152.15", "C8H8O3", "Coming from screening"],
+    [10003, "", "Example mixture, no CAS", "0", "", "Coming from screening"],
+]
+write_sheet(TPL / "chemicals" / "chemicals_limited_template.xlsx", LIMITED_ROWS, "default_1")
+
 # ── Chemicals SDF ───────────────────────────────────────────────────────
 # Built with RDKit from the SMILES above; field names match the ones
 # backend/app/utils/sdf.py promotes (DTXSID, PREFERRED_NAME, CAS_NO, ...).
@@ -128,6 +168,31 @@ for chem_id, nestle_id, name, cas, mw, formula, supplier, smiles in CHEMICALS[:3
     mol.SetProp("SYNONYMS", f"{name}; Example synonym")
     writer.write(mol)
 writer.close()
+
+# ── Chemicals: the registry SDF, V3000, with the real property NAMES ──────
+# Recognised by DTXSID + PREFERRED_NAME + "CAS Number" + "Chemical name".
+sdf3_path = TPL / "chemicals" / "chemicals_registry_template.sdf"
+writer = Chem.SDWriter(str(sdf3_path))
+writer.SetForceV3000(True)
+REGISTRY_SDF_PROPS = [
+    ("DTXSID", "DTXSID0020232"), ("PREFERRED_NAME", "Caffeine"), ("CAS Number", "58-08-2"),
+    ("Chemical name", "Caffeine"), ("Synonyms / Composition", "1,3,7-Trimethylxanthine; Guaranine"),
+    ("MOLECULAR_FORMULA", "C8H10N4O2"), ("MONOISOTOPIC_MASS", "194.080376"), ("Exact Molecular Weight", "194.19"),
+    ("INCHI_STRING", "InChI=1S/C8H10N4O2/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2/h4H,1-3H3"),
+    ("SMILES", "Cn1cnc2c1c(=O)n(C)c(=O)n2C"), ("MS_READY_SMILES", "Cn1cnc2c1c(=O)n(C)c(=O)n2C"),
+    ("FOUND_BY", "Example lookup"), ("Present in INK", "Yes"), ("Role / Usage / Source / NIAS", "example role"),
+    ("EU PM substance code", ""), ("log P(o/w) (25°C)", "-0.07"),
+]
+for cid, nid, name, cas, mw, formula, supplier, smiles in CHEMICALS[:3]:
+    mol = Chem.MolFromSmiles(smiles)
+    mol.SetProp("_Name", "")
+    for k, v in REGISTRY_SDF_PROPS:
+        val = {"DTXSID": f"DTXSID00{cid[-4:]}", "PREFERRED_NAME": name, "CAS Number": cas, "Chemical name": name,
+               "MOLECULAR_FORMULA": formula, "Exact Molecular Weight": mw, "SMILES": smiles, "MS_READY_SMILES": smiles}.get(k, v)
+        mol.SetProp(k, str(val))
+    writer.write(mol)
+writer.close()
+print(f"  wrote {sdf3_path.relative_to(ROOT)}  (3 molecules, V3000)")
 print(f"  wrote {sdf_path.relative_to(ROOT)}  (3 molecules)")
 
 

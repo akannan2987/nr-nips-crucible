@@ -215,7 +215,7 @@ new system.
 ## Step 5 — Tests, build, rebuild
 
 ```bash
-cd backend && .venv/bin/ruff check . && .venv/bin/pytest -q && cd ..    # expect: All checks passed! · 117 passed
+cd backend && .venv/bin/ruff check . && .venv/bin/pytest -q && cd ..    # expect: All checks passed! · 118 passed
 cd client && npm run build && cd ..                                     # the JSON mode is in the bundle
 ./container-py.sh rebuild                                               # scripts and the page live in the image
 ```
@@ -241,7 +241,7 @@ written; the numbers are from the five-record synthetic template.
 | **Round trip** | export to a file, `DELETE …/all/clear?force=true`, import the file back | the same count and the same fields, `pubchem_cid` and all |
 | **Database** | Query page: `SELECT chemical_id, json_extract(doc,'$.name'), json_extract(doc,'$.cas_number') FROM chemicals ORDER BY chemical_id` | the five template rows, one with an empty CAS |
 | **Deploy check** | `./verify-deploy.sh https://localhost:49160` | `16 passed` |
-| **Automated tests** | `cd backend && .venv/bin/pytest -q` | `117 passed` |
+| **Automated tests** | `cd backend && .venv/bin/pytest -q` | `118 passed` |
 
 Clean up the test records afterwards with the registry page's **Delete
 Selected**, or `./container-py.sh script remove_chemicals.py CHEM-0001 CHEM-0002 CHEM-0003 CHEM-0004 CHEM-0005 CHEM-0009 --apply`.

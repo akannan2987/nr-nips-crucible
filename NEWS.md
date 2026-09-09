@@ -10,6 +10,59 @@ change you are getting.
 
 ---
 
+## v2.14.0 — 2026-09-09 — "One form per crate type"
+
+Phase CR-9, from the owner's three real files. Tutorial:
+[`docs/04-phase-tutorials/phase-cr-9-real-registry-sources.md`](docs/04-phase-tutorials/phase-cr-9-real-registry-sources.md);
+the sources, column by column: [`docs/09-registry-sources.md`](docs/09-registry-sources.md).
+
+**Added**
+- **The laboratory's registry files as template specs.** The Dotmatics
+  export (12,561 rows, 115 columns, one row per batch) becomes one entry
+  per registration with the batches folded in and every column kept; the
+  registry structure file (77 V3000 molecules, fifty properties each) is
+  read by RDKit and merged into the export's entries on DTXSID; the
+  limited list registers entries whose identifier is *Coming from
+  screening* as pending. Recognised by their columns through the Excel and
+  SDF uploads, so every route of CR-3 applies. The decisions — one entry
+  per registration, shared identifiers kept and flagged, merge on DTXSID,
+  the owner loads the files, this before SD-1 — are recorded on the
+  sources page.
+- **Flags for a person to judge**, never resolved by the system: shared
+  CAS, DTXSID or PubChem identifiers, batches that disagree on a field,
+  pending identifiers. A banner on the Chemical Registry page counts them
+  (`GET /api/chemicals/notices/summary`), the audit script lists every
+  entry, and the deploy check's duplicate test skips flagged pairs.
+- Three synthetic templates with the real column and property names;
+  seven tests; one figure; five glossary entries.
+
+**Fixed**
+- **The structure parser could not read V3000 files.** It stripped a
+  blank first line that is the molecule's empty name line, shifting every
+  header, so RDKit read the atom counts from the comment line. Every one of
+  the 77 real structures is now drawn and analysed.
+- **Loading a large file was slow by design**: one commit per entry and a
+  rescan of every identifier per insert. Identifiers come from one counter
+  and entries are written in batches; the export loads in six seconds on a
+  Mac. (Inside the container on macOS it still takes minutes, because the
+  mounted disk is slow for a database — a Mac artefact, not a server one.)
+- An entry merged from two sources keeps the first source's label; later
+  sources are recorded under `merged_from`.
+
+**Recorded, not fixed**
+- 419 of the 12,539 entries share an identifier with another entry, and
+  three compounds' batches disagree on a field. The audit lists them; the
+  decisions are the owner's.
+- The template generator's spreadsheet output is not byte-stable; only
+  the new template files were committed (SH-11).
+
+**Deploy note**
+- Backend, client, scripts and the deploy check changed: the server
+  **rebuilds**, after a backup. Nothing is loaded by the deploy; the owner
+  loads the three files afterwards, by any route.
+
+---
+
 ## v2.13.0 — 2026-09-09 — "One stockroom, three doors"
 
 Phase CR-3. Tutorial:

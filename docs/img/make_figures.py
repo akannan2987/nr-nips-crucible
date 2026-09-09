@@ -460,6 +460,28 @@ def fig_every_way_in() -> None:
     write("fig_every_way_in.svg", svg(W, H, "Browser, API, terminal and the export loop all reach the registry through one shared import module with one parser per format", b))
 
 
+def fig_registry_sources() -> None:
+    W, H = 940, 420
+    b = text(W/2, 34, "Three real sources, one registry: each file is described as data, not parsed by hand", 16, INK, "middle", "bold")
+    cards = [
+        (40, "the Dotmatics export", COLOURS["screening"], ["a spreadsheet, 115 columns", "one row per BATCH of a compound", "rows sharing REG_ID → one entry", "batches folded into a list"], "keyed on REG_ID, merges on DTXSID"),
+        (340, "the registry SDF", COLOURS["chemical"], ["V3000 structures, ~50 properties", "RDKit draws and checks each one", "same regulatory columns as the export", "merges with the export on DTXSID"], "the structure joins the identifiers"),
+        (640, "the limited list", COLOURS["sample"], ["six columns", "NESTLE_ID = 'Coming from screening'", "registered now, identifier later", "a standing notice until then"], "matched on CAS, then name"),
+    ]
+    for x, title, col, rows, foot in cards:
+        b += box(x, 66, 260, 150, PAPER, col, 10)
+        b += text(x + 130, 90, title, 13, col, "middle", "bold")
+        b += lines(x + 130, 114, rows, 10.5, INK, "middle", 15)
+        b += text(x + 130, 200, foot, 10, MUTED)
+        b += path_arrow(f"M {x+130} 218 L {x+130} 246 L 470 246 L 470 266", col)
+    b += box(250, 268, 440, 80, "#eef2ff", COLOURS["chemical"], 10)
+    b += text(470, 292, "registry_templates.py — a spec per source", 12.5, COLOURS["chemical"], "middle", "bold")
+    b += lines(470, 312, ["fingerprint · group_by · match_order · promote · batch_fields", "promoted fields become the registry's own; EVERY column is kept under metadata"], 10.5, INK, "middle", 14)
+    b += text(W/2, 376, "a shared CAS is kept and flagged · a batch that disagrees is flagged · a pending identifier is a notice — a person decides, the audit lists them", 11, INK)
+    b += text(W/2, 398, "everyday version: three suppliers deliver in three kinds of crate; the stockroom has one form per crate type, and nothing on the delivery note is thrown away", 10.5, MUTED)
+    write("fig_registry_sources.svg", svg(W, H, "The Dotmatics export, the registry SDF and the limited list, each described as a template spec, feeding one registry through the shared import module", b))
+
+
 def fig_container_lunchbox() -> None:
     W, H = 940, 320
     b = text(W/2, 34, "The container is the isolation — the same sealed lunchbox on every platform", 16, INK, "middle", "bold")
@@ -591,6 +613,6 @@ def logo() -> None:
 
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
-              fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_container_lunchbox, fig_setup_flow, fig_timeline,
+              fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
               fig_requirements_lock, cover, logo):
         f()

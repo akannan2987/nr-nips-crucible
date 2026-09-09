@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { MagnifyingGlassIcon, PlusIcon, TrashIcon, EyeIcon, PencilSquareIcon, CheckIcon, XMarkIcon, ChevronDownIcon, LinkIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-import { getChemicals, deleteChemical, bulkDeleteChemicals, bulkUpdateChemicals, clearAllChemicals } from '../services/api'
+import { getChemicals, deleteChemical, bulkDeleteChemicals, bulkUpdateChemicals, clearAllChemicals, getChemicalNotices } from '../services/api'
 import MoleculeViewer from '../components/MoleculeViewer'
 
 export default function ChemicalsView() {
@@ -21,6 +21,9 @@ export default function ChemicalsView() {
   // answers 409 with how many rows; this holds that message and, for one
   // compound, its id so the dialog can open exactly those rows.
   const [refusal, setRefusal] = useState(null)
+  // CR-9: standing notices — entries whose identifier is still to come from
+  // screening data, entries sharing a CAS number on purpose, batch conflicts.
+  const [notices, setNotices] = useState(null)
 
   const explainRefusal = (error, chemicalId, fallback) => {
     if (error?.response?.status === 409) {
@@ -41,7 +44,12 @@ export default function ChemicalsView() {
     loadChemicals()
   }, [pagination.page, search])
 
+  const loadNotices = async () => {
+    try { const r = await getChemicalNotices(); setNotices(r.data) } catch { setNotices(null) }
+  }
+
   const loadChemicals = async () => {
+    loadNotices()
     setLoading(true)
     try {
       const response = await getChemicals({
@@ -231,6 +239,16 @@ export default function ChemicalsView() {
           )}
         </div>
       </div>
+
+      {notices && (notices.nestle_id_pending > 0 || notices.cas_shared > 0 || notices.batch_conflicts > 0) && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-900">
+          <span className="font-semibold">Needs a person's eye:</span>{' '}
+          {notices.nestle_id_pending > 0 && <span>{notices.nestle_id_pending.toLocaleString()} compound{notices.nestle_id_pending === 1 ? '' : 's'} still await an identifier from the screening data. </span>}
+          {notices.cas_shared > 0 && <span>{notices.cas_shared.toLocaleString()} entr{notices.cas_shared === 1 ? 'y shares' : 'ies share'} a CAS number with another entry (kept on purpose, flagged for the audit). </span>}
+          {notices.batch_conflicts > 0 && <span>{notices.batch_conflicts.toLocaleString()} compound{notices.batch_conflicts === 1 ? '' : 's'} whose batches disagree on a field. </span>}
+          <span className="text-amber-700">The audit script lists them: <code>./container-py.sh script audit_chemicals.py</code></span>
+        </div>
+      )}
 
       <p className="text-xs text-gray-500 -mt-2">
         A compound with measurements linked to it cannot be deleted here: unlink them first on the

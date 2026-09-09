@@ -44,7 +44,10 @@ RDLogger.DisableLog("rdApp.*")
 def _split_records(content: str) -> list[str]:
     """Split an SDF file on `$$$$` record delimiters (JS parseSDF)."""
     normalised = content.replace("\r\n", "\n").replace("\r", "\n")
-    records = re.split(r"^\$\$\$\$[^\S\n]*$", normalised, flags=re.MULTILINE)
+    # The terminator's own newline is consumed, so the next record starts at
+    # its name line. Leaving it in shifted every V3000 header by one line and
+    # RDKit read the counts from the comment line (phase CR-9).
+    records = re.split(r"^\$\$\$\$[^\S\n]*\n?", normalised, flags=re.MULTILINE)
     return [r for r in records if r.strip()]
 
 
@@ -234,9 +237,13 @@ def parse_sdf(content: str) -> list[dict[str, Any]]:
 
     for record in _split_records(content):
         try:
-            # Strip only leading blank lines / trailing whitespace — the SDF
-            # header is positional (3 lines before the counts line).
-            text = re.sub(r"^\n+", "", record).rstrip()
+            # Trailing whitespace only. The header is positional (name line,
+            # program line, comment line, counts line) and the name line may
+            # legitimately be blank — stripping leading blank lines shifted
+            # every header in a real V3000 export by one line, so RDKit read
+            # the counts from the comment line and gave up (phase CR-9). The
+            # record split already consumes the terminator's own newline.
+            text = record.rstrip()
             lines = text.split("\n")
             if len(lines) < 4:
                 continue

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { MagnifyingGlassIcon, PlusIcon, TrashIcon, EyeIcon, PencilSquareIcon, CheckIcon, XMarkIcon, ChevronDownIcon, LinkIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-import { getChemicals, deleteChemical, bulkDeleteChemicals, bulkUpdateChemicals, clearAllChemicals, getChemicalNotices } from '../services/api'
+import { getChemicals, deleteChemical, bulkDeleteChemicals, bulkUpdateChemicals, clearAllChemicals, getChemicalNotices, getChemicalColumns } from '../services/api'
 import MoleculeViewer from '../components/MoleculeViewer'
 
 export default function ChemicalsView() {
@@ -24,6 +24,17 @@ export default function ChemicalsView() {
   // CR-9: standing notices — entries whose identifier is still to come from
   // screening data, entries sharing a CAS number on purpose, batch conflicts.
   const [notices, setNotices] = useState(null)
+  // CR-2 (with CR-1): three views, sorting and per-column filters. `compact`
+  // is the fixed table the page always had; `complete` shows every column the
+  // data has (chosen from /api/chemicals/columns); `batches` is one row per
+  // batch. The view and the chosen columns are remembered per browser.
+  const [viewMode, setViewMode] = useState(() => { try { return localStorage.getItem('crucible.registry.view') || 'compact' } catch { return 'compact' } })
+  const [columns, setColumns] = useState([])            // from /api/chemicals/columns
+  const [batchColumns, setBatchColumns] = useState([])
+  const [visible, setVisible] = useState(() => { try { return JSON.parse(localStorage.getItem('crucible.registry.columns') || '[]') } catch { return [] } })
+  const [showPicker, setShowPicker] = useState(false)
+  const [sort, setSort] = useState({ key: null, order: 'asc' })
+  const [colFilters, setColFilters] = useState({})
 
   const explainRefusal = (error, chemicalId, fallback) => {
     if (error?.response?.status === 409) {
@@ -42,7 +53,25 @@ export default function ChemicalsView() {
 
   useEffect(() => {
     loadChemicals()
-  }, [pagination.page, search])
+  }, [pagination.page, pagination.limit, search, viewMode, sort, colFilters])
+
+  useEffect(() => {
+    try { localStorage.setItem('crucible.registry.view', viewMode) } catch { /* private window */ }
+  }, [viewMode])
+
+  useEffect(() => {
+    try { localStorage.setItem('crucible.registry.columns', JSON.stringify(visible)) } catch { /* private window */ }
+  }, [visible])
+
+  const loadColumns = async () => {
+    try {
+      const { data } = await getChemicalColumns()
+      setColumns(data.columns)
+      setBatchColumns(data.batch_columns || [])
+      // First visit: every column that has a value somewhere, in the file's order.
+      if (visible.length === 0) setVisible(data.columns.filter((c) => c.filled > 0).map((c) => c.key))
+    } catch { setColumns([]) }
+  }
 
   const loadNotices = async () => {
     try { const r = await getChemicalNotices(); setNotices(r.data) } catch { setNotices(null) }
@@ -52,11 +81,17 @@ export default function ChemicalsView() {
     loadNotices()
     setLoading(true)
     try {
+      const activeFilters = Object.fromEntries(Object.entries(colFilters).filter(([, v]) => v))
       const response = await getChemicals({
         page: pagination.page,
         limit: pagination.limit,
-        search: search
+        search: search,
+        view: viewMode === 'batches' ? 'batches' : undefined,
+        sort: sort.key || undefined,
+        order: sort.key ? sort.order : undefined,
+        filters: Object.keys(activeFilters).length ? JSON.stringify(activeFilters) : undefined,
       })
+      if (columns.length === 0) loadColumns()
       setChemicals(response.data.data)
       setPagination(prev => ({ ...prev, ...response.data.pagination }))
     } catch (error) {
@@ -72,6 +107,23 @@ export default function ChemicalsView() {
     setPagination(prev => ({ ...prev, page: 1 }))
     loadChemicals()
   }
+
+  const toggleSort = (key) => {
+    setSort((s) => (s.key === key ? { key, order: s.order === 'asc' ? 'desc' : 'asc' } : { key, order: 'asc' }))
+    setPagination((p) => ({ ...p, page: 1 }))
+  }
+
+  // The columns of the two generic views. Complete: the chosen columns, in the
+  // data's order. Batches: the compound's core fields, the batch position, then
+  // every batch column the data has.
+  const genericColumns = useMemo(() => {
+    if (viewMode === 'batches') {
+      const core = ['chemical_id', 'name', 'cas_number', 'dotmatics_reg_id', 'dtx_id'].map((k) => ({ key: k, label: k }))
+      return [...core, { key: 'batch_no', label: 'batch #' }, { key: 'batches_total', label: 'of' }, ...batchColumns]
+    }
+    if (columns.length === 0) return [{ key: 'chemical_id', label: 'chemical_id' }, { key: 'name', label: 'name' }, { key: 'cas_number', label: 'cas_number' }]
+    return columns.filter((c) => visible.includes(c.key))
+  }, [viewMode, columns, visible, batchColumns])
 
   const handleDelete = async (chemicalId) => {
     if (!confirm('Are you sure you want to delete this chemical?')) return
@@ -202,6 +254,63 @@ export default function ChemicalsView() {
         </form>
       </div>
 
+      {/* CR-2 toolbar: view, columns, page size */}
+      <div className="bg-white rounded-xl shadow-md p-3 flex flex-wrap items-center gap-3 text-sm">
+        <span className="text-gray-500">View:</span>
+        {[['compact', 'Compact'], ['complete', 'Complete'], ['batches', 'Batches']].map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => { setViewMode(key); setPagination((p) => ({ ...p, page: 1 })) }}
+            className={`px-3 py-1 rounded-lg ${viewMode === key ? 'bg-pandora-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            title={key === 'compact' ? 'The usual columns' : key === 'complete' ? 'Every column the entries have, chosen below' : 'One row per batch of a compound'}
+          >
+            {label}
+          </button>
+        ))}
+        {viewMode === 'complete' && (
+          <button onClick={() => setShowPicker((v) => !v)} className="text-pandora-600 hover:underline">
+            {showPicker ? 'Hide' : 'Choose'} columns ({visible.length} of {columns.length})
+          </button>
+        )}
+        <span className="ml-auto text-gray-500">Rows per page:</span>
+        <select
+          value={pagination.limit}
+          onChange={(e) => setPagination((p) => ({ ...p, limit: Number(e.target.value), page: 1 }))}
+          className="border border-gray-300 rounded-lg px-2 py-1"
+        >
+          {[20, 50, 100, 250, 500].map((n) => <option key={n} value={n}>{n}</option>)}
+        </select>
+        {(sort.key || Object.values(colFilters).some(Boolean)) && (
+          <button onClick={() => { setSort({ key: null, order: 'asc' }); setColFilters({}) }} className="text-gray-500 hover:underline">
+            Clear sort and filters
+          </button>
+        )}
+      </div>
+
+      {viewMode === 'complete' && showPicker && (
+        <div className="bg-white rounded-xl shadow-md p-4">
+          <div className="flex gap-3 mb-2 text-xs">
+            <button onClick={() => setVisible(columns.map((c) => c.key))} className="text-pandora-600 hover:underline">Select all</button>
+            <button onClick={() => setVisible(columns.filter((c) => c.filled > 0).map((c) => c.key))} className="text-pandora-600 hover:underline">Only columns with values</button>
+            <button onClick={() => setVisible([])} className="text-pandora-600 hover:underline">Clear all</button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-1 max-h-72 overflow-y-auto">
+            {columns.map((col) => (
+              <label key={col.key} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={visible.includes(col.key)}
+                  onChange={(e) => setVisible((prev) => e.target.checked ? [...prev, col.key] : prev.filter((k) => k !== col.key))}
+                  className="rounded border-gray-300 text-pandora-600"
+                />
+                <span className="truncate" title={col.key}>{col.label}{col.group === 'metadata' && <span className="ml-1 text-xs text-gray-400">file</span>}</span>
+                <span className="ml-auto text-xs text-gray-400">{Math.round(col.coverage * 100)}%</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Results Count and Bulk Actions */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <p className="text-sm text-gray-500">
@@ -246,7 +355,7 @@ export default function ChemicalsView() {
           {notices.nestle_id_pending > 0 && <span>{notices.nestle_id_pending.toLocaleString()} compound{notices.nestle_id_pending === 1 ? '' : 's'} still await an identifier from the screening data. </span>}
           {notices.cas_shared > 0 && <span>{notices.cas_shared.toLocaleString()} entr{notices.cas_shared === 1 ? 'y shares' : 'ies share'} a CAS number with another entry (kept on purpose, flagged for the audit). </span>}
           {notices.batch_conflicts > 0 && <span>{notices.batch_conflicts.toLocaleString()} compound{notices.batch_conflicts === 1 ? '' : 's'} whose batches disagree on a field. </span>}
-          <span className="text-amber-700">The audit script lists them: <code>./container-py.sh script audit_chemicals.py</code></span>
+          <span className="text-amber-700">Which entries, and what to do about each, is the audit's job — a page for it in the browser is the next registry phase; until then it runs from the terminal (<code>./container-py.sh script audit_chemicals.py</code>).</span>
         </div>
       )}
 
@@ -372,6 +481,56 @@ export default function ChemicalsView() {
               Upload your first chemicals →
             </Link>
           </div>
+        ) : viewMode !== 'compact' ? (
+          <div className="overflow-x-auto">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  {genericColumns.map((col) => (
+                    <th key={col.key} className="whitespace-nowrap">
+                      <button onClick={() => toggleSort(col.key)} className="flex items-center gap-1 hover:text-pandora-700" title={col.key}>
+                        {col.label}
+                        {sort.key === col.key && <span className="text-xs">{sort.order === 'asc' ? '▲' : '▼'}</span>}
+                      </button>
+                    </th>
+                  ))}
+                  <th>Actions</th>
+                </tr>
+                <tr className="bg-gray-50">
+                  {genericColumns.map((col) => (
+                    <th key={col.key} className="p-1">
+                      <input
+                        value={colFilters[col.key] || ''}
+                        onChange={(e) => { const v = e.target.value; setColFilters((f) => ({ ...f, [col.key]: v })); setPagination((p) => ({ ...p, page: 1 })) }}
+                        placeholder="filter…"
+                        className="w-full min-w-[6rem] text-xs border border-gray-200 rounded px-1 py-0.5 font-normal"
+                      />
+                    </th>
+                  ))}
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {chemicals.map((row, i) => (
+                  <tr key={`${row.chemical_id}-${row.batch_no || 0}-${i}`}>
+                    {genericColumns.map((col) => {
+                      const text = formatCell(cellValue(row, col.key))
+                      return (
+                        <td key={col.key} className={`text-xs max-w-[240px] truncate ${col.key === 'chemical_id' ? 'font-mono text-blue-700' : ''}`} title={text}>
+                          {text || <span className="text-gray-300">—</span>}
+                        </td>
+                      )
+                    })}
+                    <td>
+                      <button onClick={() => { setSelectedChemical(row); setDetailTab('identity'); }} className="p-1 text-blue-600 hover:bg-blue-50 rounded" title="View details">
+                        <EyeIcon className="h-5 w-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="data-table">
@@ -388,13 +547,13 @@ export default function ChemicalsView() {
                   {/* The application's own identifier, and the external
                       DTX_ID from the upload file, are two different things and
                       now have two different columns. */}
-                  <th>chemical_id</th>
+                  <th><button onClick={() => toggleSort('chemical_id')} className="hover:text-pandora-700">chemical_id{sort.key === 'chemical_id' && (sort.order === 'asc' ? ' ▲' : ' ▼')}</button></th>
                   <th>DTX_ID</th>
-                  <th>Name</th>
-                  <th>CAS Number</th>
+                  <th><button onClick={() => toggleSort('name')} className="hover:text-pandora-700">Name{sort.key === 'name' && (sort.order === 'asc' ? ' ▲' : ' ▼')}</button></th>
+                  <th><button onClick={() => toggleSort('cas_number')} className="hover:text-pandora-700">CAS Number{sort.key === 'cas_number' && (sort.order === 'asc' ? ' ▲' : ' ▼')}</button></th>
                   <th>Synonyms</th>
                   <th>Molecular Formula</th>
-                  <th>Mol. Weight</th>
+                  <th><button onClick={() => toggleSort('molecular_weight')} className="hover:text-pandora-700">Mol. Weight{sort.key === 'molecular_weight' && (sort.order === 'asc' ? ' ▲' : ' ▼')}</button></th>
                   <th>SMILES</th>
                   <th>Presence</th>
                   <th>EU PM Code</th>
@@ -757,4 +916,23 @@ export default function ChemicalsView() {
       })()}
     </div>
   )
+}
+
+/** A column's value, dotted keys included: metadata.CAS_NO, batch.BATCH_ID. */
+function cellValue(row, key) {
+  if (key.includes('.')) {
+    const [head, ...rest] = key.split('.')
+    const inner = row[head]
+    return inner && typeof inner === 'object' ? inner[rest.join('.')] : undefined
+  }
+  return row[key]
+}
+
+/** Render any stored value as table text. */
+function formatCell(value) {
+  if (value === null || value === undefined || value === '') return ''
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+  if (Array.isArray(value)) return value.map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v))).join('; ')
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
 }

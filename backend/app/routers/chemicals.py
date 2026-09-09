@@ -10,6 +10,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..compat import (
@@ -43,31 +44,106 @@ from ..store import (
 router = APIRouter(prefix="/api/chemicals", tags=["chemicals"])
 
 
+_COLUMNS_CACHE: dict[str, Any] = {}
+
+# Keys never offered as table columns: the row's own id, and the large nested
+# values that have their own presentation (batches as a view, the structure
+# as a drawing, metadata as its own dotted columns).
+_INTERNAL = {"id", "batches", "metadata", "structural", "mol_block", "structure_warnings"}
+
+
+def _value(doc: dict[str, Any], key: str) -> Any:
+    """A column's value, including dotted keys: `metadata.CAS_NO`, `batch.BATCH_ID`."""
+    if "." in key:
+        head, tail = key.split(".", 1)
+        inner = doc.get(head)
+        return inner.get(tail) if isinstance(inner, dict) else None
+    return doc.get(key)
+
+
+def _batch_rows(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """One row per batch: the compound's fields plus `batch.<column>` and a position.
+
+    A compound with no batches (a generic upload, the limited list) is one row
+    with `batch` empty, so the view is still every compound.
+    """
+    rows: list[dict[str, Any]] = []
+    for doc in docs:
+        batches = doc.get("batches") or [{}]
+        for i, batch in enumerate(batches, start=1):
+            rows.append({**doc, "batch": batch, "batch_no": i, "batches_total": len(batches)})
+    return rows
+
+
+def _filtered(docs: list[dict[str, Any]], needle: str, filters: dict[str, str]) -> list[dict[str, Any]]:
+    if needle:
+        docs = [
+            c
+            for c in docs
+            if (c.get("name") and needle in str(c["name"]).lower())
+            or (c.get("chemical_id") and needle in str(c["chemical_id"]).lower())
+            or (c.get("cas_number") and needle in str(c["cas_number"]).lower())
+        ]
+    for key, term in filters.items():
+        term_l = str(term).lower()
+        docs = [c for c in docs if term_l in str(_value(c, key) if _value(c, key) is not None else "").lower()]
+    return docs
+
+
+def _sorted(docs: list[dict[str, Any]], sort: str | None, order: str | None) -> list[dict[str, Any]]:
+    if not sort:
+        return sort_created_desc(docs)
+    reverse = (order or "asc").lower() == "desc"
+    values = [(_value(d, sort), d) for d in docs]
+    numeric = all(isinstance(v, (int, float)) or v in (None, "") for v, _ in values) and any(
+        isinstance(v, (int, float)) for v, _ in values
+    )
+
+    def missing(v: Any) -> bool:
+        return v in (None, "", [], {})
+
+    present = [(v, d) for v, d in values if not missing(v)]
+    absent = [d for v, d in values if missing(v)]
+    key = (lambda pair: float(pair[0])) if numeric else (lambda pair: str(pair[0]).lower())
+    ordered = [d for _, d in sorted(present, key=key, reverse=reverse)]
+    return ordered + absent  # missing values last in BOTH directions
+
+
 @router.get("")
 def list_chemicals(
     page: str | None = None,
     limit: str | None = None,
     search: str | None = None,
+    view: str | None = None,
+    sort: str | None = None,
+    order: str | None = None,
+    filters: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """GET /api/chemicals — paginated list with optional search."""
+    """GET /api/chemicals — paginated list with optional search.
+
+    Since v2.15.0 (phase CR-2, with CR-1's sorting and per-column filters):
+    `view=batches` answers one row per batch (`batch.<column>`, `batch_no`,
+    `batches_total`) instead of one per compound; `sort=<key>&order=asc|desc`
+    orders by any column, dotted keys included (`metadata.CAS_NO`), numbers
+    as numbers, missing values last; `filters={"key": "text", …}` keeps the
+    rows whose column contains the text, case-insensitively. Without these
+    parameters the answer is exactly what it always was.
+    """
     page_n = parse_int_or(page, 1)
     limit_n = parse_int_or(limit, 50)
     needle = (search or "").lower()
     offset = (page_n - 1) * limit_n
+    try:
+        filter_map = {str(k): str(v) for k, v in (json.loads(filters) if filters else {}).items() if str(v)}
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail="filters must be a JSON object of column: text") from None
 
     chemicals = all_docs(db, Chemical)
-
-    if needle:
-        chemicals = [
-            c
-            for c in chemicals
-            if (c.get("name") and needle in str(c["name"]).lower())
-            or (c.get("chemical_id") and needle in str(c["chemical_id"]).lower())
-            or (c.get("cas_number") and needle in str(c["cas_number"]).lower())
-        ]
-
-    chemicals = sort_created_desc(chemicals)
+    if view == "batches":
+        chemicals = _batch_rows(chemicals)
+    chemicals = _filtered(chemicals, needle, filter_map)
+    chemicals = _sorted(chemicals, sort, order)
     total = len(chemicals)
     page_items = chemicals[offset : offset + limit_n]
 
@@ -80,6 +156,57 @@ def list_chemicals(
             "totalPages": total_pages(total, limit_n),
         },
     }
+
+
+@router.get("/columns")
+def chemical_columns(db: Session = Depends(get_db)) -> dict[str, Any]:
+    """GET /api/chemicals/columns — every column the stored entries actually have (CR-2).
+
+    Top-level fields in first-seen order, then every key kept under `metadata`
+    as `metadata.<key>`, then every key seen inside `batches` as `batch.<key>`;
+    each with how many entries carry a value. Cached against the entry count,
+    like the screening table's columns.
+    """
+    count = db.scalar(select(func.count()).select_from(Chemical)) or 0
+    cached = _COLUMNS_CACHE.get("payload")
+    if cached is not None and _COLUMNS_CACHE.get("key") == count:
+        return cached
+
+    docs = all_docs(db, Chemical)
+    order: list[str] = []
+    filled: dict[str, int] = {}
+    batch_keys: list[str] = []
+
+    def note(key: str, value: Any) -> None:
+        if key not in filled:
+            order.append(key)
+            filled[key] = 0
+        if value not in (None, "", [], {}):
+            filled[key] += 1
+
+    for doc in docs:
+        for key, value in doc.items():
+            if key not in _INTERNAL:
+                note(key, value)
+        for key, value in (doc.get("metadata") or {}).items():
+            note(f"metadata.{key}", value)
+        for batch in doc.get("batches") or []:
+            for key in batch:
+                if key not in batch_keys:
+                    batch_keys.append(key)
+
+    payload = {
+        "total": len(docs),
+        "columns": [
+            {"key": k, "label": k.split(".", 1)[1] if k.startswith("metadata.") else k, "group": "metadata" if k.startswith("metadata.") else "field",
+             "filled": filled[k], "coverage": round(filled[k] / len(docs), 4) if docs else 0}
+            for k in order
+        ],
+        "batch_columns": [{"key": f"batch.{k}", "label": k} for k in batch_keys],
+    }
+    _COLUMNS_CACHE["key"] = count
+    _COLUMNS_CACHE["payload"] = payload
+    return payload
 
 
 @router.get("/list/dropdown")

@@ -10,6 +10,59 @@ change you are getting.
 
 ---
 
+## v2.15.0 — 2026-09-09 — "A bigger window, and a way to turn the pages"
+
+Phase CR-2 with CR-1, pulled forward the day the real export was loaded.
+Tutorial: [`docs/04-phase-tutorials/phase-cr-2-views-sort-filter.md`](docs/04-phase-tutorials/phase-cr-2-views-sort-filter.md).
+
+**Added**
+- **Three views on the Chemical Registry table.** *Compact* is the usual
+  fourteen columns. *Complete* shows every column the entries actually
+  have — 164 on production, 132 of them the files' own headings —
+  discovered from the data and chosen from a list that shows each
+  column's coverage. *Batches* shows one row per batch of a compound: all
+  12,561 rows of the export, the compound's key fields beside the batch's
+  34 columns. The view and the chosen columns are remembered per browser.
+- **Sorting by any column**, on the server across the whole registry,
+  numbers as numbers, entries without a value last in both directions; a
+  **filter box under every heading** in the two data-driven views; **rows
+  per page** from 20 to 500.
+- `view=batches`, `sort`, `order` and `filters` on `GET /api/chemicals`,
+  and `GET /api/chemicals/columns`; without the new parameters the list
+  answers exactly as before. Five tests; the suite is 129.
+
+**Deliberately not done**
+- A separate PubChem view: it is a column choice within Complete.
+- Export of the current view (SH-7); filters on the Compact layout.
+
+**Deploy note**
+- Backend and client changed: the server **rebuilds**, after a backup.
+
+---
+
+## v2.14.1 — 2026-09-09 — "Nothing a later batch said is lost"
+
+**Fixed**
+- When a compound's batch rows disagree on a column, each batch now keeps
+  its own value of that column under `batches`; before, only the fact of
+  the disagreement was kept and the later batch's value was dropped. Found
+  by the owner's question after loading the real export.
+
+**Changed**
+- The registry banner no longer sends a browser user to the terminal as
+  the only way to act on a flag; it says a browser page is the next
+  registry phase. **A rule, recorded in the roadmap:** anything a
+  maintenance script can do, the browser must be able to do too. CR-10,
+  the attention page, is the first application.
+
+**Recorded**
+- The three real files were loaded on production on 2026-09-09 through
+  the terminal shortcut: 12,539 entries from the export, 77 structures
+  merged, 25 list rows matched; 419 entries share an identifier, 3 have
+  batch conflicts; 16 deploy checks pass.
+
+---
+
 ## v2.14.0 — 2026-09-09 — "One form per crate type"
 
 Phase CR-9, from the owner's three real files. Tutorial:

@@ -954,20 +954,23 @@ it reports is gone: *N compounds are not registered*, *N entries are
 incomplete*. Each links to the table where you act on it. Not a pop-up: it is
 there every time you open the page.
 
-**View (of a table)** — a named set of columns. Planned for the registry:
-*Compact* (the default, today's columns), *Complete* (every field the records
-hold), *PubChem* (the identifiers and structure fields an outside database
-supplied). Underneath, a column chooser; the choice is remembered per browser.
+**View (of a table)** — a named set of columns and a rule for what a row is.
+The registry has three since v2.15.0: *Compact* (the usual columns, one row
+per compound), *Complete* (every column the entries have, chosen from a
+list, one row per compound), *Batches* (one row per batch of a compound).
+The view and the chosen columns are remembered per browser. *Everyday
+version:* the same drawer looked at through a different window.
 
 **Sort** — ordering a table's rows by one column, ascending or descending,
-by clicking its header. Planned for the registry (CR-1); the screening table
-has it.
+by clicking its header; done on the server across the whole table, numbers
+as numbers, entries without a value last either way. The registry and the
+screening table both have it.
 
 **Filter (per column)** — a search box under a column header that keeps only
 the rows whose value in *that* column contains what you typed; several
-columns' filters combine. The screening table has it; the registry gets it in
-CR-1. Different from the single search box, which looks in several fields at
-once.
+columns' filters combine. The screening table and the registry's Complete
+and Batches views have it. Different from the single search box, which
+looks in several fields at once.
 
 **Something missing?** If you met a word in this project that isn't here,
 that's a gap worth filling — the whole point of this file is that nobody

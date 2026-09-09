@@ -262,16 +262,20 @@ def import_with_spec(db: Session, spec: RegistrySpec, records: list[dict[str, An
             metadata = {k: v for k, v in head.items() if v not in (None, "") and not str(k).startswith("_")}
             entry_fields: dict[str, Any] = {**fields, "metadata": metadata, "source_template": spec.key}
             if spec.group_by:
-                entry_fields["batches"] = [
-                    {k: r.get(k) for k in spec.batch_fields if r.get(k) not in (None, "")} for r in rows
-                ]
+                differing: list[str] = []
                 if len(rows) > 1:
                     differing = sorted(
                         k for k in head if k not in spec.batch_fields and len({str(r.get(k)) for r in rows}) > 1
                     )
-                    if differing:
-                        entry_fields["batch_conflicts"] = differing
-                        conflicts += 1
+                # each batch keeps its batch-level columns AND its own value of any
+                # column the batches disagree on, so nothing a later batch said is lost
+                keep = tuple(spec.batch_fields) + tuple(differing)
+                entry_fields["batches"] = [
+                    {k: r.get(k) for k in keep if r.get(k) not in (None, "")} for r in rows
+                ]
+                if differing:
+                    entry_fields["batch_conflicts"] = differing
+                    conflicts += 1
             if entry_fields.get("nestle_id_pending"):
                 pending += 1
 

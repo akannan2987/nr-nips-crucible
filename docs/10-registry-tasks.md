@@ -52,12 +52,13 @@ flowchart LR
 
 | Browser | API | Terminal |
 |---|---|---|
-| **Chemical Registry** → type part of a name, an identifier (`CHEM-000042`) or a CAS number in the search box → **Search**. Twenty rows a page in the browser, *Previous* / *Next* underneath (the API defaults to fifty). | `curl --noproxy '*' -sSk "https://localhost:49160/api/chemicals?search=phenol&limit=20&page=1"` | The read-only SQL console: **Query** page, or `POST /api/query` with `{"sql": "SELECT chemical_id, json_extract(doc,'$.name') FROM chemicals WHERE json_extract(doc,'$.name') LIKE '%phenol%'"}` — recipes in [`09-query-cookbook.md`](09-query-cookbook.md) |
+| **Chemical Registry** → type part of a name, an identifier (`CHEM-000042`) or a CAS number in the search box → **Search**. Then: **Compact · Complete · Batches** to choose the view; click a heading to sort; in Complete and Batches a filter box under every heading; **Rows per page** 20 to 500; **Choose columns** in Complete lists every column with its coverage. The view and the columns are remembered in your browser. | `curl --noproxy '*' -sSk "https://localhost:49160/api/chemicals?search=phenol&limit=20&page=1&sort=molecular_weight&order=desc"` — add `view=batches` for one row per batch, `filters={"metadata.CAS_NO":"58-"}` (URL-encoded) for a per-column filter; `GET /api/chemicals/columns` lists every column | The read-only SQL console: **Query** page, or `POST /api/query` with `{"sql": "SELECT chemical_id, json_extract(doc,'$.name') FROM chemicals WHERE json_extract(doc,'$.name') LIKE '%phenol%'"}` — recipes in [`09-query-cookbook.md`](09-query-cookbook.md) |
 
 **You should see** matching rows with identifier, name, CAS, formula and
-weight. Sorting by a column and filtering per column are not there yet
-(planned: [CR-1](05-roadmap.md#cr--chemical-registry)). Detail:
-[API reference → List Chemicals](08-api-reference.md#list-chemicals).
+weight; in **Complete**, every column the files carried; in **Batches**,
+one row per batch (12,561 on production). Detail:
+[API reference → List Chemicals](08-api-reference.md#list-chemicals),
+[phase CR-2](04-phase-tutorials/phase-cr-2-views-sort-filter.md).
 
 ## 2. Add one compound
 
@@ -209,8 +210,6 @@ from every route afterwards: [the phase's test section](04-phase-tutorials/phase
 
 | Task | Planned change | Phase |
 |---|---|---|
-| 1 look up | sort by column, filter per column, page size | [CR-1](05-roadmap.md#cr--chemical-registry) |
-| 1, 4 | Compact, Complete and PubChem views | CR-2 |
 | 8 merge | from the browser | CR-8 |
 | 10 PubChem | notice of incomplete entries, fetch with a review table, mark as complete | CR-4 |
 | 6 link | the registry-first rule; unregistered compounds notice and review | SD-1, CR-5 |

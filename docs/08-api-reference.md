@@ -266,6 +266,15 @@ curl http://localhost:49160/api/stats
 
 ### List Chemicals
 
+**Since v2.15.0 (phase CR-2 with CR-1):** `view=batches` answers one row per
+batch (each with `batch`, `batch_no`, `batches_total`); `sort=<column>&order=asc|desc`
+orders by any column, dotted keys included (`metadata.CAS_NO`, `batch.BATCH_ID`),
+numbers as numbers, missing values last; `filters={"column":"text",…}` (URL-encoded
+JSON) keeps rows whose column contains the text. Without these parameters the
+answer is exactly as documented below. `GET /chemicals/columns` lists every
+column the entries have — `columns` (key, label, group `field`|`metadata`, filled,
+coverage) and `batch_columns` — cached against the entry count.
+
 Get paginated list of all chemicals with optional search.
 
 **Endpoint:** `GET /chemicals`

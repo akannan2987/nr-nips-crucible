@@ -84,7 +84,7 @@ codes, the way phase R (the registry reset) is CR and SD at once.
 
 | Track | Shipped so far | Next phase | Status |
 |---|---|---|---|
-| CR | Registry CRUD and uploads (CSV, TSV, XLSX, SDF, JSON); one import module for every route, import/export scripts and shortcuts (CR-3 ✅ 2026-09-09); the three real sources as template specs (CR-9 ✅ 2026-09-09); PubChem linking and enrichment scripts; audit, merge and removal scripts; R-1 and R-2 done: the registry is empty by design (2026-09-08); CR-6 deletion refuses or forces ✅ (2026-09-09) | **The owner loads the three real files** (CR-9 decision 4: export, structure file, list — by any route), then the **SD-1 build** against a registry of 12,539 real entries; **CR-1 · Sort, search and filter** after | 🔜 SD-1 build |
+| CR | Registry CRUD and uploads (CSV, TSV, XLSX, SDF, JSON); one import module for every route, import/export scripts and shortcuts (CR-3 ✅ 2026-09-09); the three real sources as template specs (CR-9 ✅ 2026-09-09); three views, sort and per-column filters (CR-1 + CR-2 ✅ 2026-09-09); PubChem linking and enrichment scripts; audit, merge and removal scripts; R-1 and R-2 done: the registry is empty by design (2026-09-08); CR-6 deletion refuses or forces ✅ (2026-09-09) | **The SD-1 build** against a registry of 12,539 real entries, then **CR-10 · the attention page** | 🔜 SD-1 build |
 | SD | Template ingestion of the Cergy export as data; the table built from the file; export in four formats; link and unlink buttons with select-all-matching and a confirmation | **SD-1 · The registry-first rule** — [specified and agreed](09-chemical-identification.md#the-next-rule-registry-first--specification) 2026-09-08; built after R-2 and CR-3 | ✅ agreed · 🔜 build |
 | SM | SLIMS three-row-header upload, table, detail view | **SM-1 · Sort, search, filter and views**, after CR-1 proves the pattern | 🔜 |
 | TX | XLSX upload, table | **TX-1 · A real study export as a template spec** | ⏸ a file |
@@ -102,19 +102,31 @@ route the data arrives on, with nothing silently missing.
 |---|---|---|---|---|
 | R (with SD) | Registry reset: R-1 unlink every row ✅ · R-2 remove every chemical ✅ (2026-09-08) · R-3 the new attachment rule (became SD-1, agreed) | The identification rule is changing; correcting 664 entries one by one is the wrong tool — [phase R](04-phase-tutorials/phase-r-registry-reset.md) | — | ✅ R-1, R-2 · SD-1 to build |
 | CR-3 | **Every way in.** One shared import module; a JSON upload in the browser and the API beside CSV, TSV, XLSX and SDF; a JSON-body endpoint for scripts; `import_file.py` and `export_chemicals.py` with `./container-py.sh import` / `export` shortcuts; the review loop that refills the registry from the pre-reset backup — [phase CR-3](04-phase-tutorials/phase-cr-3-every-way-in.md) | After R-2 the registry is empty and must be refilled from a curated file, by any route, without the routes disagreeing | — | ✅ v2.13.0 (2026-09-09) |
-| **CR-1** | **Sort, search and filter per column.** Click a column header to sort; a search box under every header filters that column; a page-size chooser; the parameters go on the existing list endpoint (additive, contract kept), following the screening table's `_apply_filters` pattern | The registry table today has one free-text box, fixed twenty-row pages and no ordering | nothing | 🔜 |
-| **CR-2** | **Three views.** *Compact* (today's columns, the default), *Complete* (every field the records hold, including the spreadsheet's extra columns kept under `metadata`, discovered from the data as the screening table does), *PubChem* (the identifier, title, IUPAC name, formula, weight, SMILES, InChI, InChIKey and how the match was made); a column chooser underneath, remembered per browser | Different questions need different columns: a chemist wants structure fields, a data manager wants provenance | CR-1 (shares the column machinery) | 🔜 |
+| CR-1 | **Sort, search and filter per column.** Click a heading to sort by any column, numbers as numbers, missing last; a filter box under every heading in the data-driven views; rows per page 20 to 500; `sort`, `order`, `filters` on the list endpoint, contract kept | The registry table had one free-text box, fixed twenty-row pages and no ordering | — | ✅ v2.15.0 (2026-09-09), with CR-2 |
+| CR-2 | **Three views.** *Compact* (the usual columns), *Complete* (every column the entries have — 164 on production — discovered from the data with a remembered column chooser), *Batches* (one row per batch, 12,561 on production); the PubChem view became a column choice within Complete — [phase CR-2](04-phase-tutorials/phase-cr-2-views-sort-filter.md) | The owner loaded 115 columns and 12,561 batch rows and the table showed fourteen columns and one row per compound | — | ✅ v2.15.0 (2026-09-09) |
 | **CR-5** | **Unregistered compounds from screening data.** A notice in the registry, always visible while any exist: *N compounds in the screening data are not registered — review them*. It opens a table of every distinct name + CAS pair with no registry entry, with the row count, source file and dates; download as CSV or XLSX; tick some or all and **Register** them with the basic information the screening data carries (name, CAS, provenance), which also links their rows — never asking PubChem | The other half of the registry-first rule: rows that could not attach must be visible somewhere, and the decision to register is the user's | SD-1 (defines the unregistered set) | 🔜 |
 | **CR-4** | **Incomplete entries.** A definition of *complete* (a named set of fields, signed off first — a missing CAS is **not** by itself incomplete, since a compound may validly have none; *Mark as complete* covers such entries); a notice in the registry, always visible while any entry is incomplete: *N registered compounds are missing metadata — review them*; a table of those entries and what each lacks; download; **Mark as complete** for entries that will never have more; **Fetch from PubChem** for the ticked entries, by name + CAS agreement, producing a review table that shows, per compound, each missing field and the value PubChem offers, so the user ticks what to accept before anything is written to the registry | Entries registered from screening data carry a name and a CAS number and nothing else; the gaps must be visible and filled deliberately, with a person deciding | CR-5 (produces the incomplete entries) and the field-set sign-off | 🔜 |
 | CR-6 | **Deletion refuses or forces, by who is asking**: in the browser a compound with linked rows cannot be deleted; the person is told how many rows and sent to unlink them first; the plain API answers 409 with the count; the API with `force=true` and the terminal script unlink automatically, then delete, always in that order, and report both counts; the link logic in one module — [phase CR-6](04-phase-tutorials/phase-cr-6-delete-unlinks-first.md) | Orphaned pointers are the failure mode lesson 22 records | — | ✅ v2.11.0 (2026-09-09) |
 | CR-7 | Compound-name normalisation: hold house-style names (`tertiobutyl` for `tert-butyl`) as synonyms so the strict PubChem match in CR-4 finds them | Around 456 compounds carry a valid CAS and a name external databases do not recognise | CR-4 | 🔜 |
 | CR-8 | Merge duplicate entries from the browser (the script exists) | A registry rebuilt by hand will acquire duplicates | CR-1 | 🔜 |
+| **CR-10** | **The attention page: every flag, in the browser.** The banner's counts become links to one page listing the flagged entries — shared identifiers side by side with the other holder, batch conflicts with each batch's value, pending identifiers, and the audit's formula findings — with the actions a person takes: *merge*, *keep both*, *set the identifier*, *mark reviewed*; the audit becomes an endpoint (`GET /api/chemicals/audit`) the page and the script both call | The registry will be used by people who never open a terminal; a flag they cannot act on from the browser is a flag they will not act on. This is the first application of the rule below | CR-9 (the flags exist) | 🔜 next in CR after SD-1 |
 | CR-9 | **The laboratory's real registry sources as template specs**: the Dotmatics export (one entry per registration, batches folded, 115 columns kept), the registry structure file (V3000, read by RDKit, merged on DTXSID), the limited list (identifier pending from screening data); shared identifiers kept and flagged; a banner and the audit for what a person must decide; the structure parser fixed — [phase CR-9](04-phase-tutorials/phase-cr-9-real-registry-sources.md), [the sources](09-registry-sources.md) | The registry is refilled from these three files; without their rules the export would load one entry per batch and no structure could be drawn | — | ✅ v2.14.0 (2026-09-09) |
 
 **The 22 compounds** removed in 2026-08 after a lookup bug are superseded by
 the reset: under the new rule they are registered with everything else, by a
 person, from the CR-5 review table. Kept as a sentence so the pointer in
 [`11-lessons-learned.md`](11-lessons-learned.md) still resolves.
+
+---
+
+**A rule for every track, from 2026-09-09:** anything a maintenance script
+can do, the browser must be able to do too, for the people who will never
+open a terminal — the audit, the merge, the removal, the import and export.
+A capability that exists only on the terminal is a gap on this page, not a
+finished feature. The scripts stay for developers and for bulk work; the
+browser gets the same action with the same rule behind it, through the same
+endpoint. CR-10 is the first application; CR-8 (merge from the browser)
+and SH-7 (export from every page) follow it.
 
 ---
 
@@ -140,7 +152,7 @@ attached to a registered compound only when the registry says so.
 
 | Phase | What it adds | Why it matters | Waits on | Status |
 |---|---|---|---|---|
-| SM-1 | Sort, search and filter per column; Compact and Complete views; page size | Parity with the registry table | CR-1 and CR-2 (the same components, reused) | 🔜 |
+| SM-1 | Sort, search and filter per column; Compact and Complete views; page size | Parity with the registry table | nothing — CR-1 and CR-2 shipped; the same pattern | 🔜 |
 | SM-2 | Every way in: JSON upload and the terminal command for samples; export in the four formats | Parity with CR-3 | CR-3 | 🔜 |
 | SM-3 | Samples of unregistered compounds: the same notice and review as CR-5, since a sample also points at a chemical | The registry-first rule applies to every record type that links | SD-1, CR-5 | ⏸ |
 
@@ -228,8 +240,10 @@ flowchart LR
    The re-identify command in SD-1 is what attaches the 49,065 rows already
    loaded once the registry is refilled — there is no need to upload the
    export again.
-7. **CR-1, CR-2, CR-4** are the registry's conveniences and its completeness
-   loop; they need real registered entries to be worth testing against.
+7. **CR-1, CR-2** were pulled forward to the day the real files were
+   loaded, because a registry that keeps everything and shows a fraction is
+   indistinguishable from one that lost the rest. Done, v2.15.0. **CR-4**
+   is the completeness loop and follows CR-10.
 8. **SH-2 after the tables have their filters**, because the hot-field list
    is read off the filters people actually use.
 9. **The authentication ladder runs beside the rest, not after it.** SH-3a

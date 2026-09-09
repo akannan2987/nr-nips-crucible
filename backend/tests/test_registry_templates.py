@@ -107,6 +107,8 @@ def test_dotmatics_export_groups_batches_and_promotes(client):
 
     conflict = client.get("/api/chemicals?search=conflict").json()["data"][0]
     assert conflict["batch_conflicts"] == ["MOL_FORMULA"]
+    assert [b["MOL_FORMULA"] for b in conflict["batches"]] == ["C8H8O3", "C8H8O4"]  # both values kept, per batch
+    assert conflict["molecular_formula"] == "C8H8O3"                                   # the first batch's is promoted
     vanillin = client.get("/api/chemicals?search=Vanillin").json()["data"]
     assert all(sorted(v["cas_shared_with"]) for v in vanillin)
 

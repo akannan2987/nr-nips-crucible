@@ -1,4 +1,4 @@
-[← README](../../README.md) · [Handbook](../HANDBOOK.md) · [Glossary](../00-glossary.md) · [← Phase CR-3](phase-cr-3-every-way-in.md)
+[← README](../../README.md) · [Handbook](../HANDBOOK.md) · [Glossary](../00-glossary.md) · [← Phase CR-3](phase-cr-3-every-way-in.md) · [Phase CR-2 →](phase-cr-2-views-sort-filter.md)
 
 # Phase CR-9 — The laboratory's real registry sources, described as data
 

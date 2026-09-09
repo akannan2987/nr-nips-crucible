@@ -116,9 +116,11 @@ recorded per batch under `batches`, one object per row: `BATCH_ID`,
 **Batch conflicts.** Any *other* column that differs between a compound's
 batch rows — in the real export, two compounds disagree on their own CAS
 number across batches, three on their name — is recorded under
-`batch_conflicts` as the list of column names, the first batch's values are
-used, and the entry is a notice for the audit. The system does not choose
-between them; a person does.
+`batch_conflicts` as the list of column names; the first batch's values are
+promoted, **and every batch keeps its own value of each disputed column
+under `batches`**, so nothing a later batch said is lost. The entry is a
+notice for the audit. The system does not choose between them; a person
+does.
 
 **Everything else** — the analytical methods, adduct masses, presence
 flags, roles, regulatory codes, EFSA opinions, restrictions, policy,

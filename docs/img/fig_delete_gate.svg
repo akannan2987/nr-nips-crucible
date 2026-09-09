@@ -1,0 +1,61 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 400' width='940' height='400' role='img' aria-label='Deleting a compound with linked rows: the browser and the plain API refuse with 409 and send the person to unlink first; the forced API and the script unlink first, then delete' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='399' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>Deleting a compound after CR-6: the clerk refuses, the archivist empties the folder first</text>
+<rect x='30' y='90' width='190' height='150' rx='10' fill='#f9fafb' stroke='#4f46e5' stroke-width='1.2'/>
+<polygon points='70,114 83.856,122.0 83.856,138.0 70,146 56.144,138.0 56.144,122.0' fill='#4f46e5' fill-opacity='0.15' stroke='#4f46e5' stroke-width='2'/>
+<text x='150' y='124' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='bold'>CHEM-000042</text>
+<text x='150' y='139' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>Phenol</text>
+<rect x='54.49' y='184.49' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='54.49' y='188.83' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='54.49' y='193.17000000000002' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='58.83' y='184.49' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='58.83' y='188.83' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='58.83' y='193.17000000000002' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='63.17' y='184.49' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='63.17' y='188.83' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='63.17' y='193.17000000000002' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='88.49' y='184.49' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='88.49' y='188.83' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='88.49' y='193.17000000000002' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='92.83' y='184.49' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='92.83' y='188.83' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='92.83' y='193.17000000000002' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='97.16999999999999' y='184.49' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='97.16999999999999' y='188.83' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='97.16999999999999' y='193.17000000000002' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='122.49' y='184.49' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='122.49' y='188.83' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='122.49' y='193.17000000000002' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='126.83' y='184.49' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='126.83' y='188.83' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='126.83' y='193.17000000000002' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='131.17' y='184.49' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<rect x='131.17' y='188.83' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.15' stroke='#d97706' stroke-width='1.2'/>
+<rect x='131.17' y='193.17000000000002' width='2.34' height='2.34' rx='2' fill='#d97706' fill-opacity='0.55' stroke='#d97706' stroke-width='1.2'/>
+<text x='190' y='194' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>3 rows</text>
+<text x='125' y='226' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>measurements point at it</text>
+<line x1='222' y1='130' x2='300' y2='130' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='302' y='80' width='290' height='100' rx='8' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='447' y='104' font-size='13' fill='#d97706' text-anchor='middle' font-weight='bold'>browser · plain API</text>
+<text x='447' y='126' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>REFUSED — 409</text>
+<text x='447' y='142' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>"3 screening rows linked; unlink them first"</text>
+<text x='447' y='158' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>nothing is changed</text>
+<path d='M 592 130 L 640 130' fill='none' stroke='#d97706' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<rect x='642' y='96' width='270' height='68' rx='6' fill='#ffffff' stroke='#d97706' stroke-width='1.2'/>
+<text x='777' y='120' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>the person unlinks the rows</text>
+<text x='777' y='135' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>on the Screening Data page, then deletes</text>
+<line x1='222' y1='200' x2='300' y2='260' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='302' y='226' width='290' height='100' rx='8' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='447' y='250' font-size='13' fill='#4f46e5' text-anchor='middle' font-weight='bold'>API with force=true · the script</text>
+<text x='447' y='272' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>1  unlink every linked row</text>
+<text x='447' y='288' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>2  then delete the entry</text>
+<text x='447' y='304' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>always in that order; both counts reported</text>
+<path d='M 592 276 L 640 276' fill='none' stroke='#4f46e5' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='642' y='242' width='270' height='68' rx='6' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='777' y='266' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>the entry is gone; its rows keep their</text>
+<text x='777' y='281' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>source names and point at nothing — no dangling link</text>
+<text x='470.0' y='356' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>a person clicking delete may not know rows are linked — refusing and saying so is the safe default;</text>
+<text x='470.0' y='374' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>a script that asked to force has said, in its own code, that it knows. Either way no row is ever left pointing at a missing entry.</text>
+<text x='470.0' y='393' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>everyday version: the filing clerk will not let you bin a folder with documents in it; the archivist with the master key empties it first, always</text>
+</svg>

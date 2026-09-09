@@ -84,7 +84,7 @@ codes, the way phase R (the registry reset) is CR and SD at once.
 
 | Track | Shipped so far | Next phase | Status |
 |---|---|---|---|
-| CR | Registry CRUD and uploads (CSV, TSV, XLSX, SDF); PubChem linking and enrichment scripts; audit, merge and removal scripts; R-1 and R-2 done: the registry is empty by design (2026-09-08) | **CR-6 · Deletion refuses or forces** (specified, one day), then **CR-3 · Every way in** (JSON upload, one terminal command) | 📝 CR-6 · 🔜 CR-3 |
+| CR | Registry CRUD and uploads (CSV, TSV, XLSX, SDF); PubChem linking and enrichment scripts; audit, merge and removal scripts; R-1 and R-2 done: the registry is empty by design (2026-09-08); CR-6 deletion refuses or forces ✅ (2026-09-09) | **CR-3 · Every way in** (JSON upload, one terminal command), then **CR-1 · Sort, search and filter per column** | 🔜 CR-3 |
 | SD | Template ingestion of the Cergy export as data; the table built from the file; export in four formats; link and unlink buttons with select-all-matching and a confirmation | **SD-1 · The registry-first rule** — [specified and agreed](09-chemical-identification.md#the-next-rule-registry-first--specification) 2026-09-08; built after R-2 and CR-3 | ✅ agreed · 🔜 build |
 | SM | SLIMS three-row-header upload, table, detail view | **SM-1 · Sort, search, filter and views**, after CR-1 proves the pattern | 🔜 |
 | TX | XLSX upload, table | **TX-1 · A real study export as a template spec** | ⏸ a file |
@@ -106,7 +106,7 @@ route the data arrives on, with nothing silently missing.
 | **CR-2** | **Three views.** *Compact* (today's columns, the default), *Complete* (every field the records hold, including the spreadsheet's extra columns kept under `metadata`, discovered from the data as the screening table does), *PubChem* (the identifier, title, IUPAC name, formula, weight, SMILES, InChI, InChIKey and how the match was made); a column chooser underneath, remembered per browser | Different questions need different columns: a chemist wants structure fields, a data manager wants provenance | CR-1 (shares the column machinery) | 🔜 |
 | **CR-5** | **Unregistered compounds from screening data.** A notice in the registry, always visible while any exist: *N compounds in the screening data are not registered — review them*. It opens a table of every distinct name + CAS pair with no registry entry, with the row count, source file and dates; download as CSV or XLSX; tick some or all and **Register** them with the basic information the screening data carries (name, CAS, provenance), which also links their rows — never asking PubChem | The other half of the registry-first rule: rows that could not attach must be visible somewhere, and the decision to register is the user's | SD-1 (defines the unregistered set) | 🔜 |
 | **CR-4** | **Incomplete entries.** A definition of *complete* (a named set of fields, signed off first — a missing CAS is **not** by itself incomplete, since a compound may validly have none; *Mark as complete* covers such entries); a notice in the registry, always visible while any entry is incomplete: *N registered compounds are missing metadata — review them*; a table of those entries and what each lacks; download; **Mark as complete** for entries that will never have more; **Fetch from PubChem** for the ticked entries, by name + CAS agreement, producing a review table that shows, per compound, each missing field and the value PubChem offers, so the user ticks what to accept before anything is written to the registry | Entries registered from screening data carry a name and a CAS number and nothing else; the gaps must be visible and filled deliberately, with a person deciding | CR-5 (produces the incomplete entries) and the field-set sign-off | 🔜 |
-| **CR-6** | **Deletion refuses or forces, by who is asking** — [specified](09-chemical-identification.md#how-deletion-will-work-after-cr-6--specification): in the browser a compound with linked rows **cannot** be deleted; the person is told how many rows and sent to unlink them first; the plain API answers 409 with the count; the API with `force=true` and the terminal script **unlink automatically, then delete**, always in that order, and report both counts | Orphaned pointers are the failure mode lesson 22 records; a person must not delete by accident, a script that says *force* has said it knows | nothing — specified 2026-09-09; the plain API's refusal is a contract change announced in the release note; **right after R-2** (one day) | 📝 next after R-2 |
+| CR-6 | **Deletion refuses or forces, by who is asking**: in the browser a compound with linked rows cannot be deleted; the person is told how many rows and sent to unlink them first; the plain API answers 409 with the count; the API with `force=true` and the terminal script unlink automatically, then delete, always in that order, and report both counts; the link logic in one module — [phase CR-6](04-phase-tutorials/phase-cr-6-delete-unlinks-first.md) | Orphaned pointers are the failure mode lesson 22 records | — | ✅ v2.11.0 (2026-09-09) |
 | CR-7 | Compound-name normalisation: hold house-style names (`tertiobutyl` for `tert-butyl`) as synonyms so the strict PubChem match in CR-4 finds them | Around 456 compounds carry a valid CAS and a name external databases do not recognise | CR-4 | 🔜 |
 | CR-8 | Merge duplicate entries from the browser (the script exists) | A registry rebuilt by hand will acquire duplicates | CR-1 | 🔜 |
 
@@ -196,7 +196,7 @@ attached to a registered compound only when the registry says so.
 flowchart LR
     SH1["SH-1 module names ✅<br/>v2.9.0"] --> SD1s["SD-1 spec agreed ✅<br/>2026-09-08"]
     SD1s --> R2["R-2 empty the registry ✅<br/>2026-09-08"]
-    R2 --> CR6["CR-6 delete unlinks first<br/>one day"] --> CR3["CR-3 every way in<br/>refill from a curated file"]
+    R2 --> CR6["CR-6 delete refuses or forces ✅<br/>v2.11.0"] --> CR3["CR-3 every way in<br/>refill from a curated file"]
     CR3 --> SD1["SD-1 build<br/>the registry-first rule + re-identify"]
     SD1 --> CR5["CR-5 unregistered review"]
     CR5 --> CR1["CR-1 sort · filter"] --> CR2["CR-2 views"]
@@ -211,8 +211,8 @@ flowchart LR
    once we know the rule the refilled registry must satisfy. Agreed on
    2026-09-08; R-2 run the same day, after a backup: 664 entries removed,
    registry empty by design.
-3. **CR-6 right after R-2**, one day, so that removing a compound from the
-   browser is safe on its own before the registry is refilled.
+3. **CR-6 right after R-2**, so that removing a compound from the browser is
+   safe on its own before the registry is refilled. Done, v2.11.0.
 4. **CR-3 before the SD-1 build.** Under the new rule nothing attaches until
    a compound is registered, so the empty registry has to be refillable from
    a curated file by every route first. The pre-R-1 backup on the server

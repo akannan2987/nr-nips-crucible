@@ -408,8 +408,19 @@ changed by any of them; removing compounds is [a separate, gated script](09-chem
 ## Cleaning up
 
 These commands remove data. Read the caveat on each one before running it.
-Unlink the rows that point at a chemical first — every route for that, and
-for every other registry task, is in [`10-registry-tasks.md`](10-registry-tasks.md).
+**Since v2.11.0 a delete is refused while rows still point at the chemical**
+— you get `409` and `{"error": "N screening rows linked to …; unlink them
+first …"}` and nothing changes. Either unlink first (every route in
+[`10-registry-tasks.md`](10-registry-tasks.md)) or add `force=true`, which
+unlinks the rows and then deletes, and tells you both counts:
+
+```bash
+curl --noproxy '*' -sS -X DELETE "http://localhost:49160/api/chemicals/CHEM-0001?force=true"
+```
+
+```json
+{"message":"Chemical deleted successfully","unlinked":{"screening":3,"total":3}}
+```
 
 **How do I delete one chemical?**
 

@@ -119,19 +119,23 @@ Detail: [playbook → Linking and unlinking by hand](10-user-playbook.md#linking
 
 ## 7. Remove a compound
 
-**Unlink before you delete.** Deleting an entry while measurements still
-point at it leaves those rows pointing at nothing — a *dangling link*, which
-the deploy check reports. The terminal script unlinks for you; in the
-browser and the API you do it first (task 6), until
-[CR-6](09-chemical-identification.md#how-deletion-will-work-after-cr-6--specification)
-makes the browser refuse and the forced routes unlink automatically.
+**Unlink before you delete — and since v2.11.0 the system holds you to
+it.** Deleting an entry while measurements still point at it would leave
+those rows pointing at nothing — a *dangling link*. So: in the browser and
+with the plain API, a compound with linked rows **cannot** be deleted; you
+are told how many rows and sent to unlink them first (task 6). The API with
+`force=true` and the terminal script **unlink first, then delete**,
+automatically, and report both counts. The rule and why:
+[phase CR-6](04-phase-tutorials/phase-cr-6-delete-unlinks-first.md).
+
+![Deleting a compound with linked rows: refused in the browser and the plain API, unlink-then-delete when forced or from the script](img/fig_delete_gate.svg)
 
 | You want to remove | Browser | API | Terminal |
 |---|---|---|---|
-| **One** compound | **Chemical Registry** → find it → the **bin icon** at the end of its row → confirm | `curl --noproxy '*' -sSk -X DELETE https://localhost:49160/api/chemicals/CHEM-000042` | `remove_chemicals.py CHEM-000042` (report), then `--apply` |
-| **Several** | tick their boxes → **Delete Selected** → confirm | `POST /api/chemicals/bulk/delete` with `{"chemical_ids":[…]}` | `remove_chemicals.py CHEM-000042 CHEM-000043 --apply`, or `--from-file ids.txt --apply` |
+| **One** compound | **Chemical Registry** → find it → the **bin icon** at the end of its row → confirm. If rows are linked: the dialog *Not deleted — rows are still linked* → **Open the linked rows** → unlink them → delete again | `curl --noproxy '*' -sSk -X DELETE https://localhost:49160/api/chemicals/CHEM-000042` — `409` while rows are linked; add `?force=true` to unlink then delete | `remove_chemicals.py CHEM-000042` (report: shows the linked rows), then `--apply` (unlinks, then deletes) |
+| **Several** | tick their boxes → **Delete Selected** → confirm; refused with the count while any is linked | `POST /api/chemicals/bulk/delete` with `{"chemical_ids":[…]}` — add `"force": true` to unlink then delete | `remove_chemicals.py CHEM-000042 CHEM-000043 --apply`, or `--from-file ids.txt --apply` |
 | **Every compound the identification job created** | not in the browser | not in the API | `remove_chemicals.py --pubchem-registered --apply` |
-| **Every compound** (the reset, R-2) | **Clear All** → confirm; unlink everything first with **Unlink all rows…** on Screening Data | `DELETE /api/chemicals/all/clear` — no confirmation, no undo | `remove_chemicals.py --all --apply` — [phase R](04-phase-tutorials/phase-r-registry-reset.md) |
+| **Every compound** (the reset, R-2) | **Clear All** → confirm; refused while anything is linked — unlink everything first with **Unlink all rows…** on Screening Data | `DELETE /api/chemicals/all/clear` — `409` while anything is linked; `?force=true` unlinks everything then clears; no undo | `remove_chemicals.py --all --apply` — [phase R](04-phase-tutorials/phase-r-registry-reset.md) |
 
 **You should see**, from the script, rows per chemical before and after and
 `Removed N entries, unlinked M rows`. **What happens to the measurements:**
@@ -200,7 +204,6 @@ from every route afterwards: [the phase's test section](04-phase-tutorials/phase
 | 1 look up | sort by column, filter per column, page size | [CR-1](05-roadmap.md#cr--chemical-registry) |
 | 1, 4 | Compact, Complete and PubChem views | CR-2 |
 | 3 load many | JSON upload; one terminal command for every file type | CR-3 |
-| 7 remove | the browser refuses while rows are linked; forced routes unlink first | CR-6 |
 | 8 merge | from the browser | CR-8 |
 | 10 PubChem | notice of incomplete entries, fetch with a review table, mark as complete | CR-4 |
 | 6 link | the registry-first rule; unregistered compounds notice and review | SD-1, CR-5 |

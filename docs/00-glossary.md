@@ -295,7 +295,7 @@ you want, and the HTTP verb to say *what to do with it*.
 **GET / POST / PUT / DELETE** — those verbs. GET = "show me", POST =
 "here's a new one", PUT = "replace this one", DELETE = "remove this one".
 
-**Status code** — the three-digit answer to every request. `200` = fine,
+**Status code** — the three-digit answer to every request. `409` = your request conflicts with the current state (here: rows are still linked to what you asked to delete). `200` = fine,
 `201` = created, `404` = no such thing, `500` = the server broke. You'll
 see these in every `curl` example.
 
@@ -368,6 +368,10 @@ is one; the moving dots follow the same curves as the drawn arrows.
 **Break-glass account** — one local administrator login kept for the day the identity provider is unreachable or a role mapping is wrong. *Everyday version:* the physical key in the box marked *emergency*.
 
 **Redirect URI, client ID, client secret, claim** — the four words the identity team will use when registering Crucible for single sign-on: where to send the user back after login; the application's own identifier; the application's own secret (into `.env.local`, never git); and one fact the provider states about the user (name, e-mail, groups). All four are explained with the flow in [`13-authentication.md`](13-authentication.md#rung-3--single-sign-on).
+
+**Dangling link** — a measurement whose pointer names a compound that no longer exists: the folder was thrown away with the documents still in it. Shows as *Unknown* where a name should be; the deploy check counts them; happened once, to 1,897 rows (lesson 22). Since v2.11.0 a deletion cannot create one: the browser and the plain API refuse while rows are linked, and the forced routes unlink first ([phase CR-6](04-phase-tutorials/phase-cr-6-delete-unlinks-first.md)).
+
+**Force (on a delete)** — the flag a script adds to say *I know rows are linked; unlink them, then delete*: `?force=true` on the delete and clear-all endpoints, `"force": true` in the bulk-delete body. The browser never sends it. Without it, a delete with linked rows is refused with status 409.
 
 **Registry tasks page** — [`10-registry-tasks.md`](10-registry-tasks.md): the twelve routine Chemical Registry jobs, in the order they come up, one table each with the browser, API and terminal route side by side and a link to the detail. The page to open when the question is *how do I…* rather than *why*.
 

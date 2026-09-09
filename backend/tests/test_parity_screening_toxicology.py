@@ -49,13 +49,21 @@ def test_screening_crud_and_enrichment(seeded_client):
 
 
 def test_screening_unknown_chemical_shows_unknown_name(seeded_client):
+    """A row whose chemical is gone shows "Unknown" — reached, since CR-6, only
+    through a forced delete: the plain delete is refused while the row is
+    linked (test_chemicals_delete_links.py), so no row is ever left pointing
+    at a missing entry by accident. The forced route unlinks the row first, so
+    the name falls back to "Unknown" because the row has no chemical, not
+    because its chemical vanished."""
     seeded_client.post(
         "/api/screening",
         json={"chemical_id": "CHEM-TEST-001", "assay_name": "A"},
     )
-    seeded_client.delete("/api/chemicals/CHEM-TEST-001")
+    assert seeded_client.delete("/api/chemicals/CHEM-TEST-001").status_code == 409
+    assert seeded_client.delete("/api/chemicals/CHEM-TEST-001?force=true").status_code == 200
     listing = seeded_client.get("/api/screening").json()
     assert listing["data"][0]["chemical_name"] == "Unknown"
+    assert listing["data"][0].get("chemical_id") is None
 
 
 def test_toxicology_requires_existing_chemical(client):

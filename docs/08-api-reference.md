@@ -474,11 +474,15 @@ curl -X PUT http://localhost:49160/api/chemicals/CHEM-001 \
 
 ### Delete Chemical
 
-Delete a chemical by ID.
+Delete a chemical by ID. **Since v2.11.0 (phase CR-6):** if any screening,
+sample or toxicology row still points at the chemical, a plain delete is
+**refused** with `409` and nothing changes; with `?force=true` the rows are
+unlinked first, then the chemical is deleted, and the answer says how many.
+The rule and why: [`09-chemical-identification.md`](09-chemical-identification.md#how-deletion-will-work-after-cr-6--specification).
 
-**Endpoint:** `DELETE /chemicals/:id`
+**Endpoint:** `DELETE /chemicals/:id` · `DELETE /chemicals/:id?force=true`
 
-**Response:**
+**Response (nothing linked, or forced):**
 
 ```json
 {
@@ -486,10 +490,28 @@ Delete a chemical by ID.
 }
 ```
 
+With `force=true` and rows unlinked, the answer gains `"unlinked"`:
+
+```json
+{
+  "message": "Chemical deleted successfully",
+  "unlinked": {"screening": 3, "samples": 1, "total": 4}
+}
+```
+
+**Refused (rows linked, no force) — HTTP 409:**
+
+```json
+{
+  "error": "3 screening rows and 1 sample linked to CHEM-001; unlink them first (Screening Data page, or POST /api/screening/unlink), or pass force=true to unlink and then delete."
+}
+```
+
 **cURL Example:**
 
 ```bash
 curl -X DELETE http://localhost:49160/api/chemicals/CHEM-001
+curl -X DELETE "http://localhost:49160/api/chemicals/CHEM-001?force=true"
 ```
 
 ---
@@ -638,7 +660,9 @@ curl -X POST http://localhost:49160/api/chemicals/upload/sdf \
 
 ### Bulk Delete Chemicals
 
-Delete multiple chemicals at once.
+Delete multiple chemicals at once. **Since v2.11.0:** refused with `409` while
+any row points at any of them, unless `"force": true`, which unlinks first
+(see [Delete Chemical](#delete-chemical)).
 
 **Endpoint:** `POST /chemicals/bulk/delete`
 
@@ -646,7 +670,8 @@ Delete multiple chemicals at once.
 
 ```json
 {
-  "chemical_ids": ["CHEM-001", "CHEM-002", "CHEM-003"]
+  "chemical_ids": ["CHEM-001", "CHEM-002", "CHEM-003"],
+  "force": false
 }
 ```
 
@@ -659,6 +684,9 @@ Delete multiple chemicals at once.
   "requested": 3
 }
 ```
+
+With `"force": true` and rows unlinked, the answer gains `"unlinked"`; refused,
+it is `409` with `{"error": "N screening rows linked to 2 of the 3 chemicals; unlink them first …"}`.
 
 **cURL Example:**
 
@@ -713,9 +741,12 @@ curl -X POST http://localhost:49160/api/chemicals/bulk/update \
 
 ### Clear All Chemicals
 
-**⚠️ DANGER:** Delete all chemicals from the database.
+**⚠️ DANGER:** Delete all chemicals from the database. **Since v2.11.0:**
+refused with `409` while any row anywhere points at a chemical, unless
+`?force=true`, which unlinks every row first (the registry reset's two
+steps in one request — [phase R](04-phase-tutorials/phase-r-registry-reset.md)).
 
-**Endpoint:** `DELETE /chemicals/all/clear`
+**Endpoint:** `DELETE /chemicals/all/clear` · `DELETE /chemicals/all/clear?force=true`
 
 **Response:**
 
@@ -726,10 +757,14 @@ curl -X POST http://localhost:49160/api/chemicals/bulk/update \
 }
 ```
 
+With `force=true` and rows unlinked, the answer gains `"unlinked"`; refused, it
+is `409` with `{"error": "11981 screening rows linked to chemicals; unlink them first …"}`.
+
 **cURL Example:**
 
 ```bash
 curl -X DELETE http://localhost:49160/api/chemicals/all/clear
+curl -X DELETE "http://localhost:49160/api/chemicals/all/clear?force=true"
 ```
 
 ---

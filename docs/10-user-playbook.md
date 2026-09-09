@@ -667,13 +667,12 @@ then left pointing at something that no longer exists — a page reference
 to a page that has been torn out. It is called a **dangling link**, the
 deploy check reports it, and it has happened once, to 1,897 rows.
 
-The terminal script does the unlinking for you. The browser does not yet
-check, so in the browser you unlink first, then delete. Roadmap item
-[CR-6](05-roadmap.md#cr--chemical-registry) makes the browser *refuse* to
-delete a compound while rows are linked and tell you how many — and makes
-the forced routes (the API with `force`, the script) unlink automatically
-before deleting; the rule is written out in
-[`09-chemical-identification.md`](09-chemical-identification.md#how-deletion-will-work-after-cr-6--specification). Since the reset (R-1) no row is
+Since v2.11.0 the system holds you to it: the browser *refuses* to delete
+a compound while rows are linked and tells you how many, with a button that
+opens exactly those rows so you can unlink them; the plain API refuses the
+same way; the API with `force` and the terminal script unlink automatically
+before deleting. The rule and how it was built:
+[phase CR-6](04-phase-tutorials/phase-cr-6-delete-unlinks-first.md). Since the reset (R-1) no row is
 linked to any compound, so today either route is safe; the habit matters
 for when the registry is refilled.
 
@@ -681,7 +680,7 @@ for when the registry is refilled.
 flowchart LR
     A["I want to remove a compound"] --> Q{"are any rows<br/>linked to it?"}
     Q -- "no" --> D["delete it: browser, API or script"]
-    Q -- "yes, or not sure" --> U["unlink its rows first:<br/>Screening Data → search its name →<br/>tick all matching → Unlink"]
+    Q -- "yes, or not sure" --> U["the browser refuses and offers<br/>'Open the linked rows' → tick all matching → Unlink"]
     U --> D
     S["the terminal script does<br/>both steps in one, with a report first"] -.-> D
 ```

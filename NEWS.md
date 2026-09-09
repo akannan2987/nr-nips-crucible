@@ -10,6 +10,43 @@ change you are getting.
 
 ---
 
+## v2.11.0 — 2026-09-09 — "The clerk refuses; the archivist empties the folder first"
+
+Phase CR-6, from the owner's rule. Tutorial:
+[`docs/04-phase-tutorials/phase-cr-6-delete-unlinks-first.md`](docs/04-phase-tutorials/phase-cr-6-delete-unlinks-first.md).
+
+**Changed — this is a contract change, announced here**
+- **Deleting a compound that still has measurements pointing at it is
+  refused** — from the browser and from the plain API (`DELETE
+  /api/chemicals/{id}`, `POST …/bulk/delete`, `DELETE …/all/clear`): HTTP
+  409, `{"error": "N screening rows linked to …; unlink them first …"}`,
+  nothing changed. The browser shows *Not deleted — rows are still linked*
+  with a button that opens exactly those rows on the Screening Data page.
+- **With `force=true`** (a query parameter, or `"force": true` in the bulk
+  body) the rows are **unlinked first, then the entry deleted**, always in
+  that order, and the answer gains `"unlinked"` counts per module. The
+  browser never sends it.
+- **With nothing linked, every delete answers exactly as before.** The
+  contract tests prove it. One test that had locked the old orphaning
+  behaviour was rewritten to assert the refusal.
+- The removal script's link logic moved to `backend/app/links.py`, shared
+  with the API, so a link is cleared in one way everywhere. The script's
+  behaviour is unchanged: report, then on `--apply` unlink, then delete.
+- Six new tests; the suite is 111. One figure; two glossary entries.
+
+**Also in this release, documents since v2.10.3**
+- The registry's routine tasks on one page, `docs/10-registry-tasks.md`;
+  every phase tutorial ends with a *how to test it, by every route* section;
+  the README says which page to open first, by reader; production described
+  as it is after the reset.
+
+**Deploy note**
+- Backend and client changed: the server **rebuilds**, after a backup. On
+  production today nothing is linked, so no delete is refused yet; the rule
+  becomes visible once the registry is refilled.
+
+---
+
 ## v2.10.3 — 2026-09-08 — "An empty registry, on purpose"
 
 **Recorded**

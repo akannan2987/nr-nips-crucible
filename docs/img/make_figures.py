@@ -402,6 +402,39 @@ def fig_auth_ladder() -> None:
     b += text(W/2, 430, "everyday version: fit a lock this week, keep the key for the cleaners, and install the badge reader when the badge office delivers", 10.5, MUTED)
     write("fig_auth_ladder.svg", svg(W, H, "Three rungs from an open port to single sign-on: a token gate, local accounts, then the corporate identity provider; one feature flag; each rung keeps what the one below gave", b))
 
+def fig_delete_gate() -> None:
+    W, H = 940, 400
+    b = text(W/2, 34, "Deleting a compound after CR-6: the clerk refuses, the archivist empties the folder first", 16, INK, "middle", "bold")
+    # the compound with linked rows
+    b += box(30, 90, 190, 150, PANEL, COLOURS["chemical"], 10)
+    b += symbol("chemical", 70, 130, 16)
+    b += lines(150, 124, ["CHEM-000042", "Phenol"], 11, INK, "middle", 15, "bold")
+    for i in range(3):
+        b += symbol("screening", 60 + i * 34, 190, 7)
+    b += text(190, 194, "3 rows", 10.5, MUTED)
+    b += text(125, 226, "measurements point at it", 10, MUTED)
+    # left path: browser / plain API
+    b += arrow(222, 130, 300, 130, LINE)
+    b += box(302, 80, 290, 100, "#fff7ed", COLOURS["screening"], 8)
+    b += text(447, 104, "browser · plain API", 13, COLOURS["screening"], "middle", "bold")
+    b += lines(447, 126, ["REFUSED — 409", "\"3 screening rows linked; unlink them first\"", "nothing is changed"], 11, INK, "middle", 16)
+    b += path_arrow("M 592 130 L 640 130", COLOURS["screening"], dash=True)
+    b += box(642, 96, 270, 68, PAPER, COLOURS["screening"], 6)
+    b += lines(777, 120, ["the person unlinks the rows", "on the Screening Data page, then deletes"], 10.5, INK, "middle", 15)
+    # right path: forced API / script
+    b += arrow(222, 200, 300, 260, LINE)
+    b += box(302, 226, 290, 100, "#eef2ff", COLOURS["chemical"], 8)
+    b += text(447, 250, "API with force=true · the script", 13, COLOURS["chemical"], "middle", "bold")
+    b += lines(447, 272, ["1  unlink every linked row", "2  then delete the entry", "always in that order; both counts reported"], 11, INK, "middle", 16)
+    b += path_arrow("M 592 276 L 640 276", COLOURS["chemical"])
+    b += box(642, 242, 270, 68, PAPER, COLOURS["chemical"], 6)
+    b += lines(777, 266, ["the entry is gone; its rows keep their", "source names and point at nothing — no dangling link"], 10.5, INK, "middle", 15)
+    b += text(W/2, 356, "a person clicking delete may not know rows are linked — refusing and saying so is the safe default;", 11, INK)
+    b += text(W/2, 374, "a script that asked to force has said, in its own code, that it knows. Either way no row is ever left pointing at a missing entry.", 11, INK)
+    b += text(W/2, 393, "everyday version: the filing clerk will not let you bin a folder with documents in it; the archivist with the master key empties it first, always", 10.5, MUTED)
+    write("fig_delete_gate.svg", svg(W, H, "Deleting a compound with linked rows: the browser and the plain API refuse with 409 and send the person to unlink first; the forced API and the script unlink first, then delete", b))
+
+
 def fig_container_lunchbox() -> None:
     W, H = 940, 320
     b = text(W/2, 34, "The container is the isolation — the same sealed lunchbox on every platform", 16, INK, "middle", "bold")
@@ -533,6 +566,6 @@ def logo() -> None:
 
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
-              fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_container_lunchbox, fig_setup_flow, fig_timeline,
+              fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_container_lunchbox, fig_setup_flow, fig_timeline,
               fig_requirements_lock, cover, logo):
         f()

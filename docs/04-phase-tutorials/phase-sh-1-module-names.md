@@ -1,4 +1,4 @@
-[← README](../../README.md) · [Handbook](../HANDBOOK.md) · [Glossary](../00-glossary.md) · [← Phase R](phase-r-registry-reset.md)
+[← README](../../README.md) · [Handbook](../HANDBOOK.md) · [Glossary](../00-glossary.md) · [← Phase R](phase-r-registry-reset.md) · [Phase CR-6 →](phase-cr-6-delete-unlinks-first.md)
 
 # Phase SH-1 — Module names: say what each part of the application is
 

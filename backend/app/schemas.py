@@ -115,6 +115,7 @@ class ToxicologyIn(_LenientModel):
 
 class BulkDeleteChemicals(_LenientModel):
     chemical_ids: Any | None = None  # validated by hand, like the v1 API
+    force: bool = False  # CR-6: unlink the rows first, then delete; otherwise refuse while any are linked
 
 
 class BulkUpdateChemicals(_LenientModel):

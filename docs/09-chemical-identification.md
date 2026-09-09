@@ -687,16 +687,13 @@ prevented the whole episode.
 
 ### Removing entries that are wrong
 
-**Unlink first, then delete.** The browser's delete buttons and
-`DELETE /api/chemicals/…` remove the entry but do not unlink the rows that
-point at it, so those rows are left referencing something that no longer
-exists — links to nowhere, reported by `verify-deploy.sh` as dangling. That
-has happened once, to 1,897 rows. From the browser, unlink the compound's
-rows on the Screening Data page first (the routes, side by side, are in the
-[playbook](10-user-playbook.md#removing-a-compound-every-route)); the
-script below does both steps in one, with a report first. Roadmap item
-[CR-6](05-roadmap.md#cr--chemical-registry) makes the endpoint unlink first,
-after which the browser is safe on its own.
+**Unlink first, then delete — enforced since v2.11.0.** A row left
+pointing at a deleted entry is a link to nowhere, reported by
+`verify-deploy.sh` as dangling; it happened once, to 1,897 rows. Now the
+browser and the plain API refuse to delete a compound while rows point at
+it, and the API with `force=true` and the script below unlink first, then
+delete ([how deletion works](#how-deletion-will-work-after-cr-6--specification);
+every route side by side in [`10-registry-tasks.md`](10-registry-tasks.md#7-remove-a-compound)).
 
 ```bash
 # By identifier — report first
@@ -720,8 +717,10 @@ later re-links them.
 
 ### How deletion will work after CR-6 — specification
 
-> **Status: specified 2026-09-09 from the owner's description, not built.**
-> Phase [CR-6](05-roadmap.md#cr--chemical-registry), one day, right after R-2.
+> **Status: built and shipped as v2.11.0 on 2026-09-09** — phase
+> [CR-6](04-phase-tutorials/phase-cr-6-delete-unlinks-first.md). The table
+> below is what the code does; the specification it was built from is kept
+> as written.
 
 Two rules, one for a person and one for the machine:
 

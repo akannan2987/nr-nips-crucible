@@ -50,11 +50,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("AUTO_INIT_DB", "false")
 
 from app.database import SessionLocal  # noqa: E402
-from app.models import Chemical, Sample, Screening, Toxicology  # noqa: E402
+from app.links import LINKED_MODELS, links_of, unlink_rows  # noqa: E402
+from app.models import Chemical  # noqa: E402
 from app.store import all_rows  # noqa: E402
 
-LINKED_MODELS = (("screening", Screening), ("samples", Sample), ("toxicology", Toxicology))
-BATCH = 5000  # rows per commit when unlinking: one transaction per row on a 116 MB file looked like a hang (lesson 18)
+# LINKED_MODELS, links_of and unlink_rows live in app/links.py since CR-6, so the
+# API's forced delete and this script clear a link in exactly one way.
 PUBCHEM_TAG = "pubchem name+cas agree"
 
 
@@ -103,49 +104,6 @@ def print_breakdown(rows_by_module: dict, chemicals: list, limit: int = 20) -> N
     if len(ranked) > limit:
         rest = sum(n for _, n in ranked[limit:])
         print(f"  … and {len(ranked) - limit} more chemicals ({rest} rows)")
-
-
-def links_of(row) -> set[str]:
-    """The chemical identifiers a row points at.
-
-    Screening and toxicology rows point at ONE chemical, stored twice (the
-    indexed column and the document). A sample points at MANY, stored only in
-    its document as a list under `chemical_ids` — there is no column, which
-    is why an earlier version of this script crashed on the first sample.
-    """
-    doc = row.doc or {}
-    ids: set[str] = set()
-    if getattr(row, "chemical_id", None):
-        ids.add(row.chemical_id)
-    if doc.get("chemical_id"):
-        ids.add(doc["chemical_id"])
-    ids.update(x for x in (doc.get("chemical_ids") or []) if x)
-    return ids
-
-
-def unlink_rows(db, rows: list, apply: bool, targets: set[str] | None = None) -> int:
-    """Clear the link on each row — column and document — in batches. Returns rows changed.
-
-    `targets` limits the unlinking to those identifiers; None means every link
-    the row has (the reset modes).
-    """
-    changed = 0
-    for row in rows:
-        doc = dict(row.doc)
-        if targets is None or doc.get("chemical_id") in targets:
-            doc.pop("chemical_id", None)
-        if "chemical_ids" in doc:
-            doc["chemical_ids"] = [] if targets is None else [x for x in doc["chemical_ids"] if x not in targets]
-        row.doc = doc
-        if hasattr(row, "chemical_id") and (targets is None or row.chemical_id in targets):
-            row.chemical_id = None
-        changed += 1
-        if apply and changed % BATCH == 0:
-            db.commit()
-            print(f"  … {changed} rows unlinked", flush=True)
-    if apply:
-        db.commit()
-    return changed
 
 
 def run(argv: list[str] | None = None, db=None) -> int:
@@ -234,7 +192,10 @@ def _run(args, db) -> int:
     unlinked = 0
     everything = args.unlink_all or args.all
     for rows in users.values():
-        unlinked += unlink_rows(db, rows, apply=True, targets=None if everything else target_ids)
+        unlinked += unlink_rows(
+            db, rows, apply=True, targets=None if everything else target_ids,
+            progress=lambda n: print(f"  … {n} rows unlinked", flush=True),
+        )
 
     if (args.unlink_all and not args.all) or args.unlink_only:
         print(f"\nUnlinked {unlinked} rows. All {len(chemicals)} chemical entries kept.")

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { MagnifyingGlassIcon, PlusIcon, TrashIcon, EyeIcon, PencilSquareIcon, CheckIcon, XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, PlusIcon, TrashIcon, EyeIcon, PencilSquareIcon, CheckIcon, XMarkIcon, ChevronDownIcon, LinkIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { getChemicals, deleteChemical, bulkDeleteChemicals, bulkUpdateChemicals, clearAllChemicals } from '../services/api'
 import MoleculeViewer from '../components/MoleculeViewer'
@@ -17,6 +17,19 @@ export default function ChemicalsView() {
   const [detailTab, setDetailTab] = useState('identity')
   const [selectedIds, setSelectedIds] = useState([])
   const [showBulkEdit, setShowBulkEdit] = useState(false)
+  // CR-6: a compound with linked rows cannot be deleted from here. The API
+  // answers 409 with how many rows; this holds that message and, for one
+  // compound, its id so the dialog can open exactly those rows.
+  const [refusal, setRefusal] = useState(null)
+
+  const explainRefusal = (error, chemicalId, fallback) => {
+    if (error?.response?.status === 409) {
+      setRefusal({ message: error.response.data?.error || 'Rows are linked to this compound.', chemicalId })
+      return true
+    }
+    toast.error(fallback)
+    return false
+  }
   const [bulkEditData, setBulkEditData] = useState({
     supplier: '',
     cas_number: '',
@@ -60,7 +73,7 @@ export default function ChemicalsView() {
       toast.success('Chemical deleted successfully')
       loadChemicals()
     } catch (error) {
-      toast.error('Failed to delete chemical')
+      explainRefusal(error, chemicalId, 'Failed to delete chemical')
     }
   }
 
@@ -95,7 +108,7 @@ export default function ChemicalsView() {
       setSelectedIds([])
       loadChemicals()
     } catch (error) {
-      toast.error('Failed to delete chemicals')
+      explainRefusal(error, selectedIds.length === 1 ? selectedIds[0] : null, 'Failed to delete chemicals')
     }
   }
 
@@ -109,7 +122,7 @@ export default function ChemicalsView() {
       setSelectedIds([])
       loadChemicals()
     } catch (error) {
-      toast.error('Failed to clear chemicals')
+      explainRefusal(error, null, 'Failed to clear chemicals')
     }
   }
 
@@ -218,6 +231,38 @@ export default function ChemicalsView() {
           )}
         </div>
       </div>
+
+      <p className="text-xs text-gray-500 -mt-2">
+        A compound with measurements linked to it cannot be deleted here: unlink them first on the
+        Screening Data page. The terminal script unlinks and deletes in one step.
+      </p>
+
+      {/* CR-6: the refusal dialog — nothing was deleted; here is why, and where to go */}
+      {refusal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
+            <h2 className="text-lg font-bold text-gray-800 mb-2">Not deleted — rows are still linked</h2>
+            <p className="text-sm text-gray-700 mb-4">{refusal.message}</p>
+            <p className="text-xs text-gray-500 mb-4">
+              Unlink the rows first — on the Screening Data page, tick the header box, choose
+              <em> Select all N matching rows</em>, then <em>Unlink</em> — and delete again. Nothing has been changed.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setRefusal(null)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                Close
+              </button>
+              <Link
+                to={refusal.chemicalId ? `/screening?chemical_id=${encodeURIComponent(refusal.chemicalId)}` : '/screening'}
+                onClick={() => setRefusal(null)}
+                className="inline-flex items-center px-4 py-2 bg-pandora-600 text-white rounded-lg hover:bg-pandora-700"
+              >
+                <LinkIcon className="h-4 w-4 mr-1.5" />
+                Open the linked rows
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bulk Edit Modal */}
       {showBulkEdit && (
@@ -396,7 +441,7 @@ export default function ChemicalsView() {
                         <button
                           onClick={() => handleDelete(chemical.chemical_id)}
                           className="p-1 text-red-600 hover:bg-red-50 rounded"
-                          title="Delete"
+                          title="Delete (refused while rows are linked — unlink them first)"
                         >
                           <TrashIcon className="h-5 w-5" />
                         </button>

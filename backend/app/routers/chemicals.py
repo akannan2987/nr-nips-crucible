@@ -9,7 +9,7 @@ import time
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from ..compat import (
@@ -21,6 +21,7 @@ from ..compat import (
     total_pages,
 )
 from ..database import get_db
+from ..links import count_links, describe_links, unlink_targets
 from ..models import Chemical
 from ..schemas import BulkDeleteChemicals, BulkUpdateChemicals, ChemicalIn
 from ..store import (
@@ -334,12 +335,41 @@ async def upload_excel(
     return response
 
 
+def _refuse_or_unlink(db: Session, targets: set[str] | None, force: bool, what: str) -> dict[str, int] | None:
+    """The CR-6 rule, shared by every deletion route.
+
+    Rows still pointing at the chemical(s) make a plain delete a **409**: the
+    caller — a person in the browser, or a script that did not say it knows —
+    is told how many and sent to unlink them first. With `force` the rows are
+    unlinked here, then the caller deletes; always in that order, so a failure
+    between the two halves leaves rows showing their source names rather than
+    pointing at nothing (lesson 22). Returns the unlink counts when forced,
+    None when nothing was linked.
+    """
+    counts = count_links(db, targets)
+    if counts["total"] == 0:
+        return None
+    if not force:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"{describe_links(counts)} linked to {what}; unlink them first "
+                "(Screening Data page, or POST /api/screening/unlink), or pass force=true "
+                "to unlink and then delete."
+            ),
+        )
+    return unlink_targets(db, targets)
+
+
 @router.post("/bulk/delete")
 def bulk_delete(body: BulkDeleteChemicals, db: Session = Depends(get_db)) -> dict[str, Any]:
-    """POST /api/chemicals/bulk/delete."""
+    """POST /api/chemicals/bulk/delete — refuses while rows are linked unless `force`."""
     ids = body.chemical_ids
     if not ids or not isinstance(ids, list) or len(ids) == 0:
         raise HTTPException(status_code=400, detail="No chemical IDs provided")
+
+    present = [cid for cid in ids if find_row(db, Chemical, "chemical_id", cid)]
+    unlinked = _refuse_or_unlink(db, set(present), bool(body.force), f"{len(present)} of the {len(ids)} chemicals")
 
     deleted = 0
     for cid in ids:
@@ -348,11 +378,14 @@ def bulk_delete(body: BulkDeleteChemicals, db: Session = Depends(get_db)) -> dic
             delete_row(db, row)
             deleted += 1
 
-    return {
+    response: dict[str, Any] = {
         "message": f"Successfully deleted {deleted} chemicals",
         "deleted": deleted,
         "requested": len(ids),
     }
+    if unlinked:
+        response["unlinked"] = unlinked
+    return response
 
 
 @router.post("/bulk/update")
@@ -384,10 +417,16 @@ def bulk_update(body: BulkUpdateChemicals, db: Session = Depends(get_db)) -> dic
 
 
 @router.delete("/all/clear")
-def clear_chemicals(db: Session = Depends(get_db)) -> dict[str, Any]:
-    """DELETE /api/chemicals/all/clear — remove every chemical."""
+def clear_chemicals(
+    force: bool = Query(default=False), db: Session = Depends(get_db)
+) -> dict[str, Any]:
+    """DELETE /api/chemicals/all/clear — remove every chemical; refuses while any row is linked unless `force`."""
+    unlinked = _refuse_or_unlink(db, None, force, "chemicals")
     count = clear_all(db, Chemical)
-    return {"message": f"Successfully deleted all {count} chemicals", "deleted": count}
+    response: dict[str, Any] = {"message": f"Successfully deleted all {count} chemicals", "deleted": count}
+    if unlinked:
+        response["unlinked"] = unlinked
+    return response
 
 
 @router.get("/{chemical_id}")
@@ -418,10 +457,16 @@ def update_chemical(
 
 
 @router.delete("/{chemical_id}")
-def delete_chemical(chemical_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
-    """DELETE /api/chemicals/:id."""
+def delete_chemical(
+    chemical_id: str, force: bool = Query(default=False), db: Session = Depends(get_db)
+) -> dict[str, Any]:
+    """DELETE /api/chemicals/:id — refuses while rows are linked unless `force`."""
     row = find_row(db, Chemical, "chemical_id", chemical_id)
     if not row:
         raise HTTPException(status_code=404, detail="Chemical not found")
+    unlinked = _refuse_or_unlink(db, {chemical_id}, force, chemical_id)
     delete_row(db, row)
-    return {"message": "Chemical deleted successfully"}
+    response: dict[str, Any] = {"message": "Chemical deleted successfully"}
+    if unlinked:
+        response["unlinked"] = unlinked
+    return response

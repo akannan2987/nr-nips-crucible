@@ -1,0 +1,47 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 440' width='940' height='440' role='img' aria-label='One audit module read by the browser&apos;s attention page, the API and the terminal script; the review mark is stored on the entry' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='439' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>The attention page (CR-10): one audit, three doors, and the mark a person leaves</text>
+<rect x='30' y='70' width='220' height='250' rx='10' fill='#f9fafb' stroke='#4f46e5' stroke-width='1.2'/>
+<polygon points='60,82 72.124,89.0 72.124,103.0 60,110 47.876,103.0 47.876,89.0' fill='#4f46e5' fill-opacity='0.15' stroke='#4f46e5' stroke-width='2'/>
+<text x='150' y='100' font-size='12' fill='#1f2937' text-anchor='middle' font-weight='bold'>the registry</text>
+<rect x='48' y='128' width='184' height='34' rx='6' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='140' y='142' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>shared identifiers</text>
+<text x='140' y='155' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>221 groups on the real export</text>
+<rect x='48' y='172' width='184' height='34' rx='6' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='140' y='186' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>batch conflicts</text>
+<text x='140' y='199' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>3 on the real export</text>
+<rect x='48' y='216' width='184' height='34' rx='6' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='140' y='230' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>pending identifiers</text>
+<text x='140' y='243' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>0 on the real export</text>
+<rect x='48' y='260' width='184' height='34' rx='6' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='140' y='274' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>doubtful formulas</text>
+<text x='140' y='287' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>125 on the real export</text>
+<line x1='252' y1='195' x2='330' y2='195' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='332' y='150' width='200' height='90' rx='8' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='432' y='176' font-size='13' fill='#4f46e5' text-anchor='middle' font-weight='bold'>app/audit.py</text>
+<text x='432' y='198' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>groups, lists, ranks;</text>
+<text x='432' y='213' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>reads the review marks</text>
+<path d='M 532 195 L 600 104' fill='none' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='602' y='74' width='300' height='62' rx='8' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='752' y='94' font-size='11.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>browser · Needs attention</text>
+<text x='752' y='112' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>merge · keep both</text>
+<text x='752' y='125' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>mark reviewed · set the identifier</text>
+<path d='M 532 195 L 600 206' fill='none' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='602' y='176' width='300' height='62' rx='8' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='752' y='196' font-size='11.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>API · GET /api/chemicals/audit</text>
+<text x='752' y='214' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>POST …/audit/review · …/merge</text>
+<text x='752' y='227' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>POST …/:id/identifier</text>
+<path d='M 532 195 L 600 308' fill='none' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='602' y='278' width='300' height='62' rx='8' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='752' y='298' font-size='11.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>terminal · audit_chemicals.py</text>
+<text x='752' y='316' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>the same list, printed;</text>
+<text x='752' y='329' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>merge_duplicate_chemicals.py</text>
+<rect x='332' y='262' width='200' height='58' rx='6' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2' stroke-dasharray='6 4'/>
+<text x='432' y='284' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>reviewed: {key: timestamp}</text>
+<text x='432' y='299' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>stored on the entry itself</text>
+<path d='M 600 200 L 532 275' fill='none' stroke='#4f46e5' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<text x='470.0' y='378' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>the page, the API and the script call one module, so they never disagree about what is flagged;</text>
+<text x='470.0' y='396' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>a mark left by one route is seen by the others, and a reviewed item stops counting on the banner without disappearing.</text>
+<text x='470.0' y='418' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>everyday version: one inspection list on the wall, with a pen tied to it — whoever ticks an item, everybody sees the tick</text>
+</svg>

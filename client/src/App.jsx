@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import ChemicalsView from './pages/ChemicalsView'
 import ChemicalsUpload from './pages/ChemicalsUpload'
+import RegistryAttention from './pages/RegistryAttention'
 import SamplesView from './pages/SamplesView'
 import SamplesUpload from './pages/SamplesUpload'
 import ScreeningView from './pages/ScreeningView'
@@ -22,6 +23,7 @@ function App() {
           {/* Chemicals */}
           <Route path="chemicals" element={<ChemicalsView />} />
           <Route path="chemicals/upload" element={<ChemicalsUpload />} />
+          <Route path="chemicals/attention" element={<RegistryAttention />} />
           {/* Samples */}
           <Route path="samples" element={<SamplesView />} />
           <Route path="samples/upload" element={<SamplesUpload />} />

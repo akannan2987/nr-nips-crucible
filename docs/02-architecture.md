@@ -451,6 +451,10 @@ backend/app/
 ├── models.py       # SQLAlchemy models (hybrid document pattern)
 ├── schemas.py      # Pydantic request models
 ├── store.py        # data-access verbs
+├── links.py        # where a link from a row to a chemical lives; unlink, count
+├── imports.py      # one door for every chemicals file format; the registry specs
+├── audit.py        # what needs a person's eye; the review mark (browser, API, script)
+├── merge.py        # fold entries into one survivor: carry over, repoint, clean, delete
 ├── routers/        # one file per resource
 └── utils/          # sdf.py (RDKit) · samples_excel.py (SLIMS) · excel.py
 ```

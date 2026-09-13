@@ -729,11 +729,90 @@ route. The sources, column by column: [`09-registry-sources.md`](09-registry-sou
 
 **Endpoint:** `GET /chemicals/notices/summary`
 
-**Response:** `{"nestle_id_pending": 0, "cas_shared": 0, "batch_conflicts": 0}` —
-entries whose identifier is still to come from the screening data, entries
-sharing a CAS, DTXSID or PubChem identifier with another (flagged, kept),
-compounds whose batches disagree on a field. The Chemical Registry page
-shows them as a banner; the audit script lists the entries.
+**Response:** `{"nestle_id_pending": 0, "cas_shared": 419, "batch_conflicts": 3, "formula": 125, "attention": 349}` —
+entries whose identifier is still to come from the screening data; entries
+sharing a CAS, DTXSID or PubChem identifier with another (kept, for a person
+to decide); compounds whose batches disagree on a field; entries whose
+formula none of their names explains; and the total of open items. Reviewed
+items are not counted. The Chemical Registry page shows them as a banner
+whose counts link to the attention page; the sidebar shows `attention`.
+
+### The audit (what needs attention)
+
+**Endpoint:** `GET /chemicals/audit` — the list behind the attention page,
+the same one `audit_chemicals.py` prints. `?everything=true` adds the
+entries the formula check passed, ranked.
+
+**Response:**
+
+```json
+{
+  "counts": {"shared_groups": 221, "shared_entries": 419, "batch_conflicts": 3, "pending": 0,
+             "formula": 125, "reviewed": 0, "attention": 349},
+  "checked": 6550, "skipped": 5989,
+  "shared": [
+    {"key": "shared:cas:121-33-5", "kind": "cas", "value": "121-33-5", "reviewed": false,
+     "entries": [
+       {"chemical_id": "CHEM-000010", "name": "Vanillin", "cas_number": "121-33-5", "dtx_id": "DTXSID0021976",
+        "pubchem_cid": null, "molecular_formula": "C8H8O3", "molecular_weight": null, "dotmatics_reg_id": null,
+        "source_template": null, "merged_from": [], "batches": 0, "created_at": "…", "linked_rows": 0},
+       {"chemical_id": "CHEM-000011", "name": "Vanillin (repeat registration)", "…": "…", "linked_rows": 2}
+     ]}
+  ],
+  "batch_conflicts": [
+    {"chemical_id": "CHEM-000843", "name": "…", "key": "batch_conflicts", "reviewed": false,
+     "columns": [{"column": "CAS_NO", "promoted": "…", "values": [{"batch": 1, "batch_id": "…", "value": "…"}, {"batch": 2, "…": "…"}]}]}
+  ],
+  "pending": [{"chemical_id": "CHEM-000021", "name": "…", "supplier": "10001", "pending_from": "screening"}],
+  "formula": [
+    {"chemical_id": "CHEM-000030", "name": "Glycerol, 2-monohexadecanoate", "pubchem_name": null,
+     "molecular_formula": "C7H9NO", "reasons": ["name says 'hexadec…' (16 carbons) but the formula has 7",
+     "formula has N but nothing in the name accounts for it"], "severity": 9, "key": "formula", "reviewed": false}
+  ]
+}
+```
+
+Shared groups are found from the data — every value held by two or more
+entries — sorted open first. `kind` is `cas`, `dtxsid` or `pubchem`. Each
+list is sorted open first, reviewed last. About 0.8 s for 12,539 entries.
+
+### Mark reviewed
+
+**Endpoint:** `POST /chemicals/audit/review`
+
+**Request Body:** `{"chemical_ids": ["CHEM-000010", "CHEM-000011"], "key": "shared:cas:121-33-5", "reviewed": true}`
+— `key` as the audit reports it (`shared:<kind>:<value>`, `batch_conflicts`,
+`formula`); `reviewed: false` lifts the mark.
+
+**Response:** `{"updated": 2, "key": "shared:cas:121-33-5", "reviewed": true}`.
+The mark is written on each entry as `reviewed: {"<key>": "<timestamp>"}`.
+`400` without ids or key; `404` if any id is unknown — nothing written.
+
+### Merge entries
+
+**Endpoint:** `POST /chemicals/merge`
+
+**Request Body:** `{"keep": "CHEM-000010", "remove": ["CHEM-000011"]}`
+
+**What happens, in order:** the survivor takes any field it lacked from the
+removed entries; every screening, sample and toxicology row pointing at a
+removed entry is repointed at the survivor (document and column); the flags
+naming the removed entries are cleaned on every entry; only then are they
+deleted, in one transaction. The survivor records them under
+`merged_entries`.
+
+**Response:** `{"kept": "CHEM-000010", "removed": ["CHEM-000011"], "rows_repointed": {"screening": 3, "samples": 1, "total": 4}, "message": "Merged 1 entry into CHEM-000010; 4 rows repointed"}`.
+`400` for an empty list or the survivor named among the removed; `404` for
+an unknown id — nothing written.
+
+### Set a pending identifier
+
+**Endpoint:** `POST /chemicals/:id/identifier`
+
+**Request Body:** `{"nestle_id": "NID-0042"}`
+
+**Response:** `{"message": "Identifier set", "chemical_id": "CHEM-000021", "nestle_id": "NID-0042"}`;
+`nestle_id_pending` is removed from the entry. `400` when blank; `404` unknown.
 
 ### Import Chemicals (JSON body)
 

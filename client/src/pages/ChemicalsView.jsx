@@ -349,13 +349,17 @@ export default function ChemicalsView() {
         </div>
       </div>
 
-      {notices && (notices.nestle_id_pending > 0 || notices.cas_shared > 0 || notices.batch_conflicts > 0) && (
+      {/* CR-9 notices; CR-10 made every count a link to the attention page, where the buttons are */}
+      {notices && notices.attention > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-900">
           <span className="font-semibold">Needs a person's eye:</span>{' '}
-          {notices.nestle_id_pending > 0 && <span>{notices.nestle_id_pending.toLocaleString()} compound{notices.nestle_id_pending === 1 ? '' : 's'} still await an identifier from the screening data. </span>}
-          {notices.cas_shared > 0 && <span>{notices.cas_shared.toLocaleString()} entr{notices.cas_shared === 1 ? 'y shares' : 'ies share'} a CAS number with another entry (kept on purpose, flagged for the audit). </span>}
-          {notices.batch_conflicts > 0 && <span>{notices.batch_conflicts.toLocaleString()} compound{notices.batch_conflicts === 1 ? '' : 's'} whose batches disagree on a field. </span>}
-          <span className="text-amber-700">Which entries, and what to do about each, is the audit's job — a page for it in the browser is the next registry phase; until then it runs from the terminal (<code>./container-py.sh script audit_chemicals.py</code>).</span>
+          {notices.nestle_id_pending > 0 && <span><Link to="/chemicals/attention#pending" className="underline font-medium">{notices.nestle_id_pending.toLocaleString()} compound{notices.nestle_id_pending === 1 ? '' : 's'}</Link> still await an identifier from the screening data. </span>}
+          {notices.cas_shared > 0 && <span><Link to="/chemicals/attention#shared" className="underline font-medium">{notices.cas_shared.toLocaleString()} entr{notices.cas_shared === 1 ? 'y shares' : 'ies share'}</Link> an identifier with another entry (kept on purpose, for a person to decide). </span>}
+          {notices.batch_conflicts > 0 && <span><Link to="/chemicals/attention#batches" className="underline font-medium">{notices.batch_conflicts.toLocaleString()} compound{notices.batch_conflicts === 1 ? '' : 's'}</Link> whose batches disagree on a field. </span>}
+          {notices.formula > 0 && <span><Link to="/chemicals/attention#formula" className="underline font-medium">{notices.formula.toLocaleString()} entr{notices.formula === 1 ? 'y' : 'ies'}</Link> whose formula does not match {notices.formula === 1 ? 'its' : 'their'} name (a check, not a verdict). </span>}
+          <Link to="/chemicals/attention" className="inline-flex items-center ml-1 px-2.5 py-1 rounded-md bg-amber-600 text-white font-medium hover:bg-amber-700">
+            Review them
+          </Link>
         </div>
       )}
 

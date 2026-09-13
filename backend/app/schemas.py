@@ -123,6 +123,27 @@ class BulkUpdateChemicals(_LenientModel):
     updates: dict[str, Any] | None = None
 
 
+class AuditReviewIn(_LenientModel):
+    """CR-10: leave or lift a review mark on entries, for one audit key."""
+
+    chemical_ids: Any | None = None
+    key: str | None = None
+    reviewed: bool = True
+
+
+class MergeIn(_LenientModel):
+    """CR-10: fold `remove` into `keep`; rows repointed first, then deleted."""
+
+    keep: str | None = None
+    remove: Any | None = None
+
+
+class IdentifierIn(_LenientModel):
+    """CR-10: fill in a pending identifier by hand."""
+
+    nestle_id: str | None = None
+
+
 class BulkDeleteSamples(_LenientModel):
     sample_ids: Any | None = None
 

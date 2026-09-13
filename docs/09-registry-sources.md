@@ -254,13 +254,19 @@ https://localhost:49160/api/chemicals/upload/excel -F "file=@…"` (or
 
 ## What the notices mean, and what to do
 
-| Notice on the registry page | Meaning | What a person does |
-|---|---|---|
-| *N compounds still await an identifier from the screening data* | entries from the limited list, `nestle_id_pending: screening` | nothing yet — SD-1 fills them in when the NR screening data is loaded; or edit the entry and set `nestle_id` by hand |
-| *N entries share a CAS number with another entry* | `cas_shared_with` set by the export import | decide, per pair, whether they are one substance (merge with `merge_duplicate_chemicals.py`) or two (leave them; the flag stays as a record) |
-| *N compounds whose batches disagree on a field* | `batch_conflicts` set by the export import | open the entry, look at `batches` and `metadata`, correct the field by hand if the first batch was wrong |
+Every count on the banner is a link to the **attention page** —
+*Chemical Registry → Needs attention* — where the entries are listed with
+the buttons to act ([phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.md)).
 
-`GET /api/chemicals/notices/summary` answers the three counts for scripts.
+| Notice on the registry page | Meaning | What a person does, on the attention page |
+|---|---|---|
+| *N compounds still await an identifier from the screening data* | entries from the limited list, `nestle_id_pending: screening` | nothing yet — SD-1 fills them in when the NR screening data is loaded; or type the identifier in the **Pending identifiers** row and **Set** |
+| *N entries share an identifier with another entry* | two or more entries hold one CAS number, DTXSID or PubChem id (the import flagged them with `cas_shared_with` and its siblings; the page finds them from the data) | decide, per group, whether they are one substance — **Merge the others into** the survivor — or two — **Keep both, mark reviewed**; the mark stays on the entries as the record |
+| *N compounds whose batches disagree on a field* | `batch_conflicts` set by the export import | read each batch's value in the table; **Open the entry** and correct the field if the first batch was wrong; **Mark reviewed** |
+| *N entries whose formula does not match their name* | the chemistry check: a chain the formula cannot hold, or an element none of the entry's names explains | read the pair; **It is fine — mark reviewed**, or **Delete** (refused while rows are linked) |
+
+`GET /api/chemicals/notices/summary` answers the counts for scripts;
+`GET /api/chemicals/audit` answers the list. Reviewed items are not counted.
 
 ---
 

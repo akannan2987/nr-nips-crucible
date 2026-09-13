@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation } from 'react-router-dom'
+import { getChemicalNotices } from '../services/api'
 import {
   BeakerIcon,
   HomeIcon,
@@ -11,6 +12,7 @@ import {
   ExclamationTriangleIcon,
   CubeIcon,
   CommandLineIcon,
+  FlagIcon,
 } from '@heroicons/react/24/outline'
 
 const navigation = [
@@ -21,6 +23,8 @@ const navigation = [
     children: [
       { name: 'View Chemical Registry', href: '/chemicals', icon: EyeIcon },
       { name: 'Upload Chemicals (ELN)', href: '/chemicals/upload', icon: DocumentPlusIcon },
+      // CR-10: everything the registry wants a person to look at, with the buttons to act
+      { name: 'Needs attention', href: '/chemicals/attention', icon: FlagIcon, badge: 'attention' },
     ],
   },
   {
@@ -58,6 +62,22 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [expandedMenu, setExpandedMenu] = useState(null)
   const location = useLocation()
+  // CR-10: the count on the "Needs attention" item, refreshed on every page change
+  // so a merge or a review mark shows in the sidebar without a reload.
+  const [attention, setAttention] = useState(0)
+  useEffect(() => {
+    let alive = true
+    getChemicalNotices()
+      .then(({ data }) => { if (alive) setAttention(data?.attention || 0) })
+      .catch(() => { if (alive) setAttention(0) })
+    return () => { alive = false }
+  }, [location.pathname])
+  const badgeFor = (child) =>
+    child.badge === 'attention' && attention > 0 ? (
+      <span className="ml-auto text-[11px] font-semibold bg-amber-100 text-amber-800 rounded-full px-2 py-0.5">
+        {attention.toLocaleString()}
+      </span>
+    ) : null
 
   const toggleMenu = (name) => {
     setExpandedMenu(expandedMenu === name ? null : name)
@@ -133,6 +153,7 @@ export default function Layout() {
                         >
                           <child.icon className="h-4 w-4 mr-2" />
                           {child.name}
+                          {badgeFor(child)}
                         </Link>
                       ))}
                     </div>
@@ -204,7 +225,7 @@ export default function Layout() {
                     <div
                       className={classNames(
                         'overflow-hidden transition-all duration-200',
-                        expandedMenu === item.name ? 'max-h-48' : 'max-h-0'
+                        expandedMenu === item.name ? 'max-h-60' : 'max-h-0'
                       )}
                     >
                       <div className="ml-8 mt-1 space-y-1 pb-2">
@@ -221,6 +242,7 @@ export default function Layout() {
                           >
                             <child.icon className="h-4 w-4 mr-2" />
                             {child.name}
+                            {badgeFor(child)}
                           </Link>
                         ))}
                       </div>

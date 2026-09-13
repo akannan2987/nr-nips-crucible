@@ -19,6 +19,7 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Callable
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .models import Sample, Screening, Toxicology
@@ -57,6 +58,26 @@ def count_links(db: Session, targets: set[str] | None) -> dict[str, int]:
     counts = {label: len(rows) for label, rows in users.items()}
     counts["total"] = sum(counts.values())
     return counts
+
+
+def link_counts(db: Session) -> dict[str, int]:
+    """How many rows point at each chemical, keyed by chemical identifier.
+
+    The screening and toxicology tables carry the link in an indexed column,
+    so one grouped query answers for 49,000 rows without reading a document;
+    samples keep their list only in the document (lesson 30) and are few, so
+    those are read.
+    """
+    counts: dict[str, int] = defaultdict(int)
+    for model in (Screening, Toxicology):
+        stmt = select(model.chemical_id, func.count()).where(model.chemical_id.is_not(None)).group_by(model.chemical_id)
+        for chemical_id, n in db.execute(stmt):
+            counts[chemical_id] += n
+    for row in all_rows(db, Sample):
+        for chemical_id in (row.doc or {}).get("chemical_ids") or []:
+            if chemical_id:
+                counts[chemical_id] += 1
+    return dict(counts)
 
 
 def describe_links(counts: dict[str, int]) -> str:

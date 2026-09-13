@@ -592,6 +592,13 @@ photo and address. The name looks right in your contacts list. Everything you do
 
 ## Run the audit
 
+**In the browser, first:** *Chemical Registry → Needs attention*. The same
+list as below, with the buttons to act — merge, keep both, mark reviewed,
+set an identifier, delete — and every count on the registry banner is a
+link into it ([phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.md)).
+The terminal form is for people who prefer text, and for scripting; both
+call the same code, and a mark left in one is seen in the other.
+
 ```bash
 ./container-py.sh script audit_chemicals.py
 ```
@@ -773,9 +780,15 @@ rather than *wrongly identified*, which is the honest state.
 Two different CAS numbers can point at one compound — a substance and a variant
 of it. Production held `1-Docosanol` twice.
 
+**In the browser:** on *Needs attention*, every group of entries sharing an
+identifier has a radio for the survivor and **Merge the others into …**; the
+confirmation says who survives, who goes and how many rows move. From the
+terminal, for every duplicate the script can find, or for a pair by hand:
+
 ```bash
 ./container-py.sh script merge_duplicate_chemicals.py
 ./container-py.sh script merge_duplicate_chemicals.py --apply
+./container-py.sh script merge_duplicate_chemicals.py CHEM-000010 CHEM-000011 --apply   # a pair, the first survives
 ```
 
 It keeps the older entry, copies over any detail only the duplicate had,

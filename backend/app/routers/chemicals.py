@@ -13,6 +13,7 @@ from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, Upload
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from ..audit import audit_registry, mark_reviewed, registry_notices, set_identifier
 from ..compat import (
     js_or,
     now_iso,
@@ -27,11 +28,11 @@ from ..imports import (
     import_json_records,
     import_sdf_text,
     parse_json_records,
-    registry_notices,
 )
 from ..links import count_links, describe_links, unlink_targets
+from ..merge import MergeError, merge_entries
 from ..models import Chemical
-from ..schemas import BulkDeleteChemicals, BulkUpdateChemicals, ChemicalIn
+from ..schemas import AuditReviewIn, BulkDeleteChemicals, BulkUpdateChemicals, ChemicalIn, IdentifierIn, MergeIn
 from ..store import (
     all_docs,
     clear_all,
@@ -407,8 +408,72 @@ def clear_chemicals(
 
 @router.get("/notices/summary")
 def notices(db: Session = Depends(get_db)) -> dict[str, int]:
-    """GET /api/chemicals/notices/summary — what the registry page keeps showing until someone acts (CR-9)."""
+    """GET /api/chemicals/notices/summary — what the registry page keeps showing until someone acts (CR-9, CR-10)."""
     return registry_notices(db)
+
+
+# ---------------------------------------------------------- CR-10: audit --
+# The attention page and the audit script both call app.audit, so the browser
+# and the terminal list the same things and a mark left by one is seen by the
+# other.
+
+
+@router.get("/audit")
+def audit(everything: bool = Query(default=False), db: Session = Depends(get_db)) -> dict[str, Any]:
+    """GET /api/chemicals/audit — every flagged entry, grouped by kind, with the review marks.
+
+    `everything=true` also returns the entries the formula check passed (the
+    script's `--all`).
+    """
+    return audit_registry(db, with_links=True, everything=everything)
+
+
+@router.post("/audit/review")
+def review(body: AuditReviewIn, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """POST /api/chemicals/audit/review — mark entries reviewed for one key, or lift the mark.
+
+    Body: `{"chemical_ids": [...], "key": "shared:cas:58-08-2", "reviewed": true}`.
+    The key names what was looked at, as the audit reports it. Nothing is
+    written when any identifier is unknown (404).
+    """
+    ids = [str(x) for x in (body.chemical_ids or []) if x]
+    if not ids or not body.key:
+        raise HTTPException(status_code=400, detail="chemical_ids and key are required")
+    try:
+        changed = mark_reviewed(db, ids, body.key, bool(body.reviewed))
+    except KeyError as err:
+        raise HTTPException(status_code=404, detail=f"Chemical not found: {err.args[0]}") from None
+    return {"updated": changed, "key": body.key, "reviewed": bool(body.reviewed)}
+
+
+@router.post("/merge")
+def merge(body: MergeIn, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """POST /api/chemicals/merge — fold entries into one survivor, repointing every row first.
+
+    Body: `{"keep": "CHEM-000001", "remove": ["CHEM-000002"]}`. The survivor
+    takes any field it lacked; the removed entries' rows are repointed at it;
+    the flags naming them are cleaned; only then are they deleted.
+    """
+    remove = [str(x) for x in (body.remove or []) if x]
+    try:
+        return merge_entries(db, str(body.keep or ""), remove)
+    except MergeError as err:
+        raise HTTPException(status_code=400, detail=str(err)) from None
+    except KeyError as err:
+        raise HTTPException(status_code=404, detail=f"Chemical not found: {err.args[0]}") from None
+
+
+@router.post("/{chemical_id}/identifier")
+def fill_identifier(chemical_id: str, body: IdentifierIn, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """POST /api/chemicals/:id/identifier — set a pending identifier by hand; the pending flag goes."""
+    value = (body.nestle_id or "").strip()
+    if not value:
+        raise HTTPException(status_code=400, detail="nestle_id is required")
+    try:
+        doc = set_identifier(db, chemical_id, value)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Chemical not found") from None
+    return {"message": "Identifier set", "chemical_id": chemical_id, "nestle_id": doc["nestle_id"]}
 
 
 @router.get("/{chemical_id}")

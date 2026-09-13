@@ -474,6 +474,61 @@ There is no "are you sure?" step — the request *is* the confirmation. Only che
 
 ---
 
+## Reviewing what needs a person's eye
+
+The registry keeps a list of things it will not decide for you — two
+entries with one identifier, batches that disagree, a formula the names
+do not explain. The browser shows it under *Chemical Registry → Needs
+attention*; this is the same list from the API.
+
+```bash
+# the counts the banner shows
+curl --noproxy '*' -sS http://localhost:49160/api/chemicals/notices/summary
+```
+
+```json
+{"nestle_id_pending":0,"cas_shared":2,"batch_conflicts":0,"formula":0,"attention":1}
+```
+
+```bash
+# the list itself: one group of two entries sharing a CAS number
+curl --noproxy '*' -sS http://localhost:49160/api/chemicals/audit | python3 -m json.tool | head -30
+```
+
+You get `counts`, then `shared` — one object per identifier held by more
+than one entry, the entries side by side with how many rows point at each —
+then `batch_conflicts`, `pending` and `formula`. Two ways to close a group:
+
+```bash
+# they are two substances that happen to share a number: keep both, mark reviewed
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/chemicals/audit/review \
+  -H 'Content-Type: application/json' \
+  -d '{"chemical_ids": ["CHEM-000010", "CHEM-000011"], "key": "shared:cas:121-33-5", "reviewed": true}'
+```
+
+```json
+{"updated":2,"key":"shared:cas:121-33-5","reviewed":true}
+```
+
+```bash
+# they are one substance: merge the second into the first
+curl --noproxy '*' -sS -X POST http://localhost:49160/api/chemicals/merge \
+  -H 'Content-Type: application/json' \
+  -d '{"keep": "CHEM-000010", "remove": ["CHEM-000011"]}'
+```
+
+```json
+{"kept":"CHEM-000010","removed":["CHEM-000011"],"rows_repointed":{"screening":3,"total":3},"message":"Merged 1 entry into CHEM-000010; 3 rows repointed"}
+```
+
+The order inside the merge is the point: the rows are repointed *before*
+the entry is deleted, so nothing is ever left pointing at a missing entry.
+Ask for the survivor afterwards and you will find `merged_entries` on it, and
+`reviewed` on anything you marked — both are ordinary fields of the
+document, so they travel with an export. Send `"reviewed": false` to lift a
+mark. Everything here has a button on the attention page and a line in
+`./container-py.sh script audit_chemicals.py`; all three call the same code.
+
 ## Why some requests are refused (and that's correct)
 
 A refusal is usually the system doing its job. Three you are likely to meet:

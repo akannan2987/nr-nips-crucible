@@ -17,6 +17,42 @@ from pathlib import Path
 
 OUT = Path(__file__).resolve().parent
 
+def fig_attention_page() -> None:
+    W, H = 940, 440
+    b = text(W/2, 34, "The attention page (CR-10): one audit, three doors, and the mark a person leaves", 16, INK, "middle", "bold")
+    # the registry with its four kinds of flag
+    b += box(30, 70, 220, 250, PANEL, COLOURS["chemical"], 10)
+    b += symbol("chemical", 60, 96, 14)
+    b += text(150, 100, "the registry", 12, INK, "middle", "bold")
+    for i, (label, n) in enumerate((("shared identifiers", "221 groups"), ("batch conflicts", "3"), ("pending identifiers", "0"), ("doubtful formulas", "125"))):
+        y = 128 + i * 44
+        b += box(48, y, 184, 34, "#fff7ed", COLOURS["screening"], 6)
+        b += text(140, y + 14, label, 10.5, INK, "middle", "bold")
+        b += text(140, y + 27, n + " on the real export", 9.5, MUTED)
+    # the one audit module
+    b += arrow(252, 195, 330, 195, LINE)
+    b += box(332, 150, 200, 90, "#eef2ff", COLOURS["chemical"], 8)
+    b += text(432, 176, "app/audit.py", 13, COLOURS["chemical"], "middle", "bold")
+    b += lines(432, 198, ["groups, lists, ranks;", "reads the review marks"], 10.5, INK, "middle", 15)
+    # three doors
+    doors = (("browser · Needs attention", ["merge · keep both", "mark reviewed · set the identifier"], 74),
+             ("API · GET /api/chemicals/audit", ["POST …/audit/review · …/merge", "POST …/:id/identifier"], 176),
+             ("terminal · audit_chemicals.py", ["the same list, printed;", "merge_duplicate_chemicals.py"], 278))
+    for title, rows, y in doors:
+        b += path_arrow(f"M 532 195 L 600 {y + 30}", LINE)
+        b += box(602, y, 300, 62, PAPER, LINE, 8)
+        b += text(752, y + 20, title, 11.5, INK, "middle", "bold")
+        b += lines(752, y + 38, rows, 10, MUTED, "middle", 13)
+    # the mark
+    b += box(332, 262, 200, 58, PAPER, COLOURS["chemical"], 6, dash=True)
+    b += lines(432, 284, ["reviewed: {key: timestamp}", "stored on the entry itself"], 10.5, INK, "middle", 15)
+    b += path_arrow("M 600 200 L 532 275", COLOURS["chemical"], dash=True)
+    b += text(W/2, 378, "the page, the API and the script call one module, so they never disagree about what is flagged;", 11, INK)
+    b += text(W/2, 396, "a mark left by one route is seen by the others, and a reviewed item stops counting on the banner without disappearing.", 11, INK)
+    b += text(W/2, 418, "everyday version: one inspection list on the wall, with a pen tied to it — whoever ticks an item, everybody sees the tick", 10.5, MUTED)
+    write("fig_attention_page.svg", svg(W, H, "One audit module read by the browser's attention page, the API and the terminal script; the review mark is stored on the entry", b))
+
+
 # ---------------------------------------------------------------- palette --
 INK = "#1f2937"        # text
 MUTED = "#6b7280"      # secondary text
@@ -614,5 +650,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, cover, logo):
+              fig_requirements_lock, fig_attention_page, cover, logo):
         f()

@@ -586,6 +586,12 @@ nicotine's formula, o-xylene holding an antibiotic's, three entries named
 source file were correct; the fault was in how they were looked up (see
 [When something goes wrong](#when-something-goes-wrong)).
 
+Since v2.16.0 the audit is a page: *Chemical Registry → Needs attention*
+lists the same findings with the buttons to act on each, and every count on
+the registry banner links into it ([phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.md)).
+The page, `GET /api/chemicals/audit` and the script below call one module,
+so a mark left in one is seen by the others. The terminal form:
+
 ```bash
 ./container-py.sh script audit_chemicals.py
 ```
@@ -593,7 +599,9 @@ source file were correct; the fault was in how they were looked up (see
 **You should see:**
 
 ```
-664 entries checked (0 skipped for having no formula).
+0 things need attention (0 shared identifiers, 0 batch conflicts, 0 pending identifiers, 0 doubtful formulas); 0 reviewed.
+
+664 entries checked for chemistry (0 skipped for having no formula).
 0 look doubtful.
 ```
 
@@ -756,10 +764,17 @@ message; a note beside the delete buttons says what the rule is.
 Two CAS numbers can legitimately point at one compound. Production held
 `1-Docosanol` twice, as `30303-65-2` and `661-19-8`, both PubChem 12620.
 
+From the browser, a group of entries sharing an identifier is merged on the
+attention page (choose the survivor, **Merge the others into …**); from the
+API, `POST /api/chemicals/merge`; from the terminal:
+
 ```bash
-./container-py.sh script merge_duplicate_chemicals.py
-./container-py.sh script merge_duplicate_chemicals.py --apply
+./container-py.sh script merge_duplicate_chemicals.py                                     # find and report
+./container-py.sh script merge_duplicate_chemicals.py --apply                             # merge what it found
+./container-py.sh script merge_duplicate_chemicals.py CHEM-000010 CHEM-000011 --apply     # a pair by hand
 ```
+
+All three run `app/merge.py`, so the order below is the only order there is.
 
 It keeps the **oldest** entry, copies over any field only the duplicate carried,
 repoints every screening, sample and toxicology row, and deletes only then.

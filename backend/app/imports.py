@@ -350,17 +350,6 @@ def _flag_shared(registry: _Registry, field: str, flag: str, values: set[str]) -
     return flagged
 
 
-def registry_notices(db: Session) -> dict[str, int]:
-    """What the Chemical Registry page keeps showing until someone acts."""
-    pending = shared = conflicts = 0
-    for row in all_rows(db, Chemical):
-        doc = row.doc or {}
-        pending += 1 if doc.get("nestle_id_pending") else 0
-        shared += 1 if (doc.get("cas_shared_with") or doc.get("dtx_shared_with") or doc.get("pubchem_shared_with")) else 0
-        conflicts += 1 if doc.get("batch_conflicts") else 0
-    return {"nestle_id_pending": pending, "cas_shared": shared, "batch_conflicts": conflicts}
-
-
 # ------------------------------------------------------- spreadsheet rows --
 def import_spreadsheet_rows(db: Session, data: list[dict[str, Any]]) -> dict[str, Any]:
     """The column-name mapping the upload page has always used, for CSV/TSV/XLSX rows."""

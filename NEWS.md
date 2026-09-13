@@ -10,6 +10,62 @@ change you are getting.
 
 ---
 
+## v2.16.0 — 2026-09-09 — "The list on the door, with a pen"
+
+Phase CR-10, pulled ahead of the screening-data build the morning the
+banner was first read on production: *until then it runs from the
+terminal* is not something the registry's users can act on.
+Tutorial: [`docs/04-phase-tutorials/phase-cr-10-attention-page.md`](docs/04-phase-tutorials/phase-cr-10-attention-page.md).
+
+**Added**
+- **Needs attention**, a page under Chemical Registry listing everything
+  the registry wants a person to look at, with the buttons to act: shared
+  identifiers side by side with the other holders (**merge**, or **keep
+  both**), batch conflicts with each batch's value (**mark reviewed**),
+  pending identifiers (**set it**), doubtful formulas (**mark reviewed**,
+  or **delete**, refused while rows are linked). The banner's counts link
+  to its sections; the sidebar shows the open count.
+- **A review mark** on the entry — `reviewed: {"<what>": "<when>"}` — so a
+  decision is data, round-trips through export and import, is visible from
+  every route, and can be lifted. A reviewed item stays listed, greyed,
+  and stops counting on the banner.
+- **One audit module** (`app/audit.py`) and **one merge module**
+  (`app/merge.py`) behind the page, four endpoints (`GET /api/chemicals/audit`,
+  `POST /api/chemicals/audit/review`, `POST /api/chemicals/merge`,
+  `POST /api/chemicals/:id/identifier`) and the two scripts, which are now
+  callers: the browser and the terminal cannot disagree about what is
+  flagged. The merge script also takes identifiers by hand. Eight tests;
+  the suite is 137.
+
+**Changed**
+- Shared identifiers are found **from the data** — every CAS number, DTXSID
+  and PubChem id held by two or more entries — not from the flags the
+  import set, so an entry that arrived by any route is seen and a merged
+  entry stops being listed. On the real export that is 221 groups (8 CAS,
+  20 DTXSID, 193 PubChem), 419 entries.
+- The formula check reads **every name the entry carries** — synonyms,
+  other names, the IUPAC and PubChem names — before saying an element is
+  unexplained, and no longer reads `tridecafluoro…` as a thirteen-carbon
+  chain. On the real export the findings went from 522 to 125 of 6,550
+  entries with a formula; every one removed was a name the entry itself
+  explained.
+- `GET /api/chemicals/notices/summary` gains `formula` and `attention`; every
+  count excludes reviewed items. The three original keys keep their
+  meaning.
+
+**Deliberately not done**
+- Merge from the registry table for a hand-picked pair (CR-8 is now that
+  small step); editing a disputed column in place; CSV/XLSX of the list
+  (SH-7); a name on the review mark (needs SH-3).
+
+**Deploy note**
+- Backend, client and scripts changed: the server **rebuilds**, after a
+  backup. The audit takes about 0.8 s on 12,539 entries; the banner and the
+  sidebar call it, so the registry page is that much slower to show its
+  counts.
+
+---
+
 ## v2.15.0 — 2026-09-09 — "A bigger window, and a way to turn the pages"
 
 Phase CR-2 with CR-1, pulled forward the day the real export was loaded.

@@ -157,7 +157,7 @@ file recorded. Detail: [`09-chemical-identification.md` → Removing entries](09
 
 | Browser | API | Terminal |
 |---|---|---|
-| not yet ([CR-8](05-roadmap.md#cr--chemical-registry)) | not yet | `merge_duplicate_chemicals.py` — finds entries that describe one substance (same PubChem compound, or two CAS numbers for one substance), repoints every measurement to the survivor first, deletes the other second; report, then `--apply` |
+| **Chemical Registry → Needs attention**: in a *shared identifier* group, choose the survivor, **Merge the others into …**, read the confirmation (who survives, who goes, how many rows are repointed), **Yes, merge**. A pair with no shared identifier cannot be merged from the browser yet ([CR-8](05-roadmap.md#cr--chemical-registry)) | `POST /api/chemicals/merge` with `{"keep": "CHEM-…", "remove": ["CHEM-…"]}` — the survivor takes what it lacked, every row is repointed first, then the others are deleted | `./container-py.sh script merge_duplicate_chemicals.py` finds entries describing one substance (same PubChem compound, or one name) and reports; `--apply` merges; `merge_duplicate_chemicals.py CHEM-000010 CHEM-000011 --apply` merges a pair by hand. All three routes run the same module |
 
 Detail: [`09-chemical-identification.md` → Merging entries](09-chemical-identification.md#merging-entries-that-describe-one-substance).
 
@@ -165,7 +165,7 @@ Detail: [`09-chemical-identification.md` → Merging entries](09-chemical-identi
 
 | Browser | API | Terminal |
 |---|---|---|
-| the banner at the top of the Chemical Registry page: *Needs a person's eye* — entries awaiting an identifier from screening data, entries sharing an identifier with another, compounds whose batches disagree ([what each means](09-registry-sources.md#what-the-notices-mean-and-what-to-do)) | `curl --noproxy '*' -sSk https://localhost:49160/api/chemicals/notices/summary` for the three counts; `./verify-deploy.sh https://localhost:49160` from the repository folder on the server: no dangling links, sequential identifiers, no duplicates by CAS, PubChem id or name (flagged pairs excepted) | `./container-py.sh script audit_chemicals.py` — lists every flagged entry, then the entries whose formula contradicts their own name; report only |
+| **Chemical Registry → Needs attention** (also every count on the registry banner, and the sidebar's amber number): shared identifiers side by side, batch conflicts with each batch's value, pending identifiers, doubtful formulas — with **Merge**, **Keep both — mark reviewed**, **Mark reviewed**, **Set**, **Delete**; *Show reviewed* brings the decided ones back, **Reopen** lifts a mark ([what each means](09-registry-sources.md#what-the-notices-mean-and-what-to-do)) | `curl --noproxy '*' -sSk https://localhost:49160/api/chemicals/audit` for the list, `…/notices/summary` for the counts, `POST …/audit/review` to mark; `./verify-deploy.sh https://localhost:49160` from the repository folder on the server: no dangling links, sequential identifiers, no duplicates by CAS, PubChem id or name (flagged pairs excepted) | `./container-py.sh script audit_chemicals.py` — the same list, printed (`--json` for the endpoint's answer); report only |
 
 Detail: [`09-chemical-identification.md` → Auditing what is registered](09-chemical-identification.md#auditing-what-is-registered).
 

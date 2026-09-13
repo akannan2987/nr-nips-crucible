@@ -3,16 +3,18 @@
 
 Two entries can end up describing one compound when they carry different CAS
 numbers that PubChem resolves to the same record — a substance and its hydrate,
-for instance. The linker now prevents this, but entries created before that are
-still there.
+for instance — or when a source registered one substance twice.
 
 Merging keeps the **oldest** entry (the lowest identifier), repoints every
 screening, sample and toxicology row at it, fills in any field the survivor was
 missing from the one being removed, and only then deletes the duplicate. Rows
-are never left pointing at an entry that no longer exists.
+are never left pointing at an entry that no longer exists. The merge itself
+lives in `app.merge` and is the same one the browser's attention page runs.
 
-    .venv/bin/python scripts/merge_duplicate_chemicals.py            # report only
-    .venv/bin/python scripts/merge_duplicate_chemicals.py --apply    # merge
+    .venv/bin/python scripts/merge_duplicate_chemicals.py                          # report only
+    .venv/bin/python scripts/merge_duplicate_chemicals.py --apply                  # merge every group found
+    .venv/bin/python scripts/merge_duplicate_chemicals.py CHEM-000001 CHEM-000002  # merge these into the first
+    .venv/bin/python scripts/merge_duplicate_chemicals.py CHEM-000001 CHEM-000002 --apply
 """
 
 import argparse
@@ -25,11 +27,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("AUTO_INIT_DB", "false")
 
 from app.database import SessionLocal  # noqa: E402
-from app.models import Chemical, Sample, Screening, Toxicology  # noqa: E402
+from app.links import link_counts  # noqa: E402
+from app.merge import MergeError, merge_entries  # noqa: E402
+from app.models import Chemical  # noqa: E402
 from app.store import all_rows  # noqa: E402
 from app.utils.cleaning import collapse_whitespace  # noqa: E402
-
-LINKED_MODELS = (Screening, Sample, Toxicology)
 
 
 def groups_of_duplicates(rows) -> list[list]:
@@ -52,62 +54,55 @@ def groups_of_duplicates(rows) -> list[list]:
     return found
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("ids", nargs="*", help="merge these entries into the FIRST one (default: find duplicates)")
     parser.add_argument("--apply", action="store_true", help="write changes (default: report)")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     db = SessionLocal()
-    chemicals = all_rows(db, Chemical)
-    duplicates = groups_of_duplicates(chemicals)
+    counts = link_counts(db)
 
-    if not duplicates:
-        print("No duplicate chemicals found.")
-        return 0
+    if args.ids:
+        if len(args.ids) < 2:
+            print("Give at least two identifiers: the survivor first, then the entries to fold into it.")
+            return 2
+        plan = [(args.ids[0], args.ids[1:])]
+    else:
+        duplicates = groups_of_duplicates(all_rows(db, Chemical))
+        if not duplicates:
+            print("No duplicate chemicals found.")
+            return 0
+        plan = []
+        for group in duplicates:
+            group.sort(key=lambda r: r.doc.get("chemical_id") or "")
+            plan.append((group[0].doc["chemical_id"], [r.doc["chemical_id"] for r in group[1:]]))
 
-    # Which rows point at which chemical, gathered once.
-    users: dict[str, list] = defaultdict(list)
-    for model in LINKED_MODELS:
-        for row in all_rows(db, model):
-            if row.chemical_id:
-                users[row.chemical_id].append(row)
-
-    moved = removed = 0
-    for group in duplicates:
-        group.sort(key=lambda r: r.doc.get("chemical_id") or "")
-        keep, drop = group[0], group[1:]
-        keep_doc = dict(keep.doc)
-        print(f"\n{keep.doc['chemical_id']}  {keep.doc.get('name')}  <- keeping")
-        for row in drop:
-            n = len(users.get(row.doc["chemical_id"], []))
-            print(f"  {row.doc['chemical_id']}  {row.doc.get('name')}  ({n} rows point at it)")
-            # Anything the survivor lacks is worth carrying over rather than
-            # losing with the entry being removed.
-            for key, value in row.doc.items():
-                if key in ("id", "chemical_id", "created_at", "updated_at"):
-                    continue
-                if keep_doc.get(key) in (None, "", [], {}):
-                    keep_doc[key] = value
-            for user in users.get(row.doc["chemical_id"], []):
-                doc = dict(user.doc)
-                doc["chemical_id"] = keep_doc["chemical_id"]
-                user.doc = doc
-                user.chemical_id = keep_doc["chemical_id"]
-                moved += 1
+    by_id = {row.doc["chemical_id"]: row.doc for row in all_rows(db, Chemical)}
+    removed = moved = 0
+    for keep, drop in plan:
+        print(f"\n{keep}  {by_id.get(keep, {}).get('name', '(unknown)')}  <- keeping")
+        for chemical_id in drop:
+            n = counts.get(chemical_id, 0)
+            print(f"  {chemical_id}  {by_id.get(chemical_id, {}).get('name', '(unknown)')}  ({n} rows point at it)")
+            moved += n
             removed += 1
 
-        keep.doc = keep_doc
-
-    print(f"\n{removed} duplicate entries would be removed, {moved} rows repointed.")
-    if args.apply:
-        for group in duplicates:
-            for row in group[1:]:
-                db.delete(row)
-        db.commit()
-        print("Applied.")
-    else:
-        db.rollback()
+    if not args.apply:
+        print(f"\n{removed} entries would be removed, {moved} rows repointed.")
         print("Report only — re-run with --apply to merge.")
+        return 0
+
+    done_removed = done_moved = 0
+    for keep, drop in plan:
+        try:
+            result = merge_entries(db, keep, drop)
+        except (MergeError, KeyError) as err:
+            print(f"  not merged ({keep}): {err}")
+            continue
+        done_removed += len(result["removed"])
+        done_moved += result["rows_repointed"]["total"]
+    print(f"\n{done_removed} entries removed, {done_moved} rows repointed. Applied.")
     return 0
 
 

@@ -149,7 +149,9 @@ def test_limited_list_registers_with_a_pending_identifier(client):
     body = res.json()
     assert body["template"] == "limited_list" and body["inserted"] == 3
     assert body["pending_identifiers"] == 2
-    assert client.get("/api/chemicals/notices/summary").json() == {"nestle_id_pending": 2, "cas_shared": 0, "batch_conflicts": 0}
+    summary = client.get("/api/chemicals/notices/summary").json()
+    assert (summary["nestle_id_pending"], summary["cas_shared"], summary["batch_conflicts"]) == (2, 0, 0)
+    assert summary["attention"] == 2 + summary["formula"]   # CR-10: the banner total counts every open item
     caff = client.get("/api/chemicals?search=Caffeine").json()["data"][0]
     assert caff["nestle_id_pending"] == "screening" and "nestle_id" not in caff
     assert caff["supplier"] == "10001"

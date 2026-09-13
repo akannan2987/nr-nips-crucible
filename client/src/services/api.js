@@ -28,6 +28,13 @@ export const uploadChemicalsExcel = (formData) =>
   });
 export const getChemicalsDropdown = () => api.get('/chemicals/list/dropdown');
 export const getChemicalNotices = () => api.get('/chemicals/notices/summary');
+// CR-10: the attention page — every flagged entry, and the marks a person leaves.
+export const getRegistryAudit = () => api.get('/chemicals/audit');
+export const reviewAuditItems = (chemical_ids, key, reviewed = true) =>
+  api.post('/chemicals/audit/review', { chemical_ids, key, reviewed });
+export const mergeChemicals = (keep, remove) => api.post('/chemicals/merge', { keep, remove });
+export const setChemicalIdentifier = (chemicalId, nestle_id) =>
+  api.post(`/chemicals/${chemicalId}/identifier`, { nestle_id });
 export const getChemicalColumns = () => api.get('/chemicals/columns');
 export const bulkDeleteChemicals = (chemical_ids) => api.post('/chemicals/bulk/delete', { chemical_ids });
 export const bulkUpdateChemicals = (chemical_ids, updates) => api.post('/chemicals/bulk/update', { chemical_ids, updates });

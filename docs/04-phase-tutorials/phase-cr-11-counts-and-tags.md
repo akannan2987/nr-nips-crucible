@@ -204,6 +204,13 @@ detail dialog shows *Where it came from* under the structure.
 **If instead** the strip is missing: the summary call failed; the table
 still works. Check `curl --noproxy '*' -sS http://localhost:49160/api/chemicals/summary`.
 
+**If instead** the table is empty and says *No chemicals match the current
+filters*: read the list under it — a search, a batch filter, ticked tags
+or a column filter is narrowing the table — and press **Clear all
+filters**. (Before v2.18.1 a column filter typed in one view silently
+carried into the next and could hide every row; filters now belong to the
+view they were typed in.)
+
 ---
 
 ## Step 5 — Tests, build, rebuild

@@ -10,6 +10,26 @@ change you are getting.
 
 ---
 
+## v2.18.1 — 2026-09-14 — "An empty table now says why"
+
+**Fixed**
+- A text filter typed under a column heading stayed active when the view
+  changed, and a filter on a column the new view does not have excluded
+  every row. The table then disappeared — and with it the filter boxes, so
+  nothing showed what was hiding 12,539 compounds; clicking tags or views
+  only narrowed further. Found by the owner an hour after v2.18.0 went
+  live. Column filters now belong to the view they were typed in and are
+  cleared when the view changes; an empty table lists every filter that is
+  narrowing it — search, batch filter, tags, column filters — with a
+  **Clear all filters** button and the number of compounds registered.
+
+**Deploy note**
+- Client only: the server **rebuilds**. Until then, **Clear sort and
+  filters** at the right of the *View:* toolbar, or a reload, brings the
+  rows back.
+
+---
+
 ## v2.18.0 — 2026-09-14 — "Where every compound came from, at a glance"
 
 Phase CR-11, the first of the owner's two requests of 2026-09-14.

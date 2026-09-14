@@ -156,6 +156,31 @@ export default function ChemicalsView() {
     setPagination((p) => ({ ...p, page: 1 }))
   }
 
+  // v2.18.1: column filters belong to the view they were typed in. Carried
+  // into another view, a filter on a column that view does not have excluded
+  // every row — and the empty table hid the boxes, so nothing showed why.
+  const switchView = (key) => {
+    setViewMode(key)
+    setColFilters({})
+    setPagination((p) => ({ ...p, page: 1 }))
+  }
+
+  // Everything that can narrow the table, named, so an empty table can say why.
+  const narrowing = [
+    ...(search ? [`search "${search}"`] : []),
+    ...(batchMode !== 'all' ? [batchMode === 'one' ? 'one batch' : 'several batches'] : []),
+    ...(selectedTags.length ? [`tags: ${selectedTags.join(selectedTags.length > 1 && tagsMatch === 'any' ? ' or ' : ' and ')}`] : []),
+    ...Object.entries(colFilters).filter(([, v]) => v).map(([k, v]) => `${k} contains "${v}"`),
+  ]
+  const clearEverything = () => {
+    setSearch('')
+    setBatchMode('all')
+    setSelectedTags([])
+    setColFilters({})
+    setSort({ key: null, order: 'asc' })
+    setPagination((p) => ({ ...p, page: 1 }))
+  }
+
   // The columns of the two generic views. Complete: the chosen columns, in the
   // data's order. Batches: the compound's core fields, the batch position, then
   // every batch column the data has.
@@ -310,7 +335,7 @@ export default function ChemicalsView() {
               <button
                 key={key}
                 title={title}
-                onClick={() => { setBatchMode(key); if (viewMode === 'batches' && key === 'all') setViewMode('compact'); setPagination((p) => ({ ...p, page: 1 })) }}
+                onClick={() => { setBatchMode(key); if (viewMode === 'batches' && key === 'all') switchView('compact'); else setPagination((p) => ({ ...p, page: 1 })) }}
                 className={`px-3 py-1 rounded-lg border ${batchMode === key && viewMode !== 'batches' ? 'bg-pandora-600 border-pandora-600 text-white' : batchMode === key ? 'bg-pandora-100 border-pandora-300 text-pandora-800' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}`}
               >
                 {label} <span className="font-semibold">{n.toLocaleString()}</span>
@@ -318,7 +343,7 @@ export default function ChemicalsView() {
             ))}
             <button
               title="One row per batch of a compound — the Batches view"
-              onClick={() => { setViewMode('batches'); setPagination((p) => ({ ...p, page: 1 })) }}
+              onClick={() => switchView('batches')}
               className={`px-3 py-1 rounded-lg border ${viewMode === 'batches' ? 'bg-pandora-600 border-pandora-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}`}
             >
               Batch rows <span className="font-semibold">{summary.batch_rows.toLocaleString()}</span>
@@ -361,7 +386,7 @@ export default function ChemicalsView() {
         {[['compact', 'Compact'], ['complete', 'Complete'], ['batches', 'Batches']].map(([key, label]) => (
           <button
             key={key}
-            onClick={() => { setViewMode(key); setPagination((p) => ({ ...p, page: 1 })) }}
+            onClick={() => switchView(key)}
             className={`px-3 py-1 rounded-lg ${viewMode === key ? 'bg-pandora-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
             title={key === 'compact' ? 'The usual columns' : key === 'complete' ? 'Every column the entries have, chosen below' : 'One row per batch of a compound'}
           >
@@ -581,10 +606,27 @@ export default function ChemicalsView() {
           </div>
         ) : chemicals.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">No chemicals found</p>
-            <Link to="/chemicals/upload" className="text-pandora-600 hover:text-pandora-700 mt-2 inline-block">
-              Upload your first chemicals →
-            </Link>
+            {narrowing.length > 0 ? (
+              <>
+                <p className="text-gray-700 font-medium">No chemicals match the current filters</p>
+                <ul className="text-sm text-gray-500 mt-2 space-y-0.5">
+                  {narrowing.map((n) => <li key={n}>{n}</li>)}
+                </ul>
+                <button onClick={clearEverything} className="mt-4 px-4 py-2 bg-pandora-600 text-white rounded-lg hover:bg-pandora-700 text-sm">
+                  Clear all filters
+                </button>
+                {summary && summary.total > 0 && (
+                  <p className="text-xs text-gray-400 mt-3">{summary.total.toLocaleString()} compounds are registered; the filters above hide them.</p>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-gray-500">No chemicals found</p>
+                <Link to="/chemicals/upload" className="text-pandora-600 hover:text-pandora-700 mt-2 inline-block">
+                  Upload your first chemicals →
+                </Link>
+              </>
+            )}
           </div>
         ) : viewMode !== 'compact' ? (
           <div className="overflow-x-auto">

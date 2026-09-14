@@ -6,10 +6,11 @@ shapes, same messages, same status codes — including the quirks (the
 """
 
 import json
+import time
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, Request, UploadFile
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -42,10 +43,24 @@ from ..store import (
     replace_doc,
 )
 
-router = APIRouter(prefix="/api/chemicals", tags=["chemicals"])
+# The discovered-columns answer (CR-2) is cached. It goes stale two ways: a
+# write through this router (any non-GET request bumps `epoch`, so the next
+# GET rebuilds), and a write from outside the process — the import script
+# inside the container, a direct Python session on a Mac — which nothing here
+# can see, so the cache also expires after `_COLUMNS_TTL` seconds. Keying on
+# the entry count alone missed a re-import that updated every entry in place
+# (production, 2026-09-14); keying on the newest `updated_at` cost a full
+# scan of every document per call.
+_COLUMNS_CACHE: dict[str, Any] = {"epoch": 0}
+_COLUMNS_TTL = 30.0
 
 
-_COLUMNS_CACHE: dict[str, Any] = {}
+def _note_write(request: Request) -> None:
+    if request.method != "GET":
+        _COLUMNS_CACHE["epoch"] = _COLUMNS_CACHE.get("epoch", 0) + 1
+
+
+router = APIRouter(prefix="/api/chemicals", tags=["chemicals"], dependencies=[Depends(_note_write)])
 
 # Keys never offered as table columns: the row's own id, and the large nested
 # values that have their own presentation (batches as a view, the structure
@@ -165,12 +180,14 @@ def chemical_columns(db: Session = Depends(get_db)) -> dict[str, Any]:
 
     Top-level fields in first-seen order, then every key kept under `metadata`
     as `metadata.<key>`, then every key seen inside `batches` as `batch.<key>`;
-    each with how many entries carry a value. Cached against the entry count,
-    like the screening table's columns.
+    each with how many entries carry a value. Cached against the entry count
+    and the write counter, for at most `_COLUMNS_TTL` seconds (see the note
+    at the top of this file).
     """
     count = db.scalar(select(func.count()).select_from(Chemical)) or 0
+    cache_key = (count, _COLUMNS_CACHE["epoch"])  # not `key`: the loops below reuse that name
     cached = _COLUMNS_CACHE.get("payload")
-    if cached is not None and _COLUMNS_CACHE.get("key") == count:
+    if cached is not None and _COLUMNS_CACHE.get("key") == cache_key and time.monotonic() - _COLUMNS_CACHE.get("at", 0) < _COLUMNS_TTL:
         return cached
 
     docs = all_docs(db, Chemical)
@@ -205,8 +222,9 @@ def chemical_columns(db: Session = Depends(get_db)) -> dict[str, Any]:
         ],
         "batch_columns": [{"key": f"batch.{k}", "label": k} for k in batch_keys],
     }
-    _COLUMNS_CACHE["key"] = count
+    _COLUMNS_CACHE["key"] = cache_key
     _COLUMNS_CACHE["payload"] = payload
+    _COLUMNS_CACHE["at"] = time.monotonic()
     return payload
 
 

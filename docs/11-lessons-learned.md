@@ -266,6 +266,27 @@ command does there.
 
 ---
 
+**33. A cache keyed on a count cannot see an update.** The registry's
+column list — every column the entries have — is discovered by reading
+every entry, so the answer was cached and rebuilt only when the number of
+entries changed. Then the export was re-imported on production to pick up
+the batch values a fix had started keeping: 12,539 entries updated, none
+added. The count did not move; the cache did not move; the page went on
+showing 10 batch columns where 34 had just been written, and would have
+until the next restart. The first fix — key the cache on the newest
+`updated_at` as well — was right and cost a full scan of every document on
+every call, a second on this registry, which is worse than the bug. The
+cache is now invalidated by any write through the chemicals API and expires
+after thirty seconds for writes made from outside the process, which the
+import script is. Found because the deploy check's question was asked
+again after the import: "how many batch columns?" *Lesson: a cache key must
+change with everything the cached answer depends on, not with the one
+thing that is cheap to ask; and where a writer exists that the cache cannot
+see, the cache must expire on its own.* *The shape:* a status that cannot
+change.
+
+---
+
 ## The one rule they add up to
 
 Documentation detailed enough to be followed literally is documentation

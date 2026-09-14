@@ -273,7 +273,7 @@ numbers as numbers, missing values last; `filters={"column":"text",…}` (URL-en
 JSON) keeps rows whose column contains the text. Without these parameters the
 answer is exactly as documented below. `GET /chemicals/columns` lists every
 column the entries have — `columns` (key, label, group `field`|`metadata`, filled,
-coverage) and `batch_columns` — cached against the entry count.
+coverage) and `batch_columns` — cached; invalidated by any write through this API, and refreshed within 30 seconds after a write from outside the process (the import script).
 
 Get paginated list of all chemicals with optional search.
 

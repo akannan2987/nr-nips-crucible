@@ -291,8 +291,10 @@ copy on 2026-09-09 and are what to expect on the server.
 direct Python import on a Mac, the running application may answer stale
 counts for a moment: its pooled database connection holds the snapshot it
 last saw, until its next write or a `./container-py.sh restart`. The
-data is there; the view catches up. On the server, loading through the
-shortcut or the browser writes through the application and shows at once.
+data is there; the view catches up. The column list is the one answer
+that is cached: after a script import it refreshes within thirty seconds
+(v2.16.1). On the server, loading through the browser writes through the
+application and shows at once.
 
 Clean up the synthetic entries afterwards: on the registry page tick them
 and **Delete Selected**, or `./container-py.sh script remove_chemicals.py --all --apply` on a test copy only.

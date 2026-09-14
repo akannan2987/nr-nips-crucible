@@ -10,6 +10,29 @@ change you are getting.
 
 ---
 
+## v2.16.1 — 2026-09-14 — "A count that cannot see an update"
+
+**Fixed**
+- `GET /api/chemicals/columns` kept answering the old columns after the
+  export was re-imported on the server: 10 batch columns where 34 had just
+  been written. The answer was cached against the number of entries, and a
+  re-import that updates every entry in place leaves that number exactly
+  where it was. The cache is now also invalidated by any write through the
+  chemicals API, and expires after 30 seconds for writes made from outside
+  the running process (the import script, a direct Python session). Two
+  tests; the suite is 139. Lesson 33.
+
+**Deliberately not done**
+- Keying the cache on the newest `updated_at`: correct, but it cost a full
+  scan of every document on every call — a second on 12,539 entries —
+  which is worse than the bug.
+
+**Deploy note**
+- Backend only: the server **rebuilds**. Until then, `./container-py.sh
+  restart` after any script import refreshes the columns.
+
+---
+
 ## v2.16.0 — 2026-09-09 — "The list on the door, with a pen"
 
 Phase CR-10, pulled ahead of the screening-data build the morning the

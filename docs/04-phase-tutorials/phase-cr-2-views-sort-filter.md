@@ -61,7 +61,7 @@ there; you need a bigger window, and a way to turn them.
 
 | Piece | What it does | Where |
 |---|---|---|
-| `GET /api/chemicals/columns` | Every column the entries have: the entries' own fields in first-seen order, then `metadata.<key>` for every key any entry keeps, then `batch.<key>` for every key seen in a batch; with how many entries carry a value; cached against the entry count | `backend/app/routers/chemicals.py` |
+| `GET /api/chemicals/columns` | Every column the entries have: the entries' own fields in first-seen order, then `metadata.<key>` for every key any entry keeps, then `batch.<key>` for every key seen in a batch; with how many entries carry a value; cached — invalidated by a write through the API, expiring within 30 s of a script's write (v2.16.1) | `backend/app/routers/chemicals.py` |
 | `view=batches` | One row per batch, the compound's fields plus `batch` (the batch's columns), `batch_no` and `batches_total`; a compound with no batches is one row | same |
 | `sort`, `order` | By any column, dotted keys included; numbers as numbers; missing values last in both directions | same |
 | `filters` | A JSON object of column → text; a row is kept when the column contains the text, case-insensitively; several columns combine | same |
@@ -77,7 +77,9 @@ there; you need a bigger window, and a way to turn them.
 **How:** the endpoint reads every entry once, notes each top-level field
 in the order first seen, each key under `metadata` as `metadata.<key>`,
 and each key seen inside a batch; it counts how many entries carry a
-value in each. The answer is cached until the number of entries changes,
+value in each. The answer is cached until a write comes through the API,
+or for thirty seconds after a write from outside the process (v2.16.1;
+keying on the entry count alone missed a re-import, lesson 33),
 because reading 12,539 documents takes a moment and the answer is the same
 until something is added or removed — the same trick the screening table
 uses.

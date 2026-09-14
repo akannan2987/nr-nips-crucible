@@ -92,3 +92,41 @@ def test_default_answer_is_unchanged(seeded_client):
     assert set(res) == {"data", "pagination"}
     assert set(res["pagination"]) == {"page", "limit", "total", "totalPages"}
     assert res["data"][0]["chemical_id"] == "CHEM-TEST-001"
+
+
+def test_columns_notice_an_update_in_place(client):
+    """A re-import that changes entries without adding any must refresh the columns.
+
+    The cache was keyed on the entry count alone; production kept answering
+    10 batch columns after a re-import that had written 34 (2026-09-14).
+    """
+    _seed(client)
+    before = client.get("/api/chemicals/columns").json()
+    assert "metadata.NEW_COLUMN" not in [c["key"] for c in before["columns"]]
+    # an update through the API, then a direct write like the import script's
+    caffeine = client.get("/api/chemicals?search=Caffeine").json()["data"][0]["chemical_id"]
+    res = client.put(f"/api/chemicals/{caffeine}", json={"metadata": {"NEW_COLUMN": "yes"}, "batches": [{"BATCH_ID": 1, "EXTRA": "x"}]})
+    assert res.status_code == 200
+    after = client.get("/api/chemicals/columns").json()
+    assert after["total"] == before["total"]                                   # same count…
+    assert "metadata.NEW_COLUMN" in [c["key"] for c in after["columns"]]      # …new columns seen
+    assert {"key": "batch.EXTRA", "label": "EXTRA"} in after["batch_columns"]
+
+
+def test_columns_expire_for_writes_made_outside_the_process(client):
+    """The import script writes to the database from another process; the
+    router cannot see that, so the cache expires on its own after a while."""
+    from app.database import SessionLocal
+    from app.models import Chemical
+    from app.routers import chemicals as router_module
+    from app.store import find_row, replace_doc
+
+    _seed(client)
+    client.get("/api/chemicals/columns")
+    caffeine = client.get("/api/chemicals?search=Caffeine").json()["data"][0]["chemical_id"]
+    with SessionLocal() as db:                       # a direct write, like the script's
+        row = find_row(db, Chemical, "chemical_id", caffeine)
+        replace_doc(db, row, {**row.doc, "metadata": {**row.doc["metadata"], "SCRIPT_COLUMN": "yes"}})
+    assert "metadata.SCRIPT_COLUMN" not in [c["key"] for c in client.get("/api/chemicals/columns").json()["columns"]]   # cached, honestly
+    router_module._COLUMNS_CACHE["at"] -= router_module._COLUMNS_TTL + 1         # the clock moves on
+    assert "metadata.SCRIPT_COLUMN" in [c["key"] for c in client.get("/api/chemicals/columns").json()["columns"]]

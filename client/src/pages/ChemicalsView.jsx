@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { MagnifyingGlassIcon, PlusIcon, TrashIcon, EyeIcon, PencilSquareIcon, CheckIcon, XMarkIcon, ChevronDownIcon, LinkIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
@@ -86,6 +86,10 @@ export default function ChemicalsView() {
     molecular_weight: ''
   })
 
+  // v2.18.2: the counts (notices, summary) read the whole registry; they are
+  // loaded once here and after a change, not on every click.
+  useEffect(() => { refreshCounts() }, [])
+
   useEffect(() => {
     loadChemicals()
   }, [pagination.page, pagination.limit, search, viewMode, sort, colFilters, batchMode, selectedTags, tagsMatch])
@@ -116,9 +120,20 @@ export default function ChemicalsView() {
     try { const r = await getChemicalSummary(); setSummary(r.data) } catch { setSummary(null) }
   }
 
+  const refreshCounts = () => { loadNotices(); loadSummary() }
+
+  // v2.18.2: one list request at a time. A click cancels the request the
+  // previous click started, and an answer that is no longer the latest is
+  // dropped — before this, a slow earlier answer could overwrite a later one
+  // and the table showed a state no button described.
+  const listSeq = useRef(0)
+  const listAbort = useRef(null)
+
   const loadChemicals = async () => {
-    loadNotices()
-    loadSummary()
+    if (listAbort.current) listAbort.current.abort()
+    const controller = new AbortController()
+    listAbort.current = controller
+    const seq = ++listSeq.current
     setLoading(true)
     try {
       const activeFilters = Object.fromEntries(Object.entries(colFilters).filter(([, v]) => v))
@@ -133,15 +148,18 @@ export default function ChemicalsView() {
         batches: batchMode === 'all' ? undefined : batchMode,
         tags: selectedTags.length ? selectedTags.join(',') : undefined,
         tags_match: selectedTags.length > 1 ? tagsMatch : undefined,
-      })
+      }, { signal: controller.signal })
+      if (seq !== listSeq.current) return          // superseded by a later click
       if (columns.length === 0) loadColumns()
       setChemicals(response.data.data)
       setPagination(prev => ({ ...prev, ...response.data.pagination }))
     } catch (error) {
+      if (error?.code === 'ERR_CANCELED' || error?.name === 'CanceledError') return
+      if (seq !== listSeq.current) return
       toast.error('Failed to load chemicals')
       console.error(error)
     } finally {
-      setLoading(false)
+      if (seq === listSeq.current) setLoading(false)
     }
   }
 
@@ -200,6 +218,7 @@ export default function ChemicalsView() {
       await deleteChemical(chemicalId)
       toast.success('Chemical deleted successfully')
       loadChemicals()
+      refreshCounts()
     } catch (error) {
       explainRefusal(error, chemicalId, 'Failed to delete chemical')
     }
@@ -235,6 +254,7 @@ export default function ChemicalsView() {
       toast.success(response.data.message)
       setSelectedIds([])
       loadChemicals()
+      refreshCounts()
     } catch (error) {
       explainRefusal(error, selectedIds.length === 1 ? selectedIds[0] : null, 'Failed to delete chemicals')
     }
@@ -249,6 +269,7 @@ export default function ChemicalsView() {
       toast.success(response.data.message)
       setSelectedIds([])
       loadChemicals()
+      refreshCounts()
     } catch (error) {
       explainRefusal(error, null, 'Failed to clear chemicals')
     }
@@ -278,6 +299,7 @@ export default function ChemicalsView() {
       setShowBulkEdit(false)
       setBulkEditData({ supplier: '', cas_number: '', molecular_formula: '', molecular_weight: '' })
       loadChemicals()
+      refreshCounts()
     } catch (error) {
       toast.error('Failed to update chemicals')
     }

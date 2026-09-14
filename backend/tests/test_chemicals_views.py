@@ -128,5 +128,15 @@ def test_columns_expire_for_writes_made_outside_the_process(client):
         row = find_row(db, Chemical, "chemical_id", caffeine)
         replace_doc(db, row, {**row.doc, "metadata": {**row.doc["metadata"], "SCRIPT_COLUMN": "yes"}})
     assert "metadata.SCRIPT_COLUMN" not in [c["key"] for c in client.get("/api/chemicals/columns").json()["columns"]]   # cached, honestly
-    router_module._COLUMNS_CACHE["at"] -= router_module._COLUMNS_TTL + 1         # the clock moves on
+    router_module._CACHE["columns"]["at"] -= router_module._CACHE_TTL + 1         # the clock moves on
     assert "metadata.SCRIPT_COLUMN" in [c["key"] for c in client.get("/api/chemicals/columns").json()["columns"]]
+
+
+def test_summary_and_notices_refresh_after_a_write_through_the_api(client):
+    """The counts are cached; a write through the chemicals API refreshes them at once."""
+    _seed(client)
+    assert client.get("/api/chemicals/summary").json()["total"] == 3
+    before = client.get("/api/chemicals/notices/summary").json()
+    assert client.post("/api/chemicals", json={"chemical_id": "CHEM-X", "name": "Ethyl benzoate", "molecular_formula": "C9H10N2"}).status_code == 201
+    assert client.get("/api/chemicals/summary").json()["total"] == 4                   # not the cached 3
+    assert client.get("/api/chemicals/notices/summary").json()["formula"] == before["formula"] + 1

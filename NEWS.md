@@ -10,6 +10,39 @@ change you are getting.
 
 ---
 
+## v2.18.2 — 2026-09-14 — "One answer per click, and the right one"
+
+**Fixed**
+- On 12,539 entries the registry page had become unusable: nothing a
+  person clicked seemed to work, and the table showed a state no button
+  described. Driving the page in a browser showed why. Every click fired
+  three requests — the list, the notices and the new summary — and the
+  last two recount the whole registry; four quick clicks queued twelve
+  requests; answers came back seconds later and out of order, the older
+  overwriting the newer. Three changes:
+  - the counts are loaded once, when the page opens and after a change,
+    not on every click;
+  - a click cancels the list request the previous click started, and an
+    answer that is no longer the latest is dropped;
+  - the three whole-registry answers — notices, summary, columns — are
+    cached on the server with one rule: refreshed at once by any write
+    through the chemicals API, and within 30 seconds after a write from
+    outside it (the import script).
+  One test; the suite is 145. Lesson 34.
+
+**Known, not yet fixed**
+- Each list request still reads every entry (about 0.7 s alone on
+  12,539); that is the design of the server-side sort and filter until
+  the schema work of SH-2 promotes the filtered fields into columns.
+  Recorded as the trigger for SH-2.
+
+**Deploy note**
+- Backend and client changed: the server **rebuilds**. Then **hard-reload
+  the page** (Ctrl+F5, or Cmd+Shift+R on a Mac): a tab that stayed open
+  keeps the old page code.
+
+---
+
 ## v2.18.1 — 2026-09-14 — "An empty table now says why"
 
 **Fixed**

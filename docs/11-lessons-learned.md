@@ -287,6 +287,29 @@ change.
 
 ---
 
+**34. Three answers per click, and the last one to arrive wins.** The
+registry page asked the server three questions on every click — the rows,
+the notices, the new counts — and two of the three recount all 12,539
+entries. Nobody noticed on the test data; on the real registry, four quick
+clicks queued twelve requests, the browser waited seconds for each, and
+the answers came back in whatever order the server finished them. The
+page applied each as it arrived, so an older, slower answer overwrote a
+newer one and the table showed a state no button described: "Showing 0 of
+0" under buttons that said otherwise. The owner reported it as "nothing I
+click works", which was exactly true. The fix was three small things —
+count once instead of on every click, drop an answer that is no longer
+the latest and cancel the request behind it, cache the whole-registry
+answers on the server — and none of them was visible in the code until a
+browser was driven against the real data with a log of every request.
+*Lesson: a page that fires a request per click must expect the answers in
+any order, and a count that reads everything must not be asked for on
+every click; and the only way to see either is to drive the page as a
+person does, against data of the real size.* *The shape:* an operation
+reporting one thing (the buttons) while showing another (the answer to an
+earlier click).
+
+---
+
 ## The one rule they add up to
 
 Documentation detailed enough to be followed literally is documentation

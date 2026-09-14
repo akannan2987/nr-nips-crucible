@@ -13,7 +13,8 @@ const api = axios.create({
 export const getStats = () => api.get('/stats');
 
 // Chemicals
-export const getChemicals = (params) => api.get('/chemicals', { params });
+// `config` may carry an AbortController signal so a superseded list request is cancelled (v2.18.2).
+export const getChemicals = (params, config = {}) => api.get('/chemicals', { params, ...config });
 export const getChemical = (id) => api.get(`/chemicals/${id}`);
 export const createChemical = (data) => api.post('/chemicals', data);
 export const updateChemical = (id, data) => api.put(`/chemicals/${id}`, data);

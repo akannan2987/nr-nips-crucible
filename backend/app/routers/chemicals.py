@@ -8,6 +8,7 @@ shapes, same messages, same status codes — including the quirks (the
 import json
 import time
 import uuid
+from collections.abc import Callable
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, Request, UploadFile
@@ -44,21 +45,37 @@ from ..store import (
 )
 from ..tags import filter_batches, filter_tags, registry_summary, tags_of
 
-# The discovered-columns answer (CR-2) is cached. It goes stale two ways: a
-# write through this router (any non-GET request bumps `epoch`, so the next
-# GET rebuilds), and a write from outside the process — the import script
-# inside the container, a direct Python session on a Mac — which nothing here
-# can see, so the cache also expires after `_COLUMNS_TTL` seconds. Keying on
-# the entry count alone missed a re-import that updated every entry in place
-# (production, 2026-09-14); keying on the newest `updated_at` cost a full
-# scan of every document per call.
-_COLUMNS_CACHE: dict[str, Any] = {"epoch": 0}
-_COLUMNS_TTL = 30.0
+# Three answers are computed by reading every entry — the discovered columns
+# (CR-2), the registry summary (CR-11) and the notices (CR-9/CR-10) — and the
+# registry page asks for all three on every visit. Each is cached here. A
+# cached answer goes stale two ways: a write through this router (any non-GET
+# request bumps `epoch`, so the next GET recomputes), and a write from outside
+# the process — the import script inside the container, a direct Python
+# session on a Mac — which nothing here can see, so every answer also expires
+# after `_CACHE_TTL` seconds. Keying on the entry count alone missed a
+# re-import that updated every entry in place (production, 2026-09-14);
+# keying on the newest `updated_at` cost a full scan per call. Recomputing
+# the counts on every click, with no cache at all, is what made the page
+# unusable on 12,539 entries (2026-09-14, lesson 34).
+_CACHE: dict[str, Any] = {"epoch": 0}
+_CACHE_TTL = 30.0
 
 
 def _note_write(request: Request) -> None:
     if request.method != "GET":
-        _COLUMNS_CACHE["epoch"] = _COLUMNS_CACHE.get("epoch", 0) + 1
+        _CACHE["epoch"] = _CACHE.get("epoch", 0) + 1
+
+
+def _cached(name: str, db: Session, compute: Callable[[], Any]) -> Any:
+    """`compute()` at most once per (entry count, write epoch) and per `_CACHE_TTL` seconds."""
+    count = db.scalar(select(func.count()).select_from(Chemical)) or 0
+    key = (count, _CACHE["epoch"])
+    slot = _CACHE.get(name)
+    if slot is not None and slot["key"] == key and time.monotonic() - slot["at"] < _CACHE_TTL:
+        return slot["payload"]
+    payload = compute()
+    _CACHE[name] = {"key": key, "payload": payload, "at": time.monotonic()}
+    return payload
 
 
 router = APIRouter(prefix="/api/chemicals", tags=["chemicals"], dependencies=[Depends(_note_write)])
@@ -195,16 +212,13 @@ def chemical_columns(db: Session = Depends(get_db)) -> dict[str, Any]:
 
     Top-level fields in first-seen order, then every key kept under `metadata`
     as `metadata.<key>`, then every key seen inside `batches` as `batch.<key>`;
-    each with how many entries carry a value. Cached against the entry count
-    and the write counter, for at most `_COLUMNS_TTL` seconds (see the note
-    at the top of this file).
+    each with how many entries carry a value. Cached like the summary and
+    the notices (see the note at the top of this file).
     """
-    count = db.scalar(select(func.count()).select_from(Chemical)) or 0
-    cache_key = (count, _COLUMNS_CACHE["epoch"])  # not `key`: the loops below reuse that name
-    cached = _COLUMNS_CACHE.get("payload")
-    if cached is not None and _COLUMNS_CACHE.get("key") == cache_key and time.monotonic() - _COLUMNS_CACHE.get("at", 0) < _COLUMNS_TTL:
-        return cached
+    return _cached("columns", db, lambda: _discover_columns(db))
 
+
+def _discover_columns(db: Session) -> dict[str, Any]:
     docs = all_docs(db, Chemical)
     order: list[str] = []
     filled: dict[str, int] = {}
@@ -242,9 +256,6 @@ def chemical_columns(db: Session = Depends(get_db)) -> dict[str, Any]:
         ],
         "batch_columns": [{"key": f"batch.{k}", "label": k} for k in batch_keys],
     }
-    _COLUMNS_CACHE["key"] = cache_key
-    _COLUMNS_CACHE["payload"] = payload
-    _COLUMNS_CACHE["at"] = time.monotonic()
     return payload
 
 
@@ -452,14 +463,19 @@ def summary(db: Session = Depends(get_db)) -> dict[str, Any]:
 
     `total` compounds, how many have `one_batch` and how many `several_batches`,
     the number of `batch_rows` the Batches view shows, and entries per `tags`.
+    Cached (see the note at the top of this file).
     """
-    return registry_summary(db)
+    return _cached("summary", db, lambda: registry_summary(db))
 
 
 @router.get("/notices/summary")
 def notices(db: Session = Depends(get_db)) -> dict[str, int]:
-    """GET /api/chemicals/notices/summary — what the registry page keeps showing until someone acts (CR-9, CR-10)."""
-    return registry_notices(db)
+    """GET /api/chemicals/notices/summary — what the registry page keeps showing until someone acts (CR-9, CR-10).
+
+    Cached (see the note at the top of this file): a review mark, a merge or a
+    delete goes through this router and refreshes it at once.
+    """
+    return _cached("notices", db, lambda: registry_notices(db))
 
 
 # ---------------------------------------------------------- CR-10: audit --

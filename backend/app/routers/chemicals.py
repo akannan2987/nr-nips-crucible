@@ -42,6 +42,7 @@ from ..store import (
     insert_doc,
     replace_doc,
 )
+from ..tags import filter_batches, filter_tags, registry_summary, tags_of
 
 # The discovered-columns answer (CR-2) is cached. It goes stale two ways: a
 # write through this router (any non-GET request bumps `epoch`, so the next
@@ -134,9 +135,18 @@ def list_chemicals(
     sort: str | None = None,
     order: str | None = None,
     filters: str | None = None,
+    tags: str | None = None,
+    tags_match: str | None = None,
+    batches: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """GET /api/chemicals — paginated list with optional search.
+
+    Since v2.18.0 (phase CR-11): every row carries `tags`, derived from where
+    the entry came from and never stored; `tags=Excel upload,SDF upload`
+    keeps entries carrying ALL of them, `tags_match=any` at least one;
+    `batches=one|several` keeps entries with a single batch or with two or
+    more. Without these the answer is what it was.
 
     Since v2.15.0 (phase CR-2, with CR-1's sorting and per-column filters):
     `view=batches` answers one row per batch (`batch.<column>`, `batch_no`,
@@ -155,7 +165,12 @@ def list_chemicals(
     except (ValueError, AttributeError):
         raise HTTPException(status_code=400, detail="filters must be a JSON object of column: text") from None
 
-    chemicals = all_docs(db, Chemical)
+    chemicals = [{**c, "tags": tags_of(c)} for c in all_docs(db, Chemical)]  # CR-11: derived, never stored
+    try:
+        chemicals = filter_batches(chemicals, batches)
+        chemicals = filter_tags(chemicals, tags, tags_match)
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err)) from None
     if view == "batches":
         chemicals = _batch_rows(chemicals)
     chemicals = _filtered(chemicals, needle, filter_map)
@@ -213,6 +228,11 @@ def chemical_columns(db: Session = Depends(get_db)) -> dict[str, Any]:
                 if key not in batch_keys:
                     batch_keys.append(key)
 
+    # CR-11: the derived tags are offered as a column too, second after the identifier
+    if "tags" not in filled:
+        order.insert(1 if order else 0, "tags")
+        filled["tags"] = len(docs)
+
     payload = {
         "total": len(docs),
         "columns": [
@@ -263,6 +283,8 @@ def add_chemical(body: ChemicalIn, db: Session = Depends(get_db)) -> dict[str, A
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
+    # CR-11: nothing is recorded here — the v1 contract fixes these keys exactly;
+    # an entry no file has touched is *Manual* by inference (app/tags.py).
     insert_doc(db, Chemical, chemical)
     return {"message": "Chemical added successfully", "chemical_id": chemical["chemical_id"]}
 
@@ -422,6 +444,16 @@ def clear_chemicals(
     if unlinked:
         response["unlinked"] = unlinked
     return response
+
+
+@router.get("/summary")
+def summary(db: Session = Depends(get_db)) -> dict[str, Any]:
+    """GET /api/chemicals/summary — the counts above the registry table (CR-11).
+
+    `total` compounds, how many have `one_batch` and how many `several_batches`,
+    the number of `batch_rows` the Batches view shows, and entries per `tags`.
+    """
+    return registry_summary(db)
 
 
 @router.get("/notices/summary")

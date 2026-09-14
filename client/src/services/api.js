@@ -36,6 +36,8 @@ export const mergeChemicals = (keep, remove) => api.post('/chemicals/merge', { k
 export const setChemicalIdentifier = (chemicalId, nestle_id) =>
   api.post(`/chemicals/${chemicalId}/identifier`, { nestle_id });
 export const getChemicalColumns = () => api.get('/chemicals/columns');
+// CR-11: the counts above the registry table — compounds, batches, entries per source tag.
+export const getChemicalSummary = () => api.get('/chemicals/summary');
 export const bulkDeleteChemicals = (chemical_ids) => api.post('/chemicals/bulk/delete', { chemical_ids });
 export const bulkUpdateChemicals = (chemical_ids, updates) => api.post('/chemicals/bulk/update', { chemical_ids, updates });
 export const clearAllChemicals = () => api.delete('/chemicals/all/clear');

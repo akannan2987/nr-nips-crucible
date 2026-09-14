@@ -410,6 +410,19 @@ eye*, for what a person must decide ([`09-registry-sources.md`](09-registry-sour
 page has the routes side by side
 ([`10-registry-tasks.md` → task 3](10-registry-tasks.md#3-load-many-compounds-from-a-file)).
 
+**What the registry page tells you at a glance (v2.18.0).** Above the
+table, a strip of counts — *All compounds · One batch · Several batches ·
+Batch rows* — each a button that filters the table, so the two totals you
+will meet (compounds, and batch rows in the Batches view) explain
+themselves. Below it, one chip per **source tag** with its count —
+*Dotmatics ID, Excel upload, SDF upload, CSV upload, JSON upload, Manual* —
+tick one or several to see only the entries that came that way; with
+several ticked, *all of these* or *any of these*. Every row shows its
+chips, in every view. The tags are read off what each entry records, never
+stored, so a re-import cannot lose them. The rules and the owner's
+decisions: [`09-registry-sources.md` → Counting and tagging the sources](09-registry-sources.md#counting-and-tagging-the-sources);
+the same numbers from the terminal: `./container-py.sh script registry_summary.py`.
+
 > **This rule is changing.** The registry-first rule — a row attaches only
 > when *both* its name *and* its CAS number match a compound you have already
 > registered, stage 2 is retired for screening rows, and unregistered

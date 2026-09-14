@@ -53,6 +53,54 @@ def fig_attention_page() -> None:
     write("fig_attention_page.svg", svg(W, H, "One audit module read by the browser's attention page, the API and the terminal script; the review mark is stored on the entry", b))
 
 
+def fig_source_tags() -> None:
+    W, H = 940, 400
+    b = text(W/2, 34, "Source tags (CR-11): derived from what the entry records, never stored; filter by all of them or any", 16, INK, "middle", "bold")
+    chips = {"Dotmatics ID": "#4f46e5", "Excel upload": "#059669", "SDF upload": "#7c3aed", "CSV upload": "#d97706", "JSON upload": "#0284c7", "Manual": "#6b7280"}
+    def chip(x, y, label):
+        w = 8 + 6.4 * len(label)
+        b_ = box(x, y, w, 18, chips[label] + "22", chips[label], 9, sw=1)
+        b_ += text(x + w/2, y + 13, label, 9.5, chips[label], "middle", "bold")
+        return b_, w
+    # four entries with their tags
+    rows = [("CHEM-000001  caffeine, from the export", ["Dotmatics ID", "Excel upload"]),
+            ("CHEM-000002  vanillin, export + structure file", ["Dotmatics ID", "Excel upload", "SDF upload"]),
+            ("CHEM-000003  from a spreadsheet of your own", ["Excel upload"]),
+            ("CHEM-000004  typed in with Add Chemical", ["Manual"])]
+    b += box(30, 66, 560, 200, PANEL, LINE, 10)
+    b += text(310, 88, "four entries and the tags each carries", 12, INK, "middle", "bold")
+    for i, (label, tags) in enumerate(rows):
+        y = 106 + i * 38
+        b += symbol("chemical", 52, y + 9, 9)
+        b += text(66, y + 13, label, 10.5, INK, "start")
+        x = 330
+        for t in tags:
+            c, w = chip(x, y, t); b += c; x += w + 6
+    b += text(310, 254, "the tags come from formats, dotmatics_reg_id and the sources the entry names", 9.5, MUTED)
+    # the two readings
+    b += box(610, 66, 300, 92, "#eef2ff", COLOURS["chemical"], 8)
+    b += text(760, 88, "tick  Excel upload  +  SDF upload", 11.5, COLOURS["chemical"], "middle", "bold")
+    b += lines(760, 110, ["all of these  →  CHEM-000002 only", "any of these  →  CHEM-000001, 000002, 000003"], 10.5, INK, "middle", 16)
+    b += text(760, 146, "the default is all; one switch flips it", 9.5, MUTED)
+    b += box(610, 174, 300, 92, "#fff7ed", COLOURS["screening"], 8)
+    b += text(760, 196, "tick  Excel upload  +  Dotmatics ID", 11.5, COLOURS["screening"], "middle", "bold")
+    b += lines(760, 218, ["all of these  →  CHEM-000001, 000002", "any of these  →  CHEM-000001, 000002, 000003"], 10.5, INK, "middle", 16)
+    b += text(760, 254, "the owner's example: spreadsheet rows that also carry a REG_ID", 9.5, MUTED)
+    # the strip
+    b += box(30, 286, 880, 46, PAPER, LINE, 8)
+    b += text(60, 314, "Compounds:", 10.5, MUTED, "start")
+    x = 140
+    for label, n, fill in (("All compounds 12,539", 0, COLOURS["chemical"]), ("One batch 12,533", 0, LINE), ("Several batches 6", 0, LINE), ("Batch rows 12,561", 0, LINE)):
+        w = 10 + 6.6 * len(label)
+        b += box(x, 298, w, 22, PAPER if fill == LINE else fill + "22", fill, 6, sw=1)
+        b += text(x + w/2, 313, label, 10, INK if fill == LINE else fill, "middle", "bold")
+        x += w + 8
+    b += text(W/2, 356, "the same counts and the same tags from the browser, GET /api/chemicals/summary and registry_summary.py — one module, three doors;", 11, INK)
+    b += text(W/2, 374, "a tag is computed when the entry is read, so it is never stale and a re-import cannot lose it.", 11, INK)
+    b += text(W/2, 393, "everyday version: the coloured sticker on the folder's spine says which shelf it came from — and a folder can carry two", 10.5, MUTED)
+    write("fig_source_tags.svg", svg(W, H, "Four registry entries with their source tags, the two readings of a multi-tag filter, and the strip of batch counts", b))
+
+
 # ---------------------------------------------------------------- palette --
 INK = "#1f2937"        # text
 MUTED = "#6b7280"      # secondary text
@@ -650,5 +698,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, cover, logo):
         f()

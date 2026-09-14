@@ -1,0 +1,53 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 400' width='940' height='400' role='img' aria-label='Four registry entries with their source tags, the two readings of a multi-tag filter, and the strip of batch counts' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='399' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>Source tags (CR-11): derived from what the entry records, never stored; filter by all of them or any</text>
+<rect x='30' y='66' width='560' height='200' rx='10' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='310' y='88' font-size='12' fill='#1f2937' text-anchor='middle' font-weight='bold'>four entries and the tags each carries</text>
+<polygon points='52,106 59.794,110.5 59.794,119.5 52,124 44.206,119.5 44.206,110.5' fill='#4f46e5' fill-opacity='0.15' stroke='#4f46e5' stroke-width='2'/>
+<text x='66' y='119' font-size='10.5' fill='#1f2937' text-anchor='start' font-weight='normal'>CHEM-000001  caffeine, from the export</text>
+<rect x='330' y='106' width='84.80000000000001' height='18' rx='9' fill='#4f46e522' stroke='#4f46e5' stroke-width='1'/>
+<text x='372.4' y='119' font-size='9.5' fill='#4f46e5' text-anchor='middle' font-weight='bold'>Dotmatics ID</text>
+<rect x='420.8' y='106' width='84.80000000000001' height='18' rx='9' fill='#05966922' stroke='#059669' stroke-width='1'/>
+<text x='463.20000000000005' y='119' font-size='9.5' fill='#059669' text-anchor='middle' font-weight='bold'>Excel upload</text>
+<polygon points='52,144 59.794,148.5 59.794,157.5 52,162 44.206,157.5 44.206,148.5' fill='#4f46e5' fill-opacity='0.15' stroke='#4f46e5' stroke-width='2'/>
+<text x='66' y='157' font-size='10.5' fill='#1f2937' text-anchor='start' font-weight='normal'>CHEM-000002  vanillin, export + structure file</text>
+<rect x='330' y='144' width='84.80000000000001' height='18' rx='9' fill='#4f46e522' stroke='#4f46e5' stroke-width='1'/>
+<text x='372.4' y='157' font-size='9.5' fill='#4f46e5' text-anchor='middle' font-weight='bold'>Dotmatics ID</text>
+<rect x='420.8' y='144' width='84.80000000000001' height='18' rx='9' fill='#05966922' stroke='#059669' stroke-width='1'/>
+<text x='463.20000000000005' y='157' font-size='9.5' fill='#059669' text-anchor='middle' font-weight='bold'>Excel upload</text>
+<rect x='511.6' y='144' width='72.0' height='18' rx='9' fill='#7c3aed22' stroke='#7c3aed' stroke-width='1'/>
+<text x='547.6' y='157' font-size='9.5' fill='#7c3aed' text-anchor='middle' font-weight='bold'>SDF upload</text>
+<polygon points='52,182 59.794,186.5 59.794,195.5 52,200 44.206,195.5 44.206,186.5' fill='#4f46e5' fill-opacity='0.15' stroke='#4f46e5' stroke-width='2'/>
+<text x='66' y='195' font-size='10.5' fill='#1f2937' text-anchor='start' font-weight='normal'>CHEM-000003  from a spreadsheet of your own</text>
+<rect x='330' y='182' width='84.80000000000001' height='18' rx='9' fill='#05966922' stroke='#059669' stroke-width='1'/>
+<text x='372.4' y='195' font-size='9.5' fill='#059669' text-anchor='middle' font-weight='bold'>Excel upload</text>
+<polygon points='52,220 59.794,224.5 59.794,233.5 52,238 44.206,233.5 44.206,224.5' fill='#4f46e5' fill-opacity='0.15' stroke='#4f46e5' stroke-width='2'/>
+<text x='66' y='233' font-size='10.5' fill='#1f2937' text-anchor='start' font-weight='normal'>CHEM-000004  typed in with Add Chemical</text>
+<rect x='330' y='220' width='46.400000000000006' height='18' rx='9' fill='#6b728022' stroke='#6b7280' stroke-width='1'/>
+<text x='353.2' y='233' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='bold'>Manual</text>
+<text x='310' y='254' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>the tags come from formats, dotmatics_reg_id and the sources the entry names</text>
+<rect x='610' y='66' width='300' height='92' rx='8' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='760' y='88' font-size='11.5' fill='#4f46e5' text-anchor='middle' font-weight='bold'>tick  Excel upload  +  SDF upload</text>
+<text x='760' y='110' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>all of these  →  CHEM-000002 only</text>
+<text x='760' y='126' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>any of these  →  CHEM-000001, 000002, 000003</text>
+<text x='760' y='146' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>the default is all; one switch flips it</text>
+<rect x='610' y='174' width='300' height='92' rx='8' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='760' y='196' font-size='11.5' fill='#d97706' text-anchor='middle' font-weight='bold'>tick  Excel upload  +  Dotmatics ID</text>
+<text x='760' y='218' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>all of these  →  CHEM-000001, 000002</text>
+<text x='760' y='234' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>any of these  →  CHEM-000001, 000002, 000003</text>
+<text x='760' y='254' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>the owner&apos;s example: spreadsheet rows that also carry a REG_ID</text>
+<rect x='30' y='286' width='880' height='46' rx='8' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='60' y='314' font-size='10.5' fill='#6b7280' text-anchor='start' font-weight='normal'>Compounds:</text>
+<rect x='140' y='298' width='142.0' height='22' rx='6' fill='#4f46e522' stroke='#4f46e5' stroke-width='1'/>
+<text x='211.0' y='313' font-size='10' fill='#4f46e5' text-anchor='middle' font-weight='bold'>All compounds 12,539</text>
+<rect x='290.0' y='298' width='115.6' height='22' rx='6' fill='#ffffff' stroke='#9ca3af' stroke-width='1'/>
+<text x='347.8' y='313' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='bold'>One batch 12,533</text>
+<rect x='413.6' y='298' width='122.19999999999999' height='22' rx='6' fill='#ffffff' stroke='#9ca3af' stroke-width='1'/>
+<text x='474.70000000000005' y='313' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='bold'>Several batches 6</text>
+<rect x='543.8' y='298' width='122.19999999999999' height='22' rx='6' fill='#ffffff' stroke='#9ca3af' stroke-width='1'/>
+<text x='604.9' y='313' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='bold'>Batch rows 12,561</text>
+<text x='470.0' y='356' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>the same counts and the same tags from the browser, GET /api/chemicals/summary and registry_summary.py — one module, three doors;</text>
+<text x='470.0' y='374' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>a tag is computed when the entry is read, so it is never stale and a re-import cannot lose it.</text>
+<text x='470.0' y='393' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>everyday version: the coloured sticker on the folder&apos;s spine says which shelf it came from — and a folder can carry two</text>
+</svg>

@@ -30,6 +30,7 @@ from sqlalchemy.orm import Session
 from .compat import js_or, now_iso, parse_float_or_none
 from .models import Chemical
 from .store import all_rows, find_row, insert_doc, insert_docs_bulk, next_chemical_id, replace_doc
+from .tags import SPEC_FORMATS, note_format
 from .utils.excel import parse_csv_rows, sheet_rows_as_dicts
 from .utils.registry_templates import RegistrySpec, detect_sdf_spec, detect_sheet_spec
 from .utils.sdf import map_molecule_to_chemical, parse_sdf
@@ -97,8 +98,12 @@ def parse_json_records(content: bytes | str) -> list[dict[str, Any]]:
     return data
 
 
-def import_json_records(db: Session, records: list[dict[str, Any]]) -> dict[str, Any]:
-    """Upsert JSON records. Unknown keys are kept: the document is the record."""
+def import_json_records(db: Session, records: list[dict[str, Any]], fmt: str = "json") -> dict[str, Any]:
+    """Upsert JSON records. Unknown keys are kept: the document is the record.
+
+    `fmt` is recorded on each entry under `formats` (CR-11): "json" for a file
+    or the JSON-body endpoint.
+    """
     inserted = updated = 0
     errors: list[dict[str, Any]] = []
     for idx, record in enumerate(records):
@@ -118,10 +123,10 @@ def import_json_records(db: Session, records: list[dict[str, Any]]) -> dict[str,
             doc["created_at"] = old["created_at"] if old else now_iso()
             doc["updated_at"] = now_iso()
             if existing:
-                replace_doc(db, existing, {**old, **doc})
+                replace_doc(db, existing, note_format({**old, **doc}, fmt))
                 updated += 1
             else:
-                insert_doc(db, Chemical, doc)
+                insert_doc(db, Chemical, note_format(doc, fmt))
                 inserted += 1
         except Exception as err:  # one bad record must not stop the file (lesson: batch validation)
             errors.append({"row": record.get("name") or record.get("chemical_id") or f"Record #{idx + 1}", "error": str(err)})
@@ -223,7 +228,7 @@ class _Registry:
             self.db.commit()
 
 
-def import_with_spec(db: Session, spec: RegistrySpec, records: list[dict[str, Any]]) -> dict[str, Any]:
+def import_with_spec(db: Session, spec: RegistrySpec, records: list[dict[str, Any]], fmt: str | None = None) -> dict[str, Any]:
     """Import rows (or SDF molecules) a registry spec recognises.
 
     Rows sharing the spec's `group_by` value are ONE compound: the first row
@@ -286,6 +291,7 @@ def import_with_spec(db: Session, spec: RegistrySpec, records: list[dict[str, An
             doc["id"] = old["id"] if old else str(uuid.uuid4())
             doc["created_at"] = old["created_at"] if old else now_iso()
             doc["updated_at"] = now_iso()
+            note_format(doc, fmt or SPEC_FORMATS.get(spec.key))  # CR-11: the route it came through
             if doc.get("nestle_id") and doc.get("nestle_id_pending"):
                 doc.pop("nestle_id_pending")  # the identifier is already known from another source
                 pending -= 1
@@ -351,7 +357,7 @@ def _flag_shared(registry: _Registry, field: str, flag: str, values: set[str]) -
 
 
 # ------------------------------------------------------- spreadsheet rows --
-def import_spreadsheet_rows(db: Session, data: list[dict[str, Any]]) -> dict[str, Any]:
+def import_spreadsheet_rows(db: Session, data: list[dict[str, Any]], fmt: str = "excel") -> dict[str, Any]:
     """The column-name mapping the upload page has always used, for CSV/TSV/XLSX rows."""
     inserted = updated = 0
     errors: list[dict[str, Any]] = []
@@ -418,6 +424,7 @@ def import_spreadsheet_rows(db: Session, data: list[dict[str, Any]]) -> dict[str
                 "created_at": old["created_at"] if old else now_iso(),
                 "updated_at": now_iso(),
             }
+            note_format(chemical, fmt, old)  # CR-11: the route it came through, kept across re-uploads
 
             if existing:
                 replace_doc(db, existing, chemical)
@@ -452,7 +459,7 @@ def import_sdf_text(db: Session, sdf_content: str) -> dict[str, Any]:
             rec["_structure"] = m.get("_structure")
             rec["_warnings"] = m.get("warnings") or []
             records.append(rec)
-        report = import_with_spec(db, spec, records)
+        report = import_with_spec(db, spec, records, fmt="sdf")
         report["totalRecords"] = len(molecules)
         report["parseErrors"] = len(molecules) - len(good)
         return report
@@ -508,6 +515,7 @@ def import_sdf_text(db: Session, sdf_content: str) -> dict[str, Any]:
                 "created_at": old["created_at"] if old else now_iso(),
                 "updated_at": now_iso(),
             }
+            note_format(chemical, "sdf", old)  # CR-11
 
             if existing:
                 replace_doc(db, existing, chemical)
@@ -549,25 +557,28 @@ def import_chemicals_file(db: Session, filename: str, content: bytes) -> dict[st
     """
     fmt = format_of(filename)
     if fmt == "json":
-        return import_json_records(db, parse_json_records(content))
+        return import_json_records(db, parse_json_records(content), fmt="json")
     if fmt == "csv":
         data = parse_csv_rows(content.decode("utf-8", errors="replace"))
         if not data:
             raise ImportError_("CSV file is empty or has no data rows")
-        return import_rows(db, data)
+        return import_rows(db, data, fmt="csv")
     if fmt == "excel":
         data = sheet_rows_as_dicts(content)
-        return import_rows(db, data)
+        return import_rows(db, data, fmt="excel")
     return import_sdf_text(db, content.decode("utf-8", errors="replace"))
 
 
-def import_rows(db: Session, data: list[dict[str, Any]]) -> dict[str, Any]:
-    """Spreadsheet rows: a recognised source goes through its spec, anything else through the generic map."""
+def import_rows(db: Session, data: list[dict[str, Any]], fmt: str = "excel") -> dict[str, Any]:
+    """Spreadsheet rows: a recognised source goes through its spec, anything else through the generic map.
+
+    `fmt` — "excel" or "csv" — is recorded on every entry the rows touch (CR-11).
+    """
     if data:
         spec = detect_sheet_spec(list(data[0].keys()))
         if spec is not None:
-            return import_with_spec(db, spec, data)
-    return import_spreadsheet_rows(db, data)
+            return import_with_spec(db, spec, data, fmt=fmt)
+    return import_spreadsheet_rows(db, data, fmt=fmt)
 
 
 def export_chemicals(db: Session) -> list[dict[str, Any]]:

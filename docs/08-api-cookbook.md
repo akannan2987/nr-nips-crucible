@@ -474,6 +474,50 @@ There is no "are you sure?" step — the request *is* the confirmation. Only che
 
 ---
 
+## Counting compounds, and asking where they came from
+
+Two numbers people meet on the registry page — compounds and batch rows —
+and the tags that say which route each entry arrived by. One call answers
+all of it:
+
+```bash
+curl --noproxy '*' -sS http://localhost:49160/api/chemicals/summary
+```
+
+```json
+{"total":6,"one_batch":5,"several_batches":1,"batch_rows":7,"tags":{"Dotmatics ID":6,"Excel upload":6,"SDF upload":3,"CSV upload":0,"JSON upload":0,"Manual":0}}
+```
+
+Six compounds, one of them with two batches, so seven rows in the Batches
+view. The tags are not stored on the entries; they are worked out from what
+each entry records every time it is read, so a re-import cannot lose them.
+
+```bash
+# only the compounds with several batches
+curl --noproxy '*' -sS "http://localhost:49160/api/chemicals?batches=several&limit=5"
+
+# entries that came from the structure file AND an Excel file (the default reading)
+curl --noproxy '*' -sS "http://localhost:49160/api/chemicals?tags=Excel%20upload,SDF%20upload&limit=5"
+
+# entries that came from EITHER
+curl --noproxy '*' -sS "http://localhost:49160/api/chemicals?tags=Excel%20upload,SDF%20upload&tags_match=any&limit=5"
+```
+
+Every row in the answer carries its `tags` list, so a script can group by
+it without a second call. Spaces in tag names are `%20` in a URL. Ask for a
+reading that does not exist and you are told so:
+
+```bash
+curl --noproxy '*' -sS "http://localhost:49160/api/chemicals?tags_match=sometimes"
+```
+
+```json
+{"error":"tags_match must be all or any"}
+```
+
+The same counts have buttons on the registry page and a line each in
+`./container-py.sh script registry_summary.py`.
+
 ## Reviewing what needs a person's eye
 
 The registry keeps a list of things it will not decide for you — two

@@ -455,6 +455,7 @@ backend/app/
 ├── imports.py      # one door for every chemicals file format; the registry specs
 ├── audit.py        # what needs a person's eye; the review mark (browser, API, script)
 ├── merge.py        # fold entries into one survivor: carry over, repoint, clean, delete
+├── tags.py         # where an entry came from, as derived tags; the counts strip; the filters
 ├── routers/        # one file per resource
 └── utils/          # sdf.py (RDKit) · samples_excel.py (SLIMS) · excel.py
 ```

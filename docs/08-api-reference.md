@@ -273,7 +273,30 @@ numbers as numbers, missing values last; `filters={"column":"text",…}` (URL-en
 JSON) keeps rows whose column contains the text. Without these parameters the
 answer is exactly as documented below. `GET /chemicals/columns` lists every
 column the entries have — `columns` (key, label, group `field`|`metadata`, filled,
-coverage) and `batch_columns` — cached; invalidated by any write through this API, and refreshed within 30 seconds after a write from outside the process (the import script).
+coverage) and `batch_columns` — cached; invalidated by any write through this API, and refreshed within 30 seconds after a write from outside the process (the import script). Since v2.18.0 the derived `tags` are offered as a column too, second in the list.
+
+### Registry summary (counts and tags)
+
+**Endpoint:** `GET /chemicals/summary` — the numbers above the registry table (CR-11).
+
+**Response:**
+
+```json
+{"total": 12539, "one_batch": 12533, "several_batches": 6, "batch_rows": 12561,
+ "tags": {"Dotmatics ID": 12539, "Excel upload": 12539, "SDF upload": 77, "CSV upload": 0, "JSON upload": 0, "Manual": 0}}
+```
+
+`one_batch` + `several_batches` = `total`; `batch_rows` is what `view=batches` returns. The tags are derived from what each entry records ([the rules](09-registry-sources.md#counting-and-tagging-the-sources)); `registry_summary.py` prints the same answer.
+
+**List parameters added with it** (on `GET /chemicals`, all optional; without them the list answers as before, plus a `tags` list on every row):
+
+| Parameter | Values | Keeps |
+|---|---|---|
+| `batches` | `one`, `several` | entries with a single batch, or with two or more; with `view=batches`, those compounds' batch rows |
+| `tags` | comma-separated tag names, e.g. `Excel upload,SDF upload` | entries carrying them |
+| `tags_match` | `all` (default), `any` | every listed tag, or at least one |
+
+An unknown value answers `400` with the reason: `{"error": "tags_match must be all or any"}`.
 
 Get paginated list of all chemicals with optional search.
 

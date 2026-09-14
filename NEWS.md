@@ -10,6 +10,44 @@ change you are getting.
 
 ---
 
+## v2.18.0 — 2026-09-14 — "Where every compound came from, at a glance"
+
+Phase CR-11, the first of the owner's two requests of 2026-09-14.
+Tutorial: [`docs/04-phase-tutorials/phase-cr-11-counts-and-tags.md`](docs/04-phase-tutorials/phase-cr-11-counts-and-tags.md).
+
+**Added**
+- **The counts strip** above the Chemical Registry table — *All compounds
+  12,539 · One batch 12,533 · Several batches 6 · Batch rows 12,561* on the
+  real export — each a button that filters the table, so the two totals
+  people kept meeting side by side now explain themselves.
+- **Six source tags**, derived from what each entry records and never
+  stored: *Dotmatics ID, Excel upload, SDF upload, CSV upload, JSON
+  upload, Manual*. Chips on every row of every view and in the detail;
+  tick one or several to filter, with a switch between *all of these*
+  and *any of these*. Every import now records the file type it came
+  through on the entry (`formats`); the 12,539 existing entries are
+  labelled from the source they name.
+- `GET /api/chemicals/summary`; `batches`, `tags` and `tags_match` on the
+  list, with `tags` on every row; `tags` offered as a column;
+  `registry_summary.py` for the terminal. Five tests; the suite is 144.
+
+**Decided, and recorded on the sources page**
+- Every Excel file earns *Excel upload*, the Dotmatics export included;
+  CSV and JSON files get their own tags; several ticked tags mean all of
+  them, with *any* one click away; chips in every view; no *Dotmatics
+  export* tag.
+
+**Deliberately not done**
+- Tags a person adds by hand; writing `formats` onto entries that predate
+  it (they are labelled by inference, correctly); the file's name.
+
+**Deploy note**
+- Backend, client and a script changed: the server **rebuilds**, after a
+  backup. `POST /api/chemicals` writes exactly the keys it always did —
+  *Manual* is inferred, not stored — so the v1 contract is untouched.
+
+---
+
 ## v2.17.0 — 2026-09-14 — "Two things the users asked for, written down first"
 
 No application code. The owner's requests of 2026-09-14, specified and
@@ -22,7 +60,7 @@ put at the front of the plan, ahead of the screening-data rule.
   the table; tags derived from the data (*Dotmatics ID*, *Dotmatics
   export*, *SDF upload*, *Excel upload*, *JSON upload*, *API*) shown as
   chips and filterable one at a time or in combination. Specification and
-  decisions T1–T3 in [`docs/09-registry-sources.md`](docs/09-registry-sources.md#counting-and-tagging-the-sources--specification).
+  decisions T1–T3 in [`docs/09-registry-sources.md`](docs/09-registry-sources.md#counting-and-tagging-the-sources).
 - **CR-12 · Structures: derive, draw, edit** — one checked structure per
   entry computed from what the sources gave, a picture drawn by the server
   wherever a compound appears, and a structure editor in the browser to

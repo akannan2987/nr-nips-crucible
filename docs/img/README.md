@@ -36,6 +36,7 @@ is defined once and means the same thing in every document.
 | `fig_setup_flow.svg` | Set up once, then the loop | the three setup guides, handbook §3 |
 | `fig_timeline.svg` | The milestones on one line | handbook §1 |
 | `fig_requirements_lock.svg` | The wish list, the receipt, and who installs from it | phase 05b tutorial, `backend/README.md` |
+| `fig_source_tags.svg` | Four entries with their source tags, the two readings of a multi-tag filter, the strip of batch counts | phase CR-11 tutorial, `09-registry-sources.md`, registry tasks page |
 | `fig_attention_page.svg` | One audit module behind the browser's attention page, the API and the script; the review mark lives on the entry | phase CR-10 tutorial, `09-registry-sources.md`, registry tasks page |
 
 **Two kinds of diagram, and when to use which.** Anything that will change
@@ -52,4 +53,4 @@ The interactive figure — the animated architecture page served at
 [`../architecture-interactive.html`](../architecture-interactive.html),
 described in [`02-architecture.md`](../02-architecture.md#interactive-architecture-page).
 
-**Last Updated:** September 9, 2026
+**Last Updated:** September 14, 2026

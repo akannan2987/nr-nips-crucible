@@ -2,8 +2,38 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { MagnifyingGlassIcon, PlusIcon, TrashIcon, EyeIcon, PencilSquareIcon, CheckIcon, XMarkIcon, ChevronDownIcon, LinkIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-import { getChemicals, deleteChemical, bulkDeleteChemicals, bulkUpdateChemicals, clearAllChemicals, getChemicalNotices, getChemicalColumns } from '../services/api'
+import { getChemicals, deleteChemical, bulkDeleteChemicals, bulkUpdateChemicals, clearAllChemicals, getChemicalNotices, getChemicalColumns, getChemicalSummary } from '../services/api'
 import MoleculeViewer from '../components/MoleculeViewer'
+
+// CR-11: where an entry came from, as chips. The tags are derived by the
+// server from what the entry records (never stored), so the browser only
+// draws them. One colour per tag, the same everywhere.
+const TAG_STYLE = {
+  'Dotmatics ID': 'bg-indigo-100 text-indigo-800',
+  'Excel upload': 'bg-emerald-100 text-emerald-800',
+  'SDF upload': 'bg-purple-100 text-purple-800',
+  'CSV upload': 'bg-amber-100 text-amber-800',
+  'JSON upload': 'bg-sky-100 text-sky-800',
+  Manual: 'bg-gray-200 text-gray-700',
+}
+const TAG_TITLE = {
+  'Dotmatics ID': 'Carries a Dotmatics registration id, whatever route it arrived by',
+  'Excel upload': 'Loaded or updated from an .xlsx/.xls file — the Dotmatics export included',
+  'SDF upload': 'Loaded or updated from a structure (SDF) file',
+  'CSV upload': 'Loaded or updated from a .csv/.tsv file',
+  'JSON upload': 'Loaded or updated from a .json file or the JSON endpoint',
+  Manual: 'Typed in: Add Chemical, or POST /api/chemicals',
+}
+export function TagChips({ tags, size = 'xs' }) {
+  if (!tags || tags.length === 0) return <span className="text-gray-300">—</span>
+  return (
+    <div className="flex flex-wrap gap-1">
+      {tags.map((t) => (
+        <span key={t} title={TAG_TITLE[t] || t} className={`inline-block px-1.5 py-0.5 rounded font-semibold whitespace-nowrap ${size === 'xs' ? 'text-[10px]' : 'text-xs'} ${TAG_STYLE[t] || 'bg-gray-100 text-gray-600'}`}>{t}</span>
+      ))}
+    </div>
+  )
+}
 
 export default function ChemicalsView() {
   const [chemicals, setChemicals] = useState([])
@@ -35,6 +65,11 @@ export default function ChemicalsView() {
   const [showPicker, setShowPicker] = useState(false)
   const [sort, setSort] = useState({ key: null, order: 'asc' })
   const [colFilters, setColFilters] = useState({})
+  // CR-11: the counts strip, the batch filter and the tag chips
+  const [summary, setSummary] = useState(null)
+  const [batchMode, setBatchMode] = useState('all')          // all | one | several
+  const [selectedTags, setSelectedTags] = useState([])
+  const [tagsMatch, setTagsMatch] = useState('all')          // all | any (T2: all by default, with a switch)
 
   const explainRefusal = (error, chemicalId, fallback) => {
     if (error?.response?.status === 409) {
@@ -53,7 +88,7 @@ export default function ChemicalsView() {
 
   useEffect(() => {
     loadChemicals()
-  }, [pagination.page, pagination.limit, search, viewMode, sort, colFilters])
+  }, [pagination.page, pagination.limit, search, viewMode, sort, colFilters, batchMode, selectedTags, tagsMatch])
 
   useEffect(() => {
     try { localStorage.setItem('crucible.registry.view', viewMode) } catch { /* private window */ }
@@ -77,8 +112,13 @@ export default function ChemicalsView() {
     try { const r = await getChemicalNotices(); setNotices(r.data) } catch { setNotices(null) }
   }
 
+  const loadSummary = async () => {
+    try { const r = await getChemicalSummary(); setSummary(r.data) } catch { setSummary(null) }
+  }
+
   const loadChemicals = async () => {
     loadNotices()
+    loadSummary()
     setLoading(true)
     try {
       const activeFilters = Object.fromEntries(Object.entries(colFilters).filter(([, v]) => v))
@@ -90,6 +130,9 @@ export default function ChemicalsView() {
         sort: sort.key || undefined,
         order: sort.key ? sort.order : undefined,
         filters: Object.keys(activeFilters).length ? JSON.stringify(activeFilters) : undefined,
+        batches: batchMode === 'all' ? undefined : batchMode,
+        tags: selectedTags.length ? selectedTags.join(',') : undefined,
+        tags_match: selectedTags.length > 1 ? tagsMatch : undefined,
       })
       if (columns.length === 0) loadColumns()
       setChemicals(response.data.data)
@@ -118,7 +161,7 @@ export default function ChemicalsView() {
   // every batch column the data has.
   const genericColumns = useMemo(() => {
     if (viewMode === 'batches') {
-      const core = ['chemical_id', 'name', 'cas_number', 'dotmatics_reg_id', 'dtx_id'].map((k) => ({ key: k, label: k }))
+      const core = ['chemical_id', 'name', 'tags', 'cas_number', 'dotmatics_reg_id', 'dtx_id'].map((k) => ({ key: k, label: k }))
       return [...core, { key: 'batch_no', label: 'batch #' }, { key: 'batches_total', label: 'of' }, ...batchColumns]
     }
     if (columns.length === 0) return [{ key: 'chemical_id', label: 'chemical_id' }, { key: 'name', label: 'name' }, { key: 'cas_number', label: 'cas_number' }]
@@ -253,6 +296,64 @@ export default function ChemicalsView() {
           </button>
         </form>
       </div>
+
+      {/* CR-11: the counts as buttons, and the source tags as chips */}
+      {summary && (
+        <div className="bg-white rounded-xl shadow-md p-3 space-y-2 text-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-gray-500 mr-1">Compounds:</span>
+            {[
+              ['all', 'All compounds', summary.total, 'Every registered compound, one row each'],
+              ['one', 'One batch', summary.one_batch, 'Compounds the export listed once (or that have no batch information)'],
+              ['several', 'Several batches', summary.several_batches, 'Compounds the export listed as two or more batches'],
+            ].map(([key, label, n, title]) => (
+              <button
+                key={key}
+                title={title}
+                onClick={() => { setBatchMode(key); if (viewMode === 'batches' && key === 'all') setViewMode('compact'); setPagination((p) => ({ ...p, page: 1 })) }}
+                className={`px-3 py-1 rounded-lg border ${batchMode === key && viewMode !== 'batches' ? 'bg-pandora-600 border-pandora-600 text-white' : batchMode === key ? 'bg-pandora-100 border-pandora-300 text-pandora-800' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}`}
+              >
+                {label} <span className="font-semibold">{n.toLocaleString()}</span>
+              </button>
+            ))}
+            <button
+              title="One row per batch of a compound — the Batches view"
+              onClick={() => { setViewMode('batches'); setPagination((p) => ({ ...p, page: 1 })) }}
+              className={`px-3 py-1 rounded-lg border ${viewMode === 'batches' ? 'bg-pandora-600 border-pandora-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}`}
+            >
+              Batch rows <span className="font-semibold">{summary.batch_rows.toLocaleString()}</span>
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-gray-500 mr-1">Tags:</span>
+            {Object.entries(summary.tags).map(([tag, n]) => {
+              const on = selectedTags.includes(tag)
+              return (
+                <button
+                  key={tag}
+                  title={TAG_TITLE[tag] || tag}
+                  onClick={() => { setSelectedTags((t) => (on ? t.filter((x) => x !== tag) : [...t, tag])); setPagination((p) => ({ ...p, page: 1 })) }}
+                  className={`px-2 py-0.5 rounded-full border text-xs font-semibold ${on ? 'ring-2 ring-pandora-500 ' : 'opacity-80 hover:opacity-100 '}${TAG_STYLE[tag] || 'bg-gray-100 text-gray-600'} border-transparent`}
+                >
+                  {tag} <span className="font-normal">{n.toLocaleString()}</span>
+                </button>
+              )
+            })}
+            {selectedTags.length > 1 && (
+              <span className="inline-flex items-center rounded-lg border border-gray-200 overflow-hidden text-xs ml-1" title="With several tags ticked: entries carrying every one of them, or at least one">
+                {[['all', 'all of these'], ['any', 'any of these']].map(([key, label]) => (
+                  <button key={key} onClick={() => { setTagsMatch(key); setPagination((p) => ({ ...p, page: 1 })) }} className={`px-2 py-1 ${tagsMatch === key ? 'bg-gray-800 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>{label}</button>
+                ))}
+              </span>
+            )}
+            {(selectedTags.length > 0 || batchMode !== 'all') && (
+              <button onClick={() => { setSelectedTags([]); setBatchMode('all'); setPagination((p) => ({ ...p, page: 1 })) }} className="text-gray-500 hover:underline text-xs ml-1">
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* CR-2 toolbar: view, columns, page size */}
       <div className="bg-white rounded-xl shadow-md p-3 flex flex-wrap items-center gap-3 text-sm">
@@ -518,6 +619,7 @@ export default function ChemicalsView() {
                 {chemicals.map((row, i) => (
                   <tr key={`${row.chemical_id}-${row.batch_no || 0}-${i}`}>
                     {genericColumns.map((col) => {
+                      if (col.key === 'tags') return <td key={col.key}><TagChips tags={row.tags} /></td>
                       const text = formatCell(cellValue(row, col.key))
                       return (
                         <td key={col.key} className={`text-xs max-w-[240px] truncate ${col.key === 'chemical_id' ? 'font-mono text-blue-700' : ''}`} title={text}>
@@ -554,6 +656,7 @@ export default function ChemicalsView() {
                   <th><button onClick={() => toggleSort('chemical_id')} className="hover:text-pandora-700">chemical_id{sort.key === 'chemical_id' && (sort.order === 'asc' ? ' ▲' : ' ▼')}</button></th>
                   <th>DTX_ID</th>
                   <th><button onClick={() => toggleSort('name')} className="hover:text-pandora-700">Name{sort.key === 'name' && (sort.order === 'asc' ? ' ▲' : ' ▼')}</button></th>
+                  <th title="Where the entry came from (CR-11)">Tags</th>
                   <th><button onClick={() => toggleSort('cas_number')} className="hover:text-pandora-700">CAS Number{sort.key === 'cas_number' && (sort.order === 'asc' ? ' ▲' : ' ▼')}</button></th>
                   <th>Synonyms</th>
                   <th>Molecular Formula</th>
@@ -593,6 +696,7 @@ export default function ChemicalsView() {
                       {chemical.dtx_id || <span className="text-gray-300">—</span>}
                     </td>
                     <td className="font-medium max-w-[200px] truncate" title={chemical.name}>{chemical.name}</td>
+                    <td><TagChips tags={chemical.tags} /></td>
                     <td className="whitespace-nowrap">{chemical.cas_number || '-'}</td>
                     <td className="text-xs text-gray-500 max-w-[150px] truncate" title={meta['Synonyms / Composition'] || ''}>{meta['Synonyms / Composition'] || '-'}</td>
                     <td className="font-mono text-sm whitespace-nowrap">{chemical.molecular_formula || '-'}</td>
@@ -753,6 +857,7 @@ export default function ChemicalsView() {
                 <MoleculeViewer molBlock={selectedChemical.mol_block} smiles={selectedChemical.smiles} width={240} height={180} />
               </div>
               <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 content-start text-sm">
+                <div className="col-span-2 sm:col-span-3"><span className="text-[11px] text-gray-400 block">Where it came from</span><TagChips tags={selectedChemical.tags} size="sm" /></div>
                 <div><span className="text-[11px] text-gray-400 block">Formula</span><span className="font-mono text-xs">{selectedChemical.molecular_formula || '—'}</span></div>
                 <div><span className="text-[11px] text-gray-400 block">Mol. Weight</span><span>{selectedChemical.molecular_weight ? `${selectedChemical.molecular_weight} g/mol` : '—'}</span></div>
                 <div><span className="text-[11px] text-gray-400 block">Exact Mass</span><span className="font-mono text-xs">{m('MONOISOTOPIC_MASS') || m('Exact Molecular Weight') || '—'}</span></div>

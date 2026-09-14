@@ -56,7 +56,7 @@ the induction course, the tasks page is the laminated card by the machine.
 
 | | |
 |---|---|
-| **Version** | 2.18.2 (2026-09-14); the first tagged release was `v2.10.1` |
+| **Version** | 2.18.3 (2026-09-14); the first tagged release was `v2.10.1` |
 | **Status date** | 2026-09-14 |
 | **Tests** | 145 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | CR-11 — counts, batch filters and source tags ✅ (2026-09-14): the strip of batch counts as filter buttons, six source tags derived from the data as chips in every view, filterable in combination, one summary endpoint and script — [phase CR-11](04-phase-tutorials/phase-cr-11-counts-and-tags.md). Before it, CR-10 — the attention page ✅ (2026-09-09): every flag in the browser with the buttons to act — merge, keep both, mark reviewed, set the identifier — behind one audit module the page, the API and the script all call; a review mark stored on the entry — [phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.md). Before it the same day, CR-2 with CR-1 — three views, sort and filter on the registry table ✅: every column (164), every batch (12,561), sorted and filtered on the server — [phase CR-2](04-phase-tutorials/phase-cr-2-views-sort-filter.md); and CR-9 — The real registry sources ✅: the Dotmatics export, the structure file and the limited list recognised by their columns and loaded by their own rules; batches folded, sources merged on DTXSID, shared identifiers flagged, structures read; a banner and the audit for what a person decides — [phase CR-9](04-phase-tutorials/phase-cr-9-real-registry-sources.md) · [the sources](09-registry-sources.md) |

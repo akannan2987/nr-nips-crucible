@@ -283,7 +283,7 @@ coverage) and `batch_columns` — cached; invalidated by any write through this 
 
 ```json
 {"total": 12539, "one_batch": 12533, "several_batches": 6, "batch_rows": 12561,
- "tags": {"Dotmatics ID": 12539, "Excel upload": 12539, "SDF upload": 77, "CSV upload": 0, "JSON upload": 0, "Manual": 0}}
+ "tags": {"Dotmatics ID": 9193, "Excel upload": 12539, "SDF upload": 77, "CSV upload": 0, "JSON upload": 0, "Manual": 0}}
 ```
 
 `one_batch` + `several_batches` = `total`; `batch_rows` is what `view=batches` returns. Cached like the columns: refreshed at once by any write through this API, within 30 seconds after a write from outside it. The tags are derived from what each entry records ([the rules](09-registry-sources.md#counting-and-tagging-the-sources)); `registry_summary.py` prints the same answer.

@@ -76,7 +76,7 @@ def fig_source_tags() -> None:
         x = 330
         for t in tags:
             c, w = chip(x, y, t); b += c; x += w + 6
-    b += text(310, 254, "the tags come from formats, dotmatics_reg_id and the sources the entry names", 9.5, MUTED)
+    b += text(310, 254, "the tags come from formats, dtx_id and the sources the entry names", 9.5, MUTED)
     # the two readings
     b += box(610, 66, 300, 92, "#eef2ff", COLOURS["chemical"], 8)
     b += text(760, 88, "tick  Excel upload  +  SDF upload", 11.5, COLOURS["chemical"], "middle", "bold")

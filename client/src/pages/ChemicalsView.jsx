@@ -17,7 +17,7 @@ const TAG_STYLE = {
   Manual: 'bg-gray-200 text-gray-700',
 }
 const TAG_TITLE = {
-  'Dotmatics ID': 'Carries a Dotmatics registration id, whatever route it arrived by',
+  'Dotmatics ID': 'Has a DTX identifier (the DTX_ID column), whatever route it arrived by',
   'Excel upload': 'Loaded or updated from an .xlsx/.xls file — the Dotmatics export included',
   'SDF upload': 'Loaded or updated from a structure (SDF) file',
   'CSV upload': 'Loaded or updated from a .csv/.tsv file',

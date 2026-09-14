@@ -304,7 +304,7 @@ stale:
 
 | Tag | An entry carries it when | On the real export |
 |---|---|---|
-| **Dotmatics ID** | it has a `dotmatics_reg_id`, whatever route it arrived by | 12,539 |
+| **Dotmatics ID** | it has a `dtx_id` — the DTX identifier shown in the *DTX_ID* column — whatever route it arrived by; an export row without one does not carry the tag | 9,193 (3,346 entries have none) |
 | **Excel upload** | an `.xlsx`/`.xls` file loaded or updated it — the Dotmatics export **included**, with or without an identifier | 12,539 |
 | **SDF upload** | a structure file did | 77 |
 | **CSV upload** | a `.csv` or `.tsv` file did | 0 |
@@ -335,7 +335,8 @@ with `--tag`, the entries behind them.
 | T2 | Several tags ticked: all of them, or any? | **All**, with an *any of these* switch beside the chips |
 | T3 | Tag chips as a column? | **In every view**: Compact, Complete and Batches, and in the detail |
 | T4 | Files that are neither Excel nor SDF? | **Their own tag**, named after the file type: *CSV upload*, *JSON upload* |
-| — | A *Dotmatics export* tag? | **No**: *Dotmatics ID* says the entry belongs to that system, *Excel upload* says how it arrived; one tag per fact |
+| — | A *Dotmatics export* tag? | **No**: *Excel upload* says how the export arrived; one tag per fact |
+| — | What does *Dotmatics ID* mean? | **Has a DTX identifier** (`dtx_id`), decided after the first release showed the tag on all 12,539 entries because every export row has a registration number; 9,193 entries have a DTX identifier, 3,346 do not |
 
 **Later, not now:** tags a person adds by hand. Derived tags cost no
 migration and are never wrong; a hand-tag editor is a small phase after.

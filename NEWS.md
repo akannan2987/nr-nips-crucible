@@ -10,6 +10,22 @@ change you are getting.
 
 ---
 
+## v2.18.3 — 2026-09-14 — "Dotmatics ID means a DTX identifier"
+
+**Changed**
+- The *Dotmatics ID* tag now marks entries that carry a DTX identifier
+  (`dtx_id`, the *DTX_ID* column): 9,193 of the 12,539 on the real
+  export, not all of them. The first release read the Dotmatics
+  registration number instead, which every export row has, so the tag
+  told nobody anything. Found by the owner on the day. The rule, the
+  chip's explanation and every number in the documents follow.
+
+**Deploy note**
+- Backend and client changed: the server **rebuilds**, then hard-reload
+  the page.
+
+---
+
 ## v2.18.2 — 2026-09-14 — "One answer per click, and the right one"
 
 **Fixed**

@@ -485,11 +485,11 @@ curl --noproxy '*' -sS http://localhost:49160/api/chemicals/summary
 ```
 
 ```json
-{"total":6,"one_batch":5,"several_batches":1,"batch_rows":7,"tags":{"Dotmatics ID":6,"Excel upload":6,"SDF upload":3,"CSV upload":0,"JSON upload":0,"Manual":0}}
+{"total":6,"one_batch":5,"several_batches":1,"batch_rows":7,"tags":{"Dotmatics ID":5,"Excel upload":6,"SDF upload":3,"CSV upload":0,"JSON upload":0,"Manual":0}}
 ```
 
 Six compounds, one of them with two batches, so seven rows in the Batches
-view. The tags are not stored on the entries; they are worked out from what
+view; five carry a DTX identifier. The tags are not stored on the entries; they are worked out from what
 each entry records every time it is read, so a re-import cannot lose them.
 
 ```bash

@@ -101,7 +101,7 @@ entry that arrives twice by two routes keeps both tokens.
 
 | Tag | Earned when |
 |---|---|
-| **Dotmatics ID** | the entry has a `dotmatics_reg_id`, by whatever route |
+| **Dotmatics ID** | the entry has a `dtx_id`, the DTX identifier in the *DTX_ID* column, by whatever route (v2.18.3; the first release read the registration number instead, which every export row has) |
 | **Excel upload** | `formats` has `excel` — the Dotmatics export **included**, with or without an ID (decision T1) |
 | **SDF upload** | `formats` has `sdf` |
 | **CSV upload** | `formats` has `csv` — a CSV is not an Excel file (T4) |
@@ -141,7 +141,7 @@ from the stored entry itself.
 
 ```json
 {"total": 12539, "one_batch": 12533, "several_batches": 6, "batch_rows": 12561,
- "tags": {"Dotmatics ID": 12539, "Excel upload": 12539, "SDF upload": 77, "CSV upload": 0, "JSON upload": 0, "Manual": 0}}
+ "tags": {"Dotmatics ID": 9193, "Excel upload": 12539, "SDF upload": 77, "CSV upload": 0, "JSON upload": 0, "Manual": 0}}
 ```
 
 A compound with no `batches` list counts as one batch and one batch row,
@@ -240,10 +240,10 @@ what the server shows.
 | Route | How | You should see (synthetic) | Real export |
 |---|---|---|---|
 | **Browser, the strip** | Chemical Registry page, above the view toolbar | *All compounds 17 · One batch 16 · Several batches 1 · Batch rows 18*; click **Several batches** → only Caffeine; click **Batch rows** → the Batches view, two Caffeine rows | 12,539 · 12,533 · 6 · 12,561 |
-| **Browser, the chips** | the *Tags:* row | *Dotmatics ID 6 · Excel upload 6 · SDF upload 3 · CSV upload 5 · JSON upload 5 · Manual 1*; tick **SDF upload** → 3 rows, each with three chips; tick **Excel upload** too → still 3 (*all of these*); flip to *any of these* → the 6 export entries; tick **CSV upload** and **JSON upload** with *all of these* → nothing, with *any* → 10 | Dotmatics ID 12,539 · Excel upload 12,539 · SDF upload 77 · the rest 0 |
+| **Browser, the chips** | the *Tags:* row | *Dotmatics ID 5 · Excel upload 6 · SDF upload 3 · CSV upload 5 · JSON upload 5 · Manual 1* (one template compound has no DTX identifier); tick **SDF upload** → 3 rows, each with three chips; tick **Excel upload** too → still 3 (*all of these*); flip to *any of these* → the 6 export entries; tick **CSV upload** and **JSON upload** with *all of these* → nothing, with *any* → 10 | Dotmatics ID 9,193 · Excel upload 12,539 · SDF upload 77 · the rest 0 |
 | **Browser, the column** | any view | a **Tags** column of coloured chips on every row; in Complete, *tags* in the column chooser, second in the list; in Batches, after the name | the same |
 | **Browser, the detail** | the eye icon on any row | *Where it came from* under the structure, with the chips | the same |
-| **API, the summary** | `curl --noproxy '*' -sSk https://localhost:49160/api/chemicals/summary` | `{"total":17,"one_batch":16,"several_batches":1,"batch_rows":18,"tags":{"Dotmatics ID":6,"Excel upload":6,"SDF upload":3,"CSV upload":5,"JSON upload":5,"Manual":1}}` | `{"total":12539,"one_batch":12533,"several_batches":6,"batch_rows":12561,"tags":{"Dotmatics ID":12539,"Excel upload":12539,"SDF upload":77,"CSV upload":0,"JSON upload":0,"Manual":0}}` |
+| **API, the summary** | `curl --noproxy '*' -sSk https://localhost:49160/api/chemicals/summary` | `{"total":17,"one_batch":16,"several_batches":1,"batch_rows":18,"tags":{"Dotmatics ID":5,"Excel upload":6,"SDF upload":3,"CSV upload":5,"JSON upload":5,"Manual":1}}` | `{"total":12539,"one_batch":12533,"several_batches":6,"batch_rows":12561,"tags":{"Dotmatics ID":9193,"Excel upload":12539,"SDF upload":77,"CSV upload":0,"JSON upload":0,"Manual":0}}` |
 | **API, the filters** | `curl --noproxy '*' -sSk "https://localhost:49160/api/chemicals?batches=several&limit=5"` then `…?tags=Excel%20upload,SDF%20upload&tags_match=any&limit=1` then `…?tags=SDF%20upload,Manual` | `pagination.total` 1, then 6, then 0; every row has a `tags` list | 6 · 12,539 · 0 |
 | **API, a refusal** | `curl --noproxy '*' -sSk "https://localhost:49160/api/chemicals?tags_match=sometimes"` | `{"error":"tags_match must be all or any"}` | the same |
 | **Terminal, the shortcut** | `./container-py.sh script registry_summary.py` | *17 compounds: 16 with one batch, 1 with several; 18 batch rows.* then *Entries per tag* | *12539 compounds: 12533 with one batch, 6 with several; 12561 batch rows.* |

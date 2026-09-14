@@ -6,7 +6,7 @@ cannot go stale and needs no re-import:
 
 | Tag            | The entry carries it when                                      |
 |----------------|----------------------------------------------------------------|
-| Dotmatics ID   | it has a `dotmatics_reg_id`, whatever route it arrived by      |
+| Dotmatics ID   | it has a `dtx_id` (a DTXSID), whatever route it arrived by     |
 | Excel upload   | an .xlsx/.xls file loaded or updated it (the export included)  |
 | SDF upload     | a structure file did                                           |
 | CSV upload     | a .csv or .tsv file did                                        |
@@ -80,8 +80,8 @@ def _inferred_formats(doc: dict[str, Any]) -> list[str]:
 def tags_of(doc: dict[str, Any]) -> list[str]:
     """The tags an entry carries, in the display order of `TAGS`."""
     earned: set[str] = set()
-    if doc.get("dotmatics_reg_id"):
-        earned.add("Dotmatics ID")
+    if doc.get("dtx_id"):
+        earned.add("Dotmatics ID")  # the owner's name for "has a DTX identifier" (2026-09-14)
     for fmt in doc.get("formats") or _inferred_formats(doc):
         tag = FORMAT_TAGS.get(str(fmt).lower())
         if tag:

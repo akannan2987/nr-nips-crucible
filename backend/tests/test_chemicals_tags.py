@@ -5,6 +5,8 @@
 * the owner's rules: every Excel file earns *Excel upload*, the Dotmatics
   export included, with or without a Dotmatics ID (T1); CSV is not Excel
   (T4); several tags ticked means ALL of them unless `any` is asked (T2);
+  *Dotmatics ID* means the entry has a `dtx_id` — an export row without a
+  DTXSID does not carry it (2026-09-14, second decision);
 * `GET /api/chemicals/summary` counts compounds, batches and tags;
   `batches=` and `tags=`/`tags_match=` filter the list; rows carry `tags`;
   the columns endpoint offers `tags`;
@@ -74,8 +76,9 @@ def _tags(client, needle: str) -> list[str]:
 def _seed_everything(client):
     """One entry per route, plus the export's compound with two batches, completed by the SDF."""
     rows = [_dm(100001, 1, "Caffeine", "58-08-2", "DTXSID0020232"), _dm(100001, 2, "Caffeine", "58-08-2", "DTXSID0020232"),
-            _dm(100002, 1, "Vanillin", "121-33-5", "DTXSID0021976", formula="C8H8O3")]
-    assert _upload(client, "Export_Chemicals.xlsx", _xlsx(DM_HEADER, rows), "/api/chemicals/upload/excel").json()["compounds"] == 2
+            _dm(100002, 1, "Vanillin", "121-33-5", "DTXSID0021976", formula="C8H8O3"),
+            _dm(100003, 1, "No DTXSID compound", "50-00-0", "", formula="CH2O")]     # in the export, but no DTX identifier
+    assert _upload(client, "Export_Chemicals.xlsx", _xlsx(DM_HEADER, rows), "/api/chemicals/upload/excel").json()["compounds"] == 3
     assert _upload(client, "Upload_Chemicals.sdf", _sdf("DTXSID0020232", "Caffeine", "Cn1cnc2c1c(=O)n(C)c(=O)n2C"), "/api/chemicals/upload/sdf").json()["updated"] == 1
     custom = _xlsx(["CHEMICAL_NAME", "CAS_NO", "MOL_FORMULA"], [["Custom xlsx compound", "100-00-1", "C6H5NO2"]], "Sheet1")
     assert _upload(client, "my_list.xlsx", custom, "/api/chemicals/upload/excel").json()["inserted"] == 1
@@ -88,6 +91,7 @@ def test_every_route_earns_its_tag_and_every_excel_file_counts(client):
     _seed_everything(client)
     assert _tags(client, "Caffeine") == ["Dotmatics ID", "Excel upload", "SDF upload"]   # export, then the structure file
     assert _tags(client, "Vanillin") == ["Dotmatics ID", "Excel upload"]                  # T1: the export IS an Excel upload
+    assert _tags(client, "No DTXSID") == ["Excel upload"]                                 # from the export, but no dtx_id → no Dotmatics ID
     assert _tags(client, "Custom xlsx") == ["Excel upload"]                               # …and so is a custom file without an ID
     assert _tags(client, "Custom csv") == ["CSV upload"]                                  # T4: CSV is not Excel
     assert _tags(client, "JSON compound") == ["JSON upload"]
@@ -103,32 +107,32 @@ def test_every_route_earns_its_tag_and_every_excel_file_counts(client):
 def test_summary_counts_compounds_batches_and_tags(client):
     _seed_everything(client)
     s = client.get("/api/chemicals/summary").json()
-    assert (s["total"], s["one_batch"], s["several_batches"], s["batch_rows"]) == (6, 5, 1, 7)
-    assert s["tags"] == {"Dotmatics ID": 2, "Excel upload": 3, "SDF upload": 1, "CSV upload": 1, "JSON upload": 1, "Manual": 1}
+    assert (s["total"], s["one_batch"], s["several_batches"], s["batch_rows"]) == (7, 6, 1, 8)
+    assert s["tags"] == {"Dotmatics ID": 2, "Excel upload": 4, "SDF upload": 1, "CSV upload": 1, "JSON upload": 1, "Manual": 1}
 
 
 def test_list_filters_by_batches_and_by_tags_all_or_any(client):
     _seed_everything(client)
     names = lambda q: sorted(r["name"] for r in client.get(f"/api/chemicals?limit=50&{q}").json()["data"])  # noqa: E731
     assert names("batches=several") == ["Caffeine"]
-    assert len(names("batches=one")) == 5
+    assert len(names("batches=one")) == 6
     assert names("view=batches&batches=several") == ["Caffeine", "Caffeine"]               # the batch rows of those compounds
     assert names("tags=Excel upload,SDF upload") == ["Caffeine"]                              # T2: all of them
     assert names("tags=Excel upload,SDF upload&tags_match=all") == ["Caffeine"]
-    assert names("tags=Excel upload,SDF upload&tags_match=any") == ["Caffeine", "Custom xlsx compound", "Vanillin"]
+    assert names("tags=Excel upload,SDF upload&tags_match=any") == ["Caffeine", "Custom xlsx compound", "No DTXSID compound", "Vanillin"]
     assert names("tags=SDF upload,Manual") == []                                              # nothing came both ways
     assert names("tags=SDF upload,Manual&tags_match=any") == ["Caffeine", "Typed in compound"]
-    assert names("tags=Excel upload,Dotmatics ID") == ["Caffeine", "Vanillin"]                # the owner's example
+    assert names("tags=Excel upload,Dotmatics ID") == ["Caffeine", "Vanillin"]                # the owner's example: the export row without a DTXSID drops out
     assert client.get("/api/chemicals?tags_match=sometimes").status_code == 400
     assert client.get("/api/chemicals?batches=few").status_code == 400
-    assert len(client.get("/api/chemicals?limit=50").json()["data"]) == 6                    # without the parameters: everything
+    assert len(client.get("/api/chemicals?limit=50").json()["data"]) == 7                    # without the parameters: everything
     cols = [c["key"] for c in client.get("/api/chemicals/columns").json()["columns"]]
     assert cols[1] == "tags"                                                                   # offered as a column, after the identifier
 
 
 def test_entries_loaded_before_formats_existed_are_still_labelled(client):
     with SessionLocal() as db:
-        insert_doc(db, Chemical, {"id": "l-1", "chemical_id": "CHEM-000001", "name": "Old export entry", "dotmatics_reg_id": "1",
+        insert_doc(db, Chemical, {"id": "l-1", "chemical_id": "CHEM-000001", "name": "Old export entry", "dotmatics_reg_id": "1", "dtx_id": "DTXSID1",
                                   "source_template": "dotmatics_export", "merged_from": ["registry_sdf", "limited_list"]})
         insert_doc(db, Chemical, {"id": "l-2", "chemical_id": "CHEM-000002", "name": "Old generic sdf entry", "mol_block": "V3000…"})
         insert_doc(db, Chemical, {"id": "l-3", "chemical_id": "CHEM-000003", "name": "Old generic sheet entry", "metadata": {"X": 1}})
@@ -143,8 +147,8 @@ def test_the_terminal_script_prints_the_same_counts(client, capsys):
     _seed_everything(client)
     assert registry_summary.main([]) == 0
     out = capsys.readouterr().out
-    assert "6 compounds: 5 with one batch, 1 with several; 7 batch rows." in out
-    assert "      3  Excel upload" in out
+    assert "7 compounds: 6 with one batch, 1 with several; 8 batch rows." in out
+    assert "      4  Excel upload" in out
     assert registry_summary.main(["--tag", "Excel upload", "--tag", "SDF upload"]) == 0
     out = capsys.readouterr().out
     assert "1 entry with Excel upload and SDF upload:" in out and "Caffeine" in out

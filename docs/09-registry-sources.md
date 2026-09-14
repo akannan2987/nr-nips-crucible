@@ -32,6 +32,7 @@ the specification it was built from, kept current with the code in
 - [The decisions this was built on](#the-decisions-this-was-built-on)
 - [Loading a source, by every route](#loading-a-source-by-every-route)
 - [What the notices mean, and what to do](#what-the-notices-mean-and-what-to-do)
+- [Counting and tagging the sources — specification](#counting-and-tagging-the-sources--specification)
 - [When something goes wrong](#when-something-goes-wrong)
 
 ---
@@ -267,6 +268,76 @@ the buttons to act ([phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.
 
 `GET /api/chemicals/notices/summary` answers the counts for scripts;
 `GET /api/chemicals/audit` answers the list. Reviewed items are not counted.
+
+---
+
+## Counting and tagging the sources — specification
+
+**Status:** specification 📝, written 2026-09-14 from the owner's request;
+decisions T1–T3 await the owner, then it is built as phase **CR-11**, ahead
+of everything else on the plan.
+
+**The problem.** The registry page says *12,539 chemicals* and the Batches
+view says *12,561*; a person meeting the two numbers has to be told that
+six compounds have several batches ([Source 1](#source-1--the-dotmatics-export)).
+And an entry does not say, at a glance, where it came from: the export,
+the structure file, a custom spreadsheet, a JSON file, the API — or several
+of those, merged. Both facts are in the data; neither is on the page.
+
+**Counts, as buttons.** A strip above the registry table:
+
+| Button | Shows | On the real export today |
+|---|---|---|
+| **All compounds** | every entry, one row each | 12,539 |
+| **One batch** | entries whose `batches` has one item (or none) | 12,533 |
+| **Several batches** | entries with two or more | 6 (two with 2, three with 3, one with 15) |
+| **Batch rows** | the Batches view, one row per batch | 12,561 |
+
+Each is a filter on the list — `batches=one|several` on `GET /api/chemicals`,
+`view=batches` for the last — and the counts come from one new answer,
+`GET /api/chemicals/summary`, so the strip is right after any import.
+
+**Tags, derived from the data.** A **tag** is a short label on an entry
+that says where it came from. Tags are computed when the entry is read,
+from fields the imports already store — `source_template`, `source`,
+`merged_from`, `dotmatics_reg_id` — so no entry has to be re-imported and
+nothing is written:
+
+| Tag | An entry carries it when | Today |
+|---|---|---|
+| **Dotmatics ID** | it has a `dotmatics_reg_id`, whatever route it arrived by | 12,539 |
+| **Dotmatics export** | the export loaded or updated it (`dotmatics_export` in `source_template` or `merged_from`) | 12,539 |
+| **SDF upload** | a structure file did (`registry_sdf`, or the generic SDF route) | 77 |
+| **Excel upload** | a spreadsheet other than the export did: the limited list, a generic CSV/XLSX/TSV | 25 |
+| **JSON upload** | the JSON file or the JSON-body endpoint did | 0 |
+| **API** | it was created one at a time through `POST /api/chemicals` or the browser's form | 0 |
+| **Screening data** | it was registered from screening rows (CR-5, later) | — |
+
+An entry merged from several sources carries several tags. Tags appear as
+small chips on the row and in the detail view, and as a column the views
+can switch on. **Filtering:** chips above the table, each with its count;
+tick one or several. With several ticked, the table shows entries carrying
+**all** of them (decision T2) — *Excel upload* and *Dotmatics ID* together
+means "custom spreadsheet rows that also carry a REG_ID" — with a switch to
+**any**. `tags=a,b&tags_match=all|any` on the list endpoint; without the
+parameters the list answers exactly as before.
+
+**Later, not now:** tags a person adds by hand (a `tags` list on the
+entry, with a chip editor). Derived tags come first because they cost no
+migration and are never wrong; hand tags are a small phase after.
+
+**Decisions T1–T3.**
+
+| # | Question | Recommendation | Why |
+|---|---|---|---|
+| T1 | Is the Dotmatics export also an *Excel upload*? | **No.** One tag per kind of source; the export has its own | *Excel upload* should mean "a spreadsheet that is not the master export", which is what a person filtering for it wants |
+| T2 | Several tags ticked: all of them, or any? | **All**, with an *any* switch | The owner's example — Excel *and* a Dotmatics ID — is an intersection |
+| T3 | Tags as a column in Compact? | Yes, as chips, on by default in Compact | It is the one column that answers "where did this come from" |
+
+**Done means:** the strip and the chips on the registry page with live
+counts; the three list parameters and the summary endpoint; tags visible
+in the detail view; tests; the phase tutorial with the every-route table;
+this section rewritten from *will* to *does*.
 
 ---
 

@@ -56,12 +56,12 @@ the induction course, the tasks page is the laminated card by the machine.
 
 | | |
 |---|---|
-| **Version** | 2.16.1 (2026-09-14); the first tagged release was `v2.10.1` |
+| **Version** | 2.17.0 (2026-09-14, the plan for CR-11 and CR-12); the first tagged release was `v2.10.1` |
 | **Status date** | 2026-09-14 |
 | **Tests** | 139 passing (`cd backend && .venv/bin/pytest`) |
 | **Last phase done** | CR-10 — the attention page ✅ (2026-09-09): every flag in the browser with the buttons to act — merge, keep both, mark reviewed, set the identifier — behind one audit module the page, the API and the script all call; a review mark stored on the entry — [phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.md). Before it the same day, CR-2 with CR-1 — three views, sort and filter on the registry table ✅: every column (164), every batch (12,561), sorted and filtered on the server — [phase CR-2](04-phase-tutorials/phase-cr-2-views-sort-filter.md); and CR-9 — The real registry sources ✅: the Dotmatics export, the structure file and the limited list recognised by their columns and loaded by their own rules; batches folded, sources merged on DTXSID, shared identifiers flagged, structures read; a banner and the audit for what a person decides — [phase CR-9](04-phase-tutorials/phase-cr-9-real-registry-sources.md) · [the sources](09-registry-sources.md) |
 | **Phase in progress** | **R — the registry reset** 🔨 (tracks CR + SD): **R-1 and R-2 done on production 2026-09-08** — every row unlinked, then every entry removed; the registry is empty by design, the 664 entries held in a backup outside the repository; R-3 is now **SD-1, agreed ✅ 2026-09-08** — the registry-first rule, written from the owner's description and agreed the same day, D1–D11 as recommended — [phase R](04-phase-tutorials/phase-r-registry-reset.md) · [the specification](09-chemical-identification.md#the-next-rule-registry-first--specification) |
-| **Plan** | Six **tracks**, one per module and a shared spine, each with its next phase — [`05-roadmap.md`](05-roadmap.md). Next in order: ~~the owner loads the three real files~~ done 2026-09-09 (12,539 entries on production) → ~~CR-10 the attention page~~ done v2.16.0 → **SD-1 build** → CR-5 unregistered review → CR-4 incomplete entries → CR-8 merge a hand-picked pair → SH-2 schema normalisation; beside them, the **authentication ladder**, agreed 2026-09-08: SH-3a token gate 🔜 ready → SH-3b break-glass admin → SH-3c single sign-on ⏸ the identity team's registration, requested this week — [`13-authentication.md`](13-authentication.md) |
+| **Plan** | Six **tracks**, one per module and a shared spine, each with its next phase — [`05-roadmap.md`](05-roadmap.md). Next in order: ~~the owner loads the three real files~~ done 2026-09-09 (12,539 entries on production) → ~~CR-10 the attention page~~ done v2.16.0 → **CR-11 counts, batch filters and source tags** → **CR-12 structures: derive, draw, edit** (both the owner's request of 2026-09-14, [specified](09-registry-sources.md#counting-and-tagging-the-sources--specification) · [specified](09-structures.md)) → SD-1 build → CR-5 unregistered review → CR-4 incomplete entries → CR-8 merge a hand-picked pair → SH-2 schema normalisation; beside them, the **authentication ladder**, agreed 2026-09-08: SH-3a token gate 🔜 ready → SH-3b break-glass admin → SH-3c single sign-on ⏸ the identity team's registration, requested this week — [`13-authentication.md`](13-authentication.md) |
 | **Production** | one RHEL 8 VM, one container, one SQLite file: 49,065 screening rows, **12,539 registered chemicals** (the Dotmatics export, the structure file and the limited list, loaded by the owner on 2026-09-09 through the terminal shortcut), **0 rows linked** until SD-1 attaches them; 419 entries share an identifier, 3 have batch conflicts and 125 have a formula their names do not explain — 349 items on the attention page, for a person to decide; the 664 old entries stay in `~/data-backup-20260908-before-R2.db` on the server |
 
 **Open items, none blocking:**
@@ -531,14 +531,20 @@ In the order the roadmap [argues for](05-roadmap.md#why-this-order):
    ([how](04-phase-tutorials/phase-cr-9-real-registry-sources.md#how-to-test-it-by-every-route)).
    The review loop for the 664 old entries stays available but is now
    optional: the export is the master source.
-4. **SD-1 build, then CR-5:** the rule in code, with the command that
+4. **CR-11, then CR-12** — the owner's request of 2026-09-14, ahead of
+   everything below: the counts and source tags on the registry page
+   ([specification](09-registry-sources.md#counting-and-tagging-the-sources--specification)),
+   then structures derived, drawn and editable in the browser
+   ([specification](09-structures.md)), each waiting only on its listed
+   decisions.
+5. **SD-1 build, then CR-5:** the rule in code, with the command that
    re-attaches the rows already loaded, and the unregistered-compounds
    notice and review table.
-5. ~~CR-1, CR-2~~ done, v2.15.0; ~~CR-10~~ the attention page done, v2.16.0.
+6. ~~CR-1, CR-2~~ done, v2.15.0; ~~CR-10~~ the attention page done, v2.16.0.
    **CR-4:** the incomplete-entries notice with the PubChem review step.
-6. **SH-2 — schema normalisation:** list the fields people filter on, agree
+7. **SH-2 — schema normalisation:** list the fields people filter on, agree
    them, *then* write the migration.
-7. **SH-3a, b, c — authentication, as a ladder:** the largest gap. `/api/*`
+8. **SH-3a, b, c — authentication, as a ladder:** the largest gap. `/api/*`
    is open to anyone who can reach the port; deliberate for an internal
    network, and the first thing a wider audience needs. A token gate in
    days, local accounts only as far as needed, single sign-on as the

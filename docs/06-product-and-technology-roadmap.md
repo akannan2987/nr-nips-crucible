@@ -280,6 +280,27 @@ the key cannot be computed for them.
 *Verdict:* **Recommended later** — *trigger:* structures arrive for most
 compounds, or a second registry must be merged.
 
+### Drawing and editing structures
+
+*What it is:* a **structure editor** — a drawing canvas for molecules in
+the browser, the thing ChemDraw, MolView and Dotmatics' Elemental are —
+plus a server that can *derive* a checked structure from the SMILES, InChI
+or MOL block a source gave and *draw* it as a picture wherever the compound
+appears. *Analogy:* the registry has been a card index that records what a
+parcel is called; this adds the X-ray.
+*Required now?* **Yes** — asked for by the owner on 2026-09-14: the
+laboratory draws structures in other tools today and cannot in this one,
+and half the registry (6,553 of 12,539 entries) already carries a structure
+nobody can see or check.
+*Benefit:* a structure is the one fact about a compound that can be checked
+against its formula and weight, so wrong entries become visible; a person
+can correct or add one without leaving the application; the InChIKey
+verdict above moves closer to its trigger. *Cost:* one client dependency
+(Ketcher, Apache-2.0, bundled), RDKit depiction on the server, three
+releases of work. Not included: 3-D, reactions, name-to-structure.
+*Verdict:* **Required now** — phase CR-12, specified in
+[`09-structures.md`](09-structures.md).
+
 ### Synonym and house-style name normalisation
 
 *What it is:* turning `Phenol, 2,4-di-tertiobutyl` into the form public
@@ -479,6 +500,7 @@ marketed.
 | Databricks / Snowflake | Optional | Tens of millions of rows |
 | Data versioning beyond Alembic | Not needed | A reconstruct-as-of-date requirement |
 | InChIKey as canonical key | Recommended later | Structures for most compounds |
+| Drawing and editing structures | **Required now** (2026-09-14) | — phase CR-12 |
 | Name normalisation and synonyms | **Required now** (roadmap) | — |
 | Knowledge graph | Optional | Multi-hop questions become routine |
 | GHS / OECD vocabularies | Recommended later | Toxicology at volume |

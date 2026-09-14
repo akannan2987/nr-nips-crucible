@@ -10,6 +10,37 @@ change you are getting.
 
 ---
 
+## v2.17.0 — 2026-09-14 — "Two things the users asked for, written down first"
+
+No application code. The owner's requests of 2026-09-14, specified and
+put at the front of the plan, ahead of the screening-data rule.
+
+**Planned**
+- **CR-11 · Counts, batch filters and source tags** — a strip above the
+  registry table saying how many compounds have one batch, how many have
+  several and how many batch rows there are, each a button that filters
+  the table; tags derived from the data (*Dotmatics ID*, *Dotmatics
+  export*, *SDF upload*, *Excel upload*, *JSON upload*, *API*) shown as
+  chips and filterable one at a time or in combination. Specification and
+  decisions T1–T3 in [`docs/09-registry-sources.md`](docs/09-registry-sources.md#counting-and-tagging-the-sources--specification).
+- **CR-12 · Structures: derive, draw, edit** — one checked structure per
+  entry computed from what the sources gave, a picture drawn by the server
+  wherever a compound appears, and a structure editor in the browser to
+  draw or correct one. Three releases. Specification, the editor
+  comparison and decisions S1–S5 in [`docs/09-structures.md`](docs/09-structures.md)
+  (new); the *Required now* verdict in the product roadmap.
+
+**Recorded**
+- The difference between 12,539 compounds and 12,561 batch rows, with the
+  exact split of the six compounds that have several batches, is now in
+  the sources page beside the counts the new strip will show.
+
+**Deliberately not done**
+- Building either phase: each waits on its listed decisions and the
+  owner's go.
+
+---
+
 ## v2.16.1 — 2026-09-14 — "A count that cannot see an update"
 
 **Fixed**

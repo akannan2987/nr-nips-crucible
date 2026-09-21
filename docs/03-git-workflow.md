@@ -220,7 +220,7 @@ Do **not** add a `public` remote here either.
    must never have. Never mirror private -> public wholesale.
 7. **Publish reaches `beta`; only a promotion moves `master`.** The publish
    command is `git push origin develop develop:beta`; the promotion is
-   `git push origin beta:master`, typed by a person when the testers agree.
+   `git push origin origin/beta:master`, typed by a person when the testers agree.
    `develop:master` is no longer part of any routine command.
 
 ---
@@ -474,15 +474,25 @@ label change, a week for a login. **Never** as part of Step 4 or Step 8.
 # ▶ MAC
 git fetch origin
 git log --oneline origin/master..origin/beta   # exactly what production is about to receive — read it
-git push origin beta:master                    # fast-forward; refused if master has diverged
+git push origin origin/beta:master             # fast-forward; refused if master has diverged
 git switch master && git pull --ff-only origin master && git switch develop
 ```
+
+**Why `origin/beta` and not `beta`.** The left side of a push refspec names
+something in *your* folder. Neither the Mac nor the mirror folder has a
+local branch called `beta` — every publish pushes `develop` *to* the
+remote's `beta`, so the branch exists only on the remote and as the
+remote-tracking copy `origin/beta` that `git fetch` refreshes. Pushing that
+copy to `master` is exactly "promote what beta has"; a local `beta` branch
+would be one more thing to keep level. (The first version of this step
+said `beta:master` and failed with `src refspec beta does not match any`;
+v2.20.1.)
 
 ```bash
 # ▶ VM — ~/work/Pandora_toolbox/crucible-mirror
 git fetch origin
 git log --oneline origin/master..origin/beta   # the same list, private commit IDs
-git push origin beta:master
+git push origin origin/beta:master
 git switch master && git pull --ff-only origin master && git switch develop
 ```
 
@@ -506,7 +516,7 @@ hosts: the page says what production now runs. Several versions may have
 reached beta since the last promotion; the page for the newest one is
 enough, and its notes list the others.
 
-**If instead** `git push origin beta:master` says `rejected … non-fast-forward`:
+**If instead** `git push origin origin/beta:master` says `rejected … non-fast-forward`:
 `master` has a commit `beta` does not — someone pushed to `master` directly.
 Do not force. `git log --oneline origin/beta..origin/master` shows the
 stray commit; bring it back through the normal route (Flow B if it was

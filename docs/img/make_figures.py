@@ -157,7 +157,7 @@ def fig_publish_promote() -> None:
     # moment 2: promote
     b += box(520, 168, 220, 54, "#eef2ff", COLOURS["chemical"], 8)
     b += text(630, 188, "moment 2 — promote", 12, COLOURS["chemical"], "middle", "bold")
-    b += text(630, 206, "git push origin beta:master", 10, INK, "middle", "normal", "ui-monospace,SFMono-Regular,Menlo,monospace")
+    b += text(630, 206, "git push origin origin/beta:master", 10, INK, "middle", "normal", "ui-monospace,SFMono-Regular,Menlo,monospace")
     b += text(630, 240, "by hand, only when the testers agree · never automatic", 9.5, MUTED)
     # the instances under the stations
     b += box(360, 262, 220, 62, "#fff7ed", COLOURS["screening"], 8)

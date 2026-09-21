@@ -127,7 +127,7 @@ sequenceDiagram
     Mir->>Priv: mirror develop and beta
     Beta->>Priv: git pull (branch beta) · rebuild
     Note over Beta: testers try it for a while
-    Mac->>Pub: git push origin beta:master   (promote)
+    Mac->>Pub: git push origin origin/beta:master   (promote)
     Mir->>Priv: mirror master
     Prod->>Priv: git pull (branch master) · rebuild
 ```

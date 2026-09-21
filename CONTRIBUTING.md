@@ -65,7 +65,7 @@ promotion moves the third:
 
 ```bash
 git push origin develop develop:beta      # publish: the beta instance pulls this
-git push origin beta:master               # promote: production pulls this — a separate day, a person's decision
+git push origin origin/beta:master        # promote: production pulls this — a separate day, a person's decision
 ```
 
 Never use a merge, squash or rebase button to promote `beta` or `master`:

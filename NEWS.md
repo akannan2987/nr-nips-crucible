@@ -10,6 +10,30 @@ change you are getting.
 
 ---
 
+## v2.20.1 — 2026-09-21 — "The promotion command, corrected"
+
+Documents only. The first promotion after v2.20.0 failed on the Mac with
+`error: src refspec beta does not match any`: the command written in the
+workflow, the contributing guide, the handbook's cheat sheet, the SH-12
+tutorial, the specification's diagram and one figure was
+`git push origin beta:master`, and neither the Mac nor the mirror folder
+has a *local* branch called `beta` — publishing pushes `develop` *to* the
+remote's `beta`, so it exists only on the remote and as the remote-tracking
+copy `origin/beta`.
+
+**Fixed**
+- The promotion is `git fetch origin && git push origin origin/beta:master`,
+  everywhere it is written, with a paragraph in
+  [`03-git-workflow.md` Step 11](docs/03-git-workflow.md#step-11---promote-to-production-when-the-testers-agree)
+  on why the remote-tracking copy is the right thing to push. A dry run
+  from the Mac confirmed it moves `master` to what `beta` has.
+
+**Deliberately not done**
+- A local `beta` branch on the authoring machines. It would be one more
+  branch to keep level on every publish, for no gain.
+
+---
+
 ## v2.20.0 — 2026-09-21 — "A second kitchen: the beta instance"
 
 Phase **SH-12** built, the same day it was planned. A second, complete copy
@@ -38,8 +62,9 @@ passing on each.
   per instance; the container's name in every line.
 - **Two moments in the workflow.** Publish is
   `git push origin develop develop:beta`; the beta instance pulls `beta`.
-  Promotion is `git push origin beta:master`, by hand, when the testers
-  agree; production pulls `master`. Every machine's commands are in
+  Promotion is `git push origin origin/beta:master` (corrected in v2.20.1;
+  the first text said `beta:master`), by hand, when the testers agree;
+  production pulls `master`. Every machine's commands are in
   [`03-git-workflow.md`](docs/03-git-workflow.md); the `beta` branch means
   the beta instance from now on.
 - [`01-setup-rhel8.md` §8](docs/01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta)

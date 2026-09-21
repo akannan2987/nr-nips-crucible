@@ -347,19 +347,27 @@ The change, in one table:
 | Moment | Mac | Mirror folder (VM) | Which instance pulls |
 |---|---|---|---|
 | **Publish** — every change | `git push origin develop develop:beta` | copy the content, then `git push origin develop develop:beta` | **beta**: `git switch beta && git pull --ff-only origin beta`, rebuild if code changed |
-| **Promote** — when the testers agree | `git push origin beta:master` | `git push origin beta:master` | **production**: backup, `git pull --ff-only origin master`, rebuild if code changed |
+| **Promote** — when the testers agree | `git fetch origin && git push origin origin/beta:master` | `git fetch origin && git push origin origin/beta:master` | **production**: backup, `git pull --ff-only origin master`, rebuild if code changed |
 
 **Why `beta` and not a fourth branch.** The branch already exists in both
 repositories and was pushed with every publish; until today it always
 equalled `master` and meant nothing. Giving it a meaning costs one
 workflow step and no new branch.
 
+**Why `origin/beta`.** Neither the Mac nor the mirror folder has a local
+branch called `beta`: publishing pushes `develop` *to* the remote's `beta`,
+so the branch lives on the remote and as the remote-tracking copy
+`origin/beta`. That copy, after a `git fetch`, is what promotion pushes to
+`master`. (A first attempt with `beta:master` failed with
+`src refspec beta does not match any`; the documents were corrected in
+v2.20.1.)
+
 **Why promotion is by hand.** The whole point of a beta instance is that
 someone looks before the laboratory gets a change. A promotion that ran
 on a timer, or on a green test run, would be a second publish with extra
 steps. It is one command, typed by a person, on a day they choose.
 
-**Why beta is promoted as a whole.** `beta:master` moves `master` to
+**Why beta is promoted as a whole.** `origin/beta:master` moves `master` to
 whatever `beta` runs today — every change published since the last
 promotion, together. There is no picking one change out of three. A
 change that is not ready for production is not published to beta either;
@@ -517,7 +525,7 @@ table. Production's image ID, uptime and counts do not move.
   replaced at 2 am.
 - **The login.** It is the next phase, SH-3a and SH-3b together, and it
   lands on this instance first ([`13-authentication.md`](../13-authentication.md)).
-- **Promoting part of beta.** `beta:master` promotes everything on beta.
+- **Promoting part of beta.** `origin/beta:master` promotes everything on beta.
   A change that must not reach production is not published to beta.
 - **A nightly backup and a certificate check for beta.** Beta's data is a
   copy that can be refreshed in two commands, and the certificate is the

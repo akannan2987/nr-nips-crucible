@@ -2,8 +2,9 @@
 
 # GitOps Workflow - Crucible: Pandora Toolbox Enhancement (v2.0)
 
-How to make changes to this project across **two repositories** and **two machines**
-without leaking internal data into the public mirror.
+How to make changes to this project across **two repositories**, **two machines**
+and, since v2.20.0, **two instances** — production and the beta instance the
+testers use — without leaking internal data into the public mirror.
 
 Every command below is labelled with **which machine and which folder** it runs in.
 Start at section 2 if you are setting up a machine for the first time.
@@ -15,8 +16,11 @@ Start at section 2 if you are setting up a machine for the first time.
   - [2.1 Mac - the authoring folder](#21-mac---the-authoring-folder)
   - [2.2 VM - the mirror folder](#22-vm---the-mirror-folder)
   - [2.3 VM - the production folder](#23-vm---the-production-folder)
+  - [2.4 VM - the beta folder](#24-vm---the-beta-folder)
 - [3. Golden rules](#3-golden-rules)
 - [4. Flow A - a change from start to finish](#4-flow-a---a-change-from-start-to-finish)
+  - [Publish: Steps 1–10 reach the beta instance](#step-1---make-and-test-the-change)
+  - [Promote: Step 11 reaches production](#step-11---promote-to-production-when-the-testers-agree)
 - [5. Flow B - a fix discovered on the VM](#5-flow-b---a-fix-discovered-on-the-vm)
 - [6. Checking the two repos are in sync](#6-checking-the-two-repos-are-in-sync)
 - [7. Why the histories differ, and why that is fine](#7-why-the-histories-differ-and-why-that-is-fine)
@@ -25,7 +29,7 @@ Start at section 2 if you are setting up a machine for the first time.
 
 ## 1. The two repositories
 
-![A Mac authoring folder pushes to the public repository; the VM's mirror folder fetches public and pushes private; the production folder pulls master from private; content flows public to private only](img/fig_machine_layout.svg)
+![A Mac authoring folder pushes to the public repository; the VM's mirror folder fetches public and pushes private; the beta folder pulls beta and the production folder pulls master from private; content flows public to private only](img/fig_machine_layout.svg)
 
 | | **Private** | **Public** |
 |---|---|---|
@@ -35,19 +39,20 @@ Start at section 2 if you are setting up a machine for the first time.
 | Real lab data | Yes - tracked, appropriately | **Never** |
 | Internal hostnames / usernames | Yes, in older commits | **Never** |
 
-Three folders, each with a fixed purpose:
+Four folders, each with a fixed purpose:
 
-| # | Machine | Folder | `origin` remote | Extra remote | Purpose |
-|---|---------|--------|-----------------|--------------|---------|
-| 1 | Mac | `~/Documents/Work/pandora_toolbox/nr-nips-crucible` | **public** | none | Write and test changes |
-| 2 | VM | `~/work/Pandora_toolbox/crucible-mirror` | **private** | `public` (fetch only) | Copy content public -> private |
-| 3 | VM | `~/work/Pandora_toolbox/nr-nips-crucible` | **private** | none | Run the live application |
+| # | Machine | Folder | `origin` remote | Extra remote | Branch | Purpose |
+|---|---------|--------|-----------------|--------------|--------|---------|
+| 1 | Mac | `~/Documents/Work/pandora_toolbox/nr-nips-crucible` | **public** | none | `develop` | Write and test changes |
+| 2 | VM | `~/work/Pandora_toolbox/crucible-mirror` | **private** | `public` (fetch only) | `develop` | Copy content public -> private |
+| 3 | VM | `~/work/Pandora_toolbox/nr-nips-crucible` | **private** | none | `master` | Run the live application (port 49160) |
+| 4 | VM | `~/work/Pandora_toolbox/nr-nips-crucible-beta` | **private** | none | `beta` | Run the **beta instance** the testers use (port 49161) — [`14-beta-instance.md`](14-beta-instance.md) |
 
 > **The paths are the ones this deployment uses**, not a requirement. What
-> matters is that the mirror and the production checkout are two *separate*
-> folders — never the same one. Run `pwd` in each and use what it prints; a
-> command run from the wrong folder is the most common way this workflow goes
-> wrong.
+> matters is that the mirror, the production checkout and the beta checkout
+> are three *separate* folders — never the same one. Run `pwd` in each and
+> use what it prints; a command run from the wrong folder is the most common
+> way this workflow goes wrong.
 
 > **One remote per purpose.** The Mac folder has no private credentials, so it
 > *cannot* accidentally push to the private repo. The production folder never
@@ -135,11 +140,12 @@ git remote -v                                  # must show ONLY the private repo
 git branch --show-current                      # should be: master
 ```
 
-**Production tracks `master`.** All three branches are pushed to the same commit,
-so today they are identical and the choice costs nothing — but `master`
-conventionally means "what is live", it tells anyone who lands in this folder
-which checkout they are in, and it leaves room to test on `develop` later
-without a routine `git pull` dragging unblessed work into production.
+**Production tracks `master`.** Until v2.20.0 all three branches were pushed
+to the same commit and the choice cost nothing; since the beta instance
+exists, `master` moves only by a **promotion** (Step 11 of Flow A), so a
+routine `git pull` in this folder can never drag work the testers have not
+seen into production. `master` conventionally means "what is live", and it
+tells anyone who lands in this folder which checkout they are in.
 
 ```bash
 # ▶ VM — production folder: switch once, then this is the update command forever
@@ -169,6 +175,35 @@ surprise merge on the production machine.
 If you ever need to recreate it, clone the private repo and follow
 [01-setup-rhel8.md](01-setup-rhel8.md). Do **not** add a `public` remote here.
 
+### 2.4 VM - the beta folder
+
+The fourth folder runs the **beta instance**: the same application, a
+second container on port 49161, its own copy of the data, checked out on
+the `beta` branch so that it can run a commit production does not have
+yet. Testers use it; the laboratory does not. The complete setup — clone,
+the three lines in `.env.local`, the one-shot script, the data copy, the
+service unit and the monitor line — is
+[`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta);
+the reasoning is [`14-beta-instance.md`](14-beta-instance.md). What matters
+here:
+
+```bash
+# ▶ VM — beta folder
+cd ~/work/Pandora_toolbox/nr-nips-crucible-beta
+git remote -v                                  # must show ONLY the private repo
+git branch --show-current                      # should be: beta
+cat .env.local                                 # CRUCIBLE_INSTANCE=beta and CRUCIBLE_PORT=49161, plus the certificate lines
+```
+
+**The beta folder tracks `beta`.** Every publish (Step 8) moves `beta`;
+this folder pulls it and rebuilds when code changed — the same rule as
+production, one branch earlier. Keep only `beta` checked out here
+(`git branch -d master develop` if a clone created them), for the same
+reason production keeps only `master`: `git branch` then answers "what is
+deployed here?" in one line.
+
+Do **not** add a `public` remote here either.
+
 ---
 
 ## 3. Golden rules
@@ -183,6 +218,10 @@ If you ever need to recreate it, clone the private repo and follow
 5. **Real values live in `.env.local`** on the VM - gitignored, never committed.
 6. **Sync is selective.** The private repo legitimately holds files the public one
    must never have. Never mirror private -> public wholesale.
+7. **Publish reaches `beta`; only a promotion moves `master`.** The publish
+   command is `git push origin develop develop:beta`; the promotion is
+   `git push origin beta:master`, typed by a person when the testers agree.
+   `develop:master` is no longer part of any routine command.
 
 ---
 
@@ -190,9 +229,14 @@ If you ever need to recreate it, clone the private repo and follow
 
 ![Seven steps: edit, test, gate, push on the Mac; mirror, deploy, confirm on the VM; then back to edit](img/fig_change_travels.svg)
 
-The complete path for a normal change: you edit something on the Mac, and finish
-with **both repositories' `develop`, `beta`, and `master` branches in sync** and
-the VM redeployed.
+The complete path for a normal change, in **two moments**. *Publish* (Steps
+1–10): you edit something on the Mac and finish with **both repositories'
+`develop` and `beta` branches in sync** and the **beta instance** redeployed,
+so the testers see the change the same day. *Promote* (Step 11): when they
+are satisfied, `beta` is pushed to `master` by hand and **production** is
+redeployed. A change that fails on beta is simply never promoted.
+
+![Three branch stations on one rail: develop, beta, master. Publish pushes develop to beta and the beta instance pulls it; promotion pushes beta to master and production pulls it, by hand](img/fig_publish_promote.svg)
 
 ### Step 1 - Make and test the change
 
@@ -226,16 +270,20 @@ git status                               # review before committing
 git commit -m "<what changed>"
 ```
 
-### Step 4 - Push to the public repo (all three branches)
+### Step 4 - Push to the public repo (develop and beta)
 
 ```bash
 # ▶ MAC
 git fetch origin                         # confirm nobody else pushed
-git push origin develop develop:beta develop:master
+git push origin develop develop:beta
 ```
 
-This sends your local `develop` to the remote `develop`, `beta`, **and** `master` -
-one commit ID across all three, fast-forward, no merge commits.
+This sends your local `develop` to the remote `develop` **and** `beta` -
+one commit ID across both, fast-forward, no merge commits. `master` is
+**not** touched: it moves in Step 11, when the testers have used the change
+on the beta instance. (Before v2.20.0 the command ended `develop:master`
+and the three branches were always identical; the `beta` branch now means
+"what the beta instance runs".)
 
 ### Step 4b - Watch CI go green
 
@@ -277,14 +325,18 @@ mean, and if not, delete it on both sides (`git tag -d v2.10.1 && git push
 origin :refs/tags/v2.10.1`) and tag again. Never move a tag that a release
 page already uses.
 
-### Step 5 - Level your local master
+### Step 5 - See where the branches stand
 
 ```bash
 # ▶ MAC
-git switch master
-git pull --ff-only origin master
-git switch develop
+git fetch origin
+git log --oneline -1 origin/develop origin/beta origin/master
 ```
+
+**You should see** `origin/develop` and `origin/beta` on the commit you
+just pushed and `origin/master` on the last promoted one (Step 11). The
+gap between them is exactly what the testers have and the laboratory does
+not yet — a list worth reading before you promote.
 
 ### Step 6 - Copy the content into the private repo
 
@@ -331,13 +383,15 @@ everything else.
 > ```
 > Then re-run the mode check; the `mode change` line should be gone.
 
-### Step 8 - Commit and push to the private repo (all three branches)
+### Step 8 - Commit and push to the private repo (develop and beta)
 
 ```bash
 # ▶ VM — ~/work/Pandora_toolbox/crucible-mirror
 git commit -m "<what changed>"
-git push origin develop develop:beta develop:master
+git push origin develop develop:beta
 ```
+
+As on the Mac, `master` stays where the last promotion left it.
 
 ### Step 8b - Tag the mirror's commit with the same version
 
@@ -371,30 +425,36 @@ histories differ, §7), so the tag is created here separately; the *name*
 is the same, and so is the content it points at. Then draft the release on
 the private host the same way as Step 4c.
 
-### Step 9 - Level the mirror's local master
+### Step 9 - See where the mirror's branches stand
 
 ```bash
 # ▶ VM — ~/work/Pandora_toolbox/crucible-mirror
-git switch master
-git pull --ff-only origin master
-git switch develop
+git fetch origin
+git log --oneline -1 origin/develop origin/beta origin/master
 ```
 
-At this point **both repositories are in sync on all three branches.**
+At this point **both repositories are in sync on `develop` and `beta`**, and
+their `master` branches both point at the last promotion.
 
-### Step 10 - Deploy to production
+### Step 10 - Deploy to the beta instance
 
 ```bash
-# ▶ VM — production folder
-cd ~/work/Pandora_toolbox/nr-nips-crucible
-./container-py.sh backup                        # consistent snapshot → backups/
-# Copy that snapshot OUT of the project folder — backups/ lives inside it
-# and would be destroyed by a --full uninstall:
-cp "$(ls -t backups/crucible-*.db | head -1)" ~/data-backup-$(date +%Y%m%d).db
-git pull
-./container-py.sh rebuild                       # preserves HTTP/HTTPS mode
-curl --noproxy '*' -sSk https://localhost:49160/api/stats   # -k: the cert names the VM's FQDN, not localhost
+# ▶ VM — beta folder
+cd ~/work/Pandora_toolbox/nr-nips-crucible-beta
+git switch beta
+./container-py.sh backup                        # beta's own snapshot → its backups/ (cheap; skip only if the testers' data is disposable)
+git pull --ff-only origin beta
+git log --stat -1                               # did backend/, client/, requirements or the Dockerfile change?
+./container-py.sh rebuild                       # only if they did; preserves HTTPS; recreates crucible-py-beta ONLY
+curl --noproxy '*' -sSk https://localhost:49161/api/stats   # -k: the cert names the VM's FQDN, not localhost
+./verify-deploy.sh https://localhost:49161
 ```
+
+The testers now have the change. Tell them what to look for; the phase
+tutorial's "How to test it, by every route" table is written for exactly
+that. Production is untouched: `podman ps` shows `crucible-py` with the
+uptime it had, and `curl --noproxy '*' -sSk https://localhost:49160/api/stats`
+answers as before.
 
 > **Why not just `cp -r data`?** Because the app is still running. Copying a live
 > SQLite file with `cp` can catch it mid-write and produce a file that opens
@@ -403,16 +463,69 @@ curl --noproxy '*' -sSk https://localhost:49160/api/stats   # -k: the cert names
 > SQLite's online-backup mechanism to take a coherent snapshot while the app
 > keeps serving. Always take the snapshot, then copy *that*.
 
-### Step 11 - Confirm
+### Step 11 - Promote to production (when the testers agree)
+
+**What:** move `master` to what the beta instance has been running, on
+both repositories, then redeploy production. **When:** on a day you
+choose, after the testers have used beta for long enough — a day for a
+label change, a week for a login. **Never** as part of Step 4 or Step 8.
+
+```bash
+# ▶ MAC
+git fetch origin
+git log --oneline origin/master..origin/beta   # exactly what production is about to receive — read it
+git push origin beta:master                    # fast-forward; refused if master has diverged
+git switch master && git pull --ff-only origin master && git switch develop
+```
 
 ```bash
 # ▶ VM — ~/work/Pandora_toolbox/crucible-mirror
-git diff --stat public/develop develop
+git fetch origin
+git log --oneline origin/master..origin/beta   # the same list, private commit IDs
+git push origin beta:master
+git switch master && git pull --ff-only origin master && git switch develop
 ```
 
-Expect **only** the private-only files: the 6 real-data workbooks under
-`docs/excel-templates/` (see
-[section 6](#6-checking-the-two-repos-are-in-sync)).
+```bash
+# ▶ VM — production folder
+cd ~/work/Pandora_toolbox/nr-nips-crucible
+./container-py.sh backup                        # consistent snapshot → backups/
+# Copy that snapshot OUT of the project folder — backups/ lives inside it
+# and would be destroyed by a --full uninstall:
+cp "$(ls -t backups/crucible-*.db | head -1)" ~/data-backup-$(date +%Y%m%d).db
+git pull --ff-only origin master
+git log --stat -1                               # rebuild only if the app's code changed
+./container-py.sh rebuild                       # preserves HTTP/HTTPS mode; recreates crucible-py ONLY
+curl --noproxy '*' -sSk https://localhost:49160/api/stats
+./verify-deploy.sh https://localhost:49160
+```
+
+Then draft the **Release page** for the tag made in Step 4c (*Releases →
+Draft a new release → choose the tag → paste the `NEWS.md` entry*) on both
+hosts: the page says what production now runs. Several versions may have
+reached beta since the last promotion; the page for the newest one is
+enough, and its notes list the others.
+
+**If instead** `git push origin beta:master` says `rejected … non-fast-forward`:
+`master` has a commit `beta` does not — someone pushed to `master` directly.
+Do not force. `git log --oneline origin/beta..origin/master` shows the
+stray commit; bring it back through the normal route (Flow B if it was
+made on the VM) so that `beta` contains it, then promote again.
+
+### Step 12 - Confirm
+
+```bash
+# ▶ VM — ~/work/Pandora_toolbox/crucible-mirror
+git fetch origin && git fetch public
+git diff --stat public/develop develop         # the two repositories agree
+git diff --stat origin/beta origin/master      # what beta has that production does not
+```
+
+The first diff shows **only** the private-only files: the 6 real-data
+workbooks under `docs/excel-templates/` (see
+[section 6](#6-checking-the-two-repos-are-in-sync)). The second is
+**empty right after a promotion** and lists the pending changes between
+promotions — read it before every Step 11.
 
 ---
 
@@ -518,4 +631,4 @@ the authoring folder.
 [macOS install](01-setup-macos.md) · [RHEL8 install](01-setup-rhel8.md) ·
 [Deployment reference](07-operations.md)
 
-**Last Updated:** August 24, 2026
+**Last Updated:** September 21, 2026

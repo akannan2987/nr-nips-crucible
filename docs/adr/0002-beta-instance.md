@@ -2,7 +2,7 @@
 
 # ADR 0002 — A beta instance on the same server, on the `beta` branch, promoted by hand
 
-**Status:** proposed 2026-09-21 (decisions B1–B6 recommended in [`14-beta-instance.md`](../14-beta-instance.md#decisions-b1b6); accepted when the owner agrees) · **Date:** 2026-09-21
+**Status:** accepted 2026-09-21 (decisions B1–B6 taken as recommended in [`14-beta-instance.md`](../14-beta-instance.md#decisions-b1b6); built as phase SH-12, v2.20.0 — [tutorial](../04-phase-tutorials/phase-sh-12-beta-instance.md)) · **Date:** 2026-09-21
 
 ## Context
 

@@ -11,11 +11,13 @@
 # All settings are env-overridable:
 #   CRUCIBLE_PORT=<n>   host+container HTTP port (default 49160; a generic
 #                       PORT env var is ignored to avoid shared-VM clashes)
+#   CRUCIBLE_INSTANCE=<name>  run a second, separate instance from another
+#                       checkout on the same machine: every resource this
+#                       script owns is named crucible-py-<name>
+#                       (docs/14-beta-instance.md)
 #   HOST_BIND=<ip>      published-port interface (see below)
 #   PLATFORM=linux/amd64  cross-build target (e.g. building amd64 on a Mac)
 
-IMAGE_NAME="crucible-py"
-CONTAINER_NAME="crucible-py"
 DATA_DIR="$(pwd)/data"
 BACKUP_DIR="${BACKUP_DIR:-$(pwd)/backups}"
 CERTS_DIR="$(pwd)/certs"
@@ -24,16 +26,46 @@ CERTS_DIR="$(pwd)/certs"
 # A machine can declare its standing configuration here so plain
 # `start`/`rebuild` do the right thing — e.g. the HTTPS production VM sets:
 #   USE_HTTPS=true
+# and the beta checkout beside it (docs/14-beta-instance.md) sets:
+#   CRUCIBLE_INSTANCE=beta
+#   CRUCIBLE_PORT=49161
 # Environment variables always override .env.local. Same mechanism as
 # setup-after-clone-py.sh (which reads CERT_SOURCE/CERT_HOSTNAME from it).
 if [ -f "$(pwd)/.env.local" ]; then
     _env_use_https="${USE_HTTPS:-}"
     _env_use_postgres="${USE_POSTGRES:-}"
+    _env_instance="${CRUCIBLE_INSTANCE:-}"
+    _env_port="${CRUCIBLE_PORT:-}"
     # shellcheck disable=SC1091
     . "$(pwd)/.env.local"
     USE_HTTPS="${_env_use_https:-${USE_HTTPS:-}}"
     USE_POSTGRES="${_env_use_postgres:-${USE_POSTGRES:-}}"
+    CRUCIBLE_INSTANCE="${_env_instance:-${CRUCIBLE_INSTANCE:-}}"
+    CRUCIBLE_PORT="${_env_port:-${CRUCIBLE_PORT:-}}"
 fi
+
+# ── Instance name ───────────────────────────────────────────────────
+# One checkout is one instance. Unset — the default, and every machine that
+# ran this script before v2.20.0 — the image and container are named
+# crucible-py and nothing below changes. Set (CRUCIBLE_INSTANCE=beta in the
+# beta folder's .env.local), the name is appended to every resource this
+# script creates: the image, the container, and the optional Postgres
+# container, network and volume. A second checkout on the same machine can
+# therefore never touch the first one's: `rebuild` in the beta folder
+# replaces crucible-py-beta and leaves crucible-py running. The folder's own
+# data/, backups/ and certs/ were already per checkout.
+CRUCIBLE_INSTANCE="${CRUCIBLE_INSTANCE:-}"
+INSTANCE_SUFFIX=""
+if [ -n "$CRUCIBLE_INSTANCE" ]; then
+    case "$CRUCIBLE_INSTANCE" in
+        *[!a-z0-9-]*|-*|*-)
+            echo "✗ CRUCIBLE_INSTANCE='$CRUCIBLE_INSTANCE' must be lowercase letters, digits and hyphens, e.g. beta"
+            exit 1 ;;
+    esac
+    INSTANCE_SUFFIX="-${CRUCIBLE_INSTANCE}"
+fi
+IMAGE_NAME="crucible-py${INSTANCE_SUFFIX}"
+CONTAINER_NAME="crucible-py${INSTANCE_SUFFIX}"
 
 # ── PostgreSQL (optional) ───────────────────────────────────────────
 # SQLite (data/crucible.db) is the DEFAULT and needs nothing extra. Set
@@ -43,10 +75,12 @@ fi
 # The app container joins DB_NETWORK and reaches the database at
 # <DB_CONTAINER_NAME>:5432; schema is created/upgraded on boot by
 # backend/scripts/db_bootstrap.py (Alembic).
+# A named instance gets its own database container, network and volume;
+# give it its own DB_HOST_PORT too if both instances use Postgres.
 USE_POSTGRES="${USE_POSTGRES:-false}"
-DB_CONTAINER_NAME="${DB_CONTAINER_NAME:-crucible-db}"
-DB_NETWORK="${DB_NETWORK:-crucible-net}"
-DB_VOLUME="${DB_VOLUME:-crucible-pgdata}"
+DB_CONTAINER_NAME="${DB_CONTAINER_NAME:-crucible-db${INSTANCE_SUFFIX}}"
+DB_NETWORK="${DB_NETWORK:-crucible-net${INSTANCE_SUFFIX}}"
+DB_VOLUME="${DB_VOLUME:-crucible-pgdata${INSTANCE_SUFFIX}}"
 POSTGRES_IMAGE="${POSTGRES_IMAGE:-docker.io/library/postgres:16-alpine}"
 POSTGRES_USER="${POSTGRES_USER:-crucible}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-crucible}"
@@ -134,7 +168,7 @@ show_help() {
     echo "║      Python Backend Container Management                  ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo ""
-    echo "Usage: $0 [command]        (runtime: $RUNTIME)"
+    echo "Usage: $0 [command]        (runtime: $RUNTIME · instance: ${CRUCIBLE_INSTANCE:-default} → ${CONTAINER_NAME}, port ${PORT})"
     echo ""
     echo "Commands:"
     echo "  build       Build the Python backend image"
@@ -144,7 +178,8 @@ show_help() {
     echo "  restart     Restart the container"
     echo "  rebuild     Rebuild image and restart container"
     echo "  backup      Consistent database backup → backups/ (safe while running)"
-    echo "  restore <f> Restore a backup file (stops app, swaps db, restarts)"
+    echo "  restore <f> Restore a backup file (stops app, swaps db, restarts);"
+    echo "              given a FOLDER, restores the newest crucible-*.db in it"
     echo "  lock        Regenerate backend/requirements.lock inside the base image"
     echo "  logs        Show container logs (follow)"
     echo "  status      Show container status + /api/stats healthcheck"
@@ -162,6 +197,8 @@ show_help() {
     echo "Environment variables:"
     echo "  CONTAINER_RUNTIME=podman|docker   force a runtime (default: auto-detect)"
     echo "  CRUCIBLE_PORT=<n>                 port (default 49160; generic PORT is ignored)"
+    echo "  CRUCIBLE_INSTANCE=<name>          a second instance from another checkout: image, container"
+    echo "                                    and db resources named crucible-py-<name> (docs/14-beta-instance.md)"
     echo "  HOST_BIND=<ip>                    published-port interface"
     echo "  PLATFORM=linux/amd64              cross-build target platform"
     echo "  USE_POSTGRES=true                 run the app against PostgreSQL (default: SQLite)"
@@ -236,6 +273,7 @@ start_container() {
     if [ $? -eq 0 ]; then
         local shown_port="${running_port:-${PORT}}"
         echo -e "${GREEN}✓ Container started successfully${NC}"
+        echo "  instance: ${CRUCIBLE_INSTANCE:-default} · container: ${CONTAINER_NAME} · image: ${IMAGE_NAME}:latest"
         echo ""
         echo "Access the application at:"
         echo "  http://localhost:${shown_port}"
@@ -326,6 +364,7 @@ start_container_ssl() {
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ Container started with HTTPS${NC}"
+        echo "  instance: ${CRUCIBLE_INSTANCE:-default} · container: ${CONTAINER_NAME} · image: ${IMAGE_NAME}:latest"
         echo ""
         echo -e "${BLUE}🔒 Access the application at:${NC}"
         echo "  https://localhost:${PORT}"
@@ -422,6 +461,20 @@ restore_data() {
         ls -lh "${BACKUP_DIR}"/*.db 2>/dev/null || echo "  (none found)"
         exit 1
     fi
+    if [ -d "$src" ]; then
+        # A folder: take the newest backup in it. This is how the beta
+        # instance is refreshed from production without copying a timestamp
+        # by hand:  ./container-py.sh restore ../nr-nips-crucible/backups
+        # (docs/14-beta-instance.md). Nothing is ever written to that folder.
+        local newest
+        newest=$(ls -t "$src"/crucible-*.db 2>/dev/null | head -1)
+        if [ -z "$newest" ]; then
+            echo -e "${RED}✗ No crucible-*.db backup found in folder $src${NC}"
+            exit 1
+        fi
+        echo "Newest backup in ${src}: $(basename "$newest")"
+        src="$newest"
+    fi
     if [ ! -f "$src" ]; then
         echo -e "${RED}✗ Backup file not found: $src${NC}"
         exit 1
@@ -438,7 +491,7 @@ restore_data() {
     fi
 
     cp "$src" "${DATA_DIR}/crucible.db"
-    echo -e "${GREEN}✓ Restored $(basename "$src") → data/crucible.db${NC}"
+    echo -e "${GREEN}✓ Restored $(basename "$src") → data/crucible.db  (instance: ${CRUCIBLE_INSTANCE:-default})${NC}"
 
     start_container
     echo ""
@@ -465,7 +518,7 @@ api_url() {
 
 show_status() {
     check_podman_machine
-    echo -e "${YELLOW}Container status (runtime: ${RUNTIME}):${NC}"
+    echo -e "${YELLOW}Container status (runtime: ${RUNTIME} · instance: ${CRUCIBLE_INSTANCE:-default} · folder: $(pwd)):${NC}"
     $RUNTIME ps -a --filter name=${CONTAINER_NAME} --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
     echo ""
     if $RUNTIME ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
@@ -483,7 +536,7 @@ show_status() {
 run_script() {
     # The maintenance scripts need the application's Python and packages,
     # which live only inside the image — so this is the one-line form of
-    # `$RUNTIME exec crucible-py python /app/backend/scripts/<name> …`.
+    # `$RUNTIME exec ${CONTAINER_NAME} python /app/backend/scripts/<name> …`.
     check_podman_machine
     local name="$1"
     if [ -z "$name" ]; then
@@ -537,7 +590,7 @@ open_shell() {
 
 clean_up() {
     check_podman_machine
-    echo -e "${YELLOW}Cleaning up container and image...${NC}"
+    echo -e "${YELLOW}Cleaning up container '${CONTAINER_NAME}' and image '${IMAGE_NAME}:latest'...${NC}"
     $RUNTIME stop ${CONTAINER_NAME} 2>/dev/null
     $RUNTIME rm ${CONTAINER_NAME} 2>/dev/null
     $RUNTIME rmi ${IMAGE_NAME}:latest 2>/dev/null

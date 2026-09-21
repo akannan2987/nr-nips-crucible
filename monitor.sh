@@ -3,18 +3,36 @@
 # Crucible Health Monitor
 # This script checks if the application is responding and restarts if needed
 
-CONTAINER_NAME="${CONTAINER_NAME:-crucible-py}"
-PORT="${PORT:-49160}"
+# ── Which instance? ─────────────────────────────────────────────────
+# The cron line written by setup-after-clone-py.sh names the container and
+# the address explicitly (CONTAINER_NAME=… API_URL=…), and those always win.
+# Run by hand from a checkout, the script reads that folder's .env.local so
+# that `./monitor.sh` in the beta folder probes — and, if need be, restarts —
+# beta, never production (docs/14-beta-instance.md).
+_here="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$_here/.env.local" ]; then
+    _inst="${CRUCIBLE_INSTANCE:-}"; _cport="${CRUCIBLE_PORT:-}"; _https="${USE_HTTPS:-}"
+    # shellcheck disable=SC1091
+    . "$_here/.env.local"
+    CRUCIBLE_INSTANCE="${_inst:-${CRUCIBLE_INSTANCE:-}}"
+    CRUCIBLE_PORT="${_cport:-${CRUCIBLE_PORT:-}}"
+    USE_HTTPS="${_https:-${USE_HTTPS:-}}"
+fi
+CRUCIBLE_INSTANCE="${CRUCIBLE_INSTANCE:-}"
+CONTAINER_NAME="${CONTAINER_NAME:-crucible-py${CRUCIBLE_INSTANCE:+-$CRUCIBLE_INSTANCE}}"
+PORT="${CRUCIBLE_PORT:-${PORT:-49160}}"
 
 # Runtime detection (same convention as container*.sh)
 if [ -n "$CONTAINER_RUNTIME" ]; then RUNTIME="$CONTAINER_RUNTIME"
 elif command -v podman >/dev/null 2>&1; then RUNTIME="podman"
 elif command -v docker >/dev/null 2>&1; then RUNTIME="docker"
 else echo "Neither podman nor docker found"; exit 1; fi
-# Default assumes plain-HTTP deployment (./container-py.sh start). For an SSL
-# deployment set API_URL=https://localhost:<port>/api/stats explicitly.
-API_URL="${API_URL:-http://localhost:${PORT}/api/stats}"
-LOG_FILE="${LOG_FILE:-/tmp/crucible-monitor.log}"
+# Default: plain HTTP (./container-py.sh start), or HTTPS when the folder's
+# .env.local says USE_HTTPS=true. The cron line sets API_URL explicitly.
+if [ "${USE_HTTPS:-false}" = "true" ]; then _scheme="https"; else _scheme="http"; fi
+API_URL="${API_URL:-${_scheme}://localhost:${PORT}/api/stats}"
+# One log per instance, so two monitors on one machine never interleave.
+LOG_FILE="${LOG_FILE:-/tmp/crucible-monitor${CRUCIBLE_INSTANCE:+-$CRUCIBLE_INSTANCE}.log}"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -32,7 +50,7 @@ check_health() {
 }
 
 restart_container() {
-    log "⚠️  Container unhealthy, restarting..."
+    log "⚠️  Container ${CONTAINER_NAME} unhealthy, restarting..."
     $RUNTIME restart "$CONTAINER_NAME"
     sleep 5
     
@@ -44,11 +62,11 @@ restart_container() {
 }
 
 # Main monitoring loop
-log "Starting health check..."
+log "Starting health check of ${CONTAINER_NAME} at ${API_URL}..."
 
 if ! check_health; then
-    log "⚠️  Health check failed!"
+    log "⚠️  Health check failed for ${CONTAINER_NAME}!"
     restart_container
 else
-    log "✓ Application is healthy"
+    log "✓ ${CONTAINER_NAME} is healthy"
 fi

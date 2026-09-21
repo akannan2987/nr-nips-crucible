@@ -22,7 +22,7 @@ is defined once and means the same thing in every document.
 | `fig_record_types.svg` | The four record types and how three of them hang off a chemical | `README.md`, handbook §2, playbook Part 0, glossary |
 | `fig_doc_is_truth.svg` | One table row: indexed columns beside the `doc` that holds the whole record | handbook §5, `02-architecture.md`, `02-database-schema.md` |
 | `fig_request_path.svg` | One request through router, session, store, model | handbook §5, `02-architecture.md` |
-| `fig_machine_layout.svg` | Two repositories, three folders, content flowing public → private | handbook §6, `03-git-workflow.md`, playbook Part 8 |
+| `fig_machine_layout.svg` | Two repositories, four folders (authoring, mirror, beta, production), content flowing public → private | handbook §6, `03-git-workflow.md`, playbook Part 8 |
 | `fig_change_travels.svg` | The seven-step loop after setup, Mac then VM | handbook §6, `03-git-workflow.md` |
 | `fig_two_stage_identification.svg` | Stage 1 (either identifier) versus stage 2 (both must agree) | handbook §9, `09-chemical-identification.md`, playbook Part 4 |
 | `fig_registry_first.svg` | The registry as a gate: a row needs both keys, name and CAS, to match one registered entry; otherwise it waits on the unregistered list | `09-chemical-identification.md` (the specification), `05-roadmap.md` |
@@ -36,7 +36,9 @@ is defined once and means the same thing in every document.
 | `fig_setup_flow.svg` | Set up once, then the loop | the three setup guides, handbook §3 |
 | `fig_timeline.svg` | The milestones on one line | handbook §1 |
 | `fig_requirements_lock.svg` | The wish list, the receipt, and who installs from it | phase 05b tutorial, `backend/README.md` |
-| `fig_two_instances.svg` | Production and beta on one server: two folders, two containers, two ports; publish, promote, and the one-way data copy | `14-beta-instance.md`, phase SH-12 tutorial, handbook §10 |
+| `fig_two_instances.svg` | Production and beta on one server: two folders, two containers, two ports; publish, promote, and the one-way data copy | `14-beta-instance.md`, phase SH-12 tutorial, `01-setup-rhel8.md` §8, handbook §10 |
+| `fig_publish_promote.svg` | Three branch stations on one rail — develop, beta, master; publish pushes develop to beta, promotion pushes beta to master by hand; which instance pulls what | phase SH-12 tutorial, `03-git-workflow.md`, `14-beta-instance.md`, handbook §6 |
+| `fig_instance_name.svg` | The three lines of the beta folder's `.env.local` fanning out to the image, container, service unit, monitor log, cron line and address; production's file beside it for contrast | phase SH-12 tutorial, `14-beta-instance.md`, `07-operations.md`, `01-setup-rhel8.md` §8 |
 | `fig_source_tags.svg` | Four entries with their source tags, the two readings of a multi-tag filter, the strip of batch counts | phase CR-11 tutorial, `09-registry-sources.md`, registry tasks page |
 | `fig_attention_page.svg` | One audit module behind the browser's attention page, the API and the script; the review mark lives on the entry | phase CR-10 tutorial, `09-registry-sources.md`, registry tasks page |
 

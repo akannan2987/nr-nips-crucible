@@ -56,13 +56,13 @@ the induction course, the tasks page is the laminated card by the machine.
 
 | | |
 |---|---|
-| **Version** | 2.19.0 (2026-09-21, the plan for the beta instance and the login); the first tagged release was `v2.10.1` |
+| **Version** | 2.20.0 (2026-09-21, the beta instance built); the first tagged release was `v2.10.1` |
 | **Status date** | 2026-09-21 |
 | **Tests** | 145 passing (`cd backend && .venv/bin/pytest`) |
-| **Last phase done** | CR-11 — counts, batch filters and source tags ✅ (2026-09-14): the strip of batch counts as filter buttons, six source tags derived from the data as chips in every view, filterable in combination, one summary endpoint and script — [phase CR-11](04-phase-tutorials/phase-cr-11-counts-and-tags.md). Before it, CR-10 — the attention page ✅ (2026-09-09): every flag in the browser with the buttons to act — merge, keep both, mark reviewed, set the identifier — behind one audit module the page, the API and the script all call; a review mark stored on the entry — [phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.md). Before it the same day, CR-2 with CR-1 — three views, sort and filter on the registry table ✅: every column (164), every batch (12,561), sorted and filtered on the server — [phase CR-2](04-phase-tutorials/phase-cr-2-views-sort-filter.md); and CR-9 — The real registry sources ✅: the Dotmatics export, the structure file and the limited list recognised by their columns and loaded by their own rules; batches folded, sources merged on DTXSID, shared identifiers flagged, structures read; a banner and the audit for what a person decides — [phase CR-9](04-phase-tutorials/phase-cr-9-real-registry-sources.md) · [the sources](09-registry-sources.md) |
+| **Last phase done** | **SH-12 — a beta instance for user testing ✅ (2026-09-21, v2.20.0):** a second, complete copy of the application beside production, named by one file (`CRUCIBLE_INSTANCE=beta`, `CRUCIBLE_PORT=49161`) that every script reads; its own container, image, data, unit and monitor line; `restore` takes a folder so beta is refreshed from production in two commands; the workflow now has two moments, publish to beta and promote to master; rehearsed on a Mac with two containers side by side; the server setup is [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta) — [phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md). Before it, CR-11 — counts, batch filters and source tags ✅ (2026-09-14): the strip of batch counts as filter buttons, six source tags derived from the data as chips in every view, filterable in combination, one summary endpoint and script — [phase CR-11](04-phase-tutorials/phase-cr-11-counts-and-tags.md). Before it, CR-10 — the attention page ✅ (2026-09-09): every flag in the browser with the buttons to act — merge, keep both, mark reviewed, set the identifier — behind one audit module the page, the API and the script all call; a review mark stored on the entry — [phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.md). Before it the same day, CR-2 with CR-1 — three views, sort and filter on the registry table ✅: every column (164), every batch (12,561), sorted and filtered on the server — [phase CR-2](04-phase-tutorials/phase-cr-2-views-sort-filter.md); and CR-9 — The real registry sources ✅: the Dotmatics export, the structure file and the limited list recognised by their columns and loaded by their own rules; batches folded, sources merged on DTXSID, shared identifiers flagged, structures read; a banner and the audit for what a person decides — [phase CR-9](04-phase-tutorials/phase-cr-9-real-registry-sources.md) · [the sources](09-registry-sources.md) |
 | **Phase in progress** | **R — the registry reset** 🔨 (tracks CR + SD): **R-1 and R-2 done on production 2026-09-08** — every row unlinked, then every entry removed; the registry is empty by design, the 664 entries held in a backup outside the repository; R-3 is now **SD-1, agreed ✅ 2026-09-08** — the registry-first rule, written from the owner's description and agreed the same day, D1–D11 as recommended — [phase R](04-phase-tutorials/phase-r-registry-reset.md) · [the specification](09-chemical-identification.md#the-next-rule-registry-first--specification) |
-| **Plan** | Six **tracks**, one per module and a shared spine, each with its next phase — [`05-roadmap.md`](05-roadmap.md). Next in order: ~~the owner loads the three real files~~ done 2026-09-09 (12,539 entries on production) → ~~CR-10 the attention page~~ done v2.16.0 → ~~CR-11 counts and tags~~ done v2.18.0 → **SH-12 the beta instance** → **SH-3a + SH-3b the login**, delivered to beta, tested by end users, then promoted to production (the owner's priority of 2026-09-21 — [`14-beta-instance.md`](14-beta-instance.md) · [`13-authentication.md`](13-authentication.md)) → CR-12 structures: derive, draw, edit ([specified](09-structures.md), three releases) → SD-1 build → CR-5 unregistered review → CR-4 incomplete entries → CR-8 merge a hand-picked pair → SH-2 schema normalisation; SH-3c single sign-on ⏸ the identity team's registration |
-| **Production** | one RHEL 8 VM, one container, one SQLite file: 49,065 screening rows, **12,539 registered chemicals** (the Dotmatics export, the structure file and the limited list, loaded by the owner on 2026-09-09 through the terminal shortcut), **0 rows linked** until SD-1 attaches them; 419 entries share an identifier, 3 have batch conflicts and 125 have a formula their names do not explain — 349 items on the attention page, for a person to decide; the 664 old entries stay in `~/data-backup-20260908-before-R2.db` on the server |
+| **Plan** | Six **tracks**, one per module and a shared spine, each with its next phase — [`05-roadmap.md`](05-roadmap.md). Next in order: ~~the owner loads the three real files~~ done 2026-09-09 (12,539 entries on production) → ~~CR-10 the attention page~~ done v2.16.0 → ~~CR-11 counts and tags~~ done v2.18.0 → ~~SH-12 the beta instance~~ done v2.20.0 (the operator sets it up on the server from [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta)) → **SH-3a + SH-3b the login**, delivered to beta, tested by end users, then promoted to production (the owner's priority of 2026-09-21 — [`13-authentication.md`](13-authentication.md)) → CR-12 structures: derive, draw, edit ([specified](09-structures.md), three releases) → SD-1 build → CR-5 unregistered review → CR-4 incomplete entries → CR-8 merge a hand-picked pair → SH-2 schema normalisation; SH-3c single sign-on ⏸ the identity team's registration |
+| **Production** | one RHEL 8 VM, one container per instance — production on 49160 and, once the operator runs §8 of the RHEL 8 guide, the beta instance on 49161 with its own copy of the data — one SQLite file each: 49,065 screening rows, **12,539 registered chemicals** (the Dotmatics export, the structure file and the limited list, loaded by the owner on 2026-09-09 through the terminal shortcut), **0 rows linked** until SD-1 attaches them; 419 entries share an identifier, 3 have batch conflicts and 125 have a formula their names do not explain — 349 items on the attention page, for a person to decide; the 664 old entries stay in `~/data-backup-20260908-before-R2.db` on the server |
 
 **Open items, none blocking:**
 
@@ -139,6 +139,7 @@ does not record a date, it says so rather than guessing.
 | 2026-09-14 | **v2.17.0.** The plan for CR-11 and CR-12 written first, at the owner's request, ahead of the screening rule. |
 | 2026-09-14 | **v2.18.0.** CR-11: the counts strip and the source tags on the registry page — where every compound came from, at a glance; one summary behind the browser, the API and a script. |
 | 2026-09-21 | **v2.19.0.** The beta instance and the login put at the top of the plan, at the owner's request, so end users can test without touching production; the local-accounts rung to be built in full. |
+| 2026-09-21 | **v2.20.0.** SH-12: the beta instance — every script reads its instance from one file, a second copy runs beside production and cannot touch it, the workflow gains publish-to-beta and promote-to-master; rehearsed on a Mac, ready for the server. |
 | 2026-09-09 | **v2.14.0.** CR-9: the laboratory's three real registry files described as data — the master export, the structure file, the limited list — loaded by their own rules; the registry can now be refilled with 12,539 real entries. |
 | 2026-09-09 | **v2.13.0.** CR-3: every way into the registry through one door — JSON beside the spreadsheet and structure formats, import and export from the terminal, and the review loop that refills the registry from the pre-reset backup. |
 | 2026-09-09 | **v2.11.0.** CR-6: deleting a compound with linked rows is refused in the browser and the plain API; forced or from the script it unlinks first, then deletes. |
@@ -330,8 +331,9 @@ reach the public one.
 (the gate), then to the company mailroom (the private mirror), and only then to
 the person who acts on it (production). The route never runs backwards.
 
-The whole sequence — edit, test, gate, commit, push three branches, mirror,
-deploy, confirm sync — lives in **one place**,
+The whole sequence — edit, test, gate, commit, push, mirror, deploy to
+beta, confirm sync, and then, when the testers agree, promote to production
+— lives in **one place**,
 [`03-git-workflow.md`](03-git-workflow.md), and nowhere else in the
 documentation. Read [§1 The two repositories](03-git-workflow.md#1-the-two-repositories),
 [§3 Golden rules](03-git-workflow.md#3-golden-rules) and
@@ -339,6 +341,14 @@ documentation. Read [§1 The two repositories](03-git-workflow.md#1-the-two-repo
 after that the cheat sheet in [§A](#a-cheat-sheet) is enough.
 
 ![Seven steps: edit, test, gate, push on the Mac; mirror, deploy, confirm on the VM; then back to edit](img/fig_change_travels.svg)
+
+**Since v2.20.0 the route has two moments.** A *publish* pushes `develop`
+and `beta`, and the **beta instance** — the testers' copy on port 49161,
+[`14-beta-instance.md`](14-beta-instance.md) — pulls it the same day. A
+*promotion* pushes `beta` to `master` by hand, on a day someone chooses,
+and production pulls it. A change that fails on beta is never promoted.
+
+![Three branch stations on one rail: develop, beta, master; publish pushes develop to beta, promotion pushes beta to master by hand](img/fig_publish_promote.svg)
 
 **Every session after setup** starts the same way, on the Mac:
 
@@ -406,8 +416,8 @@ code (`phase-cr-3-every-way-in.md`). What each track does next is
 | CR-6 | CR | Deletion refuses or forces | A compound with linked rows cannot be deleted from the browser or the plain API (409, with the count and where to unlink); with `force`, and from the script, the rows are unlinked first, then the entry deleted; one shared module for where a link lives; six tests, one contract test rewritten for the agreed rule | [`phase-cr-6-delete-unlinks-first.md`](04-phase-tutorials/phase-cr-6-delete-unlinks-first.md) | 2026-09-09 (v2.11.0) | ✅ |
 | SH-1 | SH | Module names | *Chemicals*, *Samples*, *Screening* become *Chemical Registry*, *Sample Management*, *Screening Data* in the sidebar, the page headings, the dashboard tiles, the interactive architecture page and every document; no address or API path changed | [`phase-sh-1-module-names.md`](04-phase-tutorials/phase-sh-1-module-names.md) | 2026-09-08 (v2.9.0) | ✅ |
 | 06 (SH-2) | SH | Schema normalisation | The frequently-filtered fields promoted from JSON into indexed columns, without changing the API or breaking the design rule | `04-phase-tutorials/phase-06-schema-normalisation.md` | — | 🔜 |
-| SH-12 | SH | A beta instance for user testing | A second, complete copy of the application on the same server, on the `beta` branch, its own container, image, port and database; the workflow gains *publish to beta* and *promote to master*; planned in [`14-beta-instance.md`](14-beta-instance.md), decided in [ADR 0002](adr/0002-beta-instance.md) | `04-phase-tutorials/phase-sh-12-beta-instance.md` | — | 📝 specified 2026-09-21 · **next** |
-| 07 (SH-3a/b/c) | SH | Authentication, as a ladder (agreed 2026-09-08; reordered to the top 2026-09-21) | A token gate (SH-3a), local accounts in full (SH-3b), single sign-on through the organisation's identity provider (SH-3c) — one flag, one guard on every route, one open health route; planned in [`13-authentication.md`](13-authentication.md), decided in [ADR 0001](adr/0001-authentication-ladder.md) | `04-phase-tutorials/phase-sh-3a-token-gate.md` and siblings | — | 🔜 SH-3a + SH-3b right after SH-12, on beta first · ⏸ SH-3c on the registration |
+| SH-12 | SH | A beta instance for user testing | `CRUCIBLE_INSTANCE` and `CRUCIBLE_PORT` read from a folder's `.env.local` by `container-py.sh`, the setup script, the monitor and the uninstaller, each acting on its own folder's instance; a second, complete copy of the application beside production — `crucible-py-beta` on 49161, its own data, unit and monitor line — that no script in its folder can make touch production; `restore` takes a folder; the workflow gains *publish to beta* and *promote to master*; RHEL 8 guide §8; two figures; rehearsed on a Mac; planned in [`14-beta-instance.md`](14-beta-instance.md), decided in [ADR 0002](adr/0002-beta-instance.md) | [`phase-sh-12-beta-instance.md`](04-phase-tutorials/phase-sh-12-beta-instance.md) | 2026-09-21 (v2.20.0) | ✅ (server setup: the operator, §8) |
+| 07 (SH-3a/b/c) | SH | Authentication, as a ladder (agreed 2026-09-08; reordered to the top 2026-09-21) | A token gate (SH-3a), local accounts in full (SH-3b), single sign-on through the organisation's identity provider (SH-3c) — one flag, one guard on every route, one open health route; planned in [`13-authentication.md`](13-authentication.md), decided in [ADR 0001](adr/0001-authentication-ladder.md) | `04-phase-tutorials/phase-sh-3a-token-gate.md` and siblings | — | 🔜 SH-3a + SH-3b **next**, on beta first · ⏸ SH-3c on the registration |
 
 Version-by-version detail, including what each release deliberately did *not*
 fix, is in [`NEWS.md`](../NEWS.md).
@@ -429,8 +439,10 @@ repeating it.
 
 | I want to… | Command | Where it is explained |
 |---|---|---|
-| Update to a new version | `./container-py.sh backup` → `git pull --ff-only origin master` → `./container-py.sh rebuild` | [`01-setup-rhel8.md` §6](01-setup-rhel8.md#6-day-2-operations) |
-| Back up, restore | `./container-py.sh backup` · `restore <file>` | [Backup and restore](07-operations.md#backup-and-restore) |
+| Update to a new version | `./container-py.sh backup` → `git pull --ff-only origin master` → `./container-py.sh rebuild` (production, after a promotion); the beta folder pulls `beta` after every publish | [`01-setup-rhel8.md` §6](01-setup-rhel8.md#6-day-2-operations) · [`03-git-workflow.md` Steps 10–11](03-git-workflow.md#step-10---deploy-to-the-beta-instance) |
+| Back up, restore | `./container-py.sh backup` · `restore <file>` · `restore <folder>` (its newest backup) | [Backup and restore](07-operations.md#backup-and-restore) |
+| Refresh beta from production | production folder `./container-py.sh backup`, beta folder `./container-py.sh restore ../nr-nips-crucible/backups` | [Two instances on one machine](07-operations.md#two-instances-on-one-machine) |
+| Know which instance a folder or a tab is | `./container-py.sh help \| grep Usage` · the header's *Running on port 4916x* | [`14-beta-instance.md`](14-beta-instance.md) · [playbook](10-user-playbook.md#which-instance-am-i-on) |
 | Rotate the certificate | install the new pair, `./container-py.sh start-ssl` | [SSL/TLS certificate setup](07-operations.md#ssltls-certificate-setup) |
 | Know it is still up | `monitor.sh` from cron every 5 minutes; `cert-expiry-check.sh` weekly | [Health monitoring](07-operations.md#health-monitoring) |
 | Survive a reboot | the systemd user unit and lingering | [Auto-start on boot](07-operations.md#auto-start-on-boot-systemd) |
@@ -536,10 +548,11 @@ In the order the roadmap [argues for](05-roadmap.md#why-this-order):
    ([how](04-phase-tutorials/phase-cr-9-real-registry-sources.md#how-to-test-it-by-every-route)).
    The review loop for the 664 old entries stays available but is now
    optional: the export is the master source.
-4. **SH-12 the beta instance, then SH-3a + SH-3b the login** — the owner's
-   priority of 2026-09-21, ahead of everything below: a second copy of the
-   application on the server for end users to test, then one login per
-   tester on it, promoted to production once tested
+4. ~~SH-12 the beta instance~~ done, v2.20.0 — the operator sets it up on
+   the server from [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta).
+   **SH-3a + SH-3b the login** — the owner's priority of 2026-09-21, ahead
+   of everything below: one login per tester on the beta instance,
+   promoted to production once tested
    ([`14-beta-instance.md`](14-beta-instance.md) · [`13-authentication.md`](13-authentication.md)).
 5. ~~CR-11~~ done, v2.18.0. **CR-12** — the owner's request of 2026-09-14:
    structures derived, drawn and editable in the browser
@@ -586,16 +599,18 @@ machines; they auto-detect podman or Docker.
 | Start of session | `git switch develop && git pull --ff-only origin develop` | — |
 | Run the checks CI runs | `cd backend && .venv/bin/ruff check . && .venv/bin/pytest -q` | not possible on the VM (system Python 3.6); the container ships its own |
 | Changed `requirements.txt`? | `./container-py.sh lock`, review the diff, then rebuild | — |
-| Rebuild after a code change | `./container-py.sh rebuild` | `./container-py.sh backup && ./container-py.sh rebuild` |
+| Rebuild after a code change | `./container-py.sh rebuild` | `./container-py.sh backup && ./container-py.sh rebuild` — in the folder of the instance you mean; `help \| grep Usage` says which |
 | Is it up? | `curl --noproxy '*' -sS http://localhost:49160/api/stats` | `curl --noproxy '*' -sSk https://localhost:49160/api/stats` |
 | Status, logs | `./container-py.sh status` · `logs` | same |
 | Run a maintenance script (audit, remove, merge…) | `./container-py.sh script <name.py> [args]` — no name lists them; the scripts always report first and write only with `--apply` | same |
 | Load a chemicals file · export the registry | `./container-py.sh import chemicals <file>` (json, csv, tsv, xlsx, xls, sdf) · `./container-py.sh export chemicals <file.json>` | same |
 | The gate, before every push | `git add -A && ./check-public-safe.sh` → `✓ SAFE TO PUSH` · `python3 check-links.py` | — |
-| Publish | `git push origin develop develop:beta develop:master` | — |
+| Publish (every change; the beta instance gets it) | `git push origin develop develop:beta` | beta folder: `git switch beta && git pull --ff-only origin beta`, rebuild only if code changed |
+| Promote (when the testers agree; production gets it) | `git fetch origin && git log --oneline origin/master..origin/beta` then `git push origin beta:master` | mirror folder: `git push origin beta:master`; then production's deploy row |
 | Tag the release (every version that reaches production) | `git tag -a vX.Y.Z -m "vX.Y.Z — <NEWS subtitle>" && git push origin vX.Y.Z`, then the Release page | mirror folder: the same tag on the mirror's commit, then the Release page on the private host |
-| Mirror public → private | — | mirror folder: `git fetch public && git checkout public/develop -- .` → commit → push three branches |
-| Deploy | — | production folder: `git switch master && git pull --ff-only origin master`, rebuild only if code changed |
+| Mirror public → private | — | mirror folder: `git fetch public && git checkout public/develop -- .` → commit → `git push origin develop develop:beta` |
+| Deploy to production (after a promotion) | — | production folder: `git switch master && git pull --ff-only origin master`, rebuild only if code changed |
+| Refresh beta's data from production | — | production folder `./container-py.sh backup`; beta folder `./container-py.sh restore ../nr-nips-crucible/backups` |
 | Confirm the two repos agree | — | mirror folder: `git diff --stat public/develop develop` → only the private-only files |
 | Back up | `./container-py.sh backup` | same, plus copy the newest `backups/crucible-*.db` off the machine |
 | Remove everything | `./uninstall.sh --dry-run` first | same |
@@ -637,4 +652,4 @@ the symptom / cause / fix table (SELinux, rootless ports, proxies, systemd).
   StableSeg and ImagingAgent all carry a numbered document set and a handbook
   like this one, so the five read as one body of work.
 
-**Last Updated:** September 8, 2026
+**Last Updated:** September 21, 2026

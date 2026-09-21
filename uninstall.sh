@@ -7,17 +7,49 @@
 set -euo pipefail
 
 # ── Configuration ────────────────────────────────────────────
-IMAGES="crucible-py"
-CONTAINERS="crucible-py"
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Which instance does THIS checkout run? container-py.sh names the image and
+# container after CRUCIBLE_INSTANCE in the folder's .env.local (unset →
+# crucible-py). This script removes that instance's resources and no other:
+# on a machine with a production and a beta checkout, `./uninstall.sh` in the
+# beta folder must never stop production (docs/14-beta-instance.md).
+if [ -f "${PROJECT_DIR}/.env.local" ]; then
+    _env_instance="${CRUCIBLE_INSTANCE:-}"
+    set +u
+    # shellcheck disable=SC1091
+    . "${PROJECT_DIR}/.env.local"
+    set -u
+    CRUCIBLE_INSTANCE="${_env_instance:-${CRUCIBLE_INSTANCE:-}}"
+fi
+CRUCIBLE_INSTANCE="${CRUCIBLE_INSTANCE:-}"
+INSTANCE_SUFFIX="${CRUCIBLE_INSTANCE:+-$CRUCIBLE_INSTANCE}"
+IMAGES="crucible-py${INSTANCE_SUFFIX}"
+CONTAINERS="crucible-py${INSTANCE_SUFFIX}"
+# The rootless systemd unit (podman generate systemd) and the Quadlet file,
+# named after the container — docs/07-operations.md → Auto-start on boot.
+USER_UNIT="container-crucible-py${INSTANCE_SUFFIX}.service"
+QUADLET_FILE="crucible-py${INSTANCE_SUFFIX}.container"
+QUADLET_UNIT="crucible-py${INSTANCE_SUFFIX}.service"
 # Base images pulled by the multi-stage build; removed by --full (offered in
 # interactive). Rootless podman/docker images are per-user, so this cannot
 # affect other users of a shared machine.
 BASE_IMAGES="python:3.12-slim node:18-alpine"
-PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# Every cron entry the project's docs/scripts may have installed.
-CRON_PATTERNS='monitor\.sh|cert-expiry-check\.sh|container-py\.sh backup'
-# Every log file those cron entries write.
-CRON_LOGS="/tmp/crucible-monitor.log ${HOME}/crucible-cert.log ${HOME}/crucible-backup.log"
+# Every cron entry the project's docs/scripts may have installed. Only the
+# lines that name THIS folder are touched: each checkout's lines carry its
+# own path (`cd <folder> && …`, `<folder>/cert-expiry-check.sh`), so the
+# other instance's monitor, cert check and nightly backup stay installed.
+# The path is matched WITH what follows it (" && " or "/"), because the beta
+# folder's path begins with production's (…/nr-nips-crucible-beta) and a bare
+# prefix match from the production folder would remove beta's lines too.
+# [.] rather than \. so the same pattern works in grep -E and awk.
+CRON_PATTERNS='monitor[.]sh|cert-expiry-check[.]sh|container-py[.]sh backup'
+# The log files those cron entries write. The monitor log is per instance;
+# the cert and backup logs are shared names and belong to the default
+# instance only.
+CRON_LOGS="/tmp/crucible-monitor${INSTANCE_SUFFIX}.log"
+if [ -z "${CRUCIBLE_INSTANCE}" ]; then
+    CRON_LOGS="${CRON_LOGS} ${HOME}/crucible-cert.log ${HOME}/crucible-backup.log"
+fi
 
 # Runtime detection (same convention as container*.sh)
 if [ -n "${CONTAINER_RUNTIME:-}" ]; then RUNTIME="$CONTAINER_RUNTIME"
@@ -53,6 +85,9 @@ show_header() {
     echo "║   🧪 Crucible: Pandora Toolbox Enhancement (v2.0)        ║"
     echo "║      Uninstall & Cleanup                                  ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
+    echo ""
+    echo -e "Instance: ${BOLD}${CRUCIBLE_INSTANCE:-default}${NC} — container ${CONTAINERS}, folder ${PROJECT_DIR}"
+    echo "(only this instance's container, image, cron lines and units are touched)"
     echo ""
 }
 
@@ -149,17 +184,29 @@ remove_base_images() {
     info "They are re-downloaded automatically on the next ./container-py.sh build"
 }
 
+# The project's cron lines that belong to THIS checkout (they name its path),
+# and the ones that belong to other checkouts (left alone).
+cron_mine()   { crontab -l 2>/dev/null | grep -F  -e "${PROJECT_DIR} && " -e "${PROJECT_DIR}/" | grep -E "${CRON_PATTERNS}" || true; }
+cron_others() { crontab -l 2>/dev/null | grep -vF -e "${PROJECT_DIR} && " -e "${PROJECT_DIR}/" | grep -E "${CRON_PATTERNS}" || true; }
+
 remove_cron() {
     echo ""
     echo -e "${BOLD}Step 4: Remove Cron Jobs & Their Logs${NC}"
-    # Covers every entry the project installs or documents: the */5 health
-    # monitor, the weekly cert-expiry check, and the nightly backup job.
-    if crontab -l 2>/dev/null | grep -qE "${CRON_PATTERNS}"; then
-        { crontab -l 2>/dev/null | grep -vE "${CRON_PATTERNS}" || true; } | crontab -
-        success "Cron job(s) removed (monitor.sh / cert-expiry-check.sh / backup)"
+    # Covers every entry the project installs or documents for this folder:
+    # the */5 health monitor, the weekly cert-expiry check, and the nightly
+    # backup job.
+    if [ -n "$(cron_mine)" ]; then
+        { crontab -l 2>/dev/null | awk -v dir="${PROJECT_DIR}" -v pat="${CRON_PATTERNS}" \
+            '(index($0, dir " && ") || index($0, dir "/")) && $0 ~ pat { next } { print }' || true; } | crontab -
+        success "Cron job(s) for this folder removed (monitor.sh / cert-expiry-check.sh / backup)"
     else
-        info "No crucible cron jobs found"
+        info "No crucible cron jobs for this folder found"
         skip
+    fi
+    local others
+    others=$(cron_others | wc -l | tr -d ' ')
+    if [ "${others}" -gt 0 ]; then
+        info "${others} crucible cron entr(y/ies) for OTHER checkouts left in place (crontab -l to see them)"
     fi
 
     local log
@@ -195,8 +242,8 @@ backup_data() {
     # Containers are already stopped at this point, so plain copies are safe
     # (never copy a RUNNING SQLite database — see docs/07-operations.md → Backup and restore).
     if [ -f "${PROJECT_DIR}/data/crucible.db" ]; then
-        cp "${PROJECT_DIR}/data/crucible.db" "${backup_dir}/crucible-final-${stamp}.db"
-        success "SQLite database backed up to ${backup_dir}/crucible-final-${stamp}.db"
+        cp "${PROJECT_DIR}/data/crucible.db" "${backup_dir}/crucible${INSTANCE_SUFFIX}-final-${stamp}.db"
+        success "SQLite database backed up to ${backup_dir}/crucible${INSTANCE_SUFFIX}-final-${stamp}.db"
         found=1
     fi
     if [ "$found" -eq 0 ]; then info "No database files found to back up"; fi
@@ -264,35 +311,35 @@ remove_systemd() {
     local found=0
 
     # Rootless user units, see docs/07-operations.md → Auto-start on boot (RHEL8: podman generate systemd / Quadlet)
-    local user_unit="${HOME}/.config/systemd/user/container-crucible-py.service"
+    local user_unit="${HOME}/.config/systemd/user/${USER_UNIT}"
     if [ -f "$user_unit" ]; then
-        systemctl --user stop container-crucible-py.service 2>/dev/null || true
-        systemctl --user disable container-crucible-py.service 2>/dev/null || true
+        systemctl --user stop "${USER_UNIT}" 2>/dev/null || true
+        systemctl --user disable "${USER_UNIT}" 2>/dev/null || true
         rm -f "$user_unit"
         systemctl --user daemon-reload 2>/dev/null || true
-        success "User systemd unit removed (container-crucible-py.service)"
+        success "User systemd unit removed (${USER_UNIT})"
         found=1
     fi
-    local quadlet="${HOME}/.config/containers/systemd/crucible-py.container"
+    local quadlet="${HOME}/.config/containers/systemd/${QUADLET_FILE}"
     if [ -f "$quadlet" ]; then
-        systemctl --user stop crucible-py.service 2>/dev/null || true
+        systemctl --user stop "${QUADLET_UNIT}" 2>/dev/null || true
         rm -f "$quadlet"
         systemctl --user daemon-reload 2>/dev/null || true
-        success "Quadlet unit removed (crucible-py.container)"
+        success "Quadlet unit removed (${QUADLET_FILE})"
         found=1
     fi
     if [ "$found" -eq 1 ]; then
         # Removing a unit file leaves systemd holding an in-memory "failed"
         # record for it, which then shows up forever in `systemctl --user
         # list-units` as "not-found failed failed". Clear that residue.
-        systemctl --user reset-failed container-crucible-py.service 2>/dev/null || true
-        systemctl --user reset-failed crucible-py.service 2>/dev/null || true
+        systemctl --user reset-failed "${USER_UNIT}" 2>/dev/null || true
+        systemctl --user reset-failed "${QUADLET_UNIT}" 2>/dev/null || true
         info "Login lingering was left enabled; disable with: sudo loginctl disable-linger \$USER"
     fi
 
-    # Legacy system-wide unit
+    # Legacy system-wide unit (the default instance only; it predates instances)
     local service_file="/etc/systemd/system/crucible.service"
-    if [ -f "$service_file" ]; then
+    if [ -z "${CRUCIBLE_INSTANCE}" ] && [ -f "$service_file" ]; then
         warn "System-wide systemd service found — requires sudo to remove"
         if confirm "Remove systemd service?"; then
             sudo systemctl stop crucible 2>/dev/null || true
@@ -371,13 +418,17 @@ dry_run() {
         fi
     done
 
-    # Cron entries (monitor / cert-expiry / backup)
-    local cron_hits
-    cron_hits=$(crontab -l 2>/dev/null | grep -cE "${CRON_PATTERNS}" || true)
+    # Cron entries (monitor / cert-expiry / backup) — this folder's only
+    local cron_hits cron_other
+    cron_hits=$(cron_mine | wc -l | tr -d ' ')
+    cron_other=$(cron_others | wc -l | tr -d ' ')
     if [ "${cron_hits}" -gt 0 ]; then
-        echo -e "  ${RED}✗${NC} Cron job(s): ${cron_hits} crucible entr(y/ies) (monitor / cert-expiry / backup)"
+        echo -e "  ${RED}✗${NC} Cron job(s): ${cron_hits} crucible entr(y/ies) for this folder (monitor / cert-expiry / backup)"
     else
-        echo -e "  ${GREEN}✓${NC} Cron jobs: (none found)"
+        echo -e "  ${GREEN}✓${NC} Cron jobs for this folder: (none found)"
+    fi
+    if [ "${cron_other}" -gt 0 ]; then
+        echo -e "  ${BLUE}ℹ${NC} Cron job(s) for other checkouts: ${cron_other}, left in place"
     fi
 
     # Cron logs
@@ -440,20 +491,22 @@ dry_run() {
     fi
 
     # systemd (system-wide + rootless user units + Quadlet)
-    if [ -f "/etc/systemd/system/crucible.service" ]; then
-        echo -e "  ${RED}✗${NC} systemd service: crucible.service"
-    else
-        echo -e "  ${GREEN}✓${NC} systemd service: (not installed)"
+    if [ -z "${CRUCIBLE_INSTANCE}" ]; then
+        if [ -f "/etc/systemd/system/crucible.service" ]; then
+            echo -e "  ${RED}✗${NC} systemd service: crucible.service"
+        else
+            echo -e "  ${GREEN}✓${NC} systemd service: (not installed)"
+        fi
     fi
-    if [ -f "${HOME}/.config/systemd/user/container-crucible-py.service" ]; then
-        echo -e "  ${RED}✗${NC} user systemd unit: container-crucible-py.service"
+    if [ -f "${HOME}/.config/systemd/user/${USER_UNIT}" ]; then
+        echo -e "  ${RED}✗${NC} user systemd unit: ${USER_UNIT}"
     else
-        echo -e "  ${GREEN}✓${NC} user systemd unit: (not installed)"
+        echo -e "  ${GREEN}✓${NC} user systemd unit ${USER_UNIT}: (not installed)"
     fi
-    if [ -f "${HOME}/.config/containers/systemd/crucible-py.container" ]; then
-        echo -e "  ${RED}✗${NC} Quadlet unit: crucible-py.container"
+    if [ -f "${HOME}/.config/containers/systemd/${QUADLET_FILE}" ]; then
+        echo -e "  ${RED}✗${NC} Quadlet unit: ${QUADLET_FILE}"
     else
-        echo -e "  ${GREEN}✓${NC} Quadlet unit: (not installed)"
+        echo -e "  ${GREEN}✓${NC} Quadlet unit ${QUADLET_FILE}: (not installed)"
     fi
 
     echo ""

@@ -2,11 +2,15 @@
 
 # A beta instance for user testing — two copies of the application on one server
 
-**Status:** specification 📝, written 2026-09-21 from the owner's request to
-roll the application out to end users for testing without touching
-production; decisions B1–B6 below await the owner, then it is built as
-phase **SH-12**, ahead of everything else, with the login
-([`13-authentication.md`](13-authentication.md)) delivered to it first.
+**Status:** built ✅ as phase **SH-12**, v2.20.0, 2026-09-21 — the same day
+the owner asked for the application to be rolled out to end users for
+testing without touching production. Decisions B1–B6 below were taken as
+recommended (the owner's go, 2026-09-21). The scripts and the workflow are
+what this page describes; the step-by-step walk with a test for every route
+is [phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md), and the
+server setup is [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta).
+The login ([`13-authentication.md`](13-authentication.md)) is delivered to
+this instance first.
 
 **Who this is for:** the person who runs the server and has to give a
 group of testers something to try; and the testers, who need to know that
@@ -22,11 +26,11 @@ the [glossary](00-glossary.md).
 - [What exists today that this builds on](#what-exists-today-that-this-builds-on)
 - [The design: two instances, side by side](#the-design-two-instances-side-by-side)
 - [How a change travels once there are two](#how-a-change-travels-once-there-are-two)
-- [What the scripts gain](#what-the-scripts-gain)
+- [What the scripts gained](#what-the-scripts-gained)
 - [The data the testers see](#the-data-the-testers-see)
 - [Who can log in, and where](#who-can-log-in-and-where)
 - [Decisions B1–B6](#decisions-b1b6)
-- [Done means](#done-means)
+- [Done means — and what was done](#done-means--and-what-was-done)
 - [Related pages](#related-pages)
 
 ---
@@ -130,32 +134,37 @@ sequenceDiagram
 
 1. **Publish** — every change goes to `develop` and `beta`, on both
    repositories; the beta instance pulls and rebuilds. Testers see it the
-   same day.
+   same day ([Flow A, Steps 1–10](03-git-workflow.md#4-flow-a---a-change-from-start-to-finish)).
 2. **Promote** — when the testers (or you) are satisfied, `beta` is pushed
    to `master` by hand, in a step of its own; production pulls and
-   rebuilds, after its backup, as today.
+   rebuilds, after its backup, as before ([Step 11](03-git-workflow.md#step-11---promote-to-production-when-the-testers-agree)).
 
 A fix found on beta is made on the Mac and published again; nothing is
 edited on the server. A change that turns out to be wrong simply never
-gets promoted. The full commands for every machine go into
-[`03-git-workflow.md`](03-git-workflow.md) when SH-12 ships; the two
-moments above are the whole of the change.
+gets promoted. Beta is promoted as a whole — everything published since
+the last promotion, together — so a change that is not ready for
+production is not published to beta either.
+
+![Three branch stations on one rail: develop, beta, master; publish pushes develop to beta, promotion pushes beta to master by hand](img/fig_publish_promote.svg)
 
 ---
 
-## What the scripts gain
+## What the scripts gained
 
-| Script | Today | After SH-12 |
+![The three lines of the beta folder's .env.local fan out to the image, container, service unit, monitor log, cron line and address](img/fig_instance_name.svg)
+
+| Script | Before v2.20.0 | Since v2.20.0 |
 |---|---|---|
-| `container-py.sh` | image and container names fixed to `crucible-py` | `CRUCIBLE_INSTANCE=<name>` (from `.env.local` or the environment) suffixes the image, the container and the database container: `crucible-py-beta`; unset, nothing changes |
-| `setup-after-clone-py.sh` | prints and probes port 49160; writes the cron line for `crucible-py` | uses the folder's port and instance name for both |
-| `monitor.sh` | `CONTAINER_NAME` and `API_URL` from the cron line | unchanged — the cron line for beta names its container and port |
+| `container-py.sh` | image and container names fixed to `crucible-py` | `CRUCIBLE_INSTANCE=<name>` (from `.env.local`; the environment wins) suffixes the image, the container and the optional Postgres container, network and volume: `crucible-py-beta`; a name that is not lowercase letters, digits and hyphens is refused; `help`, `status` and every start print the instance; `restore` given a **folder** takes its newest `crucible-*.db`. Unset, nothing changes |
+| `setup-after-clone-py.sh` | printed and probed port 49160; wrote the cron line for `crucible-py` and removed **every** other monitor line | names the image it builds, probes the folder's port, writes a cron line naming this folder's container and port, and replaces only **this folder's** previous line |
+| `monitor.sh` | `CONTAINER_NAME` and `API_URL` from the cron line, else `crucible-py` on 49160 | the cron line still wins; run by hand it reads the folder's `.env.local`, so `./monitor.sh` in the beta folder probes and restarts beta; one log per instance (`/tmp/crucible-monitor-beta.log`); the container's name in every line |
+| `uninstall.sh` | removed `crucible-py`, its unit, and **every** crucible cron line | reads `.env.local`; removes this instance's container, image, unit, Quadlet file, monitor log and only the cron lines naming this folder (matched with what follows the path, since the beta path begins with production's); says how many lines for other checkouts it left |
 | `verify-deploy.sh` | takes the base address | unchanged; run it against `https://localhost:49161` |
 | `healthcheck.py` | reads `PORT` inside the container | unchanged; each container has its own |
 
-A blank machine that never sets `CRUCIBLE_INSTANCE` behaves exactly as
-before, on every platform: the same script, the same one-time setup, on
-Windows, macOS and RHEL 8.
+A machine that never sets `CRUCIBLE_INSTANCE` behaves exactly as before, on
+every platform: the same script, the same one-time setup, on Windows, macOS
+and RHEL 8. The application code did not change at all.
 
 ---
 
@@ -170,13 +179,17 @@ only, on request, never automatically and never back:
 cd ~/work/Pandora_toolbox/nr-nips-crucible
 ./container-py.sh backup
 
-# hand it to beta (the restore stops beta, swaps its database, restarts it)
+# hand it to beta: given a FOLDER, restore takes its newest backup (the restore
+# stops beta, swaps its database, restarts it; beta's old one is kept as .pre-restore)
 cd ~/work/Pandora_toolbox/nr-nips-crucible-beta
-./container-py.sh restore ../nr-nips-crucible/backups/$(ls -t ../nr-nips-crucible/backups | head -1)
+./container-py.sh restore ../nr-nips-crucible/backups
 ```
 
-**You should see:** beta's registry page showing the same 12,539
-compounds as production, and its address ending in `49161`.
+**You should see:** `Newest backup in ../nr-nips-crucible/backups: crucible-<stamp>.db`,
+`✓ Restored … (instance: beta)`, and then beta's registry page showing the
+same 12,539 compounds as production, with **Running on port 49161** in the
+header's right-hand corner — the tester's way of knowing which instance a
+tab shows.
 
 Whatever the testers change on beta stays on beta. When you want them back
 on a clean copy, run the two commands again. The restore never runs the
@@ -200,7 +213,10 @@ decision A3 on the authentication page.
 
 ## Decisions B1–B6
 
-| # | Question | Recommendation | Why |
+All six taken **as recommended, 2026-09-21**, with the owner's go for the
+build ("build on what you have planned").
+
+| # | Question | Decision | Why |
 |---|---|---|---|
 | B1 | The same server, or another machine? | **The same server**, as a second container | It exists, it has the certificates and the network reach; a second machine is a request to another team. Move beta when IT offers a machine; nothing in the design changes |
 | B2 | Which port? | **49161**, the next one up | No firewall on the server to open; one number to remember |
@@ -211,26 +227,36 @@ decision A3 on the authentication page.
 
 ---
 
-## Done means
+## Done means — and what was done
 
-- The second folder exists on the server on branch `beta`, with its own
-  `.env.local`, certificates, service unit and monitor line.
-- `https://<vm-hostname>:49161` answers with a copy of production's data;
-  `./verify-deploy.sh https://localhost:49161` passes every check.
-- `https://<vm-hostname>:49160` is untouched: same image, same data, same
-  checks, before and after.
-- One publish reaches beta only; one promotion reaches production only;
+- ✅ The scripts know their instance; rehearsed end to end on a Mac with
+  two containers side by side (`crucible-py` on 49160, `crucible-py-beta`
+  on 49161), the one-way restore, a beta rebuild that left production's
+  image untouched, sixteen deploy checks passing on each, and the
+  uninstaller's dry run naming beta only
+  ([phase SH-12 → How to test it](04-phase-tutorials/phase-sh-12-beta-instance.md#how-to-test-it-by-every-route)).
+- ✅ One publish reaches beta only; one promotion reaches production only;
   both written out in [`03-git-workflow.md`](03-git-workflow.md) with the
   commands for every machine.
-- A blank Mac or Windows machine following its setup guide is unaffected.
-- The phase tutorial has the every-route test table — browser, API,
-  terminal, the container, Python, the deploy check — with the exact
-  output for each instance.
+- ✅ A blank Mac or Windows machine following its setup guide is
+  unaffected: no instance name, the same names as before.
+- ✅ The phase tutorial has the every-route test table — browser, API,
+  terminal, the container, Python, the database, the monitor, the unit,
+  the uninstaller, the deploy check — with the exact output for each
+  instance.
+- ⏳ **On the server, for the operator:** the second folder on branch
+  `beta`, with its own `.env.local`, certificates, service unit and monitor
+  line — [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta),
+  fifteen minutes; then `https://<vm-hostname>:49161` answers with a copy of
+  production's data and `./verify-deploy.sh https://localhost:49161` passes,
+  while `https://<vm-hostname>:49160` is untouched.
 
 ---
 
 ## Related pages
 
+- [Phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md) — how it was built, step by step, and how to test it by every route.
+- [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta) — setting the beta instance up on the server.
 - [`13-authentication.md`](13-authentication.md) — the login that beta receives first; decision A3 revisited.
 - [`05-roadmap.md` → SH](05-roadmap.md#sh--shared-spine) — SH-12 among the other phases, and why it is first now.
 - [`03-git-workflow.md`](03-git-workflow.md) — the three folders today; the fourth is added when SH-12 ships.

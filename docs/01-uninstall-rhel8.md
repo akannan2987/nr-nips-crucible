@@ -14,6 +14,16 @@ Companion documents: [RHEL8 Install & Run](01-setup-rhel8.md) ·
 > the same script used on macOS. The full uninstall/reinstall runbook lives in
 > **[docs/07-operations.md → Uninstall and reinstall](07-operations.md#uninstall-and-reinstall)**.
 
+> **Which instance?** Since v2.20.0 a VM can run two instances — production
+> and the [beta instance](14-beta-instance.md) the testers use, each in its own
+> folder. `uninstall.sh` acts on **the instance of the folder it runs in** (it
+> reads `CRUCIBLE_INSTANCE` from that folder's `.env.local`): run in the beta
+> folder it removes `crucible-py-beta`, its unit and its own cron lines, and
+> leaves production untouched; run in the production folder it leaves beta
+> alone. Every mode opens with a line `Instance: … — container …, folder …`;
+> read it before answering any prompt. Where this guide says `crucible-py`,
+> read `crucible-py-beta` for the beta folder.
+
 > ### How to read this doc
 >
 > **Every command runs on the RHEL8 VM**, over **SSH**
@@ -920,7 +930,7 @@ the unit while your login session is open tells you nothing about boot.
 
 ---
 
-**Last Updated:** August 25, 2026
+**Last Updated:** September 21, 2026
 
 ---
 

@@ -350,6 +350,22 @@ Git Bash `./container-py.sh start`.
 
 ---
 
+### Two copies on one PC
+
+Since v2.20.0 a second, separate copy of the application can run beside the
+first: a second checkout with two lines in its `.env.local`
+(`CRUCIBLE_INSTANCE=beta` and `CRUCIBLE_PORT=49161`) builds and runs
+`crucible-py-beta` on port 49161, with its own `data/`, and none of the
+scripts run there can touch the first copy. On the server this is the
+**beta instance** the testers use ([`14-beta-instance.md`](14-beta-instance.md));
+on a PC it is how that phase was rehearsed before the server was
+touched — the exact commands, and a test for every route, are in
+[phase SH-12 → Step 6](04-phase-tutorials/phase-sh-12-beta-instance.md#step-6--rehearse-it-on-a-laptop-first).
+The scripts read a file and append a word to a name; nothing in them is
+Linux-specific — but this walk, like the rest of this guide, has not yet been done on a real Windows machine.
+
+---
+
 ## 9. Windows-specific gotchas
 
 Expected, not yet observed. Each will either be confirmed or removed by the
@@ -456,4 +472,4 @@ Docker Desktop from Windows Settings → Apps if you no longer need it. The
 | `.venv/bin/pytest: No such file` | Windows virtual-environment layout | use `.venv/Scripts/pytest` |
 | very slow first build | antivirus scanning Docker's data folder | ask IT about excluding Docker Desktop's data directory |
 
-**Last Updated:** September 7, 2026 — **untested on a real Windows machine**
+**Last Updated:** September 21, 2026 — **untested on a real Windows machine**

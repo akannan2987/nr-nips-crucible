@@ -89,7 +89,7 @@ codes, the way phase R (the registry reset) is CR and SD at once.
 | SM | SLIMS three-row-header upload, table, detail view | **SM-1 · Sort, search, filter and views**, after CR-1 proves the pattern | 🔜 |
 | TX | XLSX upload, table | **TX-1 · A real study export as a template spec** | ⏸ a file |
 | QC | Read-only console, the query cookbook | **QC-1 · Saved queries and download** | 🔜 |
-| SH | Phases 00–05b: the Python backend, PostgreSQL option, public-repository hygiene, platform verification, the document set, reproducible builds and CI; SH-1 module names ✅ (2026-09-08) | **SH-12 · the beta instance**, then **SH-3a + SH-3b · the login** delivered to it and promoted after the testers have used it — the owner's priority of 2026-09-21 for user testing ([`14-beta-instance.md`](14-beta-instance.md) · [`13-authentication.md`](13-authentication.md)); **SH-2 · Schema normalisation** after | 📝 SH-12 specified · **next** · 🔜 SH-3a+b · 🔜 SH-2 |
+| SH | Phases 00–05b: the Python backend, PostgreSQL option, public-repository hygiene, platform verification, the document set, reproducible builds and CI; SH-1 module names ✅ (2026-09-08); **SH-12 the beta instance ✅ (2026-09-21, v2.20.0)** — the scripts know their instance, the workflow has two moments | **SH-3a + SH-3b · the login**, delivered to the beta instance and promoted after the testers have used it — the owner's priority of 2026-09-21 for user testing ([`13-authentication.md`](13-authentication.md)); **SH-2 · Schema normalisation** after | ✅ SH-12 v2.20.0 · 🔜 SH-3a+b **next** · 🔜 SH-2 |
 
 ---
 
@@ -190,9 +190,9 @@ attached to a registered compound only when the registry says so.
 |---|---|---|---|---|
 | 00–05b | The Python backend, the PostgreSQL option, public-repository hygiene, platform verification, the document set, reproducible builds and CI | — [build log](HANDBOOK.md#7-the-build-phase-by-phase) | — | ✅ |
 | SH-1 | **Module names.** *Chemicals* → **Chemical Registry**, *Samples* → **Sample Management**, *Screening* → **Screening Data** in the sidebar, page headings, dashboard tiles, the interactive architecture page and every document that names them; every address unchanged — [phase SH-1](04-phase-tutorials/phase-sh-1-module-names.md) | The names should say what the modules are | — | ✅ v2.9.0 (2026-09-08) |
-| **SH-12** | **A beta instance for user testing.** A second, complete copy of the application on the same server — its own folder on the `beta` branch, its own container and image (`crucible-py-beta`), port 49161, its own database refreshed from production's backup on request; `CRUCIBLE_INSTANCE` in `container-py.sh` and the setup script; a second service unit and monitor line; the workflow gains *publish to beta* and *promote to master* as two moments — [specification](14-beta-instance.md) · [ADR 0002](adr/0002-beta-instance.md) | End users are to test the application, and the login is to be rehearsed, without one click reaching the real registry | decisions B1–B6 | 📝 specified 2026-09-21 · **next** |
+| SH-12 | **A beta instance for user testing.** A second, complete copy of the application on the same server — its own folder on the `beta` branch, its own container and image (`crucible-py-beta`), port 49161, its own database refreshed from production's backup on request (`restore` takes a folder); `CRUCIBLE_INSTANCE` read by `container-py.sh`, the setup script, the monitor and the uninstaller, each acting on its own folder's instance; a second service unit and monitor line; the workflow gains *publish to beta* and *promote to master* as two moments; rehearsed on a Mac, set up on the server from [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta) — [phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md) · [specification](14-beta-instance.md) · [ADR 0002](adr/0002-beta-instance.md). Small follow-up, not a phase: an instance label in the header through `/api/stats`, if the testers confuse the two tabs (today the header says *Running on port 49161*) | End users are to test the application, and the login is to be rehearsed, without one click reaching the real registry | decisions B1–B6 — taken as recommended 2026-09-21 | ✅ v2.20.0 (2026-09-21) |
 | **SH-2** | **Schema normalisation** (was phase 06): the frequently filtered and sorted fields promoted from the JSON document into indexed columns, without changing the API. Read the design rule first: [`02-architecture.md`](02-architecture.md#the-one-design-rule-everything-else-follows-from) | Per-column filters (CR-1, SM-1) read every row's JSON; measurable now — **and measured 2026-09-14:** every registry list request parses all 12,539 documents, about 0.7 s alone and several seconds when three arrive together; the counts are cached since v2.18.2, the list is not (lesson 34). This is the trigger | the list of hot fields, proposed from the client's filters and `store.py`, signed off before any migration | 🔜 **raised**: after CR-12, before SD-1 if the page is still slow on the server |
-| **SH-3a** | **Token gate** — the first rung of the authentication ladder (was phase 07, now three rungs, planned in [`13-authentication.md`](13-authentication.md)): one feature flag `AUTH_MODE`, one guard on every route, one open health route, a login page, `verify-deploy.sh --token`; a shared secret closes the open port | The largest gap; needs nothing from anyone else; tokens remain for scripts on every later rung | SH-12, so that it lands on beta first — agreed 2026-09-08, reordered 2026-09-21 | 🔜 **right after SH-12**, with SH-3b |
+| **SH-3a** | **Token gate** — the first rung of the authentication ladder (was phase 07, now three rungs, planned in [`13-authentication.md`](13-authentication.md)): one feature flag `AUTH_MODE`, one guard on every route, one open health route, a login page, `verify-deploy.sh --token`; a shared secret closes the open port | The largest gap; needs nothing from anyone else; tokens remain for scripts on every later rung | ~~SH-12~~ ✅, so that it lands on beta first — agreed 2026-09-08, reordered 2026-09-21 | 🔜 **next**, with SH-3b |
 | **SH-3b** | **Local accounts** — usernames, Argon2-hashed passwords, a signed session cookie, three roles, `manage_users.py`; **in full** (A3 revisited 2026-09-21: testers need per-person logins and the registration has not arrived) | Gives *who*, which unlocks the audit trail and per-person revocation; one login per tester | SH-3a; built in the same run, on beta; promoted to production after the test | 🔜 with SH-3a |
 | **SH-3c** | **Single sign-on** — OpenID Connect against the organisation's identity provider, roles from a group claim; the destination | Leavers lose access the day they leave; no password held here | SH-3a; an application registration from the identity team — [ask for it now](13-authentication.md#what-to-ask-the-organisation-for-now); decisions A1, A5, A6, A8 | ⏸ the registration |
 | SH-4 | Role-based access everywhere, audit trail and version history, rate limiting | Meaningless without identity | SH-3b or SH-3c | ⏸ |
@@ -219,7 +219,7 @@ flowchart LR
     CR5 --> CR1["CR-1 sort · filter"] --> CR2["CR-2 views"]
     CR2 --> CR4["CR-4 incomplete entries + PubChem review"]
     CR4 --> SH2["SH-2 schema normalisation"]
-    SD1s -.-> SH3a["SH-3a token gate<br/>any time, two days"] --> SH3c["SH-3c single sign-on<br/>when the registration arrives"]
+    SD1s -.-> SH12["SH-12 beta instance ✅<br/>v2.20.0"] --> SH3a["SH-3a + SH-3b login<br/>on beta first"] --> SH3c["SH-3c single sign-on<br/>when the registration arrives"]
 ```
 
 1. **SH-1 first** because it was hours of work, touched no data, and every
@@ -258,11 +258,13 @@ flowchart LR
 **Reordered 2026-09-21, at the owner's request: the login and a beta
 instance go first.** The application is to be put in front of end users
 for testing. That needs a place to test that is not production (SH-12, a
-second instance on the same server, on the `beta` branch), and each tester
-needs a login (SH-3a and SH-3b together, in full, delivered to beta first
-and promoted to production after the test). CR-12 and everything after it
-queue behind these two; the registration request for single sign-on stays
-the long pole and SH-3c follows whenever it arrives.
+second instance on the same server, on the `beta` branch — **built the same
+day, v2.20.0**), and each tester needs a login (SH-3a and SH-3b together, in
+full, delivered to beta first and promoted to production after the test).
+CR-12 and everything after it queue behind these two; the registration
+request for single sign-on stays the long pole and SH-3c follows whenever
+it arrives. From v2.20.0 every phase is published to beta first and
+promoted to production by hand ([`03-git-workflow.md`](03-git-workflow.md)).
 
 **Reordered 2026-09-14, at the owner's request.** CR-11 (counts and
 tags) and CR-12 (structures) go ahead of the SD-1 build: both are visible
@@ -322,4 +324,4 @@ trigger arrives. They are listed so that nobody rediscovers them.
   next phase of the track being worked; this page names the next phase of
   every track.
 
-**Last Updated:** September 8, 2026
+**Last Updated:** September 21, 2026

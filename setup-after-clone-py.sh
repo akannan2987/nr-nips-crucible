@@ -11,6 +11,11 @@
 #
 # Non-interactive use (e.g. from another script):
 #   SETUP_MONITOR=y ./setup-after-clone-py.sh      # or SETUP_MONITOR=n
+#
+# A second instance on the same machine (docs/14-beta-instance.md) needs
+# nothing extra here: this script reads CRUCIBLE_INSTANCE and CRUCIBLE_PORT
+# from the folder's .env.local (or the environment), exactly as
+# container-py.sh does, and names, probes and monitors that instance.
 
 set -e
 cd "$(dirname "$0")"
@@ -33,14 +38,35 @@ echo ""
 # On a Mac neither is usually set → the app starts in HTTP mode.
 if [ -f ".env.local" ]; then
     _env_cert_source="$CERT_SOURCE"; _env_cert_hostname="$CERT_HOSTNAME"
+    _env_instance="${CRUCIBLE_INSTANCE:-}"; _env_port="${CRUCIBLE_PORT:-}"
     # shellcheck disable=SC1091
     . ./.env.local
     # values already set in the environment take precedence over .env.local
     CERT_SOURCE="${_env_cert_source:-$CERT_SOURCE}"
     CERT_HOSTNAME="${_env_cert_hostname:-$CERT_HOSTNAME}"
+    CRUCIBLE_INSTANCE="${_env_instance:-${CRUCIBLE_INSTANCE:-}}"
+    CRUCIBLE_PORT="${_env_port:-${CRUCIBLE_PORT:-}}"
 fi
 CERT_SOURCE="${CERT_SOURCE:-}"
 CERT_HOSTNAME="${CERT_HOSTNAME:-$(hostname -f 2>/dev/null || hostname)}"
+
+# ── Which instance is this folder? ──────────────────────────────────
+# container-py.sh names the image and container crucible-py-<instance>
+# (unset → crucible-py). This script needs the same answer for its
+# messages, its API probe and the monitor's cron line. The port is kept in
+# APP_PORT, not PORT: a generic PORT exported in the shell is ignored by
+# container-py.sh on purpose, and must not be changed here.
+CRUCIBLE_INSTANCE="${CRUCIBLE_INSTANCE:-}"
+CONTAINER_NAME="crucible-py${CRUCIBLE_INSTANCE:+-$CRUCIBLE_INSTANCE}"
+APP_PORT="${CRUCIBLE_PORT:-49160}"
+export CRUCIBLE_INSTANCE CRUCIBLE_PORT     # so container-py.sh sees the same values
+if [ -n "$CRUCIBLE_INSTANCE" ]; then
+    echo "Instance: ${CRUCIBLE_INSTANCE} — image and container ${CONTAINER_NAME}, port ${APP_PORT}"
+    echo "          (from .env.local or the environment; docs/14-beta-instance.md)"
+else
+    echo "Instance: default — image and container crucible-py, port ${APP_PORT}"
+fi
+echo ""
 
 echo "Step 1: SSL certificates"
 if [ -f "certs/server.crt" ] && [ -f "certs/server.key" ]; then
@@ -72,7 +98,7 @@ fi
 echo ""
 
 # ── Step 2: build the image ─────────────────────────────────────────
-echo "Step 2: Building the crucible-py image (first build takes a few minutes)..."
+echo "Step 2: Building the ${CONTAINER_NAME} image (first build takes a few minutes)..."
 ./container-py.sh build
 echo ""
 
@@ -91,14 +117,14 @@ echo ""
 echo "Step 4: Verifying the API..."
 ok=""
 for i in $(seq 1 30); do
-    if curl --noproxy '*' -ks "${PROTO}://localhost:49160/api/stats" | grep -q '"chemicals"'; then
+    if curl --noproxy '*' -ks "${PROTO}://localhost:${APP_PORT}/api/stats" | grep -q '"chemicals"'; then
         ok=1; break
     fi
     sleep 2
 done
 if [ -n "$ok" ]; then
     echo -e "  ${GREEN}✓ API is answering:${NC}"
-    curl --noproxy '*' -ks "${PROTO}://localhost:49160/api/stats" | head -c 200; echo ""
+    curl --noproxy '*' -ks "${PROTO}://localhost:${APP_PORT}/api/stats" | head -c 200; echo ""
 else
     echo -e "  ${RED}✗ API did not answer within 60s — check: ./container-py.sh logs${NC}"
     exit 1
@@ -122,12 +148,14 @@ if [[ "$REPLY" =~ ^[Yy]$ ]]; then
     # container runtime and could never restart anything.
     RUNTIME_BIN="$(command -v podman 2>/dev/null || command -v docker 2>/dev/null)"
     RUNTIME_DIR="$(dirname "${RUNTIME_BIN:-/usr/bin/true}")"
-    CRON_LINE="*/5 * * * * cd $(pwd) && PATH=${RUNTIME_DIR}:/usr/local/bin:/usr/bin:/bin USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u) CONTAINER_NAME=crucible-py API_URL=${PROTO}://localhost:49160/api/stats ./monitor.sh"
-    # Replace any previous monitor.sh entry so re-runs don't stack duplicate
-    # cron lines.
-    { crontab -l 2>/dev/null | grep -v "monitor.sh" || true; printf '%s\n' "$CRON_LINE"; } | crontab -
+    CRON_LINE="*/5 * * * * cd $(pwd) && PATH=${RUNTIME_DIR}:/usr/local/bin:/usr/bin:/bin USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u) CONTAINER_NAME=${CONTAINER_NAME} API_URL=${PROTO}://localhost:${APP_PORT}/api/stats ./monitor.sh"
+    # Replace any previous monitor.sh entry FOR THIS FOLDER so re-runs don't
+    # stack duplicate lines — and only this folder's: on a machine with a
+    # production and a beta checkout each has its own monitor line, and the
+    # beta setup must never remove production's (docs/14-beta-instance.md).
+    { crontab -l 2>/dev/null | awk -v dir="$(pwd) && " 'index($0, dir) && /monitor[.]sh/ { next } { print }' || true; printf '%s\n' "$CRON_LINE"; } | crontab -
     # Trust but verify — macOS cron can silently drop a first-time install.
-    if crontab -l 2>/dev/null | grep -q "crucible-py.*monitor.sh"; then
+    if crontab -l 2>/dev/null | grep -q "CONTAINER_NAME=${CONTAINER_NAME} .*monitor.sh"; then
         echo -e "  ${GREEN}✓ Monitoring cron installed (old monitor.sh entries replaced):${NC}"
         echo "    $CRON_LINE"
     else
@@ -143,9 +171,11 @@ echo "╔═══════════════════════�
 echo "║   ✅ Python backend setup complete!                       ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo ""
+echo "Instance ${CRUCIBLE_INSTANCE:-default}: container ${CONTAINER_NAME}, folder $(pwd)"
+echo ""
 echo "Access the application at:"
-echo "  ${PROTO}://localhost:49160"
-echo "  ${PROTO}://$(hostname):49160   (from another machine)"
+echo "  ${PROTO}://localhost:${APP_PORT}"
+echo "  ${PROTO}://$(hostname):${APP_PORT}   (from another machine)"
 echo ""
 echo "Useful commands:"
 echo "  ./container-py.sh status    - container + API health"
@@ -153,4 +183,6 @@ echo "  ./container-py.sh logs      - view logs"
 echo "  ./container-py.sh backup    - consistent database backup"
 echo ""
 echo "On the RHEL8 VM, also set up auto-start on boot (survives reboots):"
+echo "  podman generate systemd --new --name ${CONTAINER_NAME} --files   → container-${CONTAINER_NAME}.service"
 echo "  → docs/07-operations.md, 'Auto-start on boot (systemd)' / docs/01-setup-rhel8.md §4"
+echo "A second instance beside this one (for user testing): docs/14-beta-instance.md"

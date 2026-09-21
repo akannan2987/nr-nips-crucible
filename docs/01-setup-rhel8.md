@@ -74,6 +74,7 @@ documents: [RHEL8 Uninstall](01-uninstall-rhel8.md) ·
 - [6. Day-2 operations](#6-day-2-operations)
 - [What you have now](#what-you-have-now)
 - [7. RHEL8-specific gotchas](#7-rhel8-specific-gotchas)
+- [8. A second instance for user testing (beta)](#8-a-second-instance-for-user-testing-beta)
 
 ---
 
@@ -1025,6 +1026,9 @@ first.
 
 The preferred **Quadlet** variant (podman ≥ 4.4) and the full unit content are
 in [docs/07-operations.md → Auto-start on boot](07-operations.md#auto-start-on-boot-systemd).
+**One unit per instance:** if this VM also runs the beta instance
+(section 8), repeat these commands in that folder with `--name crucible-py-beta`;
+the unit is then `container-crucible-py-beta.service`.
 If you use the Quadlet file, **adjust its `Volume=` path** to your actual
 checkout or the app starts with an empty database.
 
@@ -1050,11 +1054,16 @@ monitor asks the better question, and restarts the container when the answer is
 no.
 
 ```bash
-SETUP_MONITOR=y ./setup-after-clone-py.sh     # installs/refreshes the cron line
-crontab -l | grep monitor.sh                  # verify; the installed entry is ONE line:
+SETUP_MONITOR=y ./setup-after-clone-py.sh     # installs/refreshes THIS folder's cron line
+crontab -l | grep monitor.sh                  # verify; the installed entry is ONE line per instance:
 # */5 * * * * cd <repo> && USER=<user> XDG_RUNTIME_DIR=/run/user/<uid> CONTAINER_NAME=crucible-py API_URL=https://localhost:49160/api/stats ./monitor.sh
 tail -5 /tmp/crucible-monitor.log
 ```
+
+(With the beta instance of section 8 installed there is a second line
+ending `CONTAINER_NAME=crucible-py-beta API_URL=https://localhost:49161/api/stats ./monitor.sh`,
+and a second log, `/tmp/crucible-monitor-beta.log`. Re-running the setup in
+one folder replaces only that folder's line.)
 
 `grep` filters lines, keeping only those containing the text you gave it —
 here, printing just the monitor line out of a possibly long crontab. `tail -5`
@@ -1436,7 +1445,9 @@ occasional change of plan. **Time:** varies; the update sequence takes about
 ```bash
 # Update to a new version (field-tested sequence)
 cd /path/to/crucible
-git switch master        # production tracks master (see 03-git-workflow.md §2.3)
+git switch master        # production tracks master (see 03-git-workflow.md §2.3);
+                         # the beta folder of section 8 tracks beta instead, and is updated
+                         # first — production only moves by a promotion (03-git-workflow.md Step 11)
 ./container-py.sh backup                      # consistent snapshot → backups/
 # Copy it OUT of the project folder (backups/ is inside it):
 cp "$(ls -t backups/crucible-*.db | head -1)" ~/data-backup-$(date +%Y%m%d).db
@@ -1579,9 +1590,10 @@ Key environment variables (full table in [docs/07-operations.md](07-operations.m
 `CRUCIBLE_PORT` (`container-py.sh`'s only port override — it deliberately
 ignores a generic `PORT` shell variable, which matters on shared VMs; note
 `monitor.sh` **does** read `PORT`, so on a non-default port set
-`API_URL=...` for the monitor explicitly), `HOST_BIND` (default `0.0.0.0` on
-Linux), `USE_POSTGRES`, `DATABASE_URL`, `CERT_SOURCE` / `CERT_HOSTNAME`
-(setup script).
+`API_URL=...` for the monitor explicitly), `CRUCIBLE_INSTANCE` (names a
+second instance run from another folder — section 8), `HOST_BIND` (default
+`0.0.0.0` on Linux), `USE_POSTGRES`, `DATABASE_URL`, `CERT_SOURCE` /
+`CERT_HOSTNAME` (setup script).
 
 The `PORT` asymmetry is deliberate and worth a sentence. On a shared VM, some
 other tool may well have exported a `PORT` variable into your shell for its own
@@ -1628,6 +1640,13 @@ nightly backup and keeping the last fourteen.
 
 **The doorman.** Whatever firewall arrangement section 1.4 revealed, with 49160
 open if there was a doorman to tell.
+
+**Optionally, a second instance.** Since v2.20.0 the same VM can also run
+the **beta instance** — a second folder, container and port (49161) with
+its own copy of the data, where end users test and where every change
+lands before it is promoted to production. Section 8 sets it up; it adds
+a second unit, a second monitor line and a second log, and nothing else
+above changes.
 
 What you do *not* have: a load balancer, redundancy, or a second machine. This
 is a single-VM deployment and it is honest about that. If the VM goes down, the
@@ -1730,7 +1749,243 @@ already — that is how it earned its place on the list.
 **See also:** [RHEL8 Uninstall](01-uninstall-rhel8.md) ·
 [Full deployment guide](07-operations.md) · [Project README](../README.md)
 
-**Last Updated:** August 25, 2026
+
+---
+
+## 8. A second instance for user testing (beta)
+
+**Time:** ~15 minutes, plus one image build (fast: every layer is already on
+this VM). **Prerequisites:** sections 1–5 done, production running on 49160.
+**Why:** end users are going to test the application, and the login is going
+to be rehearsed. Neither should touch the laboratory's registry. The design
+and the decisions behind it are [`14-beta-instance.md`](14-beta-instance.md)
+and [ADR 0002](adr/0002-beta-instance.md); the phase that built it, with a
+test for every route, is [phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md).
+
+![Production and beta on one server: two folders, two containers, two ports; publish reaches beta, promotion reaches production, data is copied one way on request](img/fig_two_instances.svg)
+
+**Instance** ([glossary](00-glossary.md#the-container-words)) — one running
+copy of the application: a folder, a container, a port, a database. You
+have one; this section adds a second, called **beta**, that shares nothing
+with the first at run time. *Everyday version:* a practice kitchen next to
+the restaurant kitchen — same equipment, a copy of tonight's ingredients,
+and whatever a trainee burns there, no customer eats.
+
+Everything in this section runs **on the VM**, in the **new** folder unless
+a comment says otherwise. Nothing here changes production.
+
+### 8.1 Clone the private repository a second time, on the `beta` branch
+
+```bash
+# ▶ VM
+cd ~/work/Pandora_toolbox
+git clone https://github.com/nestle-it/nr-nips-crucible.git nr-nips-crucible-beta
+cd nr-nips-crucible-beta
+git switch beta
+git branch -d master 2>/dev/null; git branch -d develop 2>/dev/null   # keep only beta here
+chmod +x *.sh
+git branch --show-current && git remote -v
+```
+
+**Why a second folder.** A folder holds one checkout of one branch, one
+`data/`, one `certs/` and one `.env.local`. Two instances need two of each,
+and beta must be able to run a commit production does not have yet. The
+folder name ends in `-beta` so that `pwd` always tells you where you are.
+
+**Why the `beta` branch.** It has existed in both repositories all along
+and, until v2.20.0, always equalled `master`. It now means "what the beta
+instance runs": every publish moves it; production's `master` moves only by
+a promotion ([`03-git-workflow.md` → Flow A](03-git-workflow.md#4-flow-a---a-change-from-start-to-finish)).
+
+**You should see:** `beta` from the first command and the private repository
+twice (fetch and push) from the second — and **no** `public` remote.
+
+**If instead:** `fatal: destination path 'nr-nips-crucible-beta' already exists` —
+a previous attempt; `ls` it, and if it is empty or half-cloned, `rm -rf` it
+and clone again. If it holds a `data/` folder, stop and look before deleting.
+
+### 8.2 Write the three lines that make it beta
+
+```bash
+# ▶ VM — beta folder
+cat > .env.local <<'EOF'
+CERT_SOURCE=<cert-store-path>
+USE_HTTPS=true
+CRUCIBLE_INSTANCE=beta
+CRUCIBLE_PORT=49161
+EOF
+./container-py.sh help | grep Usage
+```
+
+Replace `<cert-store-path>` with the same value production's `.env.local`
+has (`cat ../nr-nips-crucible/.env.local` shows it). If production also sets
+`CERT_HOSTNAME`, copy that line too.
+
+**Why a file.** Every script — the container script, the setup, the
+monitor, the uninstaller, and the cron job and service unit that run
+without you — reads this file from the folder it is in. Nobody has to
+remember a flag, and the day someone forgets it nothing is replaced by
+mistake. The environment still wins over the file for a one-off command.
+
+**Why the same certificate.** It names the host, not the port; one
+certificate serves `:49160` and `:49161`. The setup script copies the same
+pair into this folder's `certs/`.
+
+![The three lines of the beta folder's .env.local fan out to the image, container, service unit, monitor log, cron line and address](img/fig_instance_name.svg)
+
+**You should see:**
+
+```
+Usage: ./container-py.sh [command]        (runtime: podman · instance: beta → crucible-py-beta, port 49161)
+```
+
+**What it means:** every command run from this folder now names
+`crucible-py-beta` on 49161. Production's folder still prints
+`instance: default → crucible-py, port 49160`.
+
+**If instead:** `✗ CRUCIBLE_INSTANCE='…' must be lowercase letters, digits and hyphens` —
+the name is used inside container and file names; `beta` is the one this
+guide assumes.
+
+### 8.3 Run the one-shot setup — for the beta instance
+
+```bash
+# ▶ VM — beta folder
+SETUP_MONITOR=y ./setup-after-clone-py.sh
+```
+
+**You should see** it open with
+
+```
+Instance: beta — image and container crucible-py-beta, port 49161
+          (from .env.local or the environment; docs/14-beta-instance.md)
+Step 1: SSL certificates
+  ✓ Nestlé certificates copied and verified
+Step 2: Building the crucible-py-beta image (first build takes a few minutes)...
+```
+
+— the build is quick here, every layer is already on the VM from
+production's image — then
+
+```
+Step 3: Starting the container...
+✓ Container started with HTTPS
+  instance: beta · container: crucible-py-beta · image: crucible-py-beta:latest
+Step 4: Verifying the API...
+  ✓ API is answering:
+{"chemicals":{"total":0,"max":15000},...
+Step 5: Health monitoring (cron job, every 5 minutes)
+  ✓ Monitoring cron installed (old monitor.sh entries replaced):
+    */5 * * * * cd /home/<your-user>/work/Pandora_toolbox/nr-nips-crucible-beta && ... CONTAINER_NAME=crucible-py-beta API_URL=https://localhost:49161/api/stats ./monitor.sh
+```
+
+**What it means:** two containers now run on this VM. Beta is **empty**
+(`"total":0`) — a fresh instance, like production was on day one. The cron
+line names this folder, this container and this port; production's line is
+still there (`crontab -l | grep monitor.sh` prints two lines).
+
+**If instead:** `Step 2: Building the crucible-py image` (no `-beta`) — the
+`.env.local` is not in this folder or is misspelt. `cat .env.local`, fix,
+run again.
+
+**If instead:** `address already in use` — `CRUCIBLE_PORT` is missing and
+both instances asked for 49160. Add the line and `./container-py.sh rebuild`.
+
+### 8.4 Give beta a copy of production's data
+
+```bash
+# ▶ VM — production folder: a consistent snapshot while it keeps running
+cd ~/work/Pandora_toolbox/nr-nips-crucible
+./container-py.sh backup
+
+# ▶ VM — beta folder: take production's NEWEST backup (a folder, so no timestamp to copy)
+cd ~/work/Pandora_toolbox/nr-nips-crucible-beta
+./container-py.sh restore ../nr-nips-crucible/backups
+curl --noproxy '*' -sSk https://localhost:49161/api/stats | head -c 80; echo
+curl --noproxy '*' -sSk https://localhost:49160/api/stats | head -c 80; echo
+```
+
+**Why a backup and not `cp`.** The database is in use; a plain copy of a
+live SQLite file can be quietly corrupt. `backup` takes a coherent snapshot
+inside the running container ([`07-operations.md` → Backup and restore](07-operations.md#backup-and-restore)).
+
+**Why one way.** The restore runs in beta's folder against beta's `data/`.
+Nothing writes into production's `data/` from anywhere but production's own
+folder. Run the same two commands whenever the testers should start again
+from a clean copy.
+
+**You should see:** `Newest backup in ../nr-nips-crucible/backups: crucible-<stamp>.db`,
+`✓ Restored … (instance: beta)`, the container starting again, and then two
+identical stats lines — `"chemicals":{"total":12539` on both ports.
+
+Open **`https://<vm-hostname>:49161`** in a browser: the same application,
+the same 12,539 compounds, and in the header's right-hand corner
+**Running on port 49161**. That corner is how a tester knows which
+instance a tab shows.
+
+### 8.5 Make it survive a reboot
+
+```bash
+# ▶ VM — beta folder, with crucible-py-beta running
+mkdir -p ~/.config/systemd/user
+podman generate systemd --new --name crucible-py-beta --files
+mv container-crucible-py-beta.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now container-crucible-py-beta.service
+systemctl --user status container-crucible-py-beta.service | head -3
+```
+
+The same three ideas as section 4.2 — lingering, a user unit, `enable --now` —
+with the beta container's name. **You should see** `active (running)` and
+`enabled`. Section 4.2's *If instead* notes apply unchanged.
+
+### 8.6 Verify both instances
+
+```bash
+# ▶ VM — from any folder
+podman ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+crontab -l | grep monitor.sh | sed 's/.*CONTAINER_NAME=/CONTAINER_NAME=/'
+systemctl --user list-units 'container-crucible-py*' --no-legend
+(cd ~/work/Pandora_toolbox/nr-nips-crucible-beta && ./verify-deploy.sh https://localhost:49161 | tail -2)
+(cd ~/work/Pandora_toolbox/nr-nips-crucible      && ./verify-deploy.sh https://localhost:49160 | tail -2)
+```
+
+**You should see:**
+
+```
+NAMES             STATUS                  PORTS
+crucible-py       Up 3 days (healthy)     0.0.0.0:49160->49160/tcp
+crucible-py-beta  Up 5 minutes (healthy)  0.0.0.0:49161->49161/tcp, 49160/tcp
+CONTAINER_NAME=crucible-py API_URL=https://localhost:49160/api/stats ./monitor.sh
+CONTAINER_NAME=crucible-py-beta API_URL=https://localhost:49161/api/stats ./monitor.sh
+container-crucible-py.service       loaded active running ...
+container-crucible-py-beta.service  loaded active running ...
+  16 passed, 0 failed
+  Everything checks out.
+  16 passed, 0 failed
+  Everything checks out.
+```
+
+**What it means:** two of everything — container, port, unit, monitor line —
+and sixteen checks passing on each. The bare `49160/tcp` in beta's `PORTS`
+column is the port the image *declares*; beta does not publish it
+(`podman port crucible-py-beta` prints only `49161/tcp -> 0.0.0.0:49161`).
+
+### 8.7 Day 2 for the beta instance
+
+| I want to… | Command (beta folder) |
+|---|---|
+| Update beta to what was just published | `git pull --ff-only origin beta`, then `./container-py.sh rebuild` if code changed — [`03-git-workflow.md` Step 10](03-git-workflow.md#step-10---deploy-to-the-beta-instance) |
+| Give the testers a fresh copy of production | the two commands of 8.4 |
+| See what beta has that production does not | `git log --oneline origin/master..origin/beta` (after `git fetch origin`) |
+| Promote it to production | not from here — [`03-git-workflow.md` Step 11](03-git-workflow.md#step-11---promote-to-production-when-the-testers-agree), from the Mac and the mirror folder, then production's own folder |
+| Remove the beta instance | `./uninstall.sh --dry-run` here first: it opens with `Instance: beta` and lists only beta's container, image, unit and cron line; then the mode you mean. Production is not listed and not touched |
+
+The weekly certificate check (section 3.4) and the nightly backup (6.3)
+stay in production's folder: the certificate is the same file, and beta's
+data is a copy that 8.4 recreates in two commands.
+
+**Last Updated:** September 21, 2026
 
 ---
 

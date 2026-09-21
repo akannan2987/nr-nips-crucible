@@ -308,6 +308,27 @@ person does, against data of the real size.* *The shape:* an operation
 reporting one thing (the buttons) while showing another (the answer to an
 earlier click).
 
+**35. "The" container, when there are two.** Every script that managed the
+application knew one container by name: `crucible-py`. That was true for
+as long as there was one. The moment a second checkout was to run beside
+it, three scripts that had never been wrong became dangerous without a
+line of them changing: the setup removed *every* monitor line from the
+crontab before writing its own, so installing beta would have silently
+stopped watching production; the uninstaller removed *every* crucible cron
+line and *the* unit, so `./uninstall.sh --partial` in the beta folder
+would have stopped production; and the monitor, run by hand in the beta
+folder, would have restarted production. All three were found on a
+laptop, with two containers and a fake crontab, before the server had a
+second folder. The fix that took longest to get right was the smallest:
+scoping a cron line to its folder by path — because `…/nr-nips-crucible-beta`
+*begins with* `…/nr-nips-crucible`, a plain prefix match from the
+production folder would have removed beta's lines too. The path is now
+matched with what follows it. *Lesson: a name that was never a variable is
+a hidden assumption that there will only ever be one; and when a path is
+used as a key, match its boundary, not its prefix.* *The shape:* an
+operation reporting one thing (cleaning up after itself) while doing
+another (cleaning up after its neighbour).
+
 ---
 
 ## The one rule they add up to
@@ -324,4 +345,4 @@ and the setup guides; the identification rules and the audit are in
 [`09-chemical-identification.md`](09-chemical-identification.md); the remaining
 open behaviour (the delete endpoint) is on the [roadmap](05-roadmap.md).
 
-**Last Updated:** September 7, 2026
+**Last Updated:** September 21, 2026

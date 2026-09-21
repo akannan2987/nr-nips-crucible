@@ -52,23 +52,24 @@ saw, what you expected* is worth ten opinions.
 
 ## 2. Branch model
 
-Three branches, always on the same commit after a publish:
+Three branches, moved in two moments:
 
 | Branch | Role |
 |---|---|
 | `develop` | Where every change is authored and committed |
-| `beta` | Fast-forwarded to `develop` at each push; a staging pointer |
-| `master` | Fast-forwarded to `develop` at each push; **production tracks it** |
+| `beta` | Fast-forwarded to `develop` at each publish; **the beta instance runs it** — the testers' copy on port 49161 ([`14-beta-instance.md`](docs/14-beta-instance.md)) |
+| `master` | Fast-forwarded to `beta` at each **promotion**, by hand, when the testers agree; **production tracks it** |
 
-They are promoted **by fast-forward only** — one push moves all three onto
-the identical commit:
+They move **by fast-forward only**. A publish moves two of them; a
+promotion moves the third:
 
 ```bash
-git push origin develop develop:beta develop:master
+git push origin develop develop:beta      # publish: the beta instance pulls this
+git push origin beta:master               # promote: production pulls this — a separate day, a person's decision
 ```
 
 Never use a merge, squash or rebase button to promote `beta` or `master`:
-each mints a new commit and the three branches stop agreeing. A branch that
+each mints a new commit and the branches stop agreeing. A branch that
 shows `ahead N, behind M` has diverged; the realignment recipe is in
 [`03-git-workflow.md` §3](docs/03-git-workflow.md#3-golden-rules).
 
@@ -256,9 +257,10 @@ last section; the ones every change must respect:
   Linux and macOS, the client build, the figure determinism check, the link
   check, and — public side only — the safety gate. A red run is read before
   anything else is done.
-- **Pull requests are for `feature/* → develop` only.** `develop → beta →
-  master` is promoted by fast-forward from the command line, never by a
-  button.
+- **Pull requests are for `feature/* → develop` only.** `develop → beta`
+  (publish) and `beta → master` (promotion) are fast-forwards from the
+  command line, never a button — and the second only after the change has
+  been used on the beta instance.
 - **A review reads the tutorial first.** If a change ships without the
   tutorial, handbook row and release note it needs, the review asks for them
   before it reads the code.

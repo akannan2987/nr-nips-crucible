@@ -456,7 +456,8 @@ the server, and one more workflow step (promotion); the copy of the data
 ages until refreshed.
 *Verdict:* **Required now** — phase SH-12, specified in
 [`14-beta-instance.md`](14-beta-instance.md), decided in
-[ADR 0002](adr/0002-beta-instance.md). A second *machine* stays
+[ADR 0002](adr/0002-beta-instance.md), **built as v2.20.0** the same day
+([tutorial](04-phase-tutorials/phase-sh-12-beta-instance.md)). A second *machine* stays
 *Recommended later*, with the same trigger as before; the design moves to
 it unchanged.
 
@@ -531,9 +532,9 @@ marketed.
 | Kubernetes / serverless | Optional | Hosted product, multiple instances |
 | CI on the public repository | **Required now** (exists, phase 05b) | — |
 | Monitoring beyond cron | Recommended later | Second instance or an unnoticed outage |
-| A beta instance beside production | **Required now** (2026-09-21) | — phase SH-12 |
+| A beta instance beside production | **Required now** (2026-09-21) — built, v2.20.0 | — phase SH-12 ✅ |
 | Cost model | Recommended later | First hosting decision |
 | Regulatory frame (ALCOA+, Part 11, GDPR, ISO 27001) | Recommended later | A regulatory citation or hosting |
 | SEO / AEO / GEO, pricing | Not needed | Offered outside the organisation |
 
-**Last Updated:** September 7, 2026
+**Last Updated:** September 21, 2026

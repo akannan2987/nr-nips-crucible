@@ -75,7 +75,7 @@ page application served by the same process.
 - **Communication**: RESTful API (contract in [docs/08-api-reference.md](08-api-reference.md))
 - **Data Storage**: SQLite by default via SQLAlchemy 2 (`data/crucible.db`); optional PostgreSQL (JSONB) via `DATABASE_URL`, schema managed by Alembic
 - **Chemistry**: RDKit for SDF/structure handling
-- **Deployment**: One container (`crucible-py`), runs under podman or docker
+- **Deployment**: One container (`crucible-py`) per instance, runs under podman or docker; a second instance for user testing — the **beta instance**, `crucible-py-beta` on port 49161 with its own data — runs beside production from a second checkout ([`14-beta-instance.md`](14-beta-instance.md))
 - **Scalability**: Vertical scaling (horizontal planned for future)
 
 > The backend was migrated from Node.js/Express using a **strangler-fig**
@@ -938,5 +938,5 @@ of redrawing.
 
 ---
 
-**Last Updated:** September 7, 2026
+**Last Updated:** September 21, 2026
 **Version:** 2.0

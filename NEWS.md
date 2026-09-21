@@ -10,6 +10,67 @@ change you are getting.
 
 ---
 
+## v2.20.0 — 2026-09-21 — "A second kitchen: the beta instance"
+
+Phase **SH-12** built, the same day it was planned. A second, complete copy
+of the application can now run beside production on one machine — the
+**beta instance** the testers use — and none of the scripts run in its
+folder can touch production. No application code changed; four shell
+scripts and the documents did. Rehearsed end to end on a Mac before the
+server was touched: two containers side by side, the one-way data copy, a
+beta rebuild that left production's image untouched, sixteen deploy checks
+passing on each.
+
+**Added**
+- **One file names everything.** `CRUCIBLE_INSTANCE=beta` and
+  `CRUCIBLE_PORT=49161` in a folder's untracked `.env.local` make
+  `container-py.sh` name its image, container and optional Postgres
+  resources `crucible-py-beta`; `help`, `status` and every start say which
+  instance they act on; a name with spaces or capitals is refused. Unset,
+  nothing changes, on Windows, macOS and RHEL 8 alike.
+- **`restore` takes a folder** and uses its newest backup, so refreshing
+  beta from production is two commands with no timestamp copied by hand:
+  `./container-py.sh backup` in production's folder,
+  `./container-py.sh restore ../nr-nips-crucible/backups` in beta's.
+- **The setup script** builds and probes the folder's instance and writes a
+  monitor cron line naming that folder's container and port.
+- **The monitor**, run by hand, reads the folder's `.env.local`; one log
+  per instance; the container's name in every line.
+- **Two moments in the workflow.** Publish is
+  `git push origin develop develop:beta`; the beta instance pulls `beta`.
+  Promotion is `git push origin beta:master`, by hand, when the testers
+  agree; production pulls `master`. Every machine's commands are in
+  [`03-git-workflow.md`](docs/03-git-workflow.md); the `beta` branch means
+  the beta instance from now on.
+- [`01-setup-rhel8.md` §8](docs/01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta)
+  sets the beta instance up on the server; the phase tutorial
+  [`phase-sh-12-beta-instance.md`](docs/04-phase-tutorials/phase-sh-12-beta-instance.md)
+  has the test for every route; two figures; ADR 0002 accepted.
+
+**Fixed, before it could bite**
+- Re-running the setup removed **every** monitor line from the crontab;
+  `uninstall.sh` removed **every** crucible cron line and *the* unit; the
+  monitor run by hand always probed 49160. With two checkouts on one
+  machine each would have hit the other instance. All three are now scoped
+  to the folder they run in — matching the folder's path *with what
+  follows it*, because beta's path begins with production's (lesson 35).
+
+**Limitations, stated**
+- Beta is promoted **as a whole**; there is no promoting one change out of
+  three. A change that must not reach production is not published to beta.
+- No visible "BETA" ribbon: the header's *Running on port 49161* is the
+  cue. An instance label through `/api/stats` is a small later item if the
+  testers confuse tabs.
+- Beta's data is a copy that ages until refreshed, on request only (B4).
+- The server steps are written and rehearsed on a Mac, not yet run on the
+  VM: that is the operator's next quarter of an hour.
+
+**Deploy:** production `git pull` only (no application code); then the beta
+instance from the RHEL 8 guide's §8. From this version, Flow A publishes to
+`develop` and `beta`, and Step 11 promotes.
+
+---
+
 ## v2.19.0 — 2026-09-21 — "A place to test, and a way to log in"
 
 No application code. The owner's request of 2026-09-21 — the application

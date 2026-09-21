@@ -6,6 +6,15 @@
 **Learning goal:** after this guide you will know exactly what an uninstall destroys and what it spares, how to preview a deletion before committing to it, how to remove Crucible at three different depths, and how to prove afterwards that nothing was left behind.
 **Time:** ~2 minutes for a preview, ~5 minutes for the removal itself, ~10 if you also tear out the container runtime.
 
+> **Which instance?** Since v2.20.0 a machine can run two instances, each in its own folder
+> ([`14-beta-instance.md`](14-beta-instance.md); on a Mac that is how the phase
+> was rehearsed). `uninstall.sh` acts on **the instance of the folder it runs in** (it
+> reads `CRUCIBLE_INSTANCE` from that folder's `.env.local`): run in the beta
+> folder it removes `crucible-py-beta`, its unit and its own cron lines, and
+> leaves the other copy untouched. Every mode opens with a line `Instance: … — container …, folder …`;
+> read it before answering any prompt. Where this guide says `crucible-py`,
+> read `crucible-py-beta` for the beta folder.
+
 > ### How to read this doc
 >
 > Commands go in the **Terminal** (`Cmd`+`Space`, type `Terminal`, press
@@ -412,7 +421,7 @@ Depending on the mode you chose:
 
 ---
 
-**Last Updated:** August 8, 2026
+**Last Updated:** September 21, 2026
 
 ---
 

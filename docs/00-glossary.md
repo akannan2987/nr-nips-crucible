@@ -397,7 +397,13 @@ is one; the moving dots follow the same curves as the drawn arrows.
 
 **Structure editor** — a drawing canvas for molecules in the browser: atoms, bonds, rings, templates, charges, clean-up, import and export as MOL, SMILES and InChI — what ChemDraw, MolView or Dotmatics' Elemental offer. Planned as **Ketcher** (open source, Apache-2.0) embedded in the client in phase CR-12; a save is checked by RDKit and the previous structure kept. *Everyday version:* the whiteboard, with a camera that files the drawing.
 
-**Beta instance** — a second, complete copy of the application running beside production on the same server: its own folder on the `beta` branch, its own container and image (`crucible-py-beta`), its own port (49161) and its own database, a copy of production's refreshed on request. Testers use it; nothing they do reaches production. Planned as phase SH-12 in [`14-beta-instance.md`](14-beta-instance.md). *Everyday version:* the practice kitchen next to the restaurant kitchen — same equipment, a copy of tonight's ingredients, and whatever a trainee burns there, no customer eats.
+**Beta instance** — a second, complete copy of the application running beside production on the same server: its own folder on the `beta` branch, its own container and image (`crucible-py-beta`), its own port (49161) and its own database, a copy of production's refreshed on request. Testers use it; nothing they do reaches production. Built as phase SH-12 (v2.20.0): [`14-beta-instance.md`](14-beta-instance.md), [the tutorial](04-phase-tutorials/phase-sh-12-beta-instance.md). The header's right-hand corner, *Running on port 49161*, says which instance a browser tab shows. *Everyday version:* the practice kitchen next to the restaurant kitchen — same equipment, a copy of tonight's ingredients, and whatever a trainee burns there, no customer eats.
+
+**Instance** — one running copy of the application: a folder, a container, a port, a database. Production is one instance; the beta instance is another. Every script acts on the instance of the folder it runs in. *Everyday version:* one kitchen, fully equipped.
+
+**Instance name (`CRUCIBLE_INSTANCE`)** — the word, set in a folder's `.env.local`, that `container-py.sh`, `setup-after-clone-py.sh`, `monitor.sh` and `uninstall.sh` append to everything that instance owns: image and container `crucible-py-beta`, service unit `container-crucible-py-beta.service`, monitor log `crucible-monitor-beta.log`. Unset, the names are the ones every machine had before v2.20.0. Lowercase letters, digits and hyphens only. *Everyday version:* the name tag pinned on the folder — the uniform is the same, the tag says which kitchen.
+
+**Publish (to beta)** — pushing a change to `develop` and `beta` (`git push origin develop develop:beta`), after which the beta instance pulls and rebuilds; every change is published, the same day. The first of the two moments of the workflow; *Promotion (beta to production)*, below, is the second. *Everyday version:* handing the trainee the new recipe.
 
 **Promotion (beta to production)** — the deliberate step that moves what the beta instance runs to production: `beta` pushed to `master`, then production pulls and rebuilds after its backup. Publishing reaches beta on its own; promotion is a second, separate command, so a change that fails on beta is never promoted. *Everyday version:* the dress rehearsal is over and the director says "that's the show".
 
@@ -996,4 +1002,4 @@ looks in several fields at once.
 that's a gap worth filling — the whole point of this file is that nobody
 should have to already know the vocabulary to follow the documentation.
 
-**Last Updated:** September 8, 2026
+**Last Updated:** September 21, 2026

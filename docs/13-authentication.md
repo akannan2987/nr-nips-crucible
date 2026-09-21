@@ -14,9 +14,11 @@
 > **2026-09-21 — the login is now the top of the plan.** The owner wants
 > the application in front of end users for testing, which needs each
 > tester to log in, and needs a place to try it that is not production.
-> So: a **beta instance** first ([`14-beta-instance.md`](14-beta-instance.md)),
-> then rungs 1 **and 2 in full** (SH-3a + SH-3b) delivered to it, tested by
-> the testers, then promoted to production. Decision A3 is revisited below.
+> So: a **beta instance** first ([`14-beta-instance.md`](14-beta-instance.md)
+> — **built the same day as phase SH-12, v2.20.0**), then rungs 1 **and 2 in
+> full** (SH-3a + SH-3b) delivered to it, tested by the testers, then
+> promoted to production. Decision A3 is revisited below; A3, A9 and A10
+> were agreed with the go for SH-12.
 
 ## Contents
 
@@ -461,14 +463,14 @@ details, which this public page does not carry.
 |---|---|---|
 | A1–A8 | **All agreed as written** — token gate now; from rung 2 only the break-glass admin unless the registration takes over six weeks; the image defaults to `off`, the server sets `token`; roles from the provider's group claim; ten-hour sliding sessions; the cross-origin policy tightened in SH-3a; service tokens issued per service by an admin | 2026-09-08 |
 | Registration request | the owner sends it this week, from the draft above | 2026-09-08 |
-| A3 revisited, A9, A10 | **recommended 2026-09-21, awaiting the owner:** rung 2 in full, on the beta instance first, accounts created by the operator | 2026-09-21 |
+| A3 revisited, A9, A10 | **agreed 2026-09-21** (with the go for SH-12): rung 2 in full, on the beta instance first, accounts created by the operator | 2026-09-21 |
 | Licence question | on hold with the organisation | 2026-09-08 |
 
 ## The phases
 
 | Phase | What ships | Waits on | "Done" means |
 |---|---|---|---|
-| **SH-3a · Token gate** | The shared pieces (`AUTH_MODE`, `require_user`, `/api/health`, the login page, the 401 handler, `verify-deploy.sh --token`), the token mode, tests, runbook in [`07-operations.md`](07-operations.md), the setup guides' `.env.local` step updated | SH-12 (the beta instance to deliver it to); decisions A2, A4, A7 — agreed | on **beta**, `AUTH_MODE=token`: an unauthenticated call answers 401, an authenticated one answers as before, the monitor is green, 16 deploy checks pass with `--token`; production untouched |
+| **SH-3a · Token gate** | The shared pieces (`AUTH_MODE`, `require_user`, `/api/health`, the login page, the 401 handler, `verify-deploy.sh --token`), the token mode, tests, runbook in [`07-operations.md`](07-operations.md), the setup guides' `.env.local` step updated | ~~SH-12~~ ✅ v2.20.0 (the beta instance to deliver it to — [phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md)); decisions A2, A4, A7 — agreed | on **beta**, `AUTH_MODE=token`: an unauthenticated call answers 401, an authenticated one answers as before, the monitor is green, 16 deploy checks pass with `--token`; production untouched |
 | **SH-3b · Local accounts** | The `users` table and migration, Argon2 hashing, the signed session, `manage_users.py`, the login form, roles, per-person tokens — **in full** (A3 revisited) | SH-3a; built in the same run, on beta | each tester logs in with a username and password on beta, a disabled account is refused, a viewer cannot delete; after the test, the same on production |
 | **SH-3c · Single sign-on** | The OpenID Connect flow, group-to-role mapping, the sign-in button, a fake provider for the tests, the runbook; rung 2's unused pieces removed | SH-3a; the registration from the organisation; decisions A1, A5, A6, A8 | a person signs in with the corporate login and lands with the right role; the break-glass admin still works with the provider unreachable; a service token still works |
 | SH-4 · Roles everywhere, audit trail, rate limiting | What identity makes possible ([`06-product-and-technology-roadmap.md`](06-product-and-technology-roadmap.md#4-identity-and-access)) | SH-3b or SH-3c | — |

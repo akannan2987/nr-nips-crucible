@@ -645,6 +645,22 @@ saved preference. (To make one permanent for this machine, put it in
 
 ---
 
+### Two copies on one Mac
+
+Since v2.20.0 a second, separate copy of the application can run beside the
+first: a second checkout with two lines in its `.env.local`
+(`CRUCIBLE_INSTANCE=beta` and `CRUCIBLE_PORT=49161`) builds and runs
+`crucible-py-beta` on port 49161, with its own `data/`, and none of the
+scripts run there can touch the first copy. On the server this is the
+**beta instance** the testers use ([`14-beta-instance.md`](14-beta-instance.md));
+on a Mac it is how that phase was rehearsed before the server was
+touched — the exact commands, and a test for every route, are in
+[phase SH-12 → Step 6](04-phase-tutorials/phase-sh-12-beta-instance.md#step-6--rehearse-it-on-a-laptop-first).
+The scripts read a file and append a word to a name; nothing in them is
+Linux-specific.
+
+---
+
 ## 6. macOS-specific gotchas
 
 Each of these has cost somebody an afternoon. They are all normal and none of
@@ -806,7 +822,7 @@ the last line: `✓ Image built successfully` or `✗ Failed to build image`.
 **See also:** [macOS Uninstall](01-uninstall-macos.md) ·
 [Full deployment guide](07-operations.md) · [Project README](../README.md)
 
-**Last Updated:** August 25, 2026
+**Last Updated:** September 21, 2026
 
 ---
 

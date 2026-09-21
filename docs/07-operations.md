@@ -39,6 +39,7 @@ binds `0.0.0.0`, so the same image runs unmodified on macOS and RHEL8.
 - [Database: SQLite and PostgreSQL](#database-sqlite-and-postgresql)
 - [Health monitoring](#health-monitoring)
 - [Auto-start on boot (systemd)](#auto-start-on-boot-systemd)
+- [Two instances on one machine](#two-instances-on-one-machine)
 - [Backup and restore](#backup-and-restore)
 - [Maintenance and operational tasks](#maintenance-and-operational-tasks)
 - [Troubleshooting](#troubleshooting)
@@ -186,7 +187,10 @@ Guided walkthroughs, with expected output at every step:
 Both scripts auto-detect **podman or docker** (override with
 `CONTAINER_RUNTIME=docker|podman`) and check the podman VM state on macOS.
 Port override: `CRUCIBLE_PORT=<n>` (a generic `PORT` env var is ignored to
-avoid clashes on shared machines).
+avoid clashes on shared machines). Every command acts on **the instance of
+the folder it runs in**: with `CRUCIBLE_INSTANCE=beta` in that folder's
+`.env.local` the image and container are `crucible-py-beta`, and `help`
+and `status` say so ([Two instances on one machine](#two-instances-on-one-machine)).
 
 ```bash
 ./container-py.sh build       # Build image (node build stage + python:3.12-slim)
@@ -202,7 +206,7 @@ avoid clashes on shared machines).
 ./container-py.sh shell       # Shell inside the container
 ./container-py.sh clean       # Remove container and image
 ./container-py.sh backup      # Consistent snapshot → backups/ (safe while running)
-./container-py.sh restore     # List backups; with a path: stop → swap db → restart
+./container-py.sh restore     # List backups; with a file: stop → swap db → restart; with a FOLDER: the newest crucible-*.db in it
 ./container-py.sh lock        # Regenerate backend/requirements.lock inside the base image (after editing requirements.txt)
 ```
 
@@ -220,6 +224,7 @@ USE_POSTGRES=true ./container-py.sh start   # run the app against PostgreSQL
 | Environment | URL | Protocol |
 |-------------|-----|----------|
 | Production | `https://<vm-hostname>:49160` | HTTPS/TLS |
+| Beta instance (the testers' copy — [`14-beta-instance.md`](14-beta-instance.md)) | `https://<vm-hostname>:49161` | HTTPS/TLS |
 | Interactive architecture page | `https://<vm-hostname>:49160/architecture` | HTTPS/TLS |
 | Development, the built app | `http://localhost:49160` | HTTP |
 | Development, React dev server (hot reload) | `http://localhost:3000`, proxying `/api` to the backend | HTTP |
@@ -390,7 +395,8 @@ When it warns, follow "Rotating / replacing the certificate" above.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `49160` | HTTP/HTTPS port the app binds (inside the container) |
-| `CRUCIBLE_PORT` | *(unset)* | Port override for `container-py.sh` (a generic `PORT` in the shell is ignored) |
+| `CRUCIBLE_PORT` | *(unset)* | Port override for `container-py.sh`, `setup-after-clone-py.sh` and `monitor.sh` (a generic `PORT` in the shell is ignored). The beta instance sets `49161` in its `.env.local` |
+| `CRUCIBLE_INSTANCE` | *(unset)* | Names a second instance run from another checkout: the image, the container and the optional Postgres container, network and volume become `crucible-py-<name>`, `crucible-db-<name>`…; the monitor log becomes `/tmp/crucible-monitor-<name>.log`; `uninstall.sh` removes only that instance. Lowercase letters, digits and hyphens. Set in the folder's `.env.local`; the environment wins — [Two instances on one machine](#two-instances-on-one-machine) |
 | `HOST_BIND` | `127.0.0.1` (macOS) / `0.0.0.0` (Linux) | Published-port interface |
 | `USE_HTTPS` | `false` | `true` + cert files present → uvicorn serves TLS. Set it in the VM's `.env.local` so `start`/`rebuild` default to HTTPS |
 | `SSL_CERT_PATH` | `/app/certs/server.crt` | TLS certificate path (in-container) |
@@ -434,6 +440,43 @@ rebuilds:
 The application code (`backend/app`, built `client/dist`, `docs/`) is **baked
 into the image**. Changes to routes, React components, or docs require a
 rebuild: `./container-py.sh rebuild`.
+
+---
+
+## Two instances on one machine
+
+Since v2.20.0 a second, complete copy of the application can run beside
+the first on the same machine: the **beta instance** the testers use, on
+port 49161, with its own data. The design and the decisions are in
+[`14-beta-instance.md`](14-beta-instance.md); the server walk is
+[`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta);
+the phase that built it, with a test for every route, is
+[phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md). The
+runbook facts:
+
+![The three lines of the beta folder's .env.local fan out to the image, container, service unit, monitor log, cron line and address](img/fig_instance_name.svg)
+
+| | Per folder (the scripts read the folder's `.env.local`) | Shared |
+|---|---|---|
+| Names | image and container `crucible-py-<instance>`; the Postgres container, network and volume likewise | the scripts, the image recipe (`backend/Dockerfile`) |
+| Port | `CRUCIBLE_PORT` — production 49160, beta 49161 | — |
+| Files | `data/`, `backups/`, `certs/`, `.env.local` | the certificate *content* (it names the host, not the port, so the same pair is copied into both `certs/`) |
+| Boot and watch | one service unit `container-crucible-py-<instance>.service`; one monitor cron line; one log `/tmp/crucible-monitor-<instance>.log` | the weekly certificate check and the nightly backup line belong to production's folder |
+| Removal | `./uninstall.sh` in a folder removes that folder's instance and the cron lines that name that folder, nothing else | — |
+
+One rule to remember: **every script acts on the folder it runs in.**
+`./container-py.sh rebuild` in the beta folder recreates `crucible-py-beta`
+and never restarts `crucible-py`; `./monitor.sh` there probes 49161;
+`./uninstall.sh --dry-run` there opens with `Instance: beta`. Check with
+`./container-py.sh help | grep Usage` when in doubt, and `pwd` before
+anything destructive.
+
+**Refreshing beta from production** (one way, on request — never the reverse):
+
+```bash
+cd ~/work/Pandora_toolbox/nr-nips-crucible && ./container-py.sh backup
+cd ~/work/Pandora_toolbox/nr-nips-crucible-beta && ./container-py.sh restore ../nr-nips-crucible/backups
+```
 
 ---
 
@@ -527,25 +570,34 @@ it automatically on the next start.
 
 `setup-after-clone-py.sh` installs a cron job automatically — the guided setup
 is [docs/01-setup-rhel8.md](01-setup-rhel8.md) §4. The canonical crontab
-entry (**one line**; use `https://` after `start-ssl`) is:
+entry (**one line per instance**; use `https://` after `start-ssl`) is:
 
 ```bash
 */5 * * * * cd /path/to/crucible && USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u) CONTAINER_NAME=crucible-py API_URL=http://localhost:49160/api/stats ./monitor.sh
 ```
 
+and, on a server with a beta instance, a second line written by the setup
+script run in the beta folder, ending
+`CONTAINER_NAME=crucible-py-beta API_URL=https://localhost:49161/api/stats ./monitor.sh`.
+Re-running the setup in a folder replaces **that folder's** line only.
+
 Manual install / check:
 
 ```bash
-crontab -l | grep monitor.sh          # is it installed, and for which container?
-tail -5 /tmp/crucible-monitor.log     # what has it been doing?
+crontab -l | grep monitor.sh              # is it installed, and for which container(s)?
+tail -5 /tmp/crucible-monitor.log         # what has production's been doing?
+tail -5 /tmp/crucible-monitor-beta.log    # and beta's (one log per instance)
 ```
 
 `monitor.sh` sends a GET to `/api/stats`; on a non-200 response it restarts
-the `crucible-py` container and logs to `/tmp/crucible-monitor.log`. The
+the named container and logs to `/tmp/crucible-monitor.log`
+(`/tmp/crucible-monitor-<instance>.log` for a named instance). The
 container also has a built-in `HEALTHCHECK` (every 30 s) that probes
 `/api/stats` (see [backend/scripts/healthcheck.py](../backend/scripts/healthcheck.py)).
 
-Run it manually any time: `./monitor.sh`.
+Run it manually any time: `./monitor.sh` — run by hand it reads the
+folder's `.env.local`, so in the beta folder it probes 49161 and would
+restart `crucible-py-beta`, never production.
 
 > The `USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u)` prefix is required
 > under cron with rootless podman — see the note in
@@ -598,6 +650,14 @@ expected output and the common failure modes, in
 [docs/01-setup-rhel8.md](01-setup-rhel8.md) §4.2. The Quadlet unit above is
 the canonical copy — that guide links back here for it.
 
+**One unit per instance.** The beta instance gets its own:
+`podman generate systemd --new --name crucible-py-beta --files` writes
+`container-crucible-py-beta.service`; a Quadlet file for it is the block
+above saved as `crucible-py-beta.container` with `Image=localhost/crucible-py-beta:latest`,
+`ContainerName=crucible-py-beta`, `PublishPort=0.0.0.0:49161:49161`,
+`Environment=PORT=49161` and the beta folder's `data/` in `Volume=`
+([`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta)).
+
 **For an HTTPS deployment**, add to the Quadlet `[Container]` section:
 
 ```
@@ -620,6 +680,7 @@ stopped):
 ./container-py.sh backup                                   # → backups/crucible-<stamp>.db
 ./container-py.sh restore                                  # lists available backups
 ./container-py.sh restore backups/crucible-<stamp>.db      # stop → swap db → restart
+./container-py.sh restore backups                          # the same with the NEWEST crucible-*.db in that folder (any folder)
 ```
 
 - **Safe while running** — uses SQLite's online-backup API inside the
@@ -629,6 +690,20 @@ stopped):
   net) before swapping. Verify afterwards with
   `curl --noproxy '*' -sS http://localhost:49160/api/stats`.
 - Override the destination with `BACKUP_DIR=/path ./container-py.sh backup`.
+
+### Refreshing the beta instance from production
+
+The same two commands, on one machine, one way. `restore` given a folder
+takes its newest backup, so no timestamp is copied by hand; beta's previous
+database is kept as `data/crucible.db.pre-restore`. Nothing is written to
+production's folder, and no command exists that restores in the other
+direction from anywhere but production's own folder.
+
+```bash
+cd ~/work/Pandora_toolbox/nr-nips-crucible      && ./container-py.sh backup
+cd ~/work/Pandora_toolbox/nr-nips-crucible-beta && ./container-py.sh restore ../nr-nips-crucible/backups
+curl --noproxy '*' -sSk https://localhost:49161/api/stats   # the same counts as production's
+```
 
 ### Moving data between machines
 
@@ -760,6 +835,8 @@ for each: [docs/01-setup-macos.md → Troubleshooting](01-setup-macos.md#trouble
 | `address already in use` on 49160 | an old container still mapped | `podman ps -a`, then `podman rm -f <name>` |
 | Image pull prompts "Please select an image" | short image name | already handled — the Dockerfile uses fully-qualified names (`docker.io/library/...`) |
 | Container gone after logout/reboot | rootless containers die with the session | `sudo loginctl enable-linger $USER` + a systemd unit (see [Auto-start on boot](#auto-start-on-boot-systemd)) |
+| A second checkout's `rebuild` replaced or restarted **production** (`crucible-py`) | its `.env.local` lacks `CRUCIBLE_INSTANCE` (and `CRUCIBLE_PORT`), so both folders name the same container | write the two lines, `./container-py.sh help \| grep Usage` must say `instance: beta`, then `rebuild` there; production's container is restarted by `./container-py.sh start` in **its** folder ([Two instances](#two-instances-on-one-machine)) |
+| `address already in use` on 49160 when starting the second instance | `CRUCIBLE_PORT` missing from the beta folder's `.env.local` | add `CRUCIBLE_PORT=49161`, then `./container-py.sh rebuild` in that folder |
 | Healthcheck `unhealthy` but curl works | image built without `--format docker` (podman OCI drops HEALTHCHECK) | rebuild with `./container-py.sh build` (flag applied automatically) |
 | Healthcheck `unhealthy` while the app serves 200s (especially in HTTPS mode) | the in-container probe was routed through the corporate proxy → `403` (a plain `urllib`/`curl` without `--noproxy` hits the proxy, whose `no_proxy` does not list `127.0.0.1`) | fixed in `backend/scripts/healthcheck.py`, which now bypasses the proxy — rebuild to pick up the fix: `./container-py.sh rebuild` (preserves HTTP/HTTPS mode) |
 | Corporate proxy breaks localhost curl | proxy env vars | use `curl --noproxy '*' ...` (the scripts already do) |
@@ -855,7 +932,7 @@ Everything installation creates, where it lives, and the command that removes it
 | node_modules | `client/node_modules/` | `rm -rf client/node_modules/` |
 | Build output | `client/dist/` | `rm -rf client/dist/` |
 | Python venv | `backend/.venv/` | `rm -rf backend/.venv/` |
-| systemd user units | `~/.config/systemd/user/container-crucible-py.service` and `~/.config/containers/systemd/crucible-py.container` | `systemctl --user disable --now container-crucible-py.service` · `systemctl --user stop crucible-py.service` · `rm -f` both files · `systemctl --user daemon-reload` · optionally `sudo loginctl disable-linger $USER` |
+| systemd user units | `~/.config/systemd/user/container-crucible-py.service` and `~/.config/containers/systemd/crucible-py.container` (`…crucible-py-beta…` for the beta instance; `uninstall.sh` picks the folder's own) | `systemctl --user disable --now container-crucible-py.service` · `systemctl --user stop crucible-py.service` · `rm -f` both files · `systemctl --user daemon-reload` · optionally `sudo loginctl disable-linger $USER` |
 | Project source | Full project directory | `rm -rf nr-nips-crucible/` |
 
 > ⚠️ Never delete the **source** certificates in `<cert-store-path>/` — those
@@ -916,4 +993,4 @@ For deployment issues:
 
 ---
 
-**Last Updated:** August 25, 2026
+**Last Updated:** September 21, 2026

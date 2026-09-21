@@ -170,11 +170,11 @@ curl --noproxy '*' -sSk https://localhost:49160/api/stats
 **You should see** a line of counts:
 
 ```json
-{"chemicals":{"total":664,...},"screening":{"total":49065},...}
+{"chemicals":{"total":12539,...},"screening":{"total":49065},...}
 ```
 
-The counts are whatever *your* instance holds — on production after the
-2026-09-08 reset, `chemicals` is 0 by design until the registry is refilled.
+The counts are whatever *your* instance holds — on production since
+2026-09-09, 12,539 registered chemicals and 49,065 screening rows.
 
 **What it means:** the application is running and can read its database. This is
 the single most useful check in the whole system — if it answers, everything
@@ -190,6 +190,24 @@ that is *correct* on a server configured for HTTPS. Use `https://`.
 > intercepting a request to your own machine. `-sS` shows errors but hides the
 > progress bar — never use plain `-s`, which hides failures too and makes a
 > broken command look like a silent success.
+
+## Which instance am I on?
+
+Since v2.20.0 the server runs **two** copies of the application: production
+on port **49160**, which the laboratory uses, and the **beta instance** on
+port **49161**, which testers use and which holds a *copy* of the data
+([`14-beta-instance.md`](14-beta-instance.md)). Nothing you do on beta
+reaches production. Two ways to tell which one a browser tab shows:
+
+- the **address bar** ends in `:49161` (beta) or `:49160` (production);
+- the header's right-hand corner says **Running on port 49161** or
+  **Running on port 49160**.
+
+From the terminal, the same question is answered by the folder you are in
+(`pwd` ends in `-beta` or not) and by `./container-py.sh help | grep Usage`,
+which prints `instance: beta → crucible-py-beta, port 49161` or
+`instance: default → crucible-py, port 49160`. If you are a tester and the
+corner says 49160, close the tab and open the address you were given.
 
 ## The one-command health check
 
@@ -1095,4 +1113,4 @@ exactly like success. `cd ~` first.
 
 ---
 
-**Last Updated:** August 31, 2026
+**Last Updated:** September 21, 2026

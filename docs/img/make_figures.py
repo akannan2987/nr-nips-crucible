@@ -136,6 +136,88 @@ def fig_two_instances() -> None:
     write("fig_two_instances.svg", svg(W, H, "Production and beta on one server: two folders, two containers, two ports; publish reaches beta, promotion reaches production, data is copied one way on request", b))
 
 
+def fig_publish_promote() -> None:
+    """The two moments of the workflow once there are two instances (SH-12)."""
+    W, H = 940, 400
+    b = text(W/2, 34, "Two moments, not one: publish reaches beta; promotion reaches production", 16, INK, "middle", "bold")
+    # the rail: three branch stations
+    b += f"<line x1='90' y1='150' x2='850' y2='150' stroke='{LINE}' stroke-width='3'/>\n"
+    stations = [(150, "develop", "where every change is authored", ACCENT),
+                (470, "beta", "what the testers run", COLOURS["screening"]),
+                (790, "master", "what the laboratory runs", COLOURS["chemical"])]
+    for x, name, sub, col in stations:
+        b += f"<circle cx='{x}' cy='150' r='14' fill='{PAPER}' stroke='{col}' stroke-width='3'/>\n"
+        b += text(x, 112, name, 14, col, "middle", "bold", "ui-monospace,SFMono-Regular,Menlo,monospace")
+        b += text(x, 128, sub, 10, MUTED)
+    # moment 1: publish
+    b += box(200, 168, 220, 54, "#fff7ed", COLOURS["screening"], 8)
+    b += text(310, 188, "moment 1 — publish", 12, COLOURS["screening"], "middle", "bold")
+    b += text(310, 206, "git push origin develop develop:beta", 10, INK, "middle", "normal", "ui-monospace,SFMono-Regular,Menlo,monospace")
+    b += text(310, 240, "every change, the same day · CI runs · the mirror copies it", 9.5, MUTED)
+    # moment 2: promote
+    b += box(520, 168, 220, 54, "#eef2ff", COLOURS["chemical"], 8)
+    b += text(630, 188, "moment 2 — promote", 12, COLOURS["chemical"], "middle", "bold")
+    b += text(630, 206, "git push origin beta:master", 10, INK, "middle", "normal", "ui-monospace,SFMono-Regular,Menlo,monospace")
+    b += text(630, 240, "by hand, only when the testers agree · never automatic", 9.5, MUTED)
+    # the instances under the stations
+    b += box(360, 262, 220, 62, "#fff7ed", COLOURS["screening"], 8)
+    b += text(470, 282, "beta instance · port 49161", 11.5, COLOURS["screening"], "middle", "bold")
+    b += text(470, 300, "git pull origin beta · rebuild", 10, INK, "middle", "normal", "ui-monospace,SFMono-Regular,Menlo,monospace")
+    b += text(470, 316, "testers", 9.5, MUTED)
+    b += box(680, 262, 220, 62, "#eef2ff", COLOURS["chemical"], 8)
+    b += text(790, 282, "production instance · port 49160", 11.5, COLOURS["chemical"], "middle", "bold")
+    b += text(790, 300, "backup · git pull origin master · rebuild", 10, INK, "middle", "normal", "ui-monospace,SFMono-Regular,Menlo,monospace")
+    b += text(790, 316, "the laboratory", 9.5, MUTED)
+    b += arrow(470, 166, 470, 260, COLOURS["screening"], dash=True)
+    b += arrow(790, 166, 790, 260, COLOURS["chemical"], dash=True)
+    # people glyphs
+    for i, x in enumerate((430, 450)):
+        b += f"<circle cx='{x}' cy='338' r='4' fill='{COLOURS['screening']}'/><path d='M {x-7} 352 Q {x} 342 {x+7} 352' fill='none' stroke='{COLOURS['screening']}' stroke-width='2'/>\n"
+    for x in (760, 780, 800, 820):
+        b += f"<circle cx='{x}' cy='338' r='4' fill='{COLOURS['chemical']}'/><path d='M {x-7} 352 Q {x} 342 {x+7} 352' fill='none' stroke='{COLOURS['chemical']}' stroke-width='2'/>\n"
+    b += text(W/2, 380, "a change that fails on beta is simply never promoted; nothing is ever edited on the server", 10.5, MUTED)
+    write("fig_publish_promote.svg", svg(W, H, "Three branch stations on one rail: develop, beta, master. Publish pushes develop to beta and the beta instance pulls it; promotion pushes beta to master and production pulls it, by hand", b))
+
+
+def fig_instance_name() -> None:
+    """Three lines in .env.local name every resource of an instance (SH-12)."""
+    W, H = 940, 420
+    b = text(W/2, 34, "One file names everything: the instance name is a suffix, the port is a number, the code never knows the word", 15, INK, "middle", "bold")
+    # the .env.local card
+    b += box(40, 80, 250, 120, "#f9fafb", LINE, 10)
+    b += text(165, 104, ".env.local  (in the beta folder)", 12, INK, "middle", "bold", "ui-monospace,SFMono-Regular,Menlo,monospace")
+    b += lines(60, 132, ["USE_HTTPS=true", "CRUCIBLE_INSTANCE=beta", "CRUCIBLE_PORT=49161"], 12, INK, "start", 22, "normal")
+    b += text(165, 214, "untracked · gitignored · one per folder", 9.5, MUTED)
+    # the resources named from it
+    rows = [
+        ("image", "crucible-py-beta:latest", COLOURS["screening"]),
+        ("container", "crucible-py-beta", COLOURS["screening"]),
+        ("service unit", "container-crucible-py-beta.service", COLOURS["screening"]),
+        ("monitor log", "/tmp/crucible-monitor-beta.log", COLOURS["screening"]),
+        ("cron line", "CONTAINER_NAME=crucible-py-beta  API_URL=https://…:49161/api/stats", COLOURS["screening"]),
+        ("address", "https://<vm-hostname>:49161", COLOURS["screening"]),
+    ]
+    y = 84
+    for label, value, col in rows:
+        b += path_arrow(f"M 292 140 C 330 140, 330 {y+12}, 358 {y+12}", col)
+        b += box(360, y, 540, 26, PAPER, col, 6)
+        b += text(372, y + 17, label, 10.5, MUTED, "start")
+        b += text(470, y + 17, value, 10.5 if len(value) > 40 else 11, INK, "start", "normal", "ui-monospace,SFMono-Regular,Menlo,monospace")
+        y += 34
+    # the default, for contrast
+    b += box(40, 250, 250, 70, "#eef2ff", COLOURS["chemical"], 10)
+    b += text(165, 274, "production's .env.local", 12, COLOURS["chemical"], "middle", "bold", "ui-monospace,SFMono-Regular,Menlo,monospace")
+    b += text(165, 296, "USE_HTTPS=true   (no instance, no port)", 11, INK, "middle", "normal", "ui-monospace,SFMono-Regular,Menlo,monospace")
+    b += text(165, 312, "so: crucible-py · 49160 · container-crucible-py.service", 9.5, MUTED)
+    # what shares
+    b += box(360, 300, 540, 44, PANEL, LINE, 6)
+    b += text(630, 318, "shared on purpose: the same scripts, the same image recipe, the same certificate (it names the host, not the port)", 9.5, INK)
+    b += text(630, 334, "separate on purpose: data/, backups/, the container, the image, the unit, the monitor line", 9.5, INK)
+    b += text(W/2, 380, "everyday version: two identical uniforms; the name tag says which kitchen you cook in,", 10.5, MUTED)
+    b += text(W/2, 398, "and the tag is pinned on the folder, not sewn into the cloth", 10.5, MUTED)
+    write("fig_instance_name.svg", svg(W, H, "The three lines of the beta folder's .env.local fan out to the image, container, service unit, monitor log, cron line and address, all suffixed -beta or numbered 49161; production's file has no instance line and keeps the default names", b))
+
+
 # ---------------------------------------------------------------- palette --
 INK = "#1f2937"        # text
 MUTED = "#6b7280"      # secondary text
@@ -279,8 +361,8 @@ def fig_doc_is_truth() -> None:
 
 
 def fig_machine_layout() -> None:
-    W, H = 940, 400
-    b = text(W/2, 34, "Two repositories, three folders — content flows public → private only", 16, INK, "middle", "bold")
+    W, H = 940, 470
+    b = text(W/2, 34, "Two repositories, four folders — content flows public → private only", 16, INK, "middle", "bold")
     # Mac
     b += box(30, 70, 250, 130, PANEL, LINE, 10)
     b += text(155, 94, "Your Mac (or Windows PC)", 13, INK, "middle", "bold")
@@ -293,26 +375,31 @@ def fig_machine_layout() -> None:
     b += box(370, 250, 200, 60, "#fff1f2", COLOURS["toxicology"], 10)
     b += lines(470, 274, ["PRIVATE repository", "develop · beta · master"], 12, COLOURS["toxicology"], "middle", 16, "bold")
     # VM
-    b += box(660, 70, 250, 300, PANEL, LINE, 10)
-    b += text(785, 94, "The RHEL 8 VM (production)", 13, INK, "middle", "bold")
-    b += box(680, 110, 210, 80, PAPER, ACCENT, 6)
-    b += lines(785, 132, ["mirror folder", "origin = private", "+ remote 'public' (fetch only)"], 11, INK, "middle", 16)
-    b += box(680, 230, 210, 110, PAPER, ACCENT, 6)
-    b += lines(785, 252, ["production folder", "origin = private", "branch master", "the running container", "data/ · certs/ · .env.local"], 11, INK, "middle", 16)
+    b += box(660, 70, 250, 380, PANEL, LINE, 10)
+    b += text(785, 94, "The RHEL 8 VM", 13, INK, "middle", "bold")
+    b += box(680, 108, 210, 66, PAPER, ACCENT, 6)
+    b += lines(785, 128, ["mirror folder", "origin = private", "+ remote 'public' (fetch only)"], 11, INK, "middle", 15)
+    b += box(680, 190, 210, 96, "#fff7ed", COLOURS["screening"], 6)
+    b += lines(785, 210, ["beta folder  (nr-nips-crucible-beta)", "branch beta · port 49161", "container crucible-py-beta", "its own data/ · certs/ · .env.local", "the testers"], 10.5, INK, "middle", 15)
+    b += box(680, 302, 210, 130, "#eef2ff", COLOURS["chemical"], 6)
+    b += lines(785, 322, ["production folder  (nr-nips-crucible)", "branch master · port 49160", "container crucible-py", "the real data/ · certs/ · .env.local", "the laboratory"], 10.5, INK, "middle", 15)
+    b += text(785, 412, "moves only by a promotion", 9.5, MUTED)
     # arrows
     b += arrow(282, 120, 368, 100, COLOURS["chemical"])
     b += box(288, 82, 74, 20, PAPER, COLOURS["chemical"], 4)
     b += text(325, 96, "gate ✓ push", 10, COLOURS["chemical"])
-    b += arrow(572, 100, 678, 140, COLOURS["chemical"], dash=True)
+    b += arrow(572, 100, 678, 136, COLOURS["chemical"], dash=True)
     b += text(628, 108, "fetch public", 10, MUTED)
-    b += arrow(678, 170, 572, 270, COLOURS["toxicology"])
-    b += text(610, 236, "commit + push", 10, MUTED)
-    b += arrow(572, 290, 678, 300, COLOURS["toxicology"], dash=True)
-    b += text(625, 312, "pull master", 10, MUTED)
+    b += arrow(678, 156, 572, 262, COLOURS["toxicology"])
+    b += text(600, 200, "commit + push", 10, MUTED)
+    b += arrow(572, 280, 678, 236, COLOURS["screening"], dash=True)
+    b += text(626, 250, "pull beta", 10, COLOURS["screening"])
+    b += arrow(572, 300, 678, 366, COLOURS["toxicology"], dash=True)
+    b += text(614, 346, "pull master", 10, MUTED)
     b += text(155, 230, "holds NO private credentials:", 11, MUTED)
     b += text(155, 246, "it cannot push to the private repository", 11, MUTED)
-    b += text(W/2, 388, "a fix found on the VM travels back as a patch, never a push — the arrow never runs right to left", 12, INK)
-    write("fig_machine_layout.svg", svg(W, H, "A Mac authoring folder pushes to the public repository; the VM's mirror folder fetches public and pushes private; the production folder pulls master from private", b))
+    b += text(W/2, 458, "a fix found on the VM travels back as a patch, never a push — the arrow never runs right to left", 12, INK)
+    write("fig_machine_layout.svg", svg(W, H, "A Mac authoring folder pushes to the public repository; the VM's mirror folder fetches public and pushes private; the beta folder pulls beta and the production folder pulls master from private", b))
 
 
 def fig_change_travels() -> None:
@@ -733,5 +820,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, cover, logo):
         f()

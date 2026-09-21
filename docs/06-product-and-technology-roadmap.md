@@ -440,6 +440,26 @@ certificate check; the failure modes are known and cheap.
 *Verdict:* **Recommended later** — *trigger:* a second instance, or an
 outage nobody noticed for a day.
 
+### A beta instance beside production
+
+*What it is:* a second, complete copy of the application on the same
+server — its own branch, container, port and database — where end users
+test and where every change lands before it is promoted to production.
+*Analogy:* the practice kitchen next to the restaurant kitchen.
+*Required now?* **Yes** — asked for by the owner on 2026-09-21: the
+application is to be put in front of end users, and the login has to be
+rehearsed somewhere that is not the laboratory's registry.
+*Benefit:* no test ever touches the real data; every release is exercised
+by real users before the laboratory sees it; the login is tried on the
+testers first. *Cost:* one more folder, service unit and monitor line on
+the server, and one more workflow step (promotion); the copy of the data
+ages until refreshed.
+*Verdict:* **Required now** — phase SH-12, specified in
+[`14-beta-instance.md`](14-beta-instance.md), decided in
+[ADR 0002](adr/0002-beta-instance.md). A second *machine* stays
+*Recommended later*, with the same trigger as before; the design moves to
+it unchanged.
+
 ### A cost model
 
 *What it is:* what running the product costs per month, per laboratory.
@@ -511,6 +531,7 @@ marketed.
 | Kubernetes / serverless | Optional | Hosted product, multiple instances |
 | CI on the public repository | **Required now** (exists, phase 05b) | — |
 | Monitoring beyond cron | Recommended later | Second instance or an unnoticed outage |
+| A beta instance beside production | **Required now** (2026-09-21) | — phase SH-12 |
 | Cost model | Recommended later | First hosting decision |
 | Regulatory frame (ALCOA+, Part 11, GDPR, ISO 27001) | Recommended later | A regulatory citation or hosting |
 | SEO / AEO / GEO, pricing | Not needed | Offered outside the organisation |

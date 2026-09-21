@@ -234,6 +234,7 @@ get, and likely mistakes get a named fix.
 | 11 | **[Lessons learned](docs/11-lessons-learned.md)** | Every bug that real verification found, and what each taught |
 | 12 | **[History](docs/12-history.md)** | The Node → Python migration and other retired decisions |
 | 13 | **[Authentication](docs/13-authentication.md)** | The ladder from an open port to single sign-on: what a login is, three secure ways to add one, why in that order, what to ask the organisation for |
+| 14 | **[Beta instance](docs/14-beta-instance.md)** | A second copy of the application on the same server for end users to test — its own branch, port and data; how a change is published to it and promoted to production |
 | — | **[Decision records](docs/adr/README.md)** | One page per design decision: context, choice, alternatives, consequences |
 | — | **[Upload templates](docs/excel-templates)** | The spreadsheet formats each module accepts, and the generator that makes synthetic examples |
 | — | **[Backend README](backend/README.md)** | Python backend: quickstart, tests, environment variables |

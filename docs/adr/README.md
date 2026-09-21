@@ -17,6 +17,7 @@ supersedes the old one.
 | # | Decision | Status |
 |---|---|---|
 | [0001](0001-authentication-ladder.md) | Authentication is added as a ladder — token gate, local accounts, single sign-on — behind one feature flag, with single sign-on as the destination | accepted |
+| [0002](0002-beta-instance.md) | A beta instance runs beside production on the same server, on the `beta` branch, with its own container, port and data; production moves only by promotion | proposed |
 
 Decisions made before this folder existed live in the documents that made
 them: the one design rule in [`02-architecture.md`](../02-architecture.md#the-one-design-rule-everything-else-follows-from),
@@ -25,4 +26,4 @@ the identification rule in [`09-chemical-identification.md`](../09-chemical-iden
 New records are added by the phase that makes the decision and listed in
 the phase's tutorial.
 
-**Last Updated:** September 8, 2026
+**Last Updated:** September 21, 2026

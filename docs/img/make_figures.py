@@ -101,6 +101,41 @@ def fig_source_tags() -> None:
     write("fig_source_tags.svg", svg(W, H, "Four registry entries with their source tags, the two readings of a multi-tag filter, and the strip of batch counts", b))
 
 
+def fig_two_instances() -> None:
+    W, H = 940, 430
+    b = text(W/2, 34, "Two instances on one server (SH-12): production keeps the real data; testers get a copy on beta", 16, INK, "middle", "bold")
+    # the Mac
+    b += box(30, 120, 150, 90, PANEL, LINE, 10)
+    b += text(105, 148, "Mac", 13, INK, "middle", "bold")
+    b += lines(105, 170, ["author on develop", "publish · promote"], 10.5, MUTED, "middle", 15)
+    # the server
+    b += box(230, 66, 680, 300, PAPER, LINE, 12, dash=True)
+    b += text(570, 88, "the server — one machine, two folders, two containers, two ports", 11.5, MUTED)
+    # beta
+    b += box(260, 110, 290, 120, "#fff7ed", COLOURS["screening"], 10)
+    b += text(405, 134, "beta instance", 13, COLOURS["screening"], "middle", "bold")
+    b += lines(405, 156, ["folder nr-nips-crucible-beta · branch beta", "container crucible-py-beta · port 49161", "its own database: a copy of production's"], 10.5, INK, "middle", 15)
+    b += text(405, 218, "testers log in here · nothing reaches production", 9.5, MUTED)
+    # production
+    b += box(590, 110, 290, 120, "#eef2ff", COLOURS["chemical"], 10)
+    b += text(735, 134, "production instance", 13, COLOURS["chemical"], "middle", "bold")
+    b += lines(735, 156, ["folder nr-nips-crucible · branch master", "container crucible-py · port 49160", "the real database"], 10.5, INK, "middle", 15)
+    b += text(735, 218, "the laboratory · moves only by promotion", 9.5, MUTED)
+    # arrows: publish, promote, data copy
+    b += arrow(182, 150, 258, 150, COLOURS["screening"])
+    b += text(220, 142, "publish", 9.5, COLOURS["screening"])
+    b += path_arrow("M 552 150 L 588 150", COLOURS["chemical"])
+    b += text(570, 142, "promote", 9.5, COLOURS["chemical"])
+    b += path_arrow("M 735 232 L 735 290 L 405 290 L 405 232", COLOURS["chemical"], dash=True)
+    b += text(570, 306, "a copy of the data, one way, when you ask: backup on production, restore on beta", 9.5, MUTED)
+    # shared: certificates, script
+    b += box(260, 322, 620, 30, PANEL, LINE, 6)
+    b += text(570, 342, "shared: the same container-py.sh (told its instance name), the same certificate (it names the host, not the port), the same setup guide", 9.5, INK)
+    b += text(W/2, 392, "everyday version: the practice kitchen next to the restaurant kitchen — same equipment, a copy of tonight's ingredients,", 10.5, MUTED)
+    b += text(W/2, 410, "and whatever a trainee burns there, no customer eats", 10.5, MUTED)
+    write("fig_two_instances.svg", svg(W, H, "Production and beta on one server: two folders, two containers, two ports; publish reaches beta, promotion reaches production, data is copied one way on request", b))
+
+
 # ---------------------------------------------------------------- palette --
 INK = "#1f2937"        # text
 MUTED = "#6b7280"      # secondary text
@@ -698,5 +733,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, fig_source_tags, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, cover, logo):
         f()

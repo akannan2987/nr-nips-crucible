@@ -11,6 +11,13 @@
 
 ---
 
+> **2026-09-21 — the login is now the top of the plan.** The owner wants
+> the application in front of end users for testing, which needs each
+> tester to log in, and needs a place to try it that is not production.
+> So: a **beta instance** first ([`14-beta-instance.md`](14-beta-instance.md)),
+> then rungs 1 **and 2 in full** (SH-3a + SH-3b) delivered to it, tested by
+> the testers, then promoted to production. Decision A3 is revisited below.
+
 ## Contents
 
 - [Why a login, in plain words](#why-a-login-in-plain-words)
@@ -437,12 +444,14 @@ details, which this public page does not carry.
 |---|---|---|---|
 | A1 | Which identity provider? | The organisation's, whatever it is; the plan is protocol-based (OpenID Connect) and names no vendor | Every corporate provider speaks it; the code does not change with the choice |
 | A2 | Build rung 1 now, before the registration request is answered? | **Yes** | Two days closes the open port; nothing is wasted, because tokens remain for scripts on every rung |
-| A3 | How much of rung 2? | Only the break-glass admin account, *unless* the registration takes more than about six weeks — then the full rung with roles | Passwords held here are a liability the organisation would rather not have; but the laboratory should not wait months for per-person logins either |
+| A3 | How much of rung 2? | ~~Only the break-glass admin account, unless the registration takes more than about six weeks~~ **Revisited 2026-09-21: the full rung — usernames, passwords, roles — now.** User testing needs each tester identified, and the registration has not arrived. Single sign-on later replaces the passwords and keeps the accounts and the roles | Passwords held here are a liability the organisation would rather not have; but a group of testers cannot share one token, and the laboratory should not wait months for per-person logins |
 | A4 | Default `AUTH_MODE` in the image? | `off`, with the server's `.env.local` setting `token` (then `sso`); the setup guides say so at the step that writes `.env.local` | Developers and CI keep the frictionless mode; production is protected from its first restart after deployment |
 | A5 | Roles from the provider's groups, or managed in Crucible? | From groups, if the identity team can add a group claim; otherwise a small admin page later | Leavers and movers are handled by the badge office, not by us |
 | A6 | Session length? | One working day (10 hours), sliding | Long enough not to interrupt a day's work; short enough that a forgotten browser is not a permanent door |
 | A7 | Tighten the cross-origin policy at the same time? | Yes, to the server's own origin, in SH-3a | With cookies in play an open policy is a real hole; today it is only untidy |
 | A8 | Who may hold a token for scripts under SSO? | Issued by an admin per service, listed by `manage_users.py list`, revocable individually | A token is a key; keys are signed out by name |
+| A9 | Where does the login go first? | **The beta instance** ([`14-beta-instance.md`](14-beta-instance.md)), with one account per tester; production adopts it after the test, in a promotion of its own | The login is the change most worth rehearsing before it stands between the laboratory and its data |
+| A10 | Who creates the tester accounts, and how? | The operator, with `manage_users.py add <name> --role viewer|editor|admin` inside the beta container; passwords handed over out of band; an admin page later (SH-4) | One person, a handful of testers, a script that has to exist anyway for the break-glass admin |
 
 ---
 
@@ -452,14 +461,15 @@ details, which this public page does not carry.
 |---|---|---|
 | A1–A8 | **All agreed as written** — token gate now; from rung 2 only the break-glass admin unless the registration takes over six weeks; the image defaults to `off`, the server sets `token`; roles from the provider's group claim; ten-hour sliding sessions; the cross-origin policy tightened in SH-3a; service tokens issued per service by an admin | 2026-09-08 |
 | Registration request | the owner sends it this week, from the draft above | 2026-09-08 |
+| A3 revisited, A9, A10 | **recommended 2026-09-21, awaiting the owner:** rung 2 in full, on the beta instance first, accounts created by the operator | 2026-09-21 |
 | Licence question | on hold with the organisation | 2026-09-08 |
 
 ## The phases
 
 | Phase | What ships | Waits on | "Done" means |
 |---|---|---|---|
-| **SH-3a · Token gate** | The shared pieces (`AUTH_MODE`, `require_user`, `/api/health`, the login page, the 401 handler, `verify-deploy.sh --token`), the token mode, tests, runbook in [`07-operations.md`](07-operations.md), the setup guides' `.env.local` step updated | decisions A2, A4, A7 | on the server, `AUTH_MODE=token`: an unauthenticated call answers 401, an authenticated one answers as before, the monitor is green, 16 deploy checks pass with `--token` |
-| **SH-3b · Local accounts** | The `users` table and migration, Argon2 hashing, the signed session, `manage_users.py`, the login form, roles, per-person tokens; or only the break-glass admin (A3) | SH-3a; decision A3 | a person logs in with a username and password, a disabled account is refused, a viewer cannot delete |
+| **SH-3a · Token gate** | The shared pieces (`AUTH_MODE`, `require_user`, `/api/health`, the login page, the 401 handler, `verify-deploy.sh --token`), the token mode, tests, runbook in [`07-operations.md`](07-operations.md), the setup guides' `.env.local` step updated | SH-12 (the beta instance to deliver it to); decisions A2, A4, A7 — agreed | on **beta**, `AUTH_MODE=token`: an unauthenticated call answers 401, an authenticated one answers as before, the monitor is green, 16 deploy checks pass with `--token`; production untouched |
+| **SH-3b · Local accounts** | The `users` table and migration, Argon2 hashing, the signed session, `manage_users.py`, the login form, roles, per-person tokens — **in full** (A3 revisited) | SH-3a; built in the same run, on beta | each tester logs in with a username and password on beta, a disabled account is refused, a viewer cannot delete; after the test, the same on production |
 | **SH-3c · Single sign-on** | The OpenID Connect flow, group-to-role mapping, the sign-in button, a fake provider for the tests, the runbook; rung 2's unused pieces removed | SH-3a; the registration from the organisation; decisions A1, A5, A6, A8 | a person signs in with the corporate login and lands with the right role; the break-glass admin still works with the provider unreachable; a service token still works |
 | SH-4 · Roles everywhere, audit trail, rate limiting | What identity makes possible ([`06-product-and-technology-roadmap.md`](06-product-and-technology-roadmap.md#4-identity-and-access)) | SH-3b or SH-3c | — |
 
@@ -477,4 +487,4 @@ updated in the same commit.
 - [`02-architecture.md` → Security](02-architecture.md#security-architecture) and [`07-operations.md` → Security](07-operations.md#security) — what exists today.
 - [`00-glossary.md`](00-glossary.md) — every term above, in one place.
 
-**Last Updated:** September 8, 2026
+**Last Updated:** September 21, 2026

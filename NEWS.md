@@ -10,6 +10,35 @@ change you are getting.
 
 ---
 
+## v2.19.0 — 2026-09-21 — "A place to test, and a way to log in"
+
+No application code. The owner's request of 2026-09-21 — the application
+is to go in front of end users for testing — put at the top of the plan.
+
+**Planned, and first**
+- **SH-12 · A beta instance for user testing** — a second, complete copy
+  of the application on the same server: its own folder on the `beta`
+  branch, its own container and image, port 49161, its own database
+  refreshed from production's backup on request. Publishing reaches beta;
+  production moves only by a deliberate promotion. Specification and
+  decisions B1–B6 in [`docs/14-beta-instance.md`](docs/14-beta-instance.md)
+  (new); the decision in [ADR 0002](docs/adr/0002-beta-instance.md).
+- **SH-3a + SH-3b · The login**, delivered to beta first: the token gate
+  and, in full, local accounts with one username and password per tester
+  and three roles. Decision A3 revisited and A9, A10 added in
+  [`docs/13-authentication.md`](docs/13-authentication.md).
+
+**Recorded**
+- The order: SH-12, then the login on beta, then user testing, then
+  promotion to production; CR-12 and everything after queue behind them.
+  The single sign-on rung still waits on the identity team's registration.
+
+**Deliberately not done**
+- Building either phase: each waits on its listed decisions and the
+  owner's go.
+
+---
+
 ## v2.18.3 — 2026-09-14 — "Dotmatics ID means a DTX identifier"
 
 **Changed**

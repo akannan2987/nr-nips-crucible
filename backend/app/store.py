@@ -24,6 +24,7 @@ _KEY_FIELD = {
     "samples": "sample_id",
     "screening": "chemical_id",
     "toxicology": "chemical_id",
+    "users": "username",  # the login's accounts (phase SH-3b)
 }
 
 

@@ -401,6 +401,24 @@ check that it is looking at the right door before kicking it in.* *The
 shape:* a status that reported one thing (dead, restart failed) while
 another was true (answering; restarted for nothing).
 
+**40. A password change signed its own browser out.** Rung 2's session
+cookie carries the version of the person's password, so that a reset
+signs every browser of theirs out at once: the version moves, the old
+cookies stop matching. Driven in a real browser against the real registry
+(12,539 compounds, whose list takes seconds to answer), the *Change
+password* dialog succeeded and then showed the login page: a request the
+page had sent seconds earlier, with the old cookie, was answered after the
+version had moved, got 401, and the client did what it must on a 401. The
+tests had not seen it, because a test's requests are never in flight
+together. The fix is a minute of grace: a cookie of the previous version is
+honoured for sixty seconds after a change and handed the new cookie; a
+disabled account gets no grace, because that check is on the account, not
+the version. *The lesson: a credential that can change under a running
+page must tolerate the requests already in flight, or every change signs
+the changer out; and the only way to see a race is to drive the real page
+against real data, where requests are slow enough to overlap.* *The shape:*
+a success (password changed) reported as a failure (signed out).
+
 ---
 
 ## The one rule they add up to

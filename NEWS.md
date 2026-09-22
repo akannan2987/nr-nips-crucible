@@ -10,6 +10,106 @@ change you are getting.
 
 ---
 
+## v2.23.0 — 2026-09-22 — "Local accounts"
+
+The second rung of the authentication ladder ([`13-authentication.md`](docs/13-authentication.md)),
+built as phase SH-3b and delivered to the beta instance first. With
+`AUTH_MODE=local` and a `SESSION_SECRET` in an instance's `.env.local`,
+the instance asks for a **username and a password** instead of the shared
+token, knows *who* is calling and with which **role**, and lets a script
+in with a **personal token** that is revoked by name. Nothing changes with
+the flag at `off` or `token`: the contract tests and the token gate run
+unchanged, and production keeps its token until its own accounts exist.
+
+**Added**
+- **The `users` table** (`backend/app/models.py`, migration `0002_users`),
+  in the same hybrid pattern as every table: the document holds the
+  display name, the role, the enabled flag, an **Argon2id** hash of the
+  password (`argon2-cffi`; never the password), the hash of the personal
+  token, and the login bookkeeping. The container's entrypoint applies the
+  migration on the first start; an existing database gains an empty table
+  and nothing else changes. The read-only query console refuses the table
+  by name and leaves it out of its schema listing.
+- **One accounts module** (`backend/app/accounts.py`) behind the login
+  route, the guard and the script, so the browser, the API and the
+  terminal cannot disagree.
+- **A signed, sliding session.** The cookie `crucible_session` now carries
+  the username and the password version, timestamped and signed with
+  `SESSION_SECRET` (`itsdangerous`); readable, unforgeable, holding no
+  secret. It is re-issued after five minutes of age, so the ten hours
+  count from the last request (decision A6, finally). A reset password
+  moves the version and signs every browser of that person out; a
+  disabled account is refused on its next click.
+- **Three roles**, viewer, editor and admin, one per account, enforced by
+  **one rule** in the guard from the request's verb and path
+  (`required_role`): reading needs a viewer, writing an editor, deleting,
+  bulk deleting, merging and clearing an admin; the SQL console is a read.
+  Too low a role answers `403 {"error":"Forbidden: this needs the admin
+  role (yours: editor)"}`; the page shows it as a toast.
+- **`manage_users.py`** inside the image, as `./container-py.sh users
+  add · reset · role · enable · disable · unlock · token · remove · list`:
+  it talks to the database directly, so it works whatever the mode says
+  and can never lock the operator out. A password or a token is printed
+  once, when made, and stored as a hash.
+- **Personal tokens for scripts**, `<username>:<secret>`, one per
+  account, sent as the same bearer header as before, carrying the
+  account's role, revoked by name. The shared token retires in this mode.
+- **The lockout**: ten wrong passwords in a row lock the account for
+  fifteen minutes, right password or not; the log names the user and the
+  count, never the password; `users unlock` lifts it early. An unknown
+  username is never counted.
+- **The login page's username-and-password form**; the top bar says who
+  is signed in, with a role pill and a hint on what it allows; a
+  **Change password** dialog (`POST /api/auth/password`) so each person
+  replaces the temporary password the operator handed them.
+- `verify-deploy.sh` with a token now also proves the server can say who
+  the token belongs to: nineteen checks.
+- Twenty-three tests (192); the tutorial with a test for every route
+  ([phase SH-3b](docs/04-phase-tutorials/phase-sh-3b-local-accounts.md));
+  three figures, the login with accounts, the three roles and the rule,
+  the life of an account; the operator's runbook in
+  [`07-operations.md` → Accounts](docs/07-operations.md#accounts-add-a-person-reset-a-password-disable-a-leaver-issue-a-token);
+  glossary entries; the playbook's *Signing in* rewritten; the schema
+  page's new table.
+
+**Changed**
+- `container-py.sh` accepts `AUTH_MODE=local`, requires and validates
+  `SESSION_SECRET` for it, passes it into the container, keeps the file
+  owner-only whichever secret it holds, gains the `users` command, and in
+  the local mode reports the counts from the database in `status`
+  (the script holds no personal token).
+- `requirements.lock` regenerated for the two new packages; the fresh
+  resolve also moved a few existing pins (SQLAlchemy, uvicorn, pandas,
+  psycopg, alembic and friends); the suite ran green on them.
+- A password change or reset honours the previous version's cookies for
+  one minute and hands those requests the new cookie: the browser that
+  changed its password had slow requests in flight with the old cookie,
+  and a 401 on one of them signed it out the moment the change succeeded
+  (found by driving the page against the real data; lesson 40).
+
+**Limitations, on purpose**
+- No accounts page in the browser: the operator manages accounts from the
+  terminal (decision A10). Buttons are not yet greyed out by role: a
+  viewer sees *Delete* and gets a plain refusal. *Who* is not yet written
+  on the records. All three are SH-4.
+- One personal token per account, with the account's role; no forced
+  password change on the first visit; no self-service reset (there is no
+  mail service to send a link through).
+- **Production stays on the token** until its accounts are created in its
+  own folder and the mode switched there, at a moment of the owner's
+  choosing ([Step 10](docs/04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-when-its-accounts-exist)).
+- After a `restore` of production's backup into beta, beta's accounts are
+  production's: the testers are created again.
+
+**Deploy**
+- Code under `backend/` and `client/`, and the lock: blocks 3 and 6
+  rebuild. On beta, then the accounts and the two lines
+  ([tutorial, Step 9](docs/04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first)).
+  Production: the promotion adds an empty table and changes nothing else;
+  the login stays the token until Step 10.
+
+---
+
 ## v2.22.1 — 2026-09-22 — "The login on production, and the monitor's port"
 
 Closes the chapter that v2.22.0 opened. The same day the token gate went to

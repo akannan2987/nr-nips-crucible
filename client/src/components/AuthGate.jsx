@@ -11,6 +11,9 @@ import Login from '../pages/Login'
 // an event for it) puts the login page back; after a successful login the
 // routes mount again, so whatever page was open asks for its data again.
 // That is the whole 401 handler: nothing else in the client changed.
+// SH-3b: the same gate, and the same login page, which now asks for a
+// username and a password when the mode is "local"; the identity the
+// server returns (name, role) is what the top bar shows.
 
 const AuthContext = createContext({ mode: 'off', user: null, signOut: () => {} })
 

@@ -686,6 +686,20 @@ the two variables (`stop`, remove it, `start`). Every route, with its
 expected output, is in
 [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md#how-to-test-it-by-every-route).
 
+**With accounts** (v2.23.0): the same, with the local mode and a session
+secret, then an account to sign in with:
+
+```bash
+AUTH_MODE=local SESSION_SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" ./container-py.sh rebuild
+./container-py.sh users add me --role admin        # a temporary password, shown once
+```
+
+The page then asks for a username and a password; the top bar says who you
+are and with which role; every route, with its expected output, is in
+[phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md#how-to-test-it-by-every-route).
+The accounts stay in `data/crucible.db` and are ignored while the login is
+off.
+
 ---
 
 ## 6. macOS-specific gotchas

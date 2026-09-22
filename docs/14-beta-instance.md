@@ -11,7 +11,9 @@ is [phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md), and the
 server setup is [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta).
 The login ([`13-authentication.md`](13-authentication.md)) is delivered to
 this instance first: its first rung, the token gate, since v2.22.0
-([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)).
+([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)); its second,
+local accounts with roles, since v2.23.0
+([phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md)).
 
 **Who this is for:** the person who runs the server and has to give a
 group of testers something to try; and the testers, who need to know that
@@ -93,7 +95,7 @@ repository and needs a small extension.
 |---|---|---|
 | Folder on the server | `~/work/Pandora_toolbox/nr-nips-crucible` | `~/work/Pandora_toolbox/nr-nips-crucible-beta` |
 | Branch it runs | `master` | `beta` |
-| `.env.local` | `USE_HTTPS=true`, and since 2026-09-22 `AUTH_MODE=token` and its own `CRUCIBLE_TOKEN` | the same, plus `CRUCIBLE_INSTANCE=beta` and `CRUCIBLE_PORT=49161`, and since v2.22.0 `AUTH_MODE=token` and `CRUCIBLE_TOKEN=…` |
+| `.env.local` | `USE_HTTPS=true`, and since 2026-09-22 `AUTH_MODE=token` and its own `CRUCIBLE_TOKEN` (then `AUTH_MODE=local` and its own `SESSION_SECRET`, once its accounts exist) | the same, plus `CRUCIBLE_INSTANCE=beta` and `CRUCIBLE_PORT=49161`, and since v2.22.0 `AUTH_MODE=token` and `CRUCIBLE_TOKEN=…`; with v2.23.0 `AUTH_MODE=local` and `SESSION_SECRET=…` (the token line stays, ignored) |
 | Container name | `crucible-py` | `crucible-py-beta` |
 | Image name | `crucible-py` | `crucible-py-beta` (its own, so a beta rebuild can never replace production's image) |
 | Port | 49160 | 49161 |
@@ -246,7 +248,7 @@ What keeps testers from tripping over each other:
 
 | Measure | What it gives | When |
 |---|---|---|
-| **The login and roles** ([`13-authentication.md`](13-authentication.md)) | one account per tester; viewers change nothing, editors upload and link, only admins delete or merge | SH-3a ✅ v2.22.0: one shared token for the testers, the gate and the login page; SH-3b next: one account per tester, with roles |
+| **The login and roles** ([`13-authentication.md`](13-authentication.md)) | one account per tester; viewers change nothing, editors upload and link, only admins delete or merge | SH-3a ✅ v2.22.0: one shared token for the testers, the gate and the login page; SH-3b ✅ v2.23.0: one account per tester, with exactly those roles, created by the operator with `./container-py.sh users add` |
 | **A test plan with named scenarios** | each tester works a distinct corner: the structure file, the limited list, the attention page, the screening table | written with the login, from the every-route tables of the phase tutorials |
 | **A reset between rounds** | two commands put beta back to a fresh copy of production ([above](#the-data-the-testers-see)); announce it, run it, start the next round | any time, in under a minute |
 | **An audit trail** | who changed what and when, on the entry itself; answers "who did this?" rather than preventing it | SH-4, after the login |
@@ -279,14 +281,21 @@ arrives first, rung by rung. **Since v2.22.0 (SH-3a)** its `.env.local` sets
 `AUTH_MODE=token` and `CRUCIBLE_TOKEN`: one shared token, handed to each
 tester out of band, pasted once into the login page
 ([how the operator turns it on](04-phase-tutorials/phase-sh-3a-token-gate.md#step-7--turn-it-on-beta-first)).
-**Next (SH-3b)** the mode becomes `local`: each tester gets a username and a
-password, created by the operator with `manage_users.py` inside the beta
-container, with the role that fits the test (viewer, editor or admin).
-Production followed the same evening with **its own token** (decision A11:
-a token opens one instance only), so the port that had been open since the
-beginning is closed; when rung 2 arrives it is rehearsed on beta first in
-the same way, and production's accounts are created after. That order is
-decision B5 and the revisited decision A3 on the authentication page.
+**With v2.23.0 (SH-3b)** the mode becomes `local`: each tester gets a
+username and a temporary password, created by the operator with
+`./container-py.sh users add <name> --role viewer|editor|admin` in the beta
+folder, changed by the tester on the first visit; the top bar says who is
+signed in and with which role; a viewer's delete is refused by the server
+([how the operator turns it on](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first)).
+Production followed the token the same evening with **its own token**
+(decision A11: a token opens one instance only), so the port that had been
+open since the beginning is closed; it moves to accounts when the operator
+has created the laboratory's own, in production's folder, at a moment of
+the owner's choosing ([Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-when-its-accounts-exist)).
+That order is decision B5 and the revisited decision A3 on the
+authentication page. **The accounts are part of the database:** after a
+`restore` of production's backup into beta, beta's accounts are
+production's, and the testers are created again.
 
 ![Two instances side by side, each with its own token in its own settings file and its own group of people; one token never opens the other door](img/fig_two_tokens.svg)
 
@@ -338,6 +347,11 @@ build ("build on what you have planned").
   ([phase SH-3a → Step 7](04-phase-tutorials/phase-sh-3a-token-gate.md#step-7--turn-it-on-beta-first));
   production followed at 18:06 with its own token
   ([Step 8](04-phase-tutorials/phase-sh-3a-token-gate.md#step-8--turn-it-on-for-production-its-own-token)).
+- 🔜 **The login's second rung, v2.23.0 (SH-3b):** one account per tester
+  with a role, created in this folder, the mode switched to `local` with
+  its own `SESSION_SECRET`
+  ([phase SH-3b → Step 9](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first));
+  production when its accounts exist ([Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-when-its-accounts-exist)).
 
 ---
 

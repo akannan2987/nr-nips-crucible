@@ -146,12 +146,22 @@ login: token — the page asks for it once; scripts send it as Authorization: Be
 {"chemicals":{"total":12539,"max":15000},...
 ```
 
+or, with accounts (`AUTH_MODE=local`, v2.23.0):
+
+```
+login: local — usernames and passwords; scripts send a personal token as Authorization: Bearer (docs/13-authentication.md)
+counts, from the database: {'chemicals': 12539, 'samples': 0, 'screening': 49065, 'toxicology': 0}
+accounts: 3 (ada admin, ed editor, vera viewer)
+```
+
 **What it means**, line by line: the folder and instance the command acted
 on; one row for this instance's container, `Up` and `healthy`; the service
 is `active` (running it now) and `enabled` (will start it at boot); and the
 application answered the open health route; since v2.22.0 the next line
 says whether the login is on (`login: off` until it is), and the counts
-follow, fetched with the token when there is one.
+follow, fetched with the token when there is one; with accounts the script
+holds no token of its own, so it reads the counts from the database inside
+the container and lists the accounts instead.
 
 **You should see**, when it is stopped:
 

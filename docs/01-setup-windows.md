@@ -388,6 +388,10 @@ CRUCIBLE_ALLOW_HTTP_LOGIN=true AUTH_MODE=token CRUCIBLE_TOKEN="$(python3 -c 'imp
 
 The page then asks for the token; every route, with its expected output,
 is in [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md#how-to-test-it-by-every-route).
+With accounts (v2.23.0) the same command takes `AUTH_MODE=local` and
+`SESSION_SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"`
+instead, followed by `./container-py.sh users add me --role admin`; the
+routes are in [phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md#how-to-test-it-by-every-route).
 Untested on a real PC, like the rest of this guide.
 
 ---

@@ -730,12 +730,13 @@ column above holds for production too, with its own token and the indigo
 - **Say who is calling.** Every holder of the token is "the token holder"
   with every right; there are no accounts and no roles yet. That is
   rung 2, [SH-3b](../13-authentication.md#rung-2--local-accounts), which
-  drops into the same guard, the same login page and the same cookie.
+  drops into the same guard, the same login page and the same cookie —
+  **built the same day as v2.23.0** ([phase SH-3b](phase-sh-3b-local-accounts.md)).
 - **Store anything.** No table, no migration: the cookie is recomputed
   from the token on every request. Rung 2 adds the `users` table.
 - **Slide the session.** The cookie lasts ten hours from the login, not
   from the last click (decision A6 asked for sliding; the signed session
-  of rung 2 does it, because it will carry a timestamp to slide).
+  of rung 2 does it, because it carries a timestamp to slide).
 - **Refuse to *start* without HTTPS inside the application.** The process
   cannot see how its port is published; the script can, and refuses the
   token mode over HTTP on anything but `127.0.0.1`. Rule 2 of the plan is

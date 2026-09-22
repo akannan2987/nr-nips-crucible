@@ -12,10 +12,13 @@
 #   development machine : ./verify-deploy.sh
 #   RHEL8 server        : ./verify-deploy.sh https://localhost:49160
 #   with the login on   : ./verify-deploy.sh https://localhost:49161 --token <the token>
-#                         (or CRUCIBLE_TOKEN=<the token> in the shell)
+#                         (or CRUCIBLE_TOKEN=<the token> in the shell; with local
+#                         accounts the token is a personal one from
+#                         ./container-py.sh users token <name>)
 #
 # With a token the script also proves the gate: a call without the token
-# must be refused, and /api/health must stay open (docs/13-authentication.md).
+# must be refused, /api/health must stay open, and the server must say who
+# the token belongs to (docs/13-authentication.md).
 #
 # The database checks are skipped when the file is not beside you, so it is
 # safe to run from anywhere.
@@ -64,6 +67,7 @@ code=$(curl --noproxy '*' -sSk -m 30 -o /dev/null -w '%{http_code}' "$BASE/api/s
 if [ "$code" = "401" ] && [ -z "$TOKEN" ]; then
   printf '  this instance needs a token (a call without one answers 401):\n'
   printf '     ./verify-deploy.sh %s --token <the token>   (or CRUCIBLE_TOKEN=<the token> in the shell)\n' "$BASE"
+  printf '     with local accounts, a personal token:  ./container-py.sh users token <your name>\n'
   exit 2
 fi
 if [ -n "$TOKEN" ]; then
@@ -71,6 +75,11 @@ if [ -n "$TOKEN" ]; then
                       || no "login gate" "a call without the token answered HTTP $code"
   hc=$(curl --noproxy '*' -sSk -m 30 -o /dev/null -w '%{http_code}' "$BASE/api/health" 2>/dev/null)
   [ "$hc" = "200" ] && ok "health route stays open without the token" || no "health route" "HTTP $hc"
+  # Who the server thinks is calling: "token" on the shared-token rung, a
+  # username with a role on the local-accounts rung. A gate that lets a
+  # token in but cannot say whose it is would be a gate with no register.
+  who=$(C "$BASE/api/auth/me" | j "d['user']['subject']+' ('+','.join(d['user']['roles'])+') via '+d['user']['via']")
+  [ -n "$who" ] && ok "the server says who this token belongs to: $who" || no "who am I" "/api/auth/me did not name the caller"
 fi
 
 # 1 — the page loads at all (the sort_numeric 400)

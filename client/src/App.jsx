@@ -18,7 +18,7 @@ function App() {
   return (
     <>
       <Toaster position="top-right" />
-      {/* SH-3a: nothing below renders until the server says no login is needed, or this browser is signed in */}
+      {/* SH-3a/SH-3b: nothing below renders until the server says no login is needed, or this browser is signed in */}
       <AuthGate>
       <Routes>
         <Route path="/" element={<Layout />}>

@@ -7,6 +7,8 @@ alembic>=1.13                  # database schema migrations (SQLite + PostgreSQL
 psycopg[binary]>=3.1           # PostgreSQL driver (DATABASE_URL=postgresql+psycopg://...)
 pydantic>=2.7,<3.0
 python-multipart>=0.0.9        # required by FastAPI for multipart file uploads
+argon2-cffi>=23.1             # password hashing (Argon2id) for the local accounts, rung 2 of the login (docs/13-authentication.md)
+itsdangerous>=2.2             # the signed, timestamped session cookie of the local accounts
 pandas>=2.2
 openpyxl>=3.1
 rdkit>=2024.3.1,<2025.9.4      # newest release with pre-built wheels for EVERY machine this project uses:

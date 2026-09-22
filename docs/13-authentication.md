@@ -5,7 +5,7 @@
 **Prerequisites:** none. Every term is explained here with an everyday comparison. [`02-architecture.md`](02-architecture.md) helps for *where* the pieces go; [`07-operations.md`](07-operations.md) for how the server is run today.
 **Learning goal:** you understand what a login actually is (three separate ideas people run together), why Crucible has none yet and what that exposes, the three secure ways to add one, why they are built in that order, what each one needs from the organisation, and how a person and a script log in at each step.
 **Deliverable of this page:** the plan for phases **SH-3a**, **SH-3b** and **SH-3c** of the shared spine ([roadmap](05-roadmap.md#sh--shared-spine)): three rungs of one ladder, each secure on its own, the last one **single sign-on**, which is the destination. The decision itself is recorded in [ADR 0001](adr/0001-authentication-ladder.md).
-**Status:** ✅ agreed 2026-09-08 (decision log at the end). **Rung 1 built and shipped as v2.22.0 ([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md), 2026-09-22): on the beta instance at 17:31 and on production at 18:06 the same day, each with its own token (A11).** Rung 2 (SH-3b) is next; rung 3 waits: no single sign-on for the moment, the owner's decision of 2026-09-22.
+**Status:** ✅ agreed 2026-09-08 (decision log at the end). **Rung 1 built and shipped as v2.22.0 ([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md), 2026-09-22): on the beta instance at 17:31 and on production at 18:06 the same day, each with its own token (A11). Rung 2 built and shipped as v2.23.0 ([phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md), 2026-09-22): usernames, passwords, roles and personal tokens, delivered to beta first; production keeps the token until its own accounts exist.** Rung 3 waits: no single sign-on for the moment, the owner's decision of 2026-09-22.
 
 ![Three rungs: a shared token gate, local accounts with passwords, and single sign-on through the corporate identity provider; each rung keeps what the one below gave](img/fig_auth_ladder.svg)
 
@@ -29,6 +29,15 @@
 > The same day the owner decided that **single sign-on is not needed for
 > the moment**; SH-3c is on hold and SH-3b, local accounts, goes next.
 > Production followed at 18:06 with its own token (A11, v2.22.1).
+>
+> **2026-09-22, late — rung 2 is built.** SH-3b shipped as v2.23.0: the
+> `users` table and its migration, Argon2 hashing, a signed sliding
+> session, the three roles enforced by one rule, `manage_users.py` behind
+> `./container-py.sh users`, the login page's username-and-password form,
+> a change-password dialog, personal tokens for scripts, the lockout, and
+> the users table kept out of the query console. Delivered to the beta
+> instance first by [Step 9 of its tutorial](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first);
+> production follows when its accounts exist ([Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-when-its-accounts-exist)).
 
 ## Contents
 
@@ -120,6 +129,13 @@ route needs the token except `/api/health`, `/api/instance` and
 `/api/auth/*`; the probes ask `/api/health`; the cross-origin policy is
 closed; who is recorded is still nobody (rung 2). Beta and production each
 have their own token ([A11](#decisions-to-agree)).
+
+**Since v2.23.0 (2026-09-22, later), rung 2 exists and beta moves to it:**
+with `AUTH_MODE=local` an instance asks for a username and a password,
+knows *who* is calling and with which role, and lets a script in with a
+personal token that is revoked by name. The same open routes, the same
+probes, the same closed cross-origin policy. Production stays on the token
+rung until the operator has created its accounts.
 
 ---
 
@@ -262,12 +278,12 @@ sequenceDiagram
 
 | Piece | Detail |
 |---|---|
-| `users` table | The same hybrid pattern as every table ([`02-database-schema.md`](02-database-schema.md)): `id`, `username` (indexed, unique), `doc` holding `display_name`, `password_hash`, `role`, `enabled`, `created_at`, `last_login`. One Alembic migration |
+| `users` table | The same hybrid pattern as every table ([`02-database-schema.md`](02-database-schema.md#the-users-table)): `id`, `username` (indexed, unique), `doc` holding `display_name`, `password_hash`, `role`, `enabled`, `created_at`, `last_login`. One Alembic migration |
 | Hashing | **Argon2id** via `argon2-cffi` — a new dependency, justified because password hashing must never be home-made; it is the current recommendation of the people who study this. The hash is one-way: the database can check a password, never reveal it |
 | Session | A signed cookie: the server signs `{subject, roles, issued_at}` with a secret from `.env.local` (`SESSION_SECRET`); nothing is stored server-side, so a restart logs nobody out. Flags `HttpOnly` (scripts on a page cannot read it), `Secure` (HTTPS only), `SameSite=Lax` (another site cannot ride on it). Expires after a working day; decision A6 |
-| Managing users | A script inside the image, `backend/scripts/manage_users.py add|reset|disable|enable|list`, run with `podman exec` like the other maintenance scripts; the first admin is created by it. No user administration page in the browser until roles need one |
-| Roles | Three, minimal: **viewer** (read, export, query), **editor** (plus upload, link, edit), **admin** (plus delete, users). Stored on the user's doc; enforced by the same dependency (`require_user(role="editor")`) |
-| Brute force | A short delay after a failed login and a per-username lockout after ten; the failed attempts are logged without the password |
+| Managing users | A script inside the image, `backend/scripts/manage_users.py add|reset|disable|enable|list` (as built: also `role`, `unlock`, `token`, `remove`), run with `podman exec` like the other maintenance scripts, `./container-py.sh users …` for short; the first admin is created by it. No user administration page in the browser until roles need one |
+| Roles | Three, minimal: **viewer** (read, export, query), **editor** (plus upload, link, edit), **admin** (plus delete, users). Stored on the user's doc; enforced by the same dependency, through one rule from the request's verb and path rather than a declaration on each route (as built; decision A14) |
+| Brute force | A short delay after a failed login and a per-username lockout after ten (fifteen minutes, as built); the failed attempts are logged without the password |
 | Scripts | Keep using a token; a token is now issued *per person or service* and stored hashed in the same table, so it can be revoked one at a time |
 
 **Why it is a rung and not the destination:** it gives *who* and roles,
@@ -275,6 +291,21 @@ which unlocks the audit trail and per-person revocation — but it means
 Crucible holds passwords, which the organisation would rather it did not,
 and a leaver keeps access until someone disables the account. Single
 sign-on removes both.
+
+**Built:** [phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md),
+v2.23.0, 2026-09-22; twenty-three tests (192). What shipped, against the
+table above, and the four details the plan left open:
+
+| Piece | As built |
+|---|---|
+| `users` table | as planned; migration `0002_users`; the document also holds `password_version` (moves on every reset, which voids that person's cookies), `token_hash`, `failed_attempts`, `locked_until`, `last_login`. Never returned by the API; the query console refuses the table by name |
+| Hashing | Argon2id through `argon2-cffi`, the library's defaults; one rule for a password, at least eight characters |
+| Session | `itsdangerous` signs `{username, password_version}` with a timestamp under **`SESSION_SECRET`**, a third line in `.env.local` (decision A12); ten hours from the **last request**: a cookie older than five minutes is re-issued with the answer, so the session slides (A6, finally). Same flags as rung 1 |
+| Managing users | `backend/scripts/manage_users.py add · reset · role · enable · disable · unlock · token · remove · list`, run as `./container-py.sh users <verb>` inside the container, against the database directly, so it works whatever the mode says and can never lock the operator out. A password or a token is printed once, when made |
+| Roles | viewer, editor, admin, one per account, **enforced by one rule from the verb and the path** (`required_role`): reading needs a viewer, writing an editor, deleting, bulk deleting, merging and clearing an admin; the read-only SQL console is a read (decision A14). Too low a role answers `403` naming the role needed |
+| Brute force | a quarter-second pause on every wrong login; ten wrong passwords in a row lock the account for fifteen minutes, right password or not; the log names the user and the count, never the password |
+| Scripts | one personal token per account, `<username>:<secret>` (decision A13), issued and revoked by name; only its SHA-256 is stored; sent as the same bearer header; a disabled account's token is refused at once. The shared token of rung 1 opens nothing on this rung |
+| Changing one's own password | `POST /api/auth/password` and a *Change password* dialog in the top bar: the operator hands out a temporary password, the person replaces it on the first visit; every other browser of theirs is signed out within a minute (the previous version is honoured for sixty seconds so that requests in flight complete; lesson 40) |
 
 **Effort:** one to two weeks including the migration, the script, the
 login form, the tests and the runbook. Two new dependencies (`argon2-cffi`,
@@ -375,8 +406,10 @@ required, why, benefit and cost — and a verdict with a trigger.
    plain HTTP is a credential on a postcard. The server already runs HTTPS;
    the app refuses to start in a login mode without it, except on
    `localhost` for development.
-3. **The health endpoint is the only open route.** It says *ok* and
-   nothing else — no counts, no versions.
+3. **The open routes say nothing worth reading.** `/api/health` says *ok*
+   and nothing else — no counts, no versions; `/api/instance` the label;
+   `/api/auth/me` whether *this* caller is in. Everything else is behind
+   the guard.
 4. **Compare secrets in constant time**, hash passwords with Argon2id,
    sign cookies, and never write a credential to a log. Standard, and each
    has a test.
@@ -403,7 +436,8 @@ required, why, benefit and cost — and a verdict with a trigger.
 | `verify-deploy.sh` | `--token` or `CRUCIBLE_TOKEN` in the shell | the same | the same |
 | The maintenance scripts inside the container | unchanged — they never use HTTP | unchanged | unchanged |
 | The cron monitor and the container probe | `/api/health`, open | the same | the same |
-| A leaver | rotate the token; everyone pastes the new one | `manage_users.py disable <name>` | automatic, the day the corporate account closes |
+| A leaver | rotate the token; everyone pastes the new one | `./container-py.sh users disable <name>`: refused at once, cookie and token alike | automatic, the day the corporate account closes |
+| A forgotten password | — (there is none) | `./container-py.sh users reset <name>`: a new temporary one, shown once; the person changes it in the page | the badge office's problem |
 
 ---
 
@@ -481,10 +515,15 @@ details, which this public page does not carry.
 | A9 | Where does the login go first? | **The beta instance** ([`14-beta-instance.md`](14-beta-instance.md)), with one account per tester; production adopts it after the test, in a promotion of its own | The login is the change most worth rehearsing before it stands between the laboratory and its data |
 | A11 | One token for both instances, or one per instance? | **One per instance**, generated in each folder separately (agreed 2026-09-22) | A token opens one door only: a leak or a rotation on one side never touches the other, and a tester never holds the laboratory's key. The cost, two values to hand out, is exactly the separation wanted |
 | A10 | Who creates the tester accounts, and how? | The operator, with `manage_users.py add <name> --role viewer|editor|admin` inside the beta container; passwords handed over out of band; an admin page later (SH-4) | One person, a handful of testers, a script that has to exist anyway for the break-glass admin |
+| A12 | What signs the rung-2 cookie? | **Its own secret, `SESSION_SECRET`**, a third line in `.env.local`, generated like the token; not derived from the shared token | The shared token retires when the mode becomes `local`; the cookie's key must outlive it, and rotating one must not depend on the other |
+| A13 | What does a script present on rung 2? | **One personal token per account**, `<username>:<secret>`, issued and revoked by name, only its hash stored | A token is a key with a name engraved on it: the operator sees whose it is, revokes one without touching the rest, and a leaver's token dies with the account |
+| A14 | How are roles enforced? | **One rule from the verb and the path** (`required_role` in the guard): read = viewer, write = editor, delete/merge/clear = admin; the SQL console is a read | The same reason the guard is declared per router: a route added next month is covered without anyone remembering to cover it |
 
 ---
 
 ![Two instances side by side, each with its own token in its own settings file and its own group of people; one token never opens the other door](img/fig_two_tokens.svg)
+
+![Local accounts: a person signs in with a username and password, a script with a personal token; both are checked against one users table holding hashes, not secrets; the browser is remembered by a signed, sliding cookie; three roles decide what each may do](img/fig_local_login.svg)
 
 ### Decision log
 
@@ -497,19 +536,20 @@ details, which this public page does not carry.
 | SH-3a | **built and shipped, v2.22.0**: the rung-1 cookie is a keyed hash of the token (no new dependency), ten hours fixed, not sliding; the cross-origin policy closed (A7); the guard declared once per router | 2026-09-22 |
 | Single sign-on | **not needed for the moment**; the owner will revisit. SH-3c on hold; SH-3b, local accounts, goes ahead | 2026-09-22 |
 | A11, production | **one token per instance**, agreed; production's login turned on at 18:06 the same day with its own token, after beta's at 17:31 (v2.22.1) | 2026-09-22 |
+| SH-3b, A12–A14 | **built and shipped, v2.23.0** with the go for rung 2 ("build on what you have planned"): `SESSION_SECRET` its own line; one personal token per account, named; roles by one rule from the verb and the path; a change-password dialog added; delivered to beta first, production when its accounts exist | 2026-09-22 |
 
 ## The phases
 
 | Phase | What ships | Waits on | "Done" means |
 |---|---|---|---|
 | **SH-3a · Token gate** ✅ v2.22.0 — [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md) | The shared pieces (`AUTH_MODE`, `require_user`, `/api/health`, the login page, the 401 handler, `verify-deploy.sh --token`), the token mode, tests, runbook in [`07-operations.md`](07-operations.md), the setup guides' `.env.local` step updated | ~~SH-12~~ ✅ v2.20.0 (the beta instance to deliver it to — [phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md)); decisions A2, A4, A7 — agreed | on **beta**, `AUTH_MODE=token`: an unauthenticated call answers 401, an authenticated one answers as before, the monitor is green, 18 deploy checks pass with `--token` (the sixteen plus two that prove the gate); production untouched until its own step — **built and rehearsed 2026-09-22; on beta (Step 7, 17:31) and on production (Step 8, 18:06) the same day, each with its own token** |
-| **SH-3b · Local accounts** | The `users` table and migration, Argon2 hashing, the signed session, `manage_users.py`, the login form, roles, per-person tokens — **in full** (A3 revisited) | ~~SH-3a~~ ✅ v2.22.0; next, on beta | each tester logs in with a username and password on beta, a disabled account is refused, a viewer cannot delete; after the test, the same on production |
+| **SH-3b · Local accounts** ✅ v2.23.0 — [phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md) | The `users` table and migration, Argon2 hashing, the signed sliding session, `manage_users.py` behind `./container-py.sh users`, the login form and a change-password dialog, roles by one rule, per-person tokens, the lockout — **in full** (A3 revisited) | ~~SH-3a~~ ✅ v2.22.0 | each tester logs in with a username and password on beta, a disabled account is refused, a viewer cannot delete, the monitor is green, 19 deploy checks pass with a personal token; after the test, the same on production — **built and rehearsed 2026-09-22; on beta by Step 9, production by Step 10 when its accounts exist** |
 | **SH-3c · Single sign-on** | The OpenID Connect flow, group-to-role mapping, the sign-in button, a fake provider for the tests, the runbook; rung 2's unused pieces removed | SH-3a; the registration from the organisation; decisions A1, A5, A6, A8; **on hold: no single sign-on for the moment (the owner, 2026-09-22), to be revisited** | a person signs in with the corporate login and lands with the right role; the break-glass admin still works with the provider unreachable; a service token still works |
-| SH-4 · Roles everywhere, audit trail, rate limiting | What identity makes possible ([`06-product-and-technology-roadmap.md`](06-product-and-technology-roadmap.md#4-identity-and-access)) | SH-3b or SH-3c | — |
+| SH-4 · Roles everywhere, audit trail, rate limiting | What identity makes possible ([`06-product-and-technology-roadmap.md`](06-product-and-technology-roadmap.md#4-identity-and-access)): buttons greyed out per role in the page, *who* on every record, an accounts page for the admin | ~~SH-3b~~ ✅ v2.23.0 | — |
 
-Each ships with its tutorial in `04-phase-tutorials/` (`phase-sh-3a-token-gate.md`
-and so on), its release note, and the handbook's status box and build log
-updated in the same commit.
+Each ships with its tutorial in `04-phase-tutorials/` (`phase-sh-3a-token-gate.md`,
+`phase-sh-3b-local-accounts.md`), its release note, and the handbook's status
+box and build log updated in the same commit.
 
 ---
 
@@ -518,7 +558,9 @@ updated in the same commit.
 - [`05-roadmap.md` → SH](05-roadmap.md#sh--shared-spine) — where these phases sit among the others.
 - [`06-product-and-technology-roadmap.md` → Identity and access](06-product-and-technology-roadmap.md#4-identity-and-access) — the verdicts these phases fulfil.
 - [ADR 0001](adr/0001-authentication-ladder.md) — the decision, in one page.
+- [Phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md) and [phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md) — the two rungs as built, each with a test for every route.
+- [`07-operations.md` → Accounts](07-operations.md#accounts-add-a-person-reset-a-password-disable-a-leaver-issue-a-token) — the operator's runbook for rung 2.
 - [`02-architecture.md` → Security](02-architecture.md#security-architecture) and [`07-operations.md` → Security](07-operations.md#security) — what exists today.
 - [`00-glossary.md`](00-glossary.md) — every term above, in one place.
 
-**Last Updated:** September 22, 2026
+**Last Updated:** September 22, 2026 (v2.23.0, rung 2 built)

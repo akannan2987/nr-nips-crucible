@@ -398,9 +398,10 @@ When it warns, follow "Rotating / replacing the certificate" above.
 | `CRUCIBLE_PORT` | *(unset)* | Port override for `container-py.sh`, `setup-after-clone-py.sh` and `monitor.sh` (a generic `PORT` in the shell is ignored). The beta instance sets `49161` in its `.env.local` |
 | `CRUCIBLE_INSTANCE_LABEL` | *(unset)* | The word the page's corner shows for this instance (SH-13). Unset: *Prod* for the default instance, the name capitalised for a named one (*Beta*). Set it in `.env.local` to spell it your way (*Production*); `container-py.sh` passes it into the container; a rebuild applies it |
 | `CRUCIBLE_INSTANCE` | *(unset)* | Names a second instance run from another checkout: the image, the container and the optional Postgres container, network and volume become `crucible-py-<name>`, `crucible-db-<name>`…; the monitor log becomes `/tmp/crucible-monitor-<name>.log`; `uninstall.sh` removes only that instance. Lowercase letters, digits and hyphens. Set in the folder's `.env.local`; the environment wins — [Two instances on one machine](#two-instances-on-one-machine) |
-| `AUTH_MODE` | `off` | The login (v2.22.0, [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)): `off` leaves every route open; `token` makes every `/api` route except `/api/health`, `/api/instance` and `/api/auth/*` answer 401 without `CRUCIBLE_TOKEN`. Set it in the instance's `.env.local`; `container-py.sh` validates it and passes it in; a change needs the container recreated (`stop`, `start`) |
-| `CRUCIBLE_TOKEN` | *(unset)* | The shared secret of the token mode, at least 32 characters (`python3 -c 'import secrets; print(secrets.token_urlsafe(48))'`). In `.env.local` only, which the script makes owner-only; never printed, never in git |
-| `SESSION_HOURS` | `10` | How long the login page's cookie lasts (decision A6, a working day) |
+| `AUTH_MODE` | `off` | The login: `off` leaves every route open; `token` (v2.22.0, [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)) makes every `/api` route except `/api/health`, `/api/instance` and `/api/auth/*` answer 401 without `CRUCIBLE_TOKEN`; `local` (v2.23.0, [phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md)) asks for a username and a password from the accounts made with `./container-py.sh users`, gives each a role, and lets scripts in with a personal token. Set it in the instance's `.env.local`; `container-py.sh` validates it and passes it in; a change needs the container recreated (`stop`, `start`) |
+| `CRUCIBLE_TOKEN` | *(unset)* | The shared secret of the token mode, at least 32 characters (`python3 -c 'import secrets; print(secrets.token_urlsafe(48))'`). In `.env.local` only, which the script makes owner-only; never printed, never in git. Ignored in the local mode |
+| `SESSION_SECRET` | *(unset)* | The key that signs the local mode's session cookie, same rules as the token (at least 32 characters, `.env.local` only, never printed); required when `AUTH_MODE=local`. A new value signs every browser out at once; each instance has its own |
+| `SESSION_HOURS` | `10` | How long the login page's cookie lasts (decision A6, a working day): from the login on the token rung, from the last request on the local rung (the cookie is re-issued after `SESSION_SLIDE_SECONDS`, 300, of age) |
 | `CORS_ORIGINS` | *(empty: closed)* | Comma-separated origins allowed to call the API from a browser on another site (decision A7). The page is served by this process, so nothing that ships needs it |
 | `HOST_BIND` | `127.0.0.1` (macOS) / `0.0.0.0` (Linux) | Published-port interface |
 | `USE_HTTPS` | `false` | `true` + cert files present → uvicorn serves TLS. Set it in the VM's `.env.local` so `start`/`rebuild` default to HTTPS |
@@ -901,8 +902,11 @@ purge as belt-and-suspenders.
 | TLS handshake fails after `start-ssl` | cert and key are from different pairs — compare the modulus hashes ([SSL/TLS](#ssltls-certificate-setup)), then `./setup-after-clone-py.sh` |
 | Reachable on the VM but not from a workstation | host firewall — open port 49160 for the case that applies (firewalld / plain iptables / none) |
 | Database looks wrong and you want a clean slate | [Reset the database](#reset-the-database) below — it is re-created empty on the next start |
-| `curl` answers `{"error":"Not authenticated"}` | the login is on for that instance: add `-H "Authorization: Bearer <token>"` (the token is in its `.env.local`), or ask `/api/health`, which is open — [The login](#the-login-turn-it-on-rotate-the-token-turn-it-off) |
+| `curl` answers `{"error":"Not authenticated"}` | the login is on for that instance: add `-H "Authorization: Bearer <token>"` (the shared token from its `.env.local` on the token rung; a personal token from `./container-py.sh users token <name>` on the local rung), or ask `/api/health`, which is open — [The login](#the-login-turn-it-on-rotate-the-token-turn-it-off) · [Accounts](#accounts-add-a-person-reset-a-password-disable-a-leaver-issue-a-token) |
+| `curl` or the page answers `{"error":"Forbidden: this needs the admin role (yours: viewer)"}` | the account's role does not allow the verb (local mode): reading needs a viewer, writing an editor, deleting, merging and clearing an admin; `./container-py.sh users role <name> <role>` if that is wrong — [Accounts](#accounts-add-a-person-reset-a-password-disable-a-leaver-issue-a-token) |
 | The login page refuses a token you are sure of | the container was not recreated after `.env.local` changed: `./container-py.sh stop` then `start`; compare with `grep CRUCIBLE_TOKEN .env.local` |
+| The login page refuses a username and password you are sure of | `./container-py.sh users list`: `LOCKED` after ten wrong tries (`users unlock <name>`), `DISABLED` (`users enable`), or the person is on the other instance (accounts are per instance); otherwise `users reset <name>` and hand the new temporary password over |
+| `./container-py.sh users …` says there is no users table | the container runs an image older than v2.23.0, or was started without its entrypoint: `./container-py.sh rebuild` |
 | `./monitor.sh` by hand says `restart failed`, and its log names a port that is not the instance's | before v2.22.1 a generic `PORT` in the shell was honoured; now ignored, and the monitor refuses to restart a container at a port it does not publish. Set `CRUCIBLE_PORT` in the folder's `.env.local` if the instance is on a non-default port |
 | The monitor log shows a restart every five minutes | the container runs an image older than v2.22.0 with the login on somewhere else, or the application really is down: `./container-py.sh logs` |
 
@@ -949,6 +953,7 @@ rm -f data/crucible.db        # re-created empty on next start
 - **Container isolation**: runs rootless (podman) on the VM
 - **Health monitoring**: automated recovery from crashes
 - **The login (v2.22.0)**: a token gate behind one flag, `AUTH_MODE`; one guard declared per router; a login page; a cookie that is a keyed hash of the token; every comparison constant-time; the token in `.env.local` only — [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md), runbook below
+- **Local accounts (v2.23.0)**: `AUTH_MODE=local`; usernames and Argon2-hashed passwords in a `users` table the API never returns and the query console refuses; three roles enforced by one rule; a signed, sliding session cookie keyed by `SESSION_SECRET`; personal tokens for scripts, revoked by name; a lockout after ten wrong passwords — [phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md), runbook below
 - **Cross-origin policy**: closed (v2.22.0, decision A7); `CORS_ORIGINS` reopens it for a named site
 - **Pre-push gate**: `./check-public-safe.sh` must print `✓ SAFE TO PUSH` before
   every public push — it verifies no secret paths are tracked, only sanitised
@@ -976,7 +981,7 @@ chmod 600 .env.local
 ./container-py.sh stop          # through the service: the container is removed
 ./container-py.sh start         # a new container with the two lines; the unit rewritten, owner-only; handed over
 curl --noproxy '*' -sSk https://localhost:49161/api/stats; echo      # {"error":"Not authenticated"}
-CRUCIBLE_TOKEN="$(grep '^CRUCIBLE_TOKEN=' .env.local | cut -d= -f2-)" ./verify-deploy.sh https://localhost:49161   # 18 passed
+CRUCIBLE_TOKEN="$(grep '^CRUCIBLE_TOKEN=' .env.local | cut -d= -f2-)" ./verify-deploy.sh https://localhost:49161   # 19 passed (since v2.23.0; 18 before)
 ```
 
 Hand the token to each person out of band (in person, or the
@@ -1010,13 +1015,94 @@ files. What needs it: everything else, sent as
 into the login page by a person. The maintenance scripts inside the
 container are unaffected: they read the database, not the API.
 
+### Accounts: add a person, reset a password, disable a leaver, issue a token
+
+Since v2.23.0 ([phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md)).
+The second rung: instead of one shared token, one **account** per person,
+with a **role**, and a **personal token** for each script. The accounts
+live in the instance's database and are managed from its folder with
+`./container-py.sh users …`, which runs `backend/scripts/manage_users.py`
+inside the container against the database directly: it works whatever
+`AUTH_MODE` says, so the first admin is created before the switch and a
+locked-out operator can always get back in. A password or a token is
+printed **once**, when made; what the table keeps is a hash.
+
+![The life of an account: add, hand over out of band, first login and change password, a personal token for a script, a reset, a disable; each step one command or one click; secrets shown once and stored as hashes](img/fig_account_lifecycle.svg)
+
+**Turn it on** (done on beta first; production at a moment of the owner's
+choosing, after its own accounts exist — [Step 9](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first) and [Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-when-its-accounts-exist) of the tutorial):
+
+```bash
+# ▶ VM - the instance's folder; the container is running this version (block 3 or 6 rebuilt it)
+./container-py.sh users add <your-username> --role admin --name "<Your Name>"     # a temporary password, shown once
+./container-py.sh users add <person> --role viewer --name "<Their Name>"          # one per person: viewer, editor or admin
+./container-py.sh users list
+sed -i 's|^AUTH_MODE=.*|AUTH_MODE=local|' .env.local                              # the CRUCIBLE_TOKEN line stays: ignored, and your way back
+printf 'SESSION_SECRET=%s\n' "$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" >> .env.local
+chmod 600 .env.local
+./container-py.sh backup
+./container-py.sh stop && ./container-py.sh start                                 # a setting reaches a container only when it is created
+curl --noproxy '*' -sSk https://localhost:49161/api/auth/me; echo                 # {"mode":"local","authenticated":false,"user":null}
+./container-py.sh users token <your-username>                                      # your personal token, once
+CRUCIBLE_TOKEN='<your-username>:…' ./verify-deploy.sh https://localhost:49161     # 19 passed
+```
+
+Hand each temporary password over out of band (in person, or the
+organisation's password manager), never in an e-mail body or a chat; the
+person replaces it on their first visit with *Change password* in the top
+bar. Each instance has its own accounts and its own `SESSION_SECRET`
+(decision A11 again): generated in each folder, never copied across.
+
+| I want to… | Command | Effective |
+|---|---|---|
+| see who exists, with role, state, token, last login | `./container-py.sh users list` (`--json` for a script); never a hash | — |
+| a forgotten password | `./container-py.sh users reset <name>`: a new temporary one, shown once; every browser signed in as them is out within a minute | on their next request |
+| change a role | `./container-py.sh users role <name> viewer\|editor\|admin` | on their next request |
+| a leaver | `./container-py.sh users disable <name>`: refused at the login page, by cookie and by token | at once |
+| back in | `./container-py.sh users enable <name>` | at once |
+| ten wrong passwords | `./container-py.sh users unlock <name>` (or wait fifteen minutes) | at once |
+| a script needs in | `./container-py.sh users token <name>`: `<name>:…`, shown once; sent as `-H "Authorization: Bearer <it>"`, with the account's role | at once |
+| that script is retired | `./container-py.sh users token <name> --revoke` | at once |
+| the account itself gone | `./container-py.sh users remove <name> --apply` (a report without `--apply`); `disable` is usually the better choice | at once |
+
+None of these need a restart. **Roles**, in one line: a viewer reads,
+exports and queries; an editor also uploads, links and edits; an admin also
+deletes, merges, clears, and manages the accounts (from the terminal).
+Too low a role answers 403 naming the role needed; the page shows it as a
+message. The rule is one function, `required_role`, from the request's
+verb and path ([phase SH-3b, Step 4](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-4--three-roles-one-rule)).
+
+**Rotate the session secret** (a leak, or once a quarter): a new value on
+its line, then `stop` and `start`; every browser is signed out at once,
+personal tokens are unaffected.
+
+```bash
+new="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" && sed -i "s|^SESSION_SECRET=.*|SESSION_SECRET=${new}|" .env.local && unset new
+./container-py.sh stop && ./container-py.sh start
+```
+
+**Back to the token, or off:** `sed -i 's|^AUTH_MODE=.*|AUTH_MODE=token|' .env.local`
+(or `off`), then the same `stop` and `start`. The accounts stay in the
+database, ignored until the mode is `local` again.
+
+**After a `restore`** (beta refreshed from production's backup): the
+accounts are part of the database, so beta's are now production's; create
+the testers again with `users add`.
+
+**What the local mode changes for the probes and the scripts:** nothing.
+`/api/health`, `/api/instance` and `/api/auth/me` stay open; the monitor
+and the container's probe ask `/api/health`; the maintenance scripts read
+the database. `./container-py.sh status` holds no personal token, so in
+this mode it reports the counts from the database itself and lists the
+accounts.
+
 ### Protected files (`.gitignore`)
 
 ```
 /certs/            # SSL certificates (plus *.key/*.crt/*.pem/... globs)
 /data/             # SQLite database and runtime data
 /backups/          # local database backups
-.env, .env.*, *.env  # environment files / secrets; the VM keeps CERT_SOURCE, CERT_HOSTNAME, USE_HTTPS and, with the login on, AUTH_MODE and CRUCIBLE_TOKEN in an untracked .env.local (docs/01-setup-rhel8.md §3.2)
+.env, .env.*, *.env  # environment files / secrets; the VM keeps CERT_SOURCE, CERT_HOSTNAME, USE_HTTPS and, with the login on, AUTH_MODE and CRUCIBLE_TOKEN or SESSION_SECRET in an untracked .env.local (docs/01-setup-rhel8.md §3.2)
 node_modules/      # dependencies (installed per machine)
 client/dist/       # build output
 .venv/             # Python virtualenv
@@ -1026,9 +1112,10 @@ client/dist/       # build output
 
 ### Known gaps / future enhancements
 
-- [x] **Authentication, rung 1** — the token gate (v2.22.0): the runbook above, `AUTH_MODE` and `CRUCIBLE_TOKEN` in the environment table. Still to come on the same ladder: local accounts with roles (SH-3b, next) and single sign-on (SH-3c, on hold at the owner's request) — [`13-authentication.md`](13-authentication.md)
-- [ ] Role-based access control (RBAC)
-- [ ] Rate limiting and audit logging
+- [x] **Authentication, rung 1** — the token gate (v2.22.0): the runbook above, `AUTH_MODE` and `CRUCIBLE_TOKEN` in the environment table. Still to come on the same ladder: single sign-on (SH-3c, on hold at the owner's request) — [`13-authentication.md`](13-authentication.md)
+- [x] **Authentication, rung 2** — local accounts (v2.23.0): the accounts runbook above, `SESSION_SECRET` in the environment table, three roles enforced by the guard
+- [ ] Role-based access control in the page (buttons greyed out by role) and an accounts page for the admin (SH-4)
+- [ ] Rate limiting and audit logging (*who* on every record: SH-4)
 - [x] Certificate-expiry monitoring — done: `./cert-expiry-check.sh` (see [Certificate-expiry monitoring](#certificate-expiry-monitoring))
 
 ---

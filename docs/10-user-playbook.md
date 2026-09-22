@@ -225,16 +225,19 @@ were given.
 
 ## Signing in
 
-Since v2.22.0 an instance can ask for an **access token** before it shows
-anything ([`13-authentication.md`](13-authentication.md)); both instances
-on the server do since 2026-09-22, each with its own token, so the token
-for beta does not open production, nor the other way round. The page you see first is then the
-login page, with the same *Prod* / *Beta* pill on its bar so you know where
-you are:
+Since v2.22.0 an instance can ask you to sign in before it shows anything
+([`13-authentication.md`](13-authentication.md)); both instances on the
+server do since 2026-09-22. The page you see first is then the login page,
+with the same *Prod* / *Beta* pill on its bar so you know where you are.
+There are two kinds of login, and the page tells you which one it wants.
+
+**With an access token** (`AUTH_MODE=token`, the first rung; production
+until its accounts exist):
 
 1. Get the token from the person who runs the instance — in person or
    through the organisation's password manager, never by e-mail. It is one
-   long line of letters, digits, `-` and `_`.
+   long line of letters, digits, `-` and `_`; each instance has its own,
+   so beta's does not open production, nor the other way round.
 2. Paste it into the box and click **Sign in**. A wrong or incomplete token
    answers *That token was not accepted*; the words are the same whatever
    was wrong, on purpose.
@@ -243,14 +246,44 @@ you are:
    **Sign out** in the top bar forgets it; so does a new token issued by
    the operator, for everyone at once.
 
-*Everyday version:* the building now has a receptionist. One badge for the
-whole team this month; a badge with your own name on it is the next phase.
+**With your own account** (`AUTH_MODE=local`, since v2.23.0; the beta
+instance first):
 
-If you use `curl` or a script instead of the browser, send the same token
-as a header on every call, `-H "Authorization: Bearer <the token>"`; the
-[API cookbook](08-api-cookbook.md#signing-in-from-a-script) shows it. The
-one address that never needs it is `/api/health`, which is how the monitor
-knows the application is alive.
+1. The person who runs the instance gives you a **username** and a first,
+   temporary **password**, out of band as above. Type both and click
+   **Sign in**. A wrong password answers *That username and password were
+   not accepted* — the same words for an unknown name, a disabled or a
+   locked account, on purpose; ten wrong passwords in a row lock the
+   account for fifteen minutes.
+2. The top bar now shows **your name and your role**: a **viewer** reads,
+   exports and queries; an **editor** also uploads, links and edits; an
+   **admin** also deletes, merges and clears. Hover the role pill for the
+   sentence. A button your role does not cover still shows; clicking it
+   answers a red message, *Forbidden: this needs the admin role (yours:
+   viewer)*, and nothing happens. Ask the operator if your role is wrong.
+3. **Change password**, in the top bar, first thing: the temporary one,
+   then a new one twice, at least eight characters. Only you know it from
+   then on; every other browser signed in as you is signed out within a
+   minute, this one stays in.
+4. Your browser stays signed in while you use it, up to ten hours after
+   your last click. **Sign out** forgets it. Forgot the password? The
+   operator resets it (a new temporary one, shown to them once) — there is
+   no e-mail link.
+
+*Everyday version:* the building now has a receptionist. The first rung
+was one badge for the whole team; the second is a badge with your own name
+on it, which opens the doors your job needs and can be cancelled on its
+own.
+
+![Three roles as three badges, viewer, editor and admin, each including the one below; one rule from the verb and the path decides which badge a request needs; 403 names the role that was missing](img/fig_roles.svg)
+
+If you use `curl` or a script instead of the browser, send a token as a
+header on every call, `-H "Authorization: Bearer <the token>"`: the shared
+token on the first rung, or, with accounts, a **personal token** the
+operator issues for you (`<your-username>:…`, shown once; it carries your
+role); the [API cookbook](08-api-cookbook.md#signing-in-from-a-script)
+shows it. The one address that never needs it is `/api/health`, which is
+how the monitor knows the application is alive.
 
 ![Three callers meet one guard in front of every module: a browser with a cookie and a script with a bearer header pass, anyone else gets 401; health, instance and the login routes stay open](img/fig_token_gate.svg)
 
@@ -261,9 +294,11 @@ knows the application is alive.
 ```
 
 **You should see** sixteen lines of `PASS` and `Everything checks out.` —
-eighteen when the instance has the login on and you pass the token
-(`CRUCIBLE_TOKEN='<the token>' ./verify-deploy.sh https://localhost:49161`);
-without it the script says `this instance needs a token` and stops.
+nineteen when the instance has the login on and you pass a token
+(`CRUCIBLE_TOKEN='<the token>' ./verify-deploy.sh https://localhost:49161`;
+with accounts, your personal token), the three extra lines proving the
+gate, the open health route and who the token belongs to; without a token
+the script says `this instance needs a token` and stops.
 
 **What it means:** every feature has been exercised — the table loads, filters
 work, sorting works, exports work, the query console refuses to write, no

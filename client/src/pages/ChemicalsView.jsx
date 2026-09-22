@@ -76,7 +76,8 @@ export default function ChemicalsView() {
       setRefusal({ message: error.response.data?.error || 'Rows are linked to this compound.', chemicalId })
       return true
     }
-    toast.error(fallback)
+    // SH-3b: a 403 was already explained by the API layer's toast (the role needed); no second, vaguer one.
+    if (error?.response?.status !== 403) toast.error(fallback)
     return false
   }
   const [bulkEditData, setBulkEditData] = useState({

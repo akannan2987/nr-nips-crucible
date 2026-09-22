@@ -1,0 +1,50 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 400' width='940' height='400' role='img' aria-label='The life of an account: add, hand over out of band, first login and change password, a personal token for a script, a reset, a disable; each step one command or one click; secrets shown once and stored as hashes' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='399' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='15' fill='#1f2937' text-anchor='middle' font-weight='bold'>The life of an account: every step is one command in the instance&apos;s folder, or one click in the page</text>
+<rect x='26' y='70' width='140' height='150' rx='10' fill='#ffffff' stroke='#0d9488' stroke-width='1.2'/>
+<text x='96' y='94' font-size='12' fill='#0d9488' text-anchor='middle' font-weight='bold'>add</text>
+<text x='96' y='116' font-size='9' fill='#1f2937' text-anchor='middle' font-weight='normal'>users add alice</text>
+<text x='96' y='129' font-size='9' fill='#1f2937' text-anchor='middle' font-weight='normal'>--role editor</text>
+<text x='96' y='160' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>a temporary password,</text>
+<text x='96' y='174' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>shown once</text>
+<line x1='167' y1='145' x2='173' y2='145' stroke='#374151' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='174' y='70' width='140' height='150' rx='10' fill='#ffffff' stroke='#6b7280' stroke-width='1.2'/>
+<text x='244' y='94' font-size='12' fill='#6b7280' text-anchor='middle' font-weight='bold'>hand over</text>
+<text x='244' y='116' font-size='9' fill='#1f2937' text-anchor='middle' font-weight='normal'>in person, or the</text>
+<text x='244' y='129' font-size='9' fill='#1f2937' text-anchor='middle' font-weight='normal'>password manager</text>
+<text x='244' y='160' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>never an e-mail body,</text>
+<text x='244' y='174' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>never a chat</text>
+<line x1='315' y1='145' x2='321' y2='145' stroke='#374151' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='322' y='70' width='140' height='150' rx='10' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='392' y='94' font-size='12' fill='#4f46e5' text-anchor='middle' font-weight='bold'>first login</text>
+<text x='392' y='116' font-size='9' fill='#1f2937' text-anchor='middle' font-weight='normal'>the page: username</text>
+<text x='392' y='129' font-size='9' fill='#1f2937' text-anchor='middle' font-weight='normal'>+ password</text>
+<text x='392' y='160' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>then Change password</text>
+<text x='392' y='174' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>in the top bar</text>
+<line x1='463' y1='145' x2='469' y2='145' stroke='#374151' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='470' y='70' width='140' height='150' rx='10' fill='#ffffff' stroke='#d97706' stroke-width='1.2'/>
+<text x='540' y='94' font-size='12' fill='#d97706' text-anchor='middle' font-weight='bold'>a script needs in</text>
+<text x='540' y='116' font-size='9' fill='#1f2937' text-anchor='middle' font-weight='normal'>users token alice</text>
+<text x='540' y='160' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>alice:… shown once;</text>
+<text x='540' y='174' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>--revoke ends it</text>
+<line x1='611' y1='145' x2='617' y2='145' stroke='#374151' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='618' y='70' width='140' height='150' rx='10' fill='#ffffff' stroke='#0d9488' stroke-width='1.2'/>
+<text x='688' y='94' font-size='12' fill='#0d9488' text-anchor='middle' font-weight='bold'>forgot it</text>
+<text x='688' y='116' font-size='9' fill='#1f2937' text-anchor='middle' font-weight='normal'>users reset alice</text>
+<text x='688' y='160' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>a new temporary one;</text>
+<text x='688' y='174' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>every browser signed out</text>
+<line x1='759' y1='145' x2='765' y2='145' stroke='#374151' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='766' y='70' width='140' height='150' rx='10' fill='#ffffff' stroke='#be123c' stroke-width='1.2'/>
+<text x='836' y='94' font-size='12' fill='#be123c' text-anchor='middle' font-weight='bold'>leaves</text>
+<text x='836' y='116' font-size='9' fill='#1f2937' text-anchor='middle' font-weight='normal'>users disable alice</text>
+<text x='836' y='160' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>refused at once: page,</text>
+<text x='836' y='174' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>cookie and token</text>
+<rect x='30' y='244' width='880' height='66' rx='10' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='470' y='264' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>also: users list (who exists, role, state, token, last login; never a hash)</text>
+<text x='470' y='279' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>users role alice admin · users unlock alice (after ten wrong passwords) · users enable alice</text>
+<text x='470' y='300' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>every verb is backend/scripts/manage_users.py inside the container, against the database: it works whatever AUTH_MODE says, so the operator can never be locked out</text>
+<rect x='30' y='326' width='880' height='30' rx='6' fill='#fef2f2' stroke='#be123c' stroke-width='1.2'/>
+<text x='470' y='346' font-size='10.5' fill='#991b1b' text-anchor='middle' font-weight='bold'>a password or a token is printed once, when made; what the table keeps is a hash, which checks but cannot reveal</text>
+<text x='470.0' y='380' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>everyday version: reception issues the badge, you pick your own PIN on day one, a lost badge is reissued, and a leaver&apos;s badge is cancelled the same hour</text>
+</svg>

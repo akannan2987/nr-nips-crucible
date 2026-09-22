@@ -867,6 +867,132 @@ def fig_two_tokens() -> None:
     write("fig_two_tokens.svg", svg(W, H, "Two instances side by side, each with its own token in its own settings file and its own group of people; a crossed arrow between them: one token never opens the other door", b))
 
 
+def _badge(cx: float, cy: float, s: float, col: str, label: str) -> str:
+    """A visitor badge: a card on a lanyard with one word on it."""
+    return (f"<path d='M {cx-s*0.25} {cy-s*0.95} Q {cx} {cy-s*1.25} {cx+s*0.25} {cy-s*0.95}' fill='none' stroke='{col}' stroke-width='2'/>\n"
+            f"<rect x='{cx-s*0.7}' y='{cy-s*0.6}' width='{s*1.4}' height='{s*1.1}' rx='{s*0.12}' fill='{col}' fill-opacity='0.16' stroke='{col}' stroke-width='2'/>\n"
+            f"<rect x='{cx-s*0.45}' y='{cy-s*0.75}' width='{s*0.9}' height='{s*0.18}' rx='{s*0.05}' fill='{col}'/>\n"
+            f"<text x='{cx}' y='{cy+s*0.15}' font-size='{s*0.42}' fill='{col}' text-anchor='middle' font-weight='bold'>{esc(label)}</text>\n")
+
+
+def _person(cx: float, cy: float, s: float, col: str) -> str:
+    """A person glyph: head and shoulders."""
+    return (f"<circle cx='{cx}' cy='{cy-s*0.45}' r='{s*0.32}' fill='{col}' fill-opacity='0.18' stroke='{col}' stroke-width='2'/>\n"
+            f"<path d='M {cx-s*0.7} {cy+s*0.6} A {s*0.7} {s*0.7} 0 0 1 {cx+s*0.7} {cy+s*0.6} Z' fill='{col}' fill-opacity='0.18' stroke='{col}' stroke-width='2'/>\n")
+
+
+def fig_local_login() -> None:
+    """SH-3b: a person with a password, a script with a personal token, one table, one signed cookie."""
+    W, H = 940, 560
+    mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
+    acc = COLOURS["sample"]
+    b = text(W/2, 34, "Local accounts (SH-3b): who you are, checked against one table, remembered by a signed note", 16, INK, "middle", "bold")
+    # the two callers
+    b += box(30, 66, 250, 118, "#eef2ff", COLOURS["chemical"], 10)
+    b += _person(70, 118, 22, COLOURS["chemical"])
+    b += text(175, 92, "a person, in the browser", 12, COLOURS["chemical"], "middle", "bold")
+    b += lines(175, 112, ["username + password, once", "POST /api/auth/login", "then the cookie, every request"], 10, INK, "middle", 15)
+    b += box(30, 200, 250, 118, "#f0fdf4", acc, 10)
+    b += text(155, 226, "a script, or curl", 12, acc, "middle", "bold")
+    b += lines(155, 246, ["a personal token, every request", "Authorization: Bearer alice:…", "issued by name, revoked by name"], 10, INK, "middle", 15)
+    b += arrow(282, 125, 336, 200, COLOURS["chemical"])
+    b += arrow(282, 259, 336, 240, acc)
+    # the checks
+    b += box(340, 150, 260, 170, "#fffbeb", COLOURS["screening"], 12)
+    b += _lock(370, 184, 18, COLOURS["screening"], False)
+    b += text(470, 176, "require_user", 12, COLOURS["screening"], "middle", "bold", mono)
+    b += lines(470, 200, ["password → Argon2 verify (slow on purpose)", "token → SHA-256, compared in constant time",
+                          "cookie → signature and age checked", "then: is the account still enabled?",
+                          "then: does the role allow this verb?"], 9.5, INK, "middle", 15)
+    b += text(470, 306, "401 if no · 403 if the role says no · else the answer", 9.5, MUTED)
+    # the table
+    b += box(640, 96, 270, 224, PAPER, LINE, 10)
+    b += text(775, 120, "the users table", 12.5, INK, "middle", "bold", mono)
+    rows = [("username", "alice", True), ("display_name", "Alice Smith", False), ("role", "editor", True),
+            ("enabled", "true", True), ("password_hash", "$argon2id$… (one-way)", False), ("password_version", "3", False),
+            ("token_hash", "sha256(…) or null", False), ("failed_attempts / locked_until", "0 / null", False), ("last_login", "2026-09-23T08:41", False)]
+    for i, (k, v, bold) in enumerate(rows):
+        y = 142 + i * 19
+        b += text(652, y, k, 9.5, MUTED, "start", "normal", mono)
+        b += text(898, y, v, 9.5, INK if not bold else COLOURS["screening"], "end", "bold" if bold else "normal", mono)
+    b += arrow(602, 235, 638, 235, COLOURS["screening"])
+    b += text(775, 312, "never returned by the API, never readable in the query console", 8.5, MUTED)
+    # the cookie
+    b += box(30, 346, 880, 84, "#eef2ff", COLOURS["chemical"], 10)
+    b += text(470, 370, "the session cookie, crucible_session: signed, timestamped, not secret", 12, COLOURS["chemical"], "middle", "bold")
+    b += text(470, 392, "{ u: \"alice\", v: 3 } + issued-at + signature(SESSION_SECRET)   ·   HttpOnly · SameSite=Lax · Secure on HTTPS", 10, INK, "middle", "normal", mono)
+    b += text(470, 412, "valid ten hours from the LAST request (it slides); a reset password moves v and voids it; a disabled account is refused on the next click", 10, INK)
+    # the roles strip
+    b += box(30, 448, 880, 56, PANEL, ACCENT, 8)
+    for i, (role, what, col) in enumerate([("viewer", "read · export · query", LINE), ("editor", "+ upload · link · edit", acc), ("admin", "+ delete · merge · clear · the accounts", COLOURS["chemical"])]):
+        x = 60 + i * 290
+        b += _badge(x + 20, 476, 16, col, role[0].upper())
+        b += text(x + 48, 472, role, 11.5, col, "start", "bold")
+        b += text(x + 48, 490, what, 10, INK, "start")
+    b += text(W/2, 530, "everyday version: reception keeps a list of names with a fingerprint of each key, not the key; your visitor sticker is stamped, dated, and renewed while you are in the building", 10.5, INK)
+    b += text(W/2, 548, "docs/13-authentication.md, rung 2 · backend/app/accounts.py · manage_users.py inside the container", 10.5, MUTED)
+    write("fig_local_login.svg", svg(W, H, "Local accounts: a person signs in with a username and password, a script with a personal token; both are checked against one users table holding hashes, not secrets; the browser is remembered by a signed, sliding cookie; three roles decide what each may do", b))
+
+
+def fig_roles() -> None:
+    """SH-3b: one rule decides the role a request needs, from its verb and path."""
+    W, H = 940, 470
+    mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
+    b = text(W/2, 34, "Three roles, one rule: the verb and the path say which badge a request needs", 16, INK, "middle", "bold")
+    cols = [("viewer", LINE, "#f8fafc", ["GET anything", "POST /api/query (a read)", "downloads and exports"], "Vera, who checks the numbers"),
+            ("editor", COLOURS["sample"], "#f0fdf4", ["everything a viewer may", "POST · PUT: upload, create, edit", "link and unlink rows", "review marks, set an identifier"], "Ed, who loads the files"),
+            ("admin", COLOURS["chemical"], "#eef2ff", ["everything an editor may", "DELETE anything", "bulk delete · merge · clear all", "the accounts (from the terminal)"], "Ada, who runs the instance")]
+    for i, (role, col, fill, rows, who) in enumerate(cols):
+        x = 40 + i * 295
+        b += box(x, 66, 270, 214, fill, col, 12)
+        b += _badge(x + 42, 106, 22, col, role[0].upper())
+        b += text(x + 80, 100, role, 14, col, "start", "bold")
+        b += text(x + 80, 118, who, 10, MUTED, "start")
+        b += lines(x + 135, 150, rows, 10.5, INK, "middle", 18)
+        b += text(x + 135, 262, "a step up includes every step below", 9.5, MUTED)
+        if i < 2:
+            b += arrow(x + 272, 173, x + 293, 173, ACCENT)
+    # the rule
+    b += box(40, 300, 860, 96, "#fffbeb", COLOURS["screening"], 10)
+    b += text(470, 322, "required_role(method, path), in backend/app/auth.py, applied by the one guard on every router", 11.5, COLOURS["screening"], "middle", "bold", mono)
+    b += lines(470, 344, ["GET, HEAD, OPTIONS → viewer  |  POST /api/query → viewer (a read)  |  any other POST, PUT, PATCH → editor",
+                          "DELETE → admin  |  POST …/bulk/delete, …/merge, …/all/clear → admin",
+                          "the answer when the badge is too low: 403 {\"error\": \"Forbidden: this needs the admin role (yours: editor)\"}"], 10, INK, "middle", 17, "normal")
+    b += box(40, 410, 860, 26, PANEL, ACCENT, 6)
+    b += text(470, 427, "with the login off, or on the token rung, every caller is an admin: the rule never refuses, and nothing that worked before changes", 10, INK, "middle", "bold")
+    b += text(W/2, 456, "everyday version: a visitor badge opens the corridors, a staff badge the labs, a keyholder badge the stockroom and the alarm panel", 10.5, MUTED)
+    write("fig_roles.svg", svg(W, H, "Three roles as three badges, viewer, editor and admin, each including the one below; one rule from the verb and the path decides which badge a request needs; 403 names the role that was missing", b))
+
+
+def fig_account_lifecycle() -> None:
+    """SH-3b: an account from creation to disabling, every step one command or one click."""
+    W, H = 940, 400
+    mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
+    b = text(W/2, 34, "The life of an account: every step is one command in the instance's folder, or one click in the page", 15, INK, "middle", "bold")
+    steps = [("add", ["users add alice", "--role editor"], ["a temporary password,", "shown once"], COLOURS["sample"]),
+             ("hand over", ["in person, or the", "password manager"], ["never an e-mail body,", "never a chat"], MUTED),
+             ("first login", ["the page: username", "+ password"], ["then Change password", "in the top bar"], COLOURS["chemical"]),
+             ("a script needs in", ["users token alice"], ["alice:… shown once;", "--revoke ends it"], COLOURS["screening"]),
+             ("forgot it", ["users reset alice"], ["a new temporary one;", "every browser signed out"], COLOURS["sample"]),
+             ("leaves", ["users disable alice"], ["refused at once: page,", "cookie and token"], COLOURS["toxicology"])]
+    for i, (title, cmd, rows, col) in enumerate(steps):
+        x = 26 + i * 148
+        b += box(x, 70, 140, 150, PAPER, col, 10)
+        b += text(x + 70, 94, title, 12, col, "middle", "bold")
+        b += lines(x + 70, 116, cmd, 9, INK, "middle", 13, "normal")
+        b += lines(x + 70, 160, rows, 9.5, MUTED, "middle", 14)
+        if i < 5:
+            b += arrow(x + 141, 145, x + 147, 145, ACCENT)
+    b += box(30, 244, 880, 66, PANEL, LINE, 10)
+    b += lines(470, 264, ["also: users list (who exists, role, state, token, last login; never a hash)",
+                          "users role alice admin · users unlock alice (after ten wrong passwords) · users enable alice"], 10, INK, "middle", 15, "normal")
+    b += text(470, 300, "every verb is backend/scripts/manage_users.py inside the container, against the database: it works whatever AUTH_MODE says, so the operator can never be locked out", 9.2, MUTED)
+    b += box(30, 326, 880, 30, "#fef2f2", COLOURS["toxicology"], 6)
+    b += text(470, 346, "a password or a token is printed once, when made; what the table keeps is a hash, which checks but cannot reveal", 10.5, "#991b1b", "middle", "bold")
+    b += text(W/2, 380, "everyday version: reception issues the badge, you pick your own PIN on day one, a lost badge is reissued, and a leaver's badge is cancelled the same hour", 10.5, INK)
+    write("fig_account_lifecycle.svg", svg(W, H, "The life of an account: add, hand over out of band, first login and change password, a personal token for a script, a reset, a disable; each step one command or one click; secrets shown once and stored as hashes", b))
+
+
 def fig_delete_gate() -> None:
     W, H = 940, 400
     b = text(W/2, 34, "Deleting a compound after CR-6: the clerk refuses, the archivist empties the folder first", 16, INK, "middle", "bold")
@@ -1079,5 +1205,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, fig_two_tokens, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, fig_two_tokens, fig_local_login, fig_roles, fig_account_lifecycle, cover, logo):
         f()

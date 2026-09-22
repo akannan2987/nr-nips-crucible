@@ -17,8 +17,9 @@
 #                       (docs/14-beta-instance.md)
 #   HOST_BIND=<ip>      published-port interface (see below)
 #   PLATFORM=linux/amd64  cross-build target (e.g. building amd64 on an arm64 laptop)
-#   AUTH_MODE=off|token  the login (docs/13-authentication.md); with token,
-#   CRUCIBLE_TOKEN=<secret>  is required. Both normally live in .env.local.
+#   AUTH_MODE=off|token|local  the login (docs/13-authentication.md); token
+#   needs CRUCIBLE_TOKEN=<secret>, local needs SESSION_SECRET=<secret>; the
+#   accounts of the local mode are managed with `users`. All live in .env.local.
 
 DATA_DIR="$(pwd)/data"
 BACKUP_DIR="${BACKUP_DIR:-$(pwd)/backups}"
@@ -32,8 +33,10 @@ CERTS_DIR="$(pwd)/certs"
 #   CRUCIBLE_INSTANCE=beta
 #   CRUCIBLE_PORT=49161
 # and an instance with the login on (docs/13-authentication.md) sets:
-#   AUTH_MODE=token
+#   AUTH_MODE=token                       # rung 1, one shared token, or
 #   CRUCIBLE_TOKEN=<a long random secret>
+#   AUTH_MODE=local                       # rung 2, accounts with passwords and roles
+#   SESSION_SECRET=<a long random secret>
 # Environment variables always override .env.local. Same mechanism as
 # setup-after-clone-py.sh (which reads CERT_SOURCE/CERT_HOSTNAME from it).
 if [ -f "$(pwd)/.env.local" ]; then
@@ -44,6 +47,7 @@ if [ -f "$(pwd)/.env.local" ]; then
     _env_port="${CRUCIBLE_PORT:-}"
     _env_auth_mode="${AUTH_MODE:-}"
     _env_token="${CRUCIBLE_TOKEN:-}"
+    _env_session_secret="${SESSION_SECRET:-}"
     # shellcheck disable=SC1091
     . "$(pwd)/.env.local"
     USE_HTTPS="${_env_use_https:-${USE_HTTPS:-}}"
@@ -53,6 +57,7 @@ if [ -f "$(pwd)/.env.local" ]; then
     CRUCIBLE_PORT="${_env_port:-${CRUCIBLE_PORT:-}}"
     AUTH_MODE="${_env_auth_mode:-${AUTH_MODE:-}}"
     CRUCIBLE_TOKEN="${_env_token:-${CRUCIBLE_TOKEN:-}}"
+    SESSION_SECRET="${_env_session_secret:-${SESSION_SECRET:-}}"
 fi
 
 # ── Instance name ───────────────────────────────────────────────────
@@ -82,31 +87,40 @@ CONTAINER_NAME="crucible-py${INSTANCE_SUFFIX}"
 # the way you want ("Production" instead of "Prod").
 CRUCIBLE_INSTANCE_LABEL="${CRUCIBLE_INSTANCE_LABEL:-}"
 
-# ── The login (phase SH-3a; docs/13-authentication.md) ──────────────
+# ── The login (phases SH-3a and SH-3b; docs/13-authentication.md) ────
 # AUTH_MODE=off (the default) leaves every route open, as before v2.22.0.
 # AUTH_MODE=token with CRUCIBLE_TOKEN=<a long random secret> makes every
 # /api route except health, instance and the login answer 401 without it.
-# Both travel into the container as environment variables. This script
-# never prints the token, and the file that holds it is kept owner-only.
+# AUTH_MODE=local with SESSION_SECRET=<a long random secret> asks for a
+# username and a password instead (accounts made with `users add`), gives
+# each account a role, and lets scripts in with a personal token.
+# All of it travels into the container as environment variables. This
+# script never prints a secret, and the file that holds one is kept
+# owner-only.
 AUTH_MODE="${AUTH_MODE:-off}"
 CRUCIBLE_TOKEN="${CRUCIBLE_TOKEN:-}"
+SESSION_SECRET="${SESSION_SECRET:-}"
 case "$AUTH_MODE" in
-    off|token) ;;
-    *)  echo "✗ AUTH_MODE='$AUTH_MODE' must be off or token (docs/13-authentication.md)"
+    off|token|local) ;;
+    *)  echo "✗ AUTH_MODE='$AUTH_MODE' must be off, token or local (docs/13-authentication.md)"
         exit 1 ;;
 esac
-if [ "$AUTH_MODE" = "token" ]; then
-    if [ "${#CRUCIBLE_TOKEN}" -lt 32 ]; then
-        echo "✗ AUTH_MODE=token needs CRUCIBLE_TOKEN of at least 32 characters (in .env.local, or the environment)."
-        echo "  Generate one:  python3 -c 'import secrets; print(secrets.token_urlsafe(48))'"
-        exit 1
-    fi
-    if [ -f "$(pwd)/.env.local" ] && grep -q '^CRUCIBLE_TOKEN=' "$(pwd)/.env.local" 2>/dev/null; then
-        _perm="$(stat -c %a "$(pwd)/.env.local" 2>/dev/null || stat -f %Lp "$(pwd)/.env.local" 2>/dev/null)"
-        if [ -n "$_perm" ] && [ "$_perm" != "600" ]; then
-            chmod 600 "$(pwd)/.env.local" 2>/dev/null \
-                && echo "ℹ  .env.local holds the token: its permissions are now 600 (owner only)"
-        fi
+if [ "$AUTH_MODE" = "token" ] && [ "${#CRUCIBLE_TOKEN}" -lt 32 ]; then
+    echo "✗ AUTH_MODE=token needs CRUCIBLE_TOKEN of at least 32 characters (in .env.local, or the environment)."
+    echo "  Generate one:  python3 -c 'import secrets; print(secrets.token_urlsafe(48))'"
+    exit 1
+fi
+if [ "$AUTH_MODE" = "local" ] && [ "${#SESSION_SECRET}" -lt 32 ]; then
+    echo "✗ AUTH_MODE=local needs SESSION_SECRET of at least 32 characters (in .env.local, or the environment)."
+    echo "  Generate one:  python3 -c 'import secrets; print(secrets.token_urlsafe(48))'"
+    exit 1
+fi
+if [ "$AUTH_MODE" != "off" ] && [ -f "$(pwd)/.env.local" ] \
+    && grep -qE '^(CRUCIBLE_TOKEN|SESSION_SECRET)=' "$(pwd)/.env.local" 2>/dev/null; then
+    _perm="$(stat -c %a "$(pwd)/.env.local" 2>/dev/null || stat -f %Lp "$(pwd)/.env.local" 2>/dev/null)"
+    if [ -n "$_perm" ] && [ "$_perm" != "600" ]; then
+        chmod 600 "$(pwd)/.env.local" 2>/dev/null \
+            && echo "ℹ  .env.local holds a login secret: its permissions are now 600 (owner only)"
     fi
 fi
 
@@ -305,6 +319,8 @@ show_help() {
     echo "  logs        Show container logs (follow)"
     echo "  status      Show container status, the service, the /api/health probe and the counts"
     echo "  script <name> [args]  Run a maintenance script inside the container"
+    echo "  users <verb> [args]   The login's accounts (AUTH_MODE=local): add, list, reset, role, enable,"
+    echo "              disable, unlock, token, remove; e.g. ./container-py.sh users add alice --role editor"
     echo "  import chemicals <file>   Load a .json/.csv/.tsv/.xlsx/.xls/.sdf file into the registry"
     echo "  export chemicals <file>   Write every registry entry to a JSON file (reviewable, re-importable)"
     echo "              e.g. ./container-py.sh script remove_chemicals.py CHEM-000042 --apply"
@@ -321,8 +337,9 @@ show_help() {
     echo "  CRUCIBLE_INSTANCE=<name>          a second instance from another checkout: image, container"
     echo "                                    and db resources named crucible-py-<name> (docs/14-beta-instance.md)"
     echo "  CRUCIBLE_INSTANCE_LABEL=<word>    what the page's corner says (default: Prod, or the name capitalised)"
-    echo "  AUTH_MODE=off|token               the login (default off); token needs CRUCIBLE_TOKEN (docs/13-authentication.md)"
+    echo "  AUTH_MODE=off|token|local         the login (default off); token needs CRUCIBLE_TOKEN, local needs SESSION_SECRET"
     echo "  CRUCIBLE_TOKEN=<secret>           the shared secret of the token mode; keep it in .env.local, never printed"
+    echo "  SESSION_SECRET=<secret>           signs the local mode's session cookie; keep it in .env.local, never printed"
     echo "  HOST_BIND=<ip>                    published-port interface"
     echo "  PLATFORM=linux/amd64              cross-build target platform"
     echo "  USE_POSTGRES=true                 run the app against PostgreSQL (default: SQLite)"
@@ -376,7 +393,7 @@ start_container() {
         # a credential on a postcard. Loopback (127.0.0.1) is the development
         # exception; anything wider needs HTTPS, or an explicit override.
         if [ "$AUTH_MODE" != "off" ] && [ "$HOST_BIND" != "127.0.0.1" ] && [ "${CRUCIBLE_ALLOW_HTTP_LOGIN:-}" != "true" ]; then
-            echo -e "${RED}✗ AUTH_MODE=${AUTH_MODE} over plain HTTP on ${HOST_BIND}: the token would cross the network unencrypted.${NC}"
+            echo -e "${RED}✗ AUTH_MODE=${AUTH_MODE} over plain HTTP on ${HOST_BIND}: the credentials would cross the network unencrypted.${NC}"
             echo "  Use HTTPS (USE_HTTPS=true in .env.local, certificates in certs/), or, on a machine only you can reach:"
             echo "  CRUCIBLE_ALLOW_HTTP_LOGIN=true ./container-py.sh start"
             exit 1
@@ -402,6 +419,7 @@ start_container() {
             -e CRUCIBLE_INSTANCE_LABEL="${CRUCIBLE_INSTANCE_LABEL}" \
             -e AUTH_MODE="${AUTH_MODE}" \
             -e CRUCIBLE_TOKEN="${CRUCIBLE_TOKEN}" \
+            -e SESSION_SECRET="${SESSION_SECRET}" \
             "${pg_args[@]}" \
             --restart unless-stopped \
             ${IMAGE_NAME}:latest && created="yes"
@@ -532,6 +550,7 @@ start_container_ssl() {
         -e CRUCIBLE_INSTANCE_LABEL="${CRUCIBLE_INSTANCE_LABEL}" \
         -e AUTH_MODE="${AUTH_MODE}" \
         -e CRUCIBLE_TOKEN="${CRUCIBLE_TOKEN}" \
+        -e SESSION_SECRET="${SESSION_SECRET}" \
         -e USE_HTTPS=true \
         -e SSL_CERT_PATH=/app/certs/server.crt \
         -e SSL_KEY_PATH=/app/certs/server.key \
@@ -746,10 +765,24 @@ show_status() {
         echo "Testing API endpoint ($(api_url))..."
         curl --noproxy '*' -sk "$(api_url)"; echo ""
         # The counts, with the token when the login is on (this script has
-        # it; the token itself is never printed).
+        # it; the token itself is never printed). In the local mode the
+        # script holds no credential, so the counts come from the database
+        # itself, through the container's Python, and the accounts are listed.
         if [ "$AUTH_MODE" = "token" ]; then
             echo "login: token — the page asks for it once; scripts send it as Authorization: Bearer (docs/13-authentication.md)"
             curl --noproxy '*' -sk -H "Authorization: Bearer ${CRUCIBLE_TOKEN}" "$(api_base)/api/stats" | head -c 300; echo ""
+        elif [ "$AUTH_MODE" = "local" ]; then
+            echo "login: local — usernames and passwords; scripts send a personal token as Authorization: Bearer (docs/13-authentication.md)"
+            $RUNTIME exec ${CONTAINER_NAME} python -c '
+from sqlalchemy import func, select
+from app.database import SessionLocal
+from app.models import Chemical, Sample, Screening, Toxicology, User
+db = SessionLocal()
+counts = {m.__tablename__: db.scalar(select(func.count()).select_from(m)) for m in (Chemical, Sample, Screening, Toxicology)}
+users = db.scalars(select(User)).all()
+print("counts, from the database:", counts)
+print("accounts:", len(users), "(" + ", ".join(sorted(f"{u.username} {u.doc.get(chr(114)+chr(111)+chr(108)+chr(101))}" for u in users)) + ")" if users else "accounts: none yet (./container-py.sh users add <name> --role admin)")
+' 2>/dev/null || echo "  (the container could not report the counts)"
         else
             echo "login: off — every route answers anyone"
             curl --noproxy '*' -sk "$(api_base)/api/stats" | head -c 300; echo ""
@@ -775,6 +808,22 @@ run_script() {
     shift
     case "$name" in */*) ;; *) name="/app/backend/scripts/${name}" ;; esac
     $RUNTIME exec ${CONTAINER_NAME} python "$name" "$@"
+}
+
+manage_users() {
+    # The login's accounts (AUTH_MODE=local, docs/13-authentication.md):
+    # backend/scripts/manage_users.py, inside the container, against the
+    # database directly, so it works whatever the mode says and can never
+    # lock the operator out. -i keeps stdin open for --password-stdin; -t
+    # only when this terminal is one, so --prompt can hide what is typed.
+    check_podman_machine
+    if ! $RUNTIME ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
+        echo -e "${RED}✗ ${CONTAINER_NAME} is not running: the accounts live in its database (./container-py.sh start)${NC}"
+        return 1
+    fi
+    local tty=()
+    [ -t 0 ] && tty=(-t)
+    $RUNTIME exec -i "${tty[@]}" ${CONTAINER_NAME} python /app/backend/scripts/manage_users.py "$@"
 }
 
 import_file() {
@@ -913,6 +962,7 @@ case "$1" in
     status)   show_status ;;
     shell)    open_shell ;;
     script)   shift; run_script "$@" ;;
+    users)    shift; manage_users "$@" ;;
     import)   import_file "$2" "$3" ;;
     export)   export_file "$2" "$3" ;;
     clean)    clean_up ;;

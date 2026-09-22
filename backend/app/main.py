@@ -8,8 +8,10 @@ Run in production:
 
 This app:
   * answers all /api/* routes (chemicals, samples, screening, toxicology, stats),
-    every one of them behind the login guard when AUTH_MODE is not off; only
-    /api/health, /api/instance and /api/auth/* stay open (docs/13-authentication.md),
+    every one of them behind the login guard when AUTH_MODE is not off: 401
+    without a credential, 403 when the account's role does not allow the verb
+    (local accounts, v2.23.0); only /api/health, /api/instance and /api/auth/*
+    stay open (docs/13-authentication.md),
   * serves the built React client (client/dist) as static files,
   * serves /architecture (interactive architecture doc),
   * returns index.html for any other path so React Router can take over,
@@ -49,8 +51,9 @@ def create_app() -> FastAPI:
     )
 
     # A login that cannot work (a mode this version does not know, the token
-    # rung without a usable token) stops the process here, with the reason,
-    # rather than serving an open port that looks closed.
+    # rung without a usable token, the local rung without a session secret)
+    # stops the process here, with the reason, rather than serving an open
+    # port that looks closed.
     check_settings()
 
     # Cross-origin policy: closed unless CORS_ORIGINS names another site
@@ -73,8 +76,9 @@ def create_app() -> FastAPI:
     # ── API routers (must be registered before the SPA catch-all) ──
     # The guard is declared once per router, not once per route: every route
     # in a guarded router runs only after require_user has returned an
-    # identity, or the caller got 401 (docs/13-authentication.md). With
-    # AUTH_MODE=off the guard lets everyone through, so nothing changes.
+    # identity whose role allows the verb, or the caller got 401 or 403
+    # (docs/13-authentication.md). With AUTH_MODE=off the guard lets everyone
+    # through as an admin, so nothing changes.
     guard = [Depends(require_user)]
     application.include_router(chemicals.router, dependencies=guard)
     application.include_router(samples.router, dependencies=guard)

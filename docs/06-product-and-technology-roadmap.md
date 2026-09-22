@@ -150,9 +150,10 @@ provider (an external dependency and a support relationship); a token scheme
 means issuing and rotating secrets by hand. Either needs a **feature flag**
 so that internal users are not locked out mid-week.
 *Verdict:* **Required now**, as a ladder — *decided 2026-09-08; the first
-rung built 2026-09-22 (v2.22.0, [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)):*
+two rungs built 2026-09-22 (v2.22.0, [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md);
+v2.23.0, [phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md)):*
 a token gate first (SH-3a, shipped, on both instances), local
-accounts in full next (SH-3b), and **single sign-on as the destination**
+accounts in full next (SH-3b, shipped: one login per person with a role, on beta first), and **single sign-on as the destination**
 (SH-3c, on hold: the owner decided on 2026-09-22 that it is not needed for
 the moment, to be revisited). The full plan, with every method explained, the ones rejected,
 and what to ask the organisation for, is
@@ -509,7 +510,7 @@ marketed.
 | Multi-user hosted deployment | Recommended later | A second laboratory |
 | Desktop packaging | Not needed | Field site with no runtime allowed |
 | Licensing and payments | Not needed | An external customer |
-| Authentication — a ladder: token gate → local accounts → SSO ([plan](13-authentication.md)) | **Required now** (SH-3a/b/c) | SH-3a: the owner's go · SH-3c: the identity team's registration |
+| Authentication — a ladder: token gate → local accounts → SSO ([plan](13-authentication.md)) | **Required now** (SH-3a ✅ v2.22.0 · SH-3b ✅ v2.23.0 · SH-3c ⏸) | SH-3c: the owner's ask and the identity team's registration |
 | The container image published to a registry (the package) | Recommended later (SH-10) | A second deployment or the Windows walk; a registry agreed with the organisation |
 | Role-based access control | Recommended later | Authentication + a second user class |
 | Audit trail and version history | Recommended later | Authentication |

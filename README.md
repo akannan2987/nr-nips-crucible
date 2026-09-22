@@ -233,7 +233,7 @@ get, and likely mistakes get a named fix.
 | 10 | **[Chemical Registry tasks](docs/10-registry-tasks.md)** | **Routine registry work, one table per task**, in the order tasks come up: look up, add, load, edit, link, remove, merge, audit, PubChem, export, reset — browser, API and terminal side by side |
 | 11 | **[Lessons learned](docs/11-lessons-learned.md)** | Every bug that real verification found, and what each taught |
 | 12 | **[History](docs/12-history.md)** | The Node → Python migration and other retired decisions |
-| 13 | **[Authentication](docs/13-authentication.md)** | The ladder from an open port to single sign-on: what a login is, three secure ways to add one, why in that order, what to ask the organisation for; **the first rung, a token gate, is built (v2.22.0)** |
+| 13 | **[Authentication](docs/13-authentication.md)** | The ladder from an open port to single sign-on: what a login is, three secure ways to add one, why in that order, what to ask the organisation for; **the first two rungs are built: a token gate (v2.22.0) and local accounts with roles (v2.23.0)** |
 | 15 | **[Starting, stopping and checking](docs/15-run-stop-status.md)** | Is it running? Stop it, start it, restart it, and keep it running after the server reboots; the script and the service as two doors into the same room, with what each output means |
 | 14 | **[Beta instance](docs/14-beta-instance.md)** | A second copy of the application on the same server for end users to test — its own branch, port and data; how a change is published to it and promoted to production (built as phase SH-12, v2.20.0; the server setup is [RHEL 8 guide §8](docs/01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta)) |
 | — | **[Decision records](docs/adr/README.md)** | One page per design decision: context, choice, alternatives, consequences |
@@ -304,14 +304,17 @@ full list and why each is excluded: [Operations → Security](docs/07-operations
   against a registry; a molecular formula is not checked against the structure.
   RDKit will reject a structure file it cannot parse, and that is the extent of
   the validation.
-- **The login is one shared token, and off by default.** Since v2.22.0 an
-  instance can be closed with `AUTH_MODE=token`: every route then needs the
-  token, as a header from a script or pasted once into the login page. It
-  says "someone with the token", never who: accounts and roles are the next
-  rung ([`docs/13-authentication.md`](docs/13-authentication.md)). Both
-  instances on the laboratory's server have it on since 2026-09-22, each
-  with its own token; a fresh installation is open until its operator
-  writes the two lines.
+- **The login is off by default, and has two forms.** Since v2.22.0 an
+  instance can be closed with `AUTH_MODE=token`: one shared token, as a
+  header from a script or pasted once into the login page; it says
+  "someone with the token", never who. Since v2.23.0 `AUTH_MODE=local`
+  gives each person an account with a role (viewer, editor, admin), a
+  password stored only as an Argon2 hash, and a personal token for scripts;
+  the accounts are managed from the terminal, not yet from a page
+  ([`docs/13-authentication.md`](docs/13-authentication.md)). Both
+  instances on the laboratory's server have a login since 2026-09-22, the
+  beta instance with accounts first; a fresh installation is open until its
+  operator turns one on. Single sign-on is planned and on hold.
 - **There is no audit trail.** Records can be edited and deleted, and nothing
   records who did it or what it was before. Do not use this as evidence of what
   a value was on a given date.

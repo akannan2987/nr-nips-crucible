@@ -16,6 +16,7 @@ stored verbatim in its table's `doc` JSON column (JSONB on PostgreSQL).
 - [Schema Structure](#schema-structure)
 - [Collections](#collections)
 - [Relationships](#relationships)
+- [The users table](#the-users-table)
 - [Indexes and Constraints](#indexes-and-constraints)
 - [Sample Data](#sample-data)
 
@@ -461,10 +462,20 @@ erDiagram
         int seq
         json doc "doses, endpoints, NOAEL…"
     }
+    USERS {
+        string id PK
+        string username UK "lowercase, unique"
+        string created_at
+        int seq
+        json doc "display_name, role, enabled, password_hash, token_hash, last_login…"
+    }
     CHEMICALS ||--o{ SCREENING : "one chemical, many results"
     CHEMICALS ||--o{ TOXICOLOGY : "one chemical, many studies"
     CHEMICALS }o--o{ SAMPLES : "a sample lists its chemical_ids (app-managed, no hard foreign key)"
 ```
+
+`USERS` (v2.23.0) stands alone: no record points at an account yet (*who*
+on every record is the audit trail, SH-4).
 
 ### Relationship Rules
 
@@ -622,6 +633,40 @@ SELECT doc FROM screening WHERE chemical_id = 'CHEM-001' ORDER BY seq;
 
 ---
 
+## The users table
+
+Since v2.23.0 ([phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md)),
+the login's accounts, in the same hybrid pattern as every table: `id`,
+`username` (unique, indexed, lowercase), `created_at`, `seq`, and the
+document. Migration `0002_users` creates it; an existing database gains an
+empty table on the first start after the upgrade and nothing else changes.
+
+| In `doc` | What it is |
+|---|---|
+| `display_name`, `role`, `enabled` | what the page shows; `viewer`, `editor` or `admin`; a disabled account is refused everywhere |
+| `password_hash` | an **Argon2id** hash (`$argon2id$v=19$m=65536,t=3,p=4$…`): checks a password, never reveals it |
+| `password_version`, `password_changed_at` | moves on every reset or change; the session cookie carries the version it was issued with, so a reset signs the person out everywhere (the previous version is honoured for a minute so requests in flight complete) |
+| `token_hash`, `token_issued_at` | the SHA-256 of the personal token a script presents; the token itself is shown once and never stored |
+| `failed_attempts`, `locked_until` | the lockout after ten wrong passwords |
+| `last_login`, `created_at`, `updated_at` | bookkeeping |
+
+**What never leaves the table.** No API route returns a user document
+(`GET /api/auth/me` answers the four-field identity); the read-only query
+console refuses any statement that names `users` and leaves the table out
+of its schema listing; the management script prints no hash. A hash is not
+a password, but it is the one thing in the database that must not be
+readable by everyone who may read the rest.
+
+![Local accounts: a person signs in with a username and password, a script with a personal token; both are checked against one users table holding hashes, not secrets; the browser is remembered by a signed, sliding cookie; three roles decide what each may do](img/fig_local_login.svg)
+
+The accounts travel with the database: a backup holds them, a `restore`
+brings them along (so a beta instance refreshed from production carries
+production's accounts until the testers are created again), and the
+container's `users` command reads and writes them in place
+([`07-operations.md` → Accounts](07-operations.md#accounts-add-a-person-reset-a-password-disable-a-leaver-issue-a-token)).
+
+---
+
 ## Migration Considerations
 
 ### Column normalisation (future)
@@ -645,5 +690,5 @@ single source of truth, so API responses are unaffected.
 
 ---
 
-**Last Updated:** August 7, 2026  
-**Schema Version:** 2.0
+**Last Updated:** September 22, 2026 (the users table, v2.23.0)  
+**Schema Version:** 2.0 · Alembic head `0002_users`

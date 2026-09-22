@@ -135,6 +135,8 @@ if [ -n "$ok" ]; then
     curl --noproxy '*' -ks "${PROTO}://localhost:${APP_PORT}/api/health"; echo ""
     if [ "$AUTH_MODE" = "token" ]; then
         echo "    login: on (AUTH_MODE=token) — the page asks for the token once; scripts send it as Authorization: Bearer"
+    elif [ "$AUTH_MODE" = "local" ]; then
+        echo "    login: on (AUTH_MODE=local) — the page asks for a username and password; accounts: ./container-py.sh users list"
     else
         echo "    login: off — every route answers anyone (docs/13-authentication.md to turn it on)"
     fi
@@ -191,6 +193,8 @@ echo "  ${PROTO}://localhost:${APP_PORT}"
 echo "  ${PROTO}://$(hostname):${APP_PORT}   (from another machine)"
 if [ "$AUTH_MODE" = "token" ]; then
     echo "  The page asks for the access token (CRUCIBLE_TOKEN in this folder's .env.local); paste it once."
+elif [ "$AUTH_MODE" = "local" ]; then
+    echo "  The page asks for a username and password. No accounts yet? ./container-py.sh users add <name> --role admin"
 fi
 echo ""
 echo "Useful commands:"

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const API_BASE = '/api';
 
@@ -13,14 +14,16 @@ const api = axios.create({
 export const getStats = () => api.get('/stats');
 // SH-13: which instance is answering (name, label, port, https); open, no data
 export const getInstance = () => api.get('/instance');
-// SH-3a: the login (docs/13-authentication.md). /auth/me is open and says
-// whether a login is needed and whether this browser is signed in; login
-// posts the token once and the server answers with a cookie the browser
-// then sends on every request (downloads included, which a header could
-// not cover); logout clears it.
+// SH-3a and SH-3b: the login (docs/13-authentication.md). /auth/me is open
+// and says which mode is on and whether this browser is signed in; login
+// posts the credential once ({token} on the token rung, {username, password}
+// on the local rung) and the server answers with a cookie the browser then
+// sends on every request (downloads included, which a header could not
+// cover); logout clears it; password lets a signed-in person change theirs.
 export const getAuthMe = () => api.get('/auth/me');
-export const login = (token) => api.post('/auth/login', { token });
+export const login = (credentials) => api.post('/auth/login', credentials);
 export const logout = () => api.post('/auth/logout');
+export const changePassword = (current, next) => api.post('/auth/password', { current, new: next });
 
 // Chemicals
 // `config` may carry an AbortController signal so a superseded list request is cancelled (v2.18.2).
@@ -126,6 +129,9 @@ export const uploadToxicologyExcel = (formData) =>
 // login page, and the page that asked is mounted again after the login, so
 // it asks again. The auth calls themselves are left alone: a wrong token on
 // the login page is that page's own business.
+// SH-3b: a 403 means "signed in, but your role does not allow this". The
+// server names the role needed; one toast says so, and the page's own error
+// handling runs as before (the action simply did not happen).
 export const UNAUTHENTICATED_EVENT = 'crucible:unauthenticated';
 api.interceptors.response.use(
   (response) => response,
@@ -134,6 +140,9 @@ api.interceptors.response.use(
     const url = error?.config?.url || '';
     if (status === 401 && !url.startsWith('/auth/')) {
       window.dispatchEvent(new Event(UNAUTHENTICATED_EVENT));
+    }
+    if (status === 403) {
+      toast.error(error?.response?.data?.error || 'Your role does not allow this.', { id: 'forbidden' });
     }
     return Promise.reject(error);
   }

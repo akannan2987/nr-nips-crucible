@@ -77,3 +77,25 @@ class Toxicology(Base):
     created_at: Mapped[str | None] = mapped_column(String(40))
     seq: Mapped[int] = mapped_column(Integer, index=True)
     doc: Mapped[dict[str, Any]] = mapped_column(JSONDoc)
+
+
+class User(Base):
+    """A person (or a script acting for one) who may log in: rung 2 of the
+    login, phase SH-3b (docs/13-authentication.md).
+
+    The same hybrid pattern as every other table. The document holds the
+    display name, the role, the enabled flag, the Argon2 password hash, the
+    hash of the personal token, the login bookkeeping (last login, failed
+    attempts, lock). The password itself is never stored anywhere; the hash
+    can check one, never reveal it. Nothing on this table is ever returned
+    by the API: /api/auth/me answers the four-field identity, the query
+    console refuses this table, and the management script prints no hash.
+    """
+
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    username: Mapped[str | None] = mapped_column(String(64), unique=True, index=True)
+    created_at: Mapped[str | None] = mapped_column(String(40))
+    seq: Mapped[int] = mapped_column(Integer, index=True)
+    doc: Mapped[dict[str, Any]] = mapped_column(JSONDoc)

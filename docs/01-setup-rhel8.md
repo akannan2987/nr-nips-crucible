@@ -576,7 +576,9 @@ EOF
 #   uninstall). Without it, `rebuild` can only preserve the mode of an
 #   EXISTING container — from scratch it would default to HTTP.
 # AUTH_MODE / CRUCIBLE_TOKEN → the login, two more lines once you turn it on
-#   (off by default; docs/13-authentication.md, phase SH-3a Step 7).
+#   (off by default; docs/13-authentication.md, phase SH-3a Step 7);
+#   AUTH_MODE=local / SESSION_SECRET → accounts with roles instead of the
+#   shared token, once the accounts exist (phase SH-3b Step 9).
 ./setup-after-clone-py.sh
 ```
 
@@ -2005,7 +2007,8 @@ container.
 | Give the testers a fresh copy of production | the two commands of 8.4 |
 | See what beta has that production does not | `git log --oneline origin/master..origin/beta` (after `git fetch origin`) |
 | Promote it to production | not from here — [`03-git-workflow.md` Step 11](03-git-workflow.md#step-11---promote-to-production-when-the-testers-agree), from the development machine and the mirror folder, then production's own folder |
-| Turn the login on (since v2.22.0) | two lines in this folder's `.env.local`, then `./container-py.sh stop` and `start` — [phase SH-3a, Step 7](04-phase-tutorials/phase-sh-3a-token-gate.md#step-7--turn-it-on-beta-first); the testers get the token out of band; production's port stays open |
+| Turn the login on (since v2.22.0) | two lines in this folder's `.env.local`, then `./container-py.sh stop` and `start` — [phase SH-3a, Step 7](04-phase-tutorials/phase-sh-3a-token-gate.md#step-7--turn-it-on-beta-first); the testers get the token out of band |
+| Give each tester an account (since v2.23.0) | `./container-py.sh users add <name> --role viewer\|editor\|admin` in this folder, then `AUTH_MODE=local` and a `SESSION_SECRET` in `.env.local`, `stop` and `start` — [phase SH-3b, Step 9](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first); each tester gets a temporary password out of band and changes it in the page; production keeps its token until its own accounts exist |
 | Remove the beta instance | `./uninstall.sh --dry-run` here first: it opens with `Instance: beta` and lists only beta's container, image, unit and cron line; then the mode you mean. Production is not listed and not touched |
 
 The weekly certificate check (section 3.4) and the nightly backup (6.3)

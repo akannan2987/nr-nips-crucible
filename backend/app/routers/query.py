@@ -4,9 +4,10 @@ Useful because the tables store whole records as JSON: questions like "which
 simulants produced the highest migration for this compound" are a few lines of
 SQL and are otherwise not answerable from the interface at all.
 
-**Safety.** `/api/*` carries no authentication, so anyone who can reach the
-port can call this. Three independent measures, in order of how much they are
-relied upon:
+**Safety.** Until v2.22.0 `/api/*` carried no authentication, so anyone who
+could reach the port could call this; since then the login guards it like
+every other route, and a viewer may use it (reading is a viewer's right).
+Four independent measures, in order of how much they are relied upon:
 
 1. **A read-only database connection.** On SQLite the file is opened with
    `mode=ro`, so the database itself refuses to write. This is the guarantee —
@@ -14,6 +15,11 @@ relied upon:
 2. **One statement only.** A trailing `; DROP TABLE …` is rejected before the
    database sees it.
 3. **A statement allow-list.** Only `SELECT` and `WITH … SELECT` run.
+4. **The `users` table is out of bounds.** Since v2.23.0 it holds the
+   accounts' password hashes and token hashes (phase SH-3b); a query that
+   names it is refused, and the schema listing does not show it. A hash is
+   not a password, but it is the one thing in the database that must not be
+   readable by everyone who may read the rest.
 
 Keyword filtering alone would not be enough: it is guessable and escapable. The
 read-only connection is what actually makes this safe, which is why it is not
@@ -49,6 +55,11 @@ _FORBIDDEN = re.compile(
     r"pragma|vacuum|reindex|grant|revoke)\b",
     re.IGNORECASE,
 )
+# The accounts table (phase SH-3b): password and token hashes live there.
+# Matched as a whole word so a column or value merely containing the letters
+# ("users_note") is not refused. A quoted or schema-qualified spelling
+# ("users", main.users) is caught the same way: the word is still there.
+_PRIVATE_TABLES = re.compile(r"\b(users)\b", re.IGNORECASE)
 
 
 def _strip_sql_comments(sql: str) -> str:
@@ -80,6 +91,12 @@ def validate(sql: str) -> str:
         raise HTTPException(
             status_code=400,
             detail=f"'{found.group(0).upper()}' is not allowed — this endpoint is read-only.",
+        )
+    private = _PRIVATE_TABLES.search(bare)
+    if private:
+        raise HTTPException(
+            status_code=400,
+            detail=f"The '{private.group(0).lower()}' table holds the login's accounts and cannot be queried here.",
         )
     return bare
 

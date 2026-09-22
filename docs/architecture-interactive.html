@@ -492,7 +492,7 @@
               <li><code>GET/POST/PUT/DELETE /api/chemicals</code> — CRUD operations for chemical records.</li>
               <li><code>POST /api/chemicals/upload/excel</code> — bulk import from Excel via UploadFile + openpyxl.</li>
               <li><code>GET/POST /api/samples</code>, <code>/api/screening</code>, <code>/api/toxicology</code> — similar patterns for other collections.</li>
-              <li><code>GET /api/health</code> — the open health probe (container healthcheck, monitoring cron); <code>GET /api/stats</code> — record counts, behind the login when it is on.</li>
+              <li><code>GET /api/health</code> — the open health probe (container healthcheck, monitoring cron); <code>GET /api/stats</code> — record counts, behind the login when it is on; <code>/api/auth/*</code> — who am I, log in (a token, or a username and password with a role since v2.23.0), log out, change my password.</li>
               <li><b>External API proxy:</b> can call PubChem or LabKey to enrich or sync data without exposing credentials to the frontend.</li>
               <li>Also serves the compiled React static files (HTML/JS/CSS) so only one port is needed — plus free interactive API docs at <code>/docs</code>.</li>
             </ul>

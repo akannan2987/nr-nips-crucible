@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom'
 import { getChemicalNotices, getInstance } from '../services/api'
 import { BASE_TITLE, styleFor } from './instanceStyle'
 import { useAuth } from './AuthGate'
+import ChangePassword from './ChangePassword'
 import {
   BeakerIcon,
   HomeIcon,
@@ -16,6 +17,7 @@ import {
   CommandLineIcon,
   FlagIcon,
   ArrowRightOnRectangleIcon,
+  UserCircleIcon,
 } from '@heroicons/react/24/outline'
 
 // SH-13: the instance colours and the base tab title live in instanceStyle.js,
@@ -79,7 +81,16 @@ export default function Layout() {
   const instanceStyle = styleFor(instance)
   // SH-3a: with a login on, the top bar offers to sign out (forget this
   // browser's cookie); with the login off there is nothing to sign out of.
+  // SH-3b: it also says who is signed in and with which role, and on the
+  // local rung offers to change the password.
   const auth = useAuth()
+  const [changingPassword, setChangingPassword] = useState(false)
+  const role = auth.user?.roles?.[0]
+  const ROLE_HINT = {
+    viewer: 'viewer: you can read, export and query, not change anything',
+    editor: 'editor: you can also upload, link and edit; deleting and merging need an admin',
+    admin: 'admin: you can do everything, including delete, merge and clear',
+  }
 
   const [expandedMenu, setExpandedMenu] = useState(null)
   const location = useLocation()
@@ -322,6 +333,31 @@ export default function Layout() {
               )}
             </h1>
             <div className="flex items-center space-x-4">
+              {auth.mode !== 'off' && auth.user && (
+                <span
+                  className="hidden sm:flex items-center text-sm text-gray-600"
+                  title={ROLE_HINT[role] || role}
+                  data-testid="signed-in-as"
+                >
+                  <UserCircleIcon className="h-5 w-5 mr-1.5 text-gray-400" />
+                  {auth.user.display_name}
+                  {role && (
+                    <span className="ml-1.5 rounded-full border bg-gray-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-600" data-testid="role-label">
+                      {role}
+                    </span>
+                  )}
+                </span>
+              )}
+              {auth.mode === 'local' && (
+                <button
+                  onClick={() => setChangingPassword(true)}
+                  className="hidden sm:flex items-center rounded-lg border bg-white px-2.5 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  title="Replace the password you were given with one only you know"
+                  data-testid="change-password"
+                >
+                  Change password
+                </button>
+              )}
               {auth.mode !== 'off' && (
                 <button
                   onClick={auth.signOut}
@@ -347,6 +383,7 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+      {changingPassword && <ChangePassword onClose={() => setChangingPassword(false)} />}
     </div>
   )
 }

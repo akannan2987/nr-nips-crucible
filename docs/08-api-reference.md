@@ -9,7 +9,7 @@ Complete REST API reference for the Chemical and Sample Management System.
 
 > 🔒 **Note:** Production endpoints use HTTPS. Add `-k` flag to `curl` commands if using self-signed certificates. All examples below show production HTTPS URLs.
 >
-> 🔑 **Since v2.22.0:** with the login on (`AUTH_MODE=token`), add `-H "Authorization: Bearer <the token>"` to every command below except the three open routes — [Authentication](#authentication) · [Health and login](#health-and-login).
+> 🔑 **Since v2.22.0:** with the login on, add `-H "Authorization: Bearer <the token>"` to every command below except the three open routes: the shared token with `AUTH_MODE=token`, a personal token (`<username>:…`, from `./container-py.sh users token <name>`) with `AUTH_MODE=local` (v2.23.0), where the account's role also decides what the call may do — [Authentication](#authentication) · [Health and login](#health-and-login).
 
 ---
 
@@ -147,8 +147,28 @@ curl --noproxy '*' -sSk -H "Authorization: Bearer <the token>" https://<vm-hostn
 A browser presents the same token once on the login page and is then
 remembered by a cookie. With `AUTH_MODE=off`, the default on a fresh
 installation, nothing is required; both instances on the laboratory's
-server have the gate on since 2026-09-22, each with its own token. Accounts,
-roles and single sign-on are later rungs of the same ladder.
+server have the gate on since 2026-09-22, each with its own token.
+
+**Since v2.23.0, `AUTH_MODE=local` ([phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md)):**
+the instance has **accounts**. A person signs in with a username and a
+password; a script presents a **personal token** issued for one account
+(`./container-py.sh users token <name>`), `<username>:<secret>`, in the same
+header:
+
+```bash
+curl --noproxy '*' -sSk -H "Authorization: Bearer alice:…" https://<vm-hostname>:49161/api/stats
+```
+
+Every identity carries one **role**, and one rule in the guard decides the
+role a request needs from its verb and path: `GET` (and `POST /api/query`,
+a read) need a **viewer**; `POST`, `PUT` and `PATCH` an **editor**;
+`DELETE`, and the three `POST` routes that reshape records in one call
+(`…/bulk/delete`, `…/merge`, `…/all/clear`), an **admin**. Too low a role
+answers `403 {"error": "Forbidden: this needs the admin role (yours: editor)"}`.
+With the login off or on the token rung every caller is an admin, so
+nothing on this page changes there. The `users` table is never returned by
+any route and is refused by the query console. Single sign-on is a later
+rung of the same ladder.
 
 ### Rate Limiting
 
@@ -339,32 +359,63 @@ load to decide whether to show the login.
 ```json
 {"mode": "token", "authenticated": false, "user": null}
 {"mode": "token", "authenticated": true, "user": {"subject": "token", "display_name": "Token holder", "roles": ["admin"], "via": "token"}}
+{"mode": "local", "authenticated": true, "user": {"subject": "alice", "display_name": "Alice Smith", "roles": ["editor"], "via": "local"}}
+{"mode": "local", "authenticated": true, "user": {"subject": "alice", "display_name": "Alice Smith", "roles": ["editor"], "via": "token"}}
 {"mode": "off", "authenticated": true, "user": {"subject": "anyone", "display_name": "Anyone (login off)", "roles": ["admin"], "via": "off"}}
 ```
 
 | Field of `user` | Meaning |
 |---|---|
-| `subject` | Who: `anyone` with the login off, `token` on rung 1; a username on later rungs |
+| `subject` | Who: `anyone` with the login off, `token` on rung 1; the username on rung 2 |
 | `display_name` | What a page may show |
-| `roles` | `["admin"]` on rungs 0 and 1 (every holder may do everything); *viewer*, *editor*, *admin* from rung 2 |
-| `via` | How the identity was established: `off`, `token`; later `local`, `sso` |
+| `roles` | `["admin"]` on rungs 0 and 1 (every holder may do everything); one of `viewer`, `editor`, `admin` on rung 2 |
+| `via` | How the identity was established: `off`; `token` (the shared token on rung 1, a personal token on rung 2); `local` (a username and password, by cookie); later `sso` |
 
 ### Log in
 
-`POST /api/auth/login` with `{"token": "<the token>"}` — on success 200 and
+`POST /api/auth/login` — on success 200, the identity, and
 `Set-Cookie: crucible_session=…; HttpOnly; Max-Age=36000; Path=/; SameSite=lax`
-(plus `Secure` over HTTPS); the value is a keyed hash of the token, not the
-token. A wrong token: 401 with the same body as a missing one, after a
-quarter of a second, and no cookie. With the login off: 400.
+(plus `Secure` over HTTPS). A wrong credential: 401 with the same body as a
+missing one, after a quarter of a second, and no cookie. With the login off: 400.
+
+- `AUTH_MODE=token`: `{"token": "<the token>"}`; the cookie's value is a
+  keyed hash of the token, not the token.
+- `AUTH_MODE=local` (v2.23.0): `{"username": "alice", "password": "…"}`; the
+  cookie is signed with the instance's `SESSION_SECRET`, names the user and
+  the version of their password, and is re-issued with the answer after
+  five minutes of age, so the ten hours count from the last request. Ten
+  wrong passwords in a row lock the account for fifteen minutes (still 401,
+  the same words).
 
 ```bash
 curl --noproxy '*' -sSk -c jar.txt -H 'Content-Type: application/json' -d '{"token":"<the token>"}' https://localhost:49161/api/auth/login
+curl --noproxy '*' -sSk -c jar.txt -H 'Content-Type: application/json' -d '{"username":"alice","password":"…"}' https://localhost:49161/api/auth/login
 curl --noproxy '*' -sSk -b jar.txt https://localhost:49161/api/stats | head -c 60
 ```
 
 ### Log out
 
 `POST /api/auth/logout` — clears the cookie; 200 whether or not one was set.
+
+### Change my password
+
+`POST /api/auth/password` with `{"current": "…", "new": "…"}` — the local
+mode only, for a person signed in by cookie (a personal token cannot: 401).
+The current password must be right (`400 {"error": "The current password is
+not right"}`) and the new one at least eight characters (`400 {"error": "A
+password needs at least 8 characters"}`). On success 200, the identity, and
+a fresh cookie for this browser; every other browser signed in as this
+person is signed out within a minute (the previous password version is
+honoured for sixty seconds so that requests already in flight complete).
+On the other rungs: 400.
+
+```bash
+curl --noproxy '*' -sSk -b jar.txt -c jar.txt -H 'Content-Type: application/json' -d '{"current":"…","new":"a longer passphrase"}' https://localhost:49161/api/auth/password
+```
+
+The accounts themselves (create, reset, role, enable, disable, token) have
+no HTTP route in this version: they are managed from the terminal with
+`./container-py.sh users …` ([`07-operations.md` → Accounts](07-operations.md#accounts-add-a-person-reset-a-password-disable-a-leaver-issue-a-token)).
 
 ## Chemicals
 
@@ -1662,6 +1713,7 @@ Records are addressed by their `id` (UUID, returned on create).
 | 201 | Created |
 | 400 | Bad Request (validation error) |
 | 401 | Not authenticated: the login is on and no valid token (header) or cookie was presented — [Authentication](#authentication) |
+| 403 | Forbidden: the account's role does not allow this verb on this path (local mode, v2.23.0); the body names the role needed — [Authentication](#authentication) |
 | 404 | Not Found |
 | 500 | Internal Server Error |
 | 503 | `/api/health` only: the database is not reachable |

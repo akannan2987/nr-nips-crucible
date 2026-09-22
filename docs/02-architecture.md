@@ -314,14 +314,22 @@ backend/app/routers/
 ├── stats.py           # Dashboard statistics
 ├── instance.py        # Which instance is answering: name, label, port (SH-13)
 ├── health.py          # GET /api/health, open on every rung: ok, or 503 (SH-3a)
-└── auth.py            # /api/auth: who am I, log in, log out (SH-3a)
+└── auth.py            # /api/auth: who am I, log in (a token, or a username and password), log out, change my password (SH-3a, SH-3b)
 ```
 
 The guard every protected router declares, `require_user`, lives in
 `backend/app/auth.py` and is attached once per router in `main.py`, so a
 route added later is guarded without anyone remembering to guard it
 ([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)). The three
-routers above that stay open are registered without it.
+routers above that stay open are registered without it. Since v2.23.0 the
+same guard applies one rule for the **role** a request needs, from its
+verb and path (`required_role`: reading needs a viewer, writing an editor,
+deleting an admin), and answers 403 when the account's role is too low;
+the accounts themselves live in `backend/app/accounts.py`, one module
+behind the login route, the guard and the management script
+([phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md)).
+
+![Three roles as three badges, viewer, editor and admin, each including the one below; one rule from the verb and the path decides which badge a request needs; 403 names the role that was missing](img/fig_roles.svg)
 
 ### 3. Business Logic Layer
 
@@ -465,6 +473,8 @@ backend/app/
 ├── audit.py        # what needs a person's eye; the review mark (browser, API, script)
 ├── merge.py        # fold entries into one survivor: carry over, repoint, clean, delete
 ├── tags.py         # where an entry came from, as derived tags; the counts strip; the filters
+├── accounts.py     # the login's accounts (SH-3b): Argon2 hashing, roles, personal tokens, the lockout; one module behind the route, the guard and the script
+├── auth.py         # the guard, require_user: who is asking, on every rung; the role rule (SH-3a, SH-3b)
 ├── routers/        # one file per resource
 └── utils/          # sdf.py (RDKit) · samples_excel.py (SLIMS) · excel.py
 ```
@@ -643,7 +653,14 @@ uvicorn `--workers N`, and a caching layer if ever needed.
 
 - **Login**: a token gate since v2.22.0 (`AUTH_MODE=token`; one guard declared per
   router, a login page, a cookie that is a keyed hash of the token; off by
-  default) — [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)
+  default) — [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md);
+  local accounts since v2.23.0 (`AUTH_MODE=local`; usernames and Argon2-hashed
+  passwords in a `users` table the API never returns and the query console
+  refuses; a signed, sliding session cookie keyed by `SESSION_SECRET`;
+  personal tokens for scripts; a lockout after ten wrong passwords) —
+  [phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md)
+- **Authorisation**: three roles, viewer, editor and admin, enforced by one
+  rule in the guard from the request's verb and path (v2.23.0)
 - **CORS**: closed since v2.22.0 (decision A7); `CORS_ORIGINS` reopens it for a named site
 - **Input Validation**: server-side checks (duplicate IDs, required references);
   Pydantic models kept lenient on purpose to preserve the API contract
@@ -655,10 +672,12 @@ uvicorn `--workers N`, and a caching layer if ever needed.
 
 ### Future Enhancements
 
-- [x] Authentication, rung 1 — the token gate (v2.22.0); rungs 2 and 3, local
-      accounts and single sign-on, drop into the same guard:
+- [x] Authentication, rung 1 — the token gate (v2.22.0) — and rung 2, local
+      accounts (v2.23.0); rung 3, single sign-on, drops into the same guard
+      when the owner asks for it:
       [`13-authentication.md`](13-authentication.md), [ADR 0001](adr/0001-authentication-ladder.md)
-- [ ] Authorization (role-based access) — after identity, see the same plan
+- [x] Authorization (role-based access) — three roles in the guard (v2.23.0);
+      buttons greyed out by role in the page, and an accounts page, are SH-4
 - [ ] Rate limiting
 - [ ] Audit logging
 

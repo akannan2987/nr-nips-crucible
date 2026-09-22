@@ -92,6 +92,12 @@ query that gives up.
 | `screening` | one compound detected in one sample | `id`, `chemical_id`, `created_at`, `seq` | inside `doc` |
 | `toxicology` | one study record | `id`, `chemical_id`, `created_at`, `seq` | inside `doc` |
 
+A fifth table, `users` (v2.23.0), holds the login's accounts and their
+password hashes; the console refuses any query that names it and does not
+list it (*The 'users' table holds the login's accounts and cannot be queried
+here.*). Since v2.22.0 the console itself is behind the login; with accounts,
+a viewer may use it, because it only reads ([`13-authentication.md`](13-authentication.md)).
+
 To see which fields a document actually holds, use the **Show tables & fields**
 button on the Query page, or:
 

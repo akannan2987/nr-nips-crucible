@@ -21,7 +21,7 @@ Two flags appear in every command here:
 - `-s` — **silent**. Suppresses curl's download-progress meter, which would otherwise scribble over your JSON.
 - `--noproxy '*'` — on the corporate network your machine is told to send all web traffic through a proxy server. That proxy has no idea what `localhost` means and will hijack the request. This flag says "talk directly, never via the proxy". Leave it out and you will get confusing timeouts or proxy error pages instead of data.
 
-**One header, when the login is on.** Since v2.22.0 an instance can ask for an access token ([`13-authentication.md`](13-authentication.md)); both server instances do since 2026-09-22, each with its own token. Every recipe below then needs one more flag, `-H "Authorization: Bearer $CRUCIBLE_TOKEN"`, with the token in a shell variable set once (`export CRUCIBLE_TOKEN='…'`, from whoever runs the instance). Without it the server answers `{"error":"Not authenticated"}` and status 401, which is the gate doing its job, not a fault. [Signing in from a script](#signing-in-from-a-script) shows the three ways to carry it.
+**One header, when the login is on.** Since v2.22.0 an instance can ask for an access token ([`13-authentication.md`](13-authentication.md)); both server instances do since 2026-09-22, each with its own token, and since v2.23.0 an instance with **accounts** (`AUTH_MODE=local`, beta first) takes a *personal* token instead, `<username>:…`, issued to you by whoever runs it (`./container-py.sh users token <name>`) and carrying your role. Every recipe below then needs one more flag, `-H "Authorization: Bearer $CRUCIBLE_TOKEN"`, with the token in a shell variable set once (`export CRUCIBLE_TOKEN='…'`). Without it the server answers `{"error":"Not authenticated"}` and status 401, which is the gate doing its job, not a fault; with a viewer's token, a write answers `{"error":"Forbidden: this needs the editor role (yours: viewer)"}` and 403, which is the role doing its job. [Signing in from a script](#signing-in-from-a-script) shows the ways to carry it.
 
 **Your base address** is `http://localhost:49160/api` on the development machine, and `https://<vm-hostname>:49160/api` in production on the RHEL8 VM. Every recipe below uses the development form; swap the front half if you are on the VM.
 
@@ -157,6 +157,38 @@ What needs no token at all: `/api/health` (`{"status":"ok"}`),
 `/api/instance`, and `/api/auth/me` itself. A wrong token gets exactly
 `{"error":"Not authenticated"}`, never a hint. The deploy checks run through
 the gate with `./verify-deploy.sh <base> --token "$CRUCIBLE_TOKEN"`.
+
+**With accounts (`AUTH_MODE=local`, v2.23.0).** The same header, a personal
+token instead of the shared one; the answer to *Am I signed in?* then
+says who you are and what you may do:
+
+```bash
+curl --noproxy '*' -sSk -H "Authorization: Bearer $CRUCIBLE_TOKEN" https://localhost:49161/api/auth/me
+```
+
+```json
+{"mode":"local","authenticated":true,"user":{"subject":"alice","display_name":"Alice Smith","roles":["editor"],"via":"token"}}
+```
+
+A cookie jar works with a username and a password too (and is the only way
+to log in as a *person* from a script, with the role of that person);
+`POST /api/auth/password` changes it:
+
+```bash
+curl --noproxy '*' -sSk -c jar.txt -H 'Content-Type: application/json' -d '{"username":"alice","password":"…"}' https://localhost:49161/api/auth/login
+curl --noproxy '*' -sSk -b jar.txt https://localhost:49161/api/chemicals/summary | head -c 80
+curl --noproxy '*' -sSk -b jar.txt -X DELETE https://localhost:49161/api/chemicals/CHEM-000001
+```
+
+```json
+{"mode":"local","authenticated":true,"user":{"subject":"alice","display_name":"Alice Smith","roles":["editor"],"via":"local"}}
+{"total":12539,"one_batch":12533,"several_batches":6,"batch_rows":12561,"tags":{"Dotmatics ID":9193,
+{"error":"Forbidden: this needs the admin role (yours: editor)"}
+```
+
+The last line is an editor trying to delete: reading needs a viewer,
+writing an editor, deleting an admin ([the rule](13-authentication.md#rung-2--local-accounts)).
+Whoever runs the instance changes a role with `./container-py.sh users role <name> admin`.
 
 ## Loading data in
 

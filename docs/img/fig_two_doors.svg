@@ -33,6 +33,6 @@
 <text x='470' y='352' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>the building opens (the server reboots)</text>
 <text x='470' y='367' font-size='9' fill='#6b7280' text-anchor='middle' font-weight='normal'>lingering lets your services run while you are logged out; the enabled service switches the application on</text>
 <line x1='470' y1='334' x2='470' y2='322' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
-<text x='470.0' y='404' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>the script builds and updates, then hands the container to the service; on a Mac or Windows there is no service and the script is the only door</text>
+<text x='470.0' y='404' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>the script builds and updates, then hands the container to the service; on a development machine there is no service and the script is the only door</text>
 <text x='470.0' y='422' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>everyday version: two doors into one kitchen; the caretaker inside keeps the stove lit and relights it every morning</text>
 </svg>

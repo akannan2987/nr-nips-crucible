@@ -56,7 +56,7 @@ flowchart LR
 
 ## What the registry holds today
 
-Counted on the Mac copy of the real export on 2026-09-14 (12,539 entries):
+Counted on the development copy of the real export on 2026-09-14 (12,539 entries):
 
 | Structure source on the entry | Entries | Where it came from |
 |---|---|---|

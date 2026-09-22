@@ -164,7 +164,7 @@ View Screening Data* is wrong the moment the sidebar says *Screening Data*.
 
 **What:** turn the edited source into the files the server serves, and look.
 
-**How, on the Mac:**
+**How, on the development machine:**
 
 ```bash
 cd ~/Documents/Work/pandora_toolbox/nr-nips-crucible/client && npm run build && cd ..

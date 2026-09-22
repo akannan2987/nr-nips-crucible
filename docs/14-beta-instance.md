@@ -57,7 +57,7 @@ trainee burns there, no customer eats.
 
 ```mermaid
 flowchart LR
-    M["Mac<br/>author on develop"] -- "publish" --> B["beta instance<br/>branch beta · port 49161<br/>its own database"]
+    M["development machine<br/>author on develop"] -- "publish" --> B["beta instance<br/>branch beta · port 49161<br/>its own database"]
     B -- "promote, by hand,<br/>after the testers agree" --> P["production instance<br/>branch master · port 49160<br/>the real database"]
     P -. "a copy of the data,<br/>when you ask for it" .-> B
     T["testers"] --> B
@@ -120,17 +120,17 @@ command becomes two moments:
 
 ```mermaid
 sequenceDiagram
-    participant Mac
+    participant Dev as development machine
     participant Pub as public repository
     participant Mir as mirror (VM)
     participant Priv as private repository
     participant Beta as beta instance
     participant Prod as production instance
-    Mac->>Pub: git push origin develop develop:beta
+    Dev->>Pub: git push origin develop develop:beta
     Mir->>Priv: mirror develop and beta
     Beta->>Priv: git pull (branch beta) · rebuild
     Note over Beta: testers try it for a while
-    Mac->>Pub: git push origin origin/beta:master   (promote)
+    Dev->>Pub: git push origin origin/beta:master   (promote)
     Mir->>Priv: mirror master
     Prod->>Priv: git pull (branch master) · rebuild
 ```
@@ -142,12 +142,12 @@ sequenceDiagram
    to `master` by hand, in a step of its own; production pulls and
    rebuilds, after its backup, as before ([Step 11](03-git-workflow.md#step-11---promote-to-production-when-the-testers-agree)).
 
-A fix found on beta is made on the Mac and published again; nothing is
+A fix found on beta is made on the development machine and published again; nothing is
 edited on the server. A change that turns out to be wrong simply never
 gets promoted. Beta is promoted as a whole — everything published since
 the last promotion, together — so a change that is not ready for
 production is not published to beta either. In practice every change is
-handed over as **six blocks**, three per moment (Mac, mirror folder,
+handed over as **six blocks**, three per moment (development machine, mirror folder,
 instance folder), written out with why each exists in
 [`03-git-workflow.md` → The six blocks](03-git-workflow.md#the-six-blocks-at-a-glance).
 
@@ -303,7 +303,7 @@ build ("build on what you have planned").
 
 ## Done means — and what was done
 
-- ✅ The scripts know their instance; rehearsed end to end on a Mac with
+- ✅ The scripts know their instance; rehearsed end to end on the development machine with
   two containers side by side (`crucible-py` on 49160, `crucible-py-beta`
   on 49161), the one-way restore, a beta rebuild that left production's
   image untouched, sixteen deploy checks passing on each, and the
@@ -312,7 +312,7 @@ build ("build on what you have planned").
 - ✅ One publish reaches beta only; one promotion reaches production only;
   both written out in [`03-git-workflow.md`](03-git-workflow.md) with the
   commands for every machine.
-- ✅ A blank Mac or Windows machine following its setup guide is
+- ✅ A blank macOS or Windows machine following its setup guide is
   unaffected: no instance name, the same names as before.
 - ✅ The phase tutorial has the every-route test table — browser, API,
   terminal, the container, Python, the database, the monitor, the unit,

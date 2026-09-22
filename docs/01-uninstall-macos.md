@@ -7,7 +7,7 @@
 **Time:** ~2 minutes for a preview, ~5 minutes for the removal itself, ~10 if you also tear out the container runtime.
 
 > **Which instance?** Since v2.20.0 a machine can run two instances, each in its own folder
-> ([`14-beta-instance.md`](14-beta-instance.md); on a Mac that is how the phase
+> ([`14-beta-instance.md`](14-beta-instance.md); on the development machine that is how the phase
 > was rehearsed). `uninstall.sh` acts on **the instance of the folder it runs in** (it
 > reads `CRUCIBLE_INSTANCE` from that folder's `.env.local`): run in the beta
 > folder it removes `crucible-py-beta`, its unit and its own cron lines, and

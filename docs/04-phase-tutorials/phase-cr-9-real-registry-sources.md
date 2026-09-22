@@ -88,7 +88,7 @@ crates carry the same item — and one clerk reads the forms.
 **What:** learn the files' shape — headers, counts, fill rates — before
 writing a line of code, and without printing a single value.
 
-**How, on a Mac with the test environment** (the real files stay outside
+**How, on the development machine with the test environment** (the real files stay outside
 git: the ignore rules for spreadsheets and structure files under
 `docs/excel-templates/` cover them, and the gate refuses anything there
 that is not a synthetic template):
@@ -236,17 +236,17 @@ the deploy check by design.
 
 **What:** the first run of the real export took eight and a half minutes.
 
-**How it was diagnosed:** the same import run directly on the Mac took ten
+**How it was diagnosed:** the same import run directly on the development machine took ten
 seconds, and a profile showed six of them reading the spreadsheet. So the
 code was fine, and the eight minutes were the container's mounted disk on
-macOS, which is slow for a database that commits often. That is a Mac
-development artefact — the server's mount is native — but committing once
+a desktop runtime, which is slow for a database that commits often. That is a
+development-machine artefact — the server's mount is native — but committing once
 per entry and rescanning every identifier to allocate the next one was
 still the pattern of lesson 18, so both were fixed: identifiers come from
 one counter, new entries are written in batches of 1,000, changed entries
 commit once.
 
-**You should see** the export load in about six seconds directly on a Mac,
+**You should see** the export load in about six seconds directly on the development machine,
 and in a few tens of seconds inside the container on the server.
 
 ---
@@ -259,7 +259,7 @@ cd client && npm run build && cd ..                                    # the ban
 ./container-py.sh rebuild                                              # the parser, specs and scripts live in the image
 ```
 
-Then the real files, on the Mac copy only, never committed, through the
+Then the real files, on the development copy only, never committed, through the
 routes below. The numbers there are what they gave.
 
 ---
@@ -267,7 +267,7 @@ routes below. The numbers there are what they gave.
 ## How to test it, by every route
 
 The synthetic templates give small, exact numbers on any machine. The
-real files give the numbers in the last column; they were run on the Mac
+real files give the numbers in the last column; they were run on the development machine
 copy on 2026-09-09 and are what to expect on the server.
 
 | Route | How | You should see (synthetic templates) | Real files |
@@ -281,14 +281,14 @@ copy on 2026-09-09 and are what to expect on the server.
 | **API, the notices** | `curl --noproxy '*' -sSk https://localhost:49160/api/chemicals/notices/summary` | `{"nestle_id_pending":2,"cas_shared":0,"batch_conflicts":0}` | `{"nestle_id_pending":0,"cas_shared":419,"batch_conflicts":3}` |
 | **Terminal, the shortcut** | `./container-py.sh import chemicals docs/excel-templates/chemicals/dotmatics_template.xlsx` | the report's message line | 12,539 compounds |
 | **Terminal, the long form** | `podman cp docs/excel-templates/chemicals/chemicals_registry_template.sdf crucible-py:/tmp/t.sdf && podman exec crucible-py python /app/backend/scripts/import_file.py chemicals /tmp/t.sdf --json` | the full JSON report | — |
-| **Python directly, on a Mac** | `cd backend && .venv/bin/python scripts/import_file.py chemicals ../docs/excel-templates/chemicals/dotmatics_template.xlsx --json` | the full JSON report, against `data/crucible.db` — the same file the container serves | the export in about 6 s, the SDF in 2 s, the list in 2 s |
+| **Python directly, on the development machine** | `cd backend && .venv/bin/python scripts/import_file.py chemicals ../docs/excel-templates/chemicals/dotmatics_template.xlsx --json` | the full JSON report, against `data/crucible.db` — the same file the container serves | the export in about 6 s, the SDF in 2 s, the list in 2 s |
 | **Terminal, the audit** | `./container-py.sh script audit_chemicals.py` | a *Flags set by the registry imports* section with two *pending id* lines: Caffeine and the mixture | 419 shared-id lines, 3 batch-conflict lines |
 | **Database** | Query page: `SELECT chemical_id, json_extract(doc,'$.dotmatics_reg_id') reg, json_array_length(doc,'$.batches') batches, json_extract(doc,'$.merged_from') merged FROM chemicals ORDER BY chemical_id` | six rows, `CHEM-000001` to `CHEM-000006`; Caffeine with `batches 2` and `merged ["limited_list","registry_sdf"]`; every column of the file under `metadata` | 12,539 rows |
 | **Deploy check** | `./verify-deploy.sh https://localhost:49160` | `16 passed` — flagged pairs are not duplicates | `16 passed` |
 | **Automated tests** | `cd backend && .venv/bin/pytest -q` | `124 passed` | — |
 
 **One thing to know when writing from outside the container.** After a
-direct Python import on a Mac, the running application may answer stale
+direct Python import on the development machine, the running application may answer stale
 counts for a moment: its pooled database connection holds the snapshot it
 last saw, until its next write or a `./container-py.sh restart`. The
 data is there; the view catches up. The column list is the one answer

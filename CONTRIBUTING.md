@@ -126,7 +126,7 @@ Three self-checks before the commit:
 
 ## 4. The push sequence
 
-The full sequence — commit on the Mac, push three branches, mirror into the
+The full sequence — commit on the development machine, push three branches, mirror into the
 private repository on the VM, deploy, confirm the two repositories agree —
 is written once, with expected output at every step, in
 [`03-git-workflow.md` → Flow A](docs/03-git-workflow.md#4-flow-a---a-change-from-start-to-finish).
@@ -245,6 +245,12 @@ last section; the ones every change must respect:
   assistant, and nothing implies the project exists for anything but its
   stated purpose. The safety gate checks paths and identifiers; this rule is
   checked by reading.
+- **Machines are named by their role, never by their operating system.**
+  Where the code is written and tested is *the development machine*; where
+  people use it is *the server* (production), with *the beta instance*
+  beside it. A platform name (macOS, Windows, RHEL 8) appears only where
+  behaviour differs by platform — a setup guide, a binding rule, a CI runner
+  — never to say where the work is done.
 - **Diff-anchored writing is for `NEWS.md` only.** Every other document
   describes the system as it is.
 

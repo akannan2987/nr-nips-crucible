@@ -31,8 +31,8 @@
 > *does* delete things is the [Uninstall guide](01-uninstall-macos.md), and it warns
 > you loudly.
 
-Step-by-step guide to install, run, and verify Crucible on **macOS** (development
-machine), including HTTPS. Companion documents: [macOS Uninstall](01-uninstall-macos.md) ·
+Step-by-step guide to install, run, and verify Crucible on **macOS**, as a development
+machine, including HTTPS. Companion documents: [macOS Uninstall](01-uninstall-macos.md) ·
 [RHEL8 Install & Run](01-setup-rhel8.md) · [RHEL8 Uninstall](01-uninstall-rhel8.md) ·
 [Windows Install & Run](01-setup-windows.md) (untested).
 
@@ -198,7 +198,7 @@ cd nr-nips-crucible
 #    (SETUP_MONITOR=y installs the */5-minute health-monitoring cron instead of asking)
 
 # ✅ On a Mac with no corporate certificate store the script prints
-#    "No certificate store ... (normal on macOS)" and starts in HTTP mode.
+#    "No certificate store ... (normal on a development machine)" and starts in HTTP mode.
 #    It then polls the API for up to 60 s and confirms it answers.
 ```
 
@@ -217,7 +217,7 @@ Line by line, since this is the important one:
 
 ```
 Step 1: SSL certificates
-  – No certificate store configured (normal on macOS)
+  – No certificate store configured (normal on a development machine)
     → will start in HTTP mode. ...
 Step 2: Building the crucible-py image (first build takes a few minutes)...
 Step 3: Starting the container...
@@ -662,7 +662,7 @@ first: a second checkout with two lines in its `.env.local`
 `crucible-py-beta` on port 49161, with its own `data/`, and none of the
 scripts run there can touch the first copy. On the server this is the
 **beta instance** the testers use ([`14-beta-instance.md`](14-beta-instance.md));
-on a Mac it is how that phase was rehearsed before the server was
+on the development machine it is how that phase was rehearsed before the server was
 touched — the exact commands, and a test for every route, are in
 [phase SH-12 → Step 6](04-phase-tutorials/phase-sh-12-beta-instance.md#step-6--rehearse-it-on-a-laptop-first).
 The scripts read a file and append a word to a name; nothing in them is
@@ -721,7 +721,7 @@ them mean you did something wrong.
   include podman (`/opt/podman/bin`) or Homebrew. The setup script now writes the
   runtime's directory into the cron line for you; an older hand-written entry
   without it cannot find podman and could never restart anything.
-  → **Honestly:** on a development Mac this monitor earns little. It exists for
+  → **Honestly:** on a development machine this monitor earns little. It exists for
   the always-on server. If you would rather not grant `cron` that access, remove
   the entry (`crontab -e`) and rely on `./container-py.sh status`.
 - The `:Z` suffix on volume mounts is SELinux relabelling for RHEL8 — it is a

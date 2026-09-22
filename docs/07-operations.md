@@ -2,8 +2,8 @@
 
 # Deployment Guide — Crucible: Pandora Toolbox Enhancement (v2.0)
 
-Operational **reference** for the Crucible **Python/FastAPI** backend on macOS
-(development) and the RHEL8 VM (production).
+Operational **reference** for the Crucible **Python/FastAPI** backend on the
+development machine and the RHEL8 VM (production).
 
 > **Step-by-step walkthroughs live in the platform guides.** Install:
 > [docs/01-setup-macos.md](01-setup-macos.md) ·
@@ -17,7 +17,7 @@ Operational **reference** for the Crucible **Python/FastAPI** backend on macOS
 The container scripts are runtime-agnostic — they auto-detect **podman or
 docker** (override with `CONTAINER_RUNTIME=docker|podman`). Nothing is
 hardcoded to a hostname or platform: the app reads `PORT` (default 49160) and
-binds `0.0.0.0`, so the same image runs unmodified on macOS and RHEL8.
+binds `0.0.0.0`, so the same image runs unmodified on every platform.
 
 > For the history of the Node/Express → Python/FastAPI migration and the
 > codebase learning map, see [docs/12-history.md](12-history.md).
@@ -53,7 +53,7 @@ binds `0.0.0.0`, so the same image runs unmodified on macOS and RHEL8.
 
 ```mermaid
 flowchart LR
-    subgraph mac["Mac (development)"]
+    subgraph dev["Development machine"]
         M["container-py.sh start<br/>HTTP on 127.0.0.1:49160"]
     end
     subgraph vm["RHEL 8 VM (production)"]
@@ -155,7 +155,7 @@ Notes:
   **ignored** to avoid clashes on shared machines).
 - Rootless podman cannot bind ports below 1024; 49160 is unaffected.
 - macOS quirk: Apple's `remoted` daemon listens on ports 49152+ on a
-  link-local IPv6 address, so a wildcard bind of 49160 fails on Macs.
+  link-local IPv6 address, so a wildcard bind of 49160 fails on macOS.
   The scripts publish on `127.0.0.1` on macOS and `0.0.0.0` on Linux;
   override with `HOST_BIND=<ip>`.
 
@@ -164,7 +164,7 @@ Notes:
 ## Quick Start (after clone)
 
 One command does everything (certs when available, build, start, verify,
-optional monitoring cron) — on macOS **and** the RHEL8 VM:
+optional monitoring cron) — on the development machine **and** the RHEL8 VM:
 
 ```bash
 ./setup-after-clone-py.sh
@@ -736,7 +736,7 @@ plus `SSL_CERT_PATH` / `SSL_KEY_PATH` if your file names differ from
 ## Backup and restore
 
 Everything worth backing up lives in `data/crucible.db`. Identical commands on
-macOS and the RHEL8 VM (the script handles podman vs docker, running vs
+the development machine and the RHEL8 VM (the script handles podman vs docker, running vs
 stopped):
 
 ```bash
@@ -965,7 +965,7 @@ detail, manual leftovers, and a verification checklist — are in
 [docs/01-uninstall-macos.md](01-uninstall-macos.md) and
 [docs/01-uninstall-rhel8.md](01-uninstall-rhel8.md).
 
-`./uninstall.sh` removes the deployment (podman or docker, macOS or RHEL8):
+`./uninstall.sh` removes the deployment (podman or docker, on any platform):
 
 ```bash
 ./uninstall.sh --dry-run     # preview everything it would remove (safe)

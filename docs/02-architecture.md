@@ -794,7 +794,7 @@ is a change to the public contract: propose it, show the failing test, and
 wait for sign-off rather than editing the assertion.
 
 Bare-metal setup for the virtual environment the tests use:
-[`backend/README.md` → Quickstart](../backend/README.md#quickstart-macos).
+[`backend/README.md` → Quickstart](../backend/README.md#quickstart-development-machine).
 The environment installs from `backend/requirements.lock`, the exact versions
 the image runs, so a test failure means the code, not a library drift. The
 linter (`ruff check .`, rules in `backend/ruff.toml`) runs beside the tests,
@@ -820,7 +820,7 @@ there; the floor plan lets you see the whole building at a glance.
 ./container-py.sh status
 
 # 2. Open the page in a browser
-#    macOS (HTTP, local development):
+#    development machine (HTTP):
 open http://localhost:49160/architecture
 #    RHEL 8 VM (HTTPS; use the VM's full hostname, not localhost):
 #    https://<vm-hostname>:49160/architecture

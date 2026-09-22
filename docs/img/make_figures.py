@@ -104,10 +104,11 @@ def fig_source_tags() -> None:
 def fig_two_instances() -> None:
     W, H = 940, 430
     b = text(W/2, 34, "Two instances on one server (SH-12): production keeps the real data; testers get a copy on beta", 16, INK, "middle", "bold")
-    # the Mac
+    # the development machine
     b += box(30, 120, 150, 90, PANEL, LINE, 10)
-    b += text(105, 148, "Mac", 13, INK, "middle", "bold")
-    b += lines(105, 170, ["author on develop", "publish · promote"], 10.5, MUTED, "middle", 15)
+    b += text(105, 142, "development", 13, INK, "middle", "bold")
+    b += text(105, 158, "machine", 13, INK, "middle", "bold")
+    b += lines(105, 180, ["author on develop", "publish · promote"], 10.5, MUTED, "middle", 15)
     # the server
     b += box(230, 66, 680, 300, PAPER, LINE, 12, dash=True)
     b += text(570, 88, "the server — one machine, two folders, two containers, two ports", 11.5, MUTED)
@@ -292,7 +293,7 @@ def fig_two_doors() -> None:
     b += text(470, 352, "the building opens (the server reboots)", 10.5, INK, "middle", "bold")
     b += text(470, 367, "lingering lets your services run while you are logged out; the enabled service switches the application on", 9, MUTED)
     b += arrow(470, 334, 470, 322, LINE, dash=True)
-    b += text(W/2, 404, "the script builds and updates, then hands the container to the service; on a Mac or Windows there is no service and the script is the only door", 10.5, MUTED)
+    b += text(W/2, 404, "the script builds and updates, then hands the container to the service; on a development machine there is no service and the script is the only door", 10.5, MUTED)
     b += text(W/2, 422, "everyday version: two doors into one kitchen; the caretaker inside keeps the stove lit and relights it every morning", 10.5, MUTED)
     write("fig_two_doors.svg", svg(W, H, "One running application per instance, with the systemd service inside it; two doors lead in, the script and systemctl, and the boot key underneath: lingering plus an enabled service switches it on when the server restarts", b))
 
@@ -302,7 +303,7 @@ def fig_six_blocks() -> None:
     W, H = 940, 470
     mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
     b = text(W/2, 34, "Every change travels the same six blocks: three to reach the testers, three to reach the laboratory", 15, INK, "middle", "bold")
-    cols = [(40, "Mac, your folder"), (350, "VM, mirror folder"), (660, "VM, instance folder")]
+    cols = [(40, "Development machine, your folder"), (350, "VM, mirror folder"), (660, "VM, instance folder")]
     for x, title in cols:
         b += text(x + 120, 66, title, 11.5, MUTED, "middle", "bold")
     def block(x, y, n, title, rows, col, fill):
@@ -333,7 +334,7 @@ def fig_six_blocks() -> None:
     b += text(W/2, 408, "what changes between releases: whether blocks 3 and 6 rebuild (code) or only pull (documents), and how long the pause lasts", 10, MUTED)
     b += text(W/2, 428, "the detailed steps with expected output: 03-git-workflow.md, Flow A · everyday version: a recipe is written at home, copied into the", 10, MUTED)
     b += text(W/2, 446, "restaurant's book, cooked in the practice kitchen; when the trainees approve, it is marked approved in both places and the restaurant cooks it", 10, MUTED)
-    write("fig_six_blocks.svg", svg(W, H, "Six blocks in two rows: publish (Mac commit and push, mirror copy and push, beta folder pull and rebuild) then, after the testers agree, promote (Mac push beta to master, mirror the same and the sync check, production folder backup, pull and rebuild)", b))
+    write("fig_six_blocks.svg", svg(W, H, "Six blocks in two rows: publish (development machine commit and push, mirror copy and push, beta folder pull and rebuild) then, after the testers agree, promote (development machine push beta to master, mirror the same and the sync check, production folder backup, pull and rebuild)", b))
 
 
 # ---------------------------------------------------------------- palette --
@@ -481,9 +482,9 @@ def fig_doc_is_truth() -> None:
 def fig_machine_layout() -> None:
     W, H = 940, 470
     b = text(W/2, 34, "Two repositories, four folders — content flows public → private only", 16, INK, "middle", "bold")
-    # Mac
+    # the development machine
     b += box(30, 70, 250, 130, PANEL, LINE, 10)
-    b += text(155, 94, "Your Mac (or Windows PC)", 13, INK, "middle", "bold")
+    b += text(155, 94, "Your development machine", 13, INK, "middle", "bold")
     b += box(50, 108, 210, 74, PAPER, ACCENT, 6)
     b += lines(155, 130, ["authoring folder", "branch develop", "origin = PUBLIC only"], 11, INK, "middle", 16)
     # GitHub public
@@ -517,19 +518,20 @@ def fig_machine_layout() -> None:
     b += text(155, 230, "holds NO private credentials:", 11, MUTED)
     b += text(155, 246, "it cannot push to the private repository", 11, MUTED)
     b += text(W/2, 458, "a fix found on the VM travels back as a patch, never a push — the arrow never runs right to left", 12, INK)
-    write("fig_machine_layout.svg", svg(W, H, "A Mac authoring folder pushes to the public repository; the VM's mirror folder fetches public and pushes private; the beta folder pulls beta and the production folder pulls master from private", b))
+    write("fig_machine_layout.svg", svg(W, H, "The authoring folder on the development machine pushes to the public repository; the VM's mirror folder fetches public and pushes private; the beta folder pulls beta and the production folder pulls master from private", b))
 
 
 def fig_change_travels() -> None:
     W, H = 940, 250
     b = text(W/2, 34, "How a change travels — the loop after setup, on one screen", 16, INK, "middle", "bold")
+    dev = "development machine"
     steps = [
-        ("edit", "on develop", "Mac"), ("test", "90 passed", "Mac"), ("gate", "✓ SAFE TO PUSH", "Mac"),
-        ("push", "3 branches", "Mac"), ("mirror", "public → private", "VM"), ("deploy", "pull, rebuild if code", "VM"), ("confirm", "only 6 workbooks differ", "VM"),
+        ("edit", "on develop", dev), ("test", "90 passed", dev), ("gate", "✓ SAFE TO PUSH", dev),
+        ("push", "3 branches", dev), ("mirror", "public → private", "VM"), ("deploy", "pull, rebuild if code", "VM"), ("confirm", "only 6 workbooks differ", "VM"),
     ]
     x = 30
     for i, (t, sub, where) in enumerate(steps):
-        col = COLOURS["chemical"] if where == "Mac" else COLOURS["toxicology"]
+        col = COLOURS["chemical"] if where == dev else COLOURS["toxicology"]
         b += box(x, 80, 116, 70, PAPER, col, 8)
         b += text(x + 58, 106, t, 14, col, "middle", "bold")
         b += text(x + 58, 128, sub, 10.5, MUTED)
@@ -537,10 +539,10 @@ def fig_change_travels() -> None:
         if i < len(steps) - 1:
             b += arrow(x + 118, 115, x + 130, 115, LINE)
         x += 132
-    b += path_arrow(f"M 880 152 L 880 200 L 48 200 L 48 154", LINE, dash=True)
+    b += path_arrow(f"M 880 152 L 880 200 L 16 200 L 16 115 L 28 115", LINE, dash=True)
     b += text(W/2, 222, "a rebuild is needed only when backend/, client/ or the Dockerfile changed; documentation needs the pull alone", 11, INK)
     b += text(W/2, 240, "full commands with expected output: docs/03-git-workflow.md · one-screen version: the handbook cheat sheet", 11, MUTED)
-    write("fig_change_travels.svg", svg(W, H, "Seven steps: edit, test, gate, push on the Mac; mirror, deploy, confirm on the VM; then back to edit", b))
+    write("fig_change_travels.svg", svg(W, H, "Seven steps: edit, test, gate, push on the development machine; mirror, deploy, confirm on the VM; then back to edit", b))
 
 
 def fig_request_path() -> None:

@@ -141,7 +141,7 @@ development and redeployment are a short loop that never needs the install
 guide again.
 
 ```bash
-# macOS (development) — the PUBLIC repository, no authentication needed
+# development machine — the PUBLIC repository, no authentication needed
 git clone https://github.com/akannan2987/nr-nips-crucible.git
 cd nr-nips-crucible
 ./setup-after-clone-py.sh          # build the image, start the app, poll the API until it answers
@@ -160,7 +160,7 @@ you have.
 **Then read the [Handbook](docs/HANDBOOK.md).** It is the one document to
 keep open: where the project stands, the story so far, and every other
 document in the order you need it — set up once, run it, understand how it is
-built, how a change travels from your Mac to production, operate it, work with
+built, how a change travels from your development machine to production, operate it, work with
 real laboratory data, what comes next.
 
 **Looking for something specific?**
@@ -170,7 +170,7 @@ real laboratory data, what comes next.
 | Know where the project stands, what was built, what comes next | [Handbook](docs/HANDBOOK.md) §0, §7, §10 |
 | Learn to use the application from nothing: load a file, check it, identify compounds, correct mistakes, ask questions | [The user playbook](docs/10-user-playbook.md) |
 | Do a routine registry job right now — add, load, edit, link, remove, export | [Chemical Registry tasks](docs/10-registry-tasks.md) |
-| Take an edit from my Mac to production safely | [Git workflow](docs/03-git-workflow.md) · [Handbook §6](docs/HANDBOOK.md#6-how-a-change-travels) |
+| Take an edit from my development machine to production safely | [Git workflow](docs/03-git-workflow.md) · [Handbook §6](docs/HANDBOOK.md#6-how-a-change-travels) |
 | Update, back up, rotate a certificate, monitor, troubleshoot, uninstall | [Operations](docs/07-operations.md) |
 | Develop against the backend, run the checks CI runs | [backend/README.md](backend/README.md) · [Contributing → the loop](CONTRIBUTING.md#3-the-day-to-day-loop) · [Architecture → Testing](docs/02-architecture.md#testing) |
 | Call the API from a script | [API cookbook](docs/08-api-cookbook.md) · [API reference](docs/08-api-reference.md) |
@@ -211,14 +211,14 @@ get, and likely mistakes get a named fix.
 |---|-------|-----------------|
 | — | **[Handbook](docs/HANDBOOK.md)** | **Start here.** Where the project stands, the story so far, and everything below in the order you need it — updated with every change |
 | 00 | **[Glossary](docs/00-glossary.md)** | Every term in the project, in plain words — read it, or keep it open in a tab |
-| 01 | **[Set up: macOS](docs/01-setup-macos.md)** | From a blank Mac to the app running: containers, ports, HTTPS. Uses the **public** repo |
+| 01 | **[Set up: macOS](docs/01-setup-macos.md)** | From a blank macOS machine to the app running: containers, ports, HTTPS. Uses the **public** repo |
 | 01 | **[Set up: RHEL 8](docs/01-setup-rhel8.md)** | The production deployment: rootless podman, SELinux, firewall cases, real certificates, surviving a reboot. Uses the **private** repo |
 | 01 | **[Uninstall: macOS](docs/01-uninstall-macos.md)** | Clean removal, starting with what you cannot get back |
 | 01 | **[Uninstall: RHEL 8](docs/01-uninstall-rhel8.md)** | The same, plus the server-only pieces (systemd, lingering, cron) and the R1–R9 reinstall checklist |
 | 01 | **[Set up: Windows](docs/01-setup-windows.md)** | Docker Desktop and Git Bash, or a Linux distribution under WSL 2 — written to the same depth, **untested** until walked on a real PC |
 | 02 | **[Architecture](docs/02-architecture.md)** | How the boxes fit; the one design rule everything else follows from; the interactive architecture page |
 | 02 | **[Database schema](docs/02-database-schema.md)** | The hybrid document pattern; SQLite and PostgreSQL; Alembic |
-| 03 | **[Git workflow](docs/03-git-workflow.md)** | Two repositories, three folders; how a change travels from your Mac to the server; the safety gate that stops secrets escaping |
+| 03 | **[Git workflow](docs/03-git-workflow.md)** | Two repositories, three folders; how a change travels from your development machine to the server; the safety gate that stops secrets escaping |
 | 04 | **[Phase tutorials](docs/04-phase-tutorials/phase-00-node-to-python.md)** | One tutorial per build phase, 00 to 05b, R, SH-1, CR-6, CR-3, CR-9 and CR-2: why it existed, what it built, steps with expected output, a checkpoint, what it deliberately did not do |
 | 05 | **[Roadmap](docs/05-roadmap.md)** | Six tracks, one per module and a shared spine: what each builds next, why, and what it waits on |
 | 06 | **[Product and technology roadmap](docs/06-product-and-technology-roadmap.md)** | From one VM to a product: every candidate technology with a verdict and the trigger that would change it |
@@ -280,7 +280,7 @@ nr-nips-crucible/
 | `backend/alembic/` | Schema migrations. In the container these run at startup and are the only thing allowed to change the schema. |
 | `client/` | The browser interface. Built into `client/dist` and served by the same Python process — there is no second web server. |
 | `docs/` | The guides. Written for a reader with no prior container experience. |
-| `*.sh` (root) | The operator's toolkit. Same scripts on macOS and RHEL8; they auto-detect podman or docker. |
+| `*.sh` (root) | The operator's toolkit. The same scripts on every platform; they auto-detect podman or docker. |
 
 **Two kinds of "not in Git."** `data/`, `backups/` and `certs/` are absent
 because they are *yours* — your records, your certificates — and must never

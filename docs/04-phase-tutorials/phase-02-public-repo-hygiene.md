@@ -57,7 +57,7 @@ flowchart LR
     W["Working tree<br/>certs/ · data/ · backups/ · .env.local"] -->|".gitignore: never seen"| G["Git index"]
     G -->|"check-public-safe.sh: refuse if any secret path,<br/>extension or internal name is tracked"| P["public repository"]
     P -->|"mirror, content only"| V["private repository → VM"]
-    R["Real workbooks"] -.->|"kept outside the repo"| X["~/.crucible/ on the Mac"]
+    R["Real workbooks"] -.->|"kept outside the repo"| X["~/.crucible/ on the development machine"]
     S["generate_templates.py"] --> T["synthetic templates<br/>docs/excel-templates/"]
     T --> P
 ```
@@ -155,7 +155,7 @@ environment variables taking precedence.
 
 **What:** produce the example files from the script and confirm they import.
 
-**How (Mac, test virtual environment):**
+**How (development machine, test virtual environment):**
 
 ```bash
 backend/.venv/bin/python docs/excel-templates/generate_templates.py
@@ -184,11 +184,11 @@ backend's virtual environment, which has both; use the path shown.
 **How:** open [`03-git-workflow.md` §1](../03-git-workflow.md#1-the-two-repositories)
 and [§3 Golden rules](../03-git-workflow.md#3-golden-rules).
 
-**Why:** the public repository is authored on a Mac that holds no private
+**Why:** the public repository is authored on a development machine that holds no private
 credentials; the private one is filled by *copying content* from the public
 one on the VM, never the reverse. That direction is what makes a leak into
 the public repository impossible from the VM side, and the gate is what makes
-it unlikely from the Mac side.
+it unlikely from the development machine's side.
 
 **You should see:** three folders, two remotes, and the rule that content
 flows public → private only.

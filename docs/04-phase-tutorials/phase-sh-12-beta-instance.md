@@ -2,7 +2,7 @@
 
 # Phase SH-12 — A beta instance for user testing: two copies of the application on one server
 
-**Version shipped:** 2.20.0 (2.20.2 on the server) · **Date:** 2026-09-21, on the server 2026-09-22 · **Status:** complete (rehearsed end to end on a Mac; set up on the server by the operator the next morning, two containers side by side)
+**Version shipped:** 2.20.0 (2.20.2 on the server) · **Date:** 2026-09-21, on the server 2026-09-22 · **Status:** complete (rehearsed end to end on the development machine; set up on the server by the operator the next morning, two containers side by side)
 **Track:** SH, the shared spine ([roadmap](../05-roadmap.md#sh--shared-spine)); the owner's request of 2026-09-21, first of everything else so that end users can test without touching production.
 **Prerequisites:** a setup guide completed for your platform ([macOS](../01-setup-macos.md), [RHEL 8](../01-setup-rhel8.md) or [Windows](../01-setup-windows.md)); the two-repository workflow read once ([`03-git-workflow.md`](../03-git-workflow.md)); the specification and its decisions ([`14-beta-instance.md`](../14-beta-instance.md), [ADR 0002](../adr/0002-beta-instance.md)).
 **Learning goal:** you understand what an *instance* of an application is and why two of them on one machine must share nothing at run time; how one untracked file names every resource of an instance; why the `beta` branch now means something; and how a change reaches the testers the same day and the laboratory only when someone decides.
@@ -353,7 +353,7 @@ The one page for all of this is [`15-run-stop-status.md`](../15-run-stop-status.
 are in [`03-git-workflow.md` → Flow A](../03-git-workflow.md#4-flow-a---a-change-from-start-to-finish).
 The change, in one table:
 
-| Moment | Mac | Mirror folder (VM) | Which instance pulls |
+| Moment | Development machine | Mirror folder (VM) | Which instance pulls |
 |---|---|---|---|
 | **Publish** — every change | `git push origin develop develop:beta` | copy the content, then `git push origin develop develop:beta` | **beta**: `git switch beta && git pull --ff-only origin beta`, rebuild if code changed |
 | **Promote** — when the testers agree | `git fetch origin && git push origin origin/beta:master` | `git fetch origin && git push origin origin/beta:master` | **production**: backup, `git pull --ff-only origin master`, rebuild if code changed |
@@ -363,7 +363,7 @@ repositories and was pushed with every publish; until today it always
 equalled `master` and meant nothing. Giving it a meaning costs one
 workflow step and no new branch.
 
-**Why `origin/beta`.** Neither the Mac nor the mirror folder has a local
+**Why `origin/beta`.** Neither the development machine nor the mirror folder has a local
 branch called `beta`: publishing pushes `develop` *to* the remote's `beta`,
 so the branch lives on the remote and as the remote-tracking copy
 `origin/beta`. That copy, after a `git fetch`, is what promotion pushes to
@@ -393,14 +393,14 @@ folder prints nothing.
 
 ## Step 6 — Rehearse it on a laptop first
 
-**What:** the whole phase, on one Mac (or Windows PC), before touching
+**What:** the whole phase, on one development machine, before touching
 the server. This is how SH-12 was tested: the production folder is the
 ordinary checkout; the beta folder is a second copy in a temporary place.
 
 **How:**
 
 ```bash
-# ▶ MAC — the production copy runs as usual on 49160
+# ▶ DEVELOPMENT MACHINE — the production copy runs as usual on 49160
 cd ~/Documents/Work/pandora_toolbox/nr-nips-crucible
 ./container-py.sh start
 
@@ -434,7 +434,7 @@ server. A laptop rehearsal costs ten minutes and nothing else.
 word to a name. There is nothing Linux-specific in that; podman and
 Docker both accept the names, and the Windows guide's Git Bash runs the
 same scripts. The Windows walk is still marked *untested*
-([SH-6](../05-roadmap.md#sh--shared-spine)); the Mac walk is what this
+([SH-6](../05-roadmap.md#sh--shared-spine)); the development-machine walk is what this
 tutorial records.
 
 **You should see** two rows from `podman ps`, `crucible-py` on
@@ -480,15 +480,15 @@ image ID, data and checks are what they were before the phase.
 ## How to test it, by every route
 
 The left column is the server after §8 of the RHEL 8 guide; the right
-column is the Mac rehearsal of Step 6 (HTTP, `127.0.0.1`, the real
-export's numbers because the Mac copy holds it). Replace `podman` with
+column is the Step 6 rehearsal on the development machine (HTTP, `127.0.0.1`, the real
+export's numbers because the development copy holds it). Replace `podman` with
 `docker` on a machine that uses Docker.
 
-| Route | How | You should see (server) | Mac rehearsal |
+| Route | How | You should see (server) | Rehearsal on the development machine |
 |---|---|---|---|
 | **Browser, which instance am I on** | open `https://<vm-hostname>:49161` and `https://<vm-hostname>:49160` in two tabs | the header's right-hand corner says **Running on port 49161** in one tab and **Running on port 49160** in the other; same sidebar, same pages | `http://localhost:49161` · `http://localhost:49160`, the same two headers |
 | **Browser, the data is a copy** | Chemical Registry page on both | *All compounds 12,539 · One batch 12,533 · Several batches 6 · Batch rows 12,561* on both after a restore; delete a compound on beta → beta says 12,538, production still 12,539 | the same |
-| **Browser, the padlock** | click the padlock on the 49161 tab | the certificate names `<vm-hostname>`, valid, the same as on 49160 | — (HTTP on the Mac) |
+| **Browser, the padlock** | click the padlock on the 49161 tab | the certificate names `<vm-hostname>`, valid, the same as on 49160 | — (HTTP on the development machine) |
 | **API, two answers** | `curl --noproxy '*' -sSk https://localhost:49160/api/stats` then `…:49161/api/stats` | both `{"chemicals":{"total":12539,…` after a restore; only beta's changes when a tester acts | `curl --noproxy '*' -sS http://localhost:4916{0,1}/api/stats` |
 | **API, the whole registry** | `curl --noproxy '*' -sSk https://localhost:49161/api/chemicals/summary` | `{"total":12539,"one_batch":12533,"several_batches":6,"batch_rows":12561,…}` | the same |
 | **Terminal, the script knows its instance** | in each folder: `./container-py.sh help \| grep Usage` | production: `instance: default → crucible-py, port 49160`; beta: `instance: beta → crucible-py-beta, port 49161` | the same |
@@ -501,7 +501,7 @@ export's numbers because the Mac copy holds it). Replace `podman` with
 | **Podman / Docker, the long form** | `podman exec crucible-py-beta python /app/backend/scripts/registry_summary.py --json` | the summary JSON from beta's database | the same |
 | **Podman / Docker, each container's own port** | `podman exec crucible-py sh -c 'echo $PORT'` · `podman exec crucible-py-beta sh -c 'echo $PORT'` | `49160` · `49161` | the same |
 | **Podman / Docker, a beta rebuild leaves production alone** | note `podman images` IDs; beta folder `./container-py.sh rebuild`; `podman images` again | `crucible-py-beta`'s ID changes (or not, if nothing changed); `crucible-py`'s ID identical; `crucible-py` never restarted (`podman ps` uptime) | the same |
-| **Python directly, on a Mac** | `DATABASE_URL=sqlite:////absolute/path/to/nr-nips-crucible-beta/data/crucible.db backend/.venv/bin/python backend/scripts/registry_summary.py` | — | the same summary line, read from beta's file, with the test virtual environment |
+| **Python directly, on the development machine** | `DATABASE_URL=sqlite:////absolute/path/to/nr-nips-crucible-beta/data/crucible.db backend/.venv/bin/python backend/scripts/registry_summary.py` | — | the same summary line, read from beta's file, with the test virtual environment |
 | **Database, the query console** | Query page on 49161: `SELECT COUNT(*) AS chemicals FROM chemicals` | `12539`; the same query on 49160 gives production's count, which stops agreeing the moment a tester deletes something on beta | the same |
 | **Database, two files** | `ls -la ~/work/Pandora_toolbox/nr-nips-crucible/data ~/work/Pandora_toolbox/nr-nips-crucible-beta/data` | two `crucible.db`, and `crucible.db.pre-restore` in beta's folder after a restore | the same |
 | **Monitor, by hand** | beta folder: `./monitor.sh` then `ls /tmp/crucible-monitor*.log` | `Starting health check of crucible-py-beta at https://localhost:49161/api/stats...` · `✓ crucible-py-beta is healthy`; two log files, `crucible-monitor.log` and `crucible-monitor-beta.log` | `http://…` |
@@ -540,8 +540,8 @@ table. Production's image ID, uptime and counts do not move.
   copy that can be refreshed in two commands, and the certificate is the
   same file production's weekly check already watches. Add the backup
   line if the testers' work on beta becomes worth keeping.
-- **The Windows walk.** The scripts are platform-agnostic and the Mac
-  rehearsal passed; the Windows guide stays *untested* until SH-6.
+- **The Windows walk.** The scripts are platform-agnostic and the
+  development-machine rehearsal passed; the Windows guide stays *untested* until SH-6.
 
 ---
 

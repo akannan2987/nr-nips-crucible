@@ -97,7 +97,7 @@ two months — and the badge reader is still the destination.
 
 | | Today |
 |---|---|
-| Transport | HTTPS on the server with the organisation's certificate; HTTP on a developer's Mac |
+| Transport | HTTPS on the server with the organisation's certificate; HTTP on a development machine |
 | Login | none; every `/api/*` route answers anyone |
 | Cross-origin policy | open (any web page may call the API) |
 | Who is recorded | nobody; records carry `created_at` and `updated_at`, no *by whom* |
@@ -389,7 +389,7 @@ The registration request is the long pole of rung 3, and none of it needs
 code first. What to ask the identity team for, in their words:
 
 - [ ] An **OpenID Connect application registration** for "Crucible, internal laboratory registry", *web application* type, authorization code flow with PKCE.
-- [ ] The **redirect URI** to register: `https://<vm-hostname>:49160/api/auth/callback` (the server's full name; and, for testing on a developer's Mac, `http://localhost:49160/api/auth/callback` if their policy allows a localhost URI).
+- [ ] The **redirect URI** to register: `https://<vm-hostname>:49160/api/auth/callback` (the server's full name; and, for testing on a development machine, `http://localhost:49160/api/auth/callback` if their policy allows a localhost URI).
 - [ ] A **post-logout redirect URI**: `https://<vm-hostname>:49160/`.
 - [ ] The **client ID** and a **client secret** (delivered by a secure channel, never by e-mail body; it goes into `.env.local` only).
 - [ ] The **issuer / discovery URL** (the `…/.well-known/openid-configuration` address).

@@ -98,7 +98,7 @@ today, but the script treats all three the same way.
 **What:** run both reset modes without `--apply`, on any instance, and show
 that nothing changed.
 
-**How (on the VM, or on a Mac with data loaded; `docker` for `podman` if that is your runtime):**
+**How (on the VM, or on the development machine with data loaded; `docker` for `podman` if that is your runtime):**
 
 ```bash
 curl --noproxy '*' -sSk https://localhost:49160/api/stats | head -c 120; echo
@@ -236,7 +236,7 @@ the boxes in the van.
 **What:** open the application and look at the three pages the reset
 touched.
 
-**How:** `https://<vm-hostname>:49160` (on a Mac, `http://localhost:49160`).
+**How:** `https://<vm-hostname>:49160` (on the development machine, `http://localhost:49160`).
 
 | Page | What to look at | You should see |
 |---|---|---|
@@ -255,7 +255,7 @@ is the restore in Step 3.
 **What:** ask the same questions a script would.
 
 **How, on the server** (`-k` because the certificate names the full host,
-not `localhost`; on a Mac drop `-k` and use `http://`):
+not `localhost`; on the development machine drop `-k` and use `http://`):
 
 ```bash
 curl --noproxy '*' -sSk https://localhost:49160/api/stats | head -c 90; echo
@@ -299,7 +299,7 @@ SQL pasted into the Query page gives the same row. **Why this route
 matters:** the pages and the API read through the same code; the database
 is the one place that cannot agree with them by accident.
 
-### 5. The automated tests, on the Mac
+### 5. The automated tests, on the development machine
 
 **What:** the script's own tests, which cover unlink-all and remove-all on
 a throwaway database.

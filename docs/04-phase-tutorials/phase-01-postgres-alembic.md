@@ -180,7 +180,7 @@ variable.
 
 **What:** confirm the models and the migrations agree.
 
-**How (Mac, test virtual environment):**
+**How (development machine, test virtual environment):**
 
 ```bash
 cd backend && .venv/bin/alembic check && cd ..

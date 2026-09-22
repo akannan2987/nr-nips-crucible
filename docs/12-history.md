@@ -32,8 +32,8 @@ parity tests, then swapped in — and finally the old stack was deleted.
 | Phase | Change | Why |
 |---|---|---|
 | 1 | Rebranded to **Crucible: Pandora Toolbox Enhancement (v2.0)**; image/container names standardised | New project identity |
-| 2 | Port **5942 → 49160** everywhere; `PORT` env var + `0.0.0.0` binding; no hardcoded hostnames | Same image/scripts run unmodified on macOS and RHEL8 |
-| 2 | Container ports published on `HOST_BIND` (127.0.0.1 on macOS, 0.0.0.0 on Linux) | macOS's `remoted` daemon squats on 49152+ via link-local IPv6, breaking wildcard binds of 49160 on Macs |
+| 2 | Port **5942 → 49160** everywhere; `PORT` env var + `0.0.0.0` binding; no hardcoded hostnames | Same image/scripts run unmodified on every platform |
+| 2 | Container ports published on `HOST_BIND` (127.0.0.1 on macOS, 0.0.0.0 on Linux) | macOS's `remoted` daemon squats on 49152+ via link-local IPv6, breaking wildcard binds of 49160 on macOS |
 | 2 | Container `HEALTHCHECK` fixed to `127.0.0.1` | In-container `localhost` resolves to `::1`, but the server binds IPv4 — the old check always failed |
 | 3 | New **`backend/`**: FastAPI + SQLAlchemy 2 + Pydantic v2 + SQLite, RDKit for SDF, openpyxl for Excel | Python rewrite with an **identical API contract** |
 | 3 | A one-time JSON→SQL data import + contract-parity tests | Proof the contract was identical before switching |

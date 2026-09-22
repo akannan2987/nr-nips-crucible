@@ -234,7 +234,7 @@ route: load `docs/excel-templates/chemicals/dotmatics_template.xlsx` (six
 compounds, Caffeine with two batches), then `chemicals_registry_template.sdf`
 (three structures that merge into them), then `chemicals_template.csv`, then
 `chemicals_template.json`, then add one compound by hand with **Add
-Chemical**. The last column is the Mac copy of the real export, which is
+Chemical**. The last column is the development copy of the real export, which is
 what the server shows.
 
 | Route | How | You should see (synthetic) | Real export |
@@ -250,7 +250,7 @@ what the server shows.
 | **Terminal, the entries behind a tag** | `./container-py.sh script registry_summary.py --tag "Excel upload" --tag "SDF upload"` then add `--any` | *3 entries with Excel upload and SDF upload:* with their tags; then *6 entries with Excel upload or SDF upload* | 77, then 12,539 |
 | **Terminal, the compounds with several batches** | `./container-py.sh script registry_summary.py --batches several` | *1 entry with several batches:* Caffeine, `batches=2` | 6 entries, `batches=` 2, 2, 3, 3, 3, 15 |
 | **Podman / Docker, the long form** | `podman exec crucible-py python /app/backend/scripts/registry_summary.py --json` (Docker: `docker exec …`) | the endpoint's answer as JSON | the same |
-| **Python directly, on a Mac** | `cd backend && .venv/bin/python scripts/registry_summary.py --tag "SDF upload"` | the same lines, against `data/crucible.db` | 77 entries |
+| **Python directly, on the development machine** | `cd backend && .venv/bin/python scripts/registry_summary.py --tag "SDF upload"` | the same lines, against `data/crucible.db` | 77 entries |
 | **Database** | Query page: `SELECT json_extract(doc,'$.formats') formats, COUNT(*) n FROM chemicals GROUP BY formats` | `["excel","sdf"]` 3 · `["excel"]` 3 · `["csv"]` 5 · `["json"]` 5 · `null` 1 (the typed-in one; tags are not stored, formats are) | `null` 12,539 until the next import touches an entry — the 12,539 predate `formats` and are labelled from their source |
 | **Deploy check** | `./verify-deploy.sh https://localhost:49160` | `16 passed` | `16 passed` |
 | **Automated tests** | `cd backend && .venv/bin/pytest -q` | `144 passed` | — |

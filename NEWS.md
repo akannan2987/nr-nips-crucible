@@ -10,6 +10,37 @@ change you are getting.
 
 ---
 
+## v2.21.4 — 2026-09-22 — "The development machine, by its role"
+
+Documents, figures and comments, plus one script message. The documents
+named the machine where the code is written and tested by its operating
+system. They now name it by its role, **the development machine**, because
+the role is what a reader needs and any of the three platforms can hold it.
+A platform name stays only where behaviour differs by platform: the setup
+and uninstall guides for macOS and Windows, the loopback binding on macOS,
+the CI runners, the RDKit wheel cap, the operating-system checks in the
+scripts.
+
+**Changed**
+- Every document, the cheat sheet, the workflow page's folder table and
+  its section 2.1, the tutorials' rehearsal columns, the figure captions,
+  five figures (`fig_machine_layout.svg`, `fig_change_travels.svg`,
+  `fig_six_blocks.svg`, `fig_two_instances.svg`, `fig_two_doors.svg`) and
+  the comments in the scripts and the backend: *the development machine*
+  where the role was meant, the platform name only where the platform is
+  meant.
+- `setup-after-clone-py.sh` prints `normal on a development machine` where
+  it named the platform; the macOS guide shows the new line.
+- A documentation norm in the contributing guide, machines are named by
+  their role, never by their operating system; a glossary entry,
+  *Development machine*.
+
+**Deploy**
+- Nothing the application executes changed: blocks 3 and 6 are a
+  `git pull` each, no rebuild.
+
+---
+
 ## v2.21.3 — 2026-09-22 — "The six blocks"
 
 Documents only. Since the beta instance every change has been handed over
@@ -48,7 +79,7 @@ documents it once.
   Its `status`, `stop` and `restart` go through the service when the
   service is running it. `systemctl --user status|stop|start|restart` and
   the script's commands therefore always agree, and the unit is `active
-  (enabled)` whenever the application runs. On a Mac, Windows or Docker
+  (enabled)` whenever the application runs. On a development machine or under Docker
   nothing changes: the script is the only door.
 - **A command returns only when the application answers** (SH-9, the
   wait-for-ready): no more `Connection reset by peer` from a curl typed in
@@ -61,7 +92,7 @@ documents it once.
 **Added**
 - [`docs/15-run-stop-status.md`](docs/15-run-stop-status.md): the one page
   for "is it running?", stop, start, restart, and keeping it running after
-  the server reboots, for the Mac and the server, with what every output
+  the server reboots, for the development machine and the server, with what every output
   means, a table of what can look wrong, and what not to do. Every other
   page points to it; a figure, `fig_two_doors.svg`; lesson 37.
 
@@ -88,7 +119,7 @@ unit's status; lesson 36.
   `restore` create a container it **rewrites the unit from that
   container** and reloads systemd, and says so. `status` prints the unit's
   state. Without a unit file, without `systemctl`, or with Docker, nothing
-  changes: macOS and Windows behave as before.
+  changes: a development machine behaves as before.
 - The manual "regenerate the unit" step is gone from the SH-13 tutorial's
   deploy; the four commands stay in the operations page as the fallback.
 
@@ -169,11 +200,11 @@ came out of watching the real output.
 
 ## v2.20.1 — 2026-09-21 — "The promotion command, corrected"
 
-Documents only. The first promotion after v2.20.0 failed on the Mac with
+Documents only. The first promotion after v2.20.0 failed on the development machine with
 `error: src refspec beta does not match any`: the command written in the
 workflow, the contributing guide, the handbook's cheat sheet, the SH-12
 tutorial, the specification's diagram and one figure was
-`git push origin beta:master`, and neither the Mac nor the mirror folder
+`git push origin beta:master`, and neither the development machine nor the mirror folder
 has a *local* branch called `beta` — publishing pushes `develop` *to* the
 remote's `beta`, so it exists only on the remote and as the remote-tracking
 copy `origin/beta`.
@@ -183,7 +214,7 @@ copy `origin/beta`.
   everywhere it is written, with a paragraph in
   [`03-git-workflow.md` Step 11](docs/03-git-workflow.md#step-11---promote-to-production-when-the-testers-agree)
   on why the remote-tracking copy is the right thing to push. A dry run
-  from the Mac confirmed it moves `master` to what `beta` has.
+  from the development machine confirmed it moves `master` to what `beta` has.
 
 **Deliberately not done**
 - A local `beta` branch on the authoring machines. It would be one more
@@ -197,7 +228,7 @@ Phase **SH-12** built, the same day it was planned. A second, complete copy
 of the application can now run beside production on one machine — the
 **beta instance** the testers use — and none of the scripts run in its
 folder can touch production. No application code changed; four shell
-scripts and the documents did. Rehearsed end to end on a Mac before the
+scripts and the documents did. Rehearsed end to end on the development machine before the
 server was touched: two containers side by side, the one-way data copy, a
 beta rebuild that left production's image untouched, sixteen deploy checks
 passing on each.
@@ -244,7 +275,7 @@ passing on each.
   cue. An instance label through `/api/stats` is a small later item if the
   testers confuse tabs.
 - Beta's data is a copy that ages until refreshed, on request only (B4).
-- The server steps are written and rehearsed on a Mac, not yet run on the
+- The server steps are written and rehearsed on the development machine, not yet run on the
   VM: that is the operator's next quarter of an hour.
 
 **Deploy:** production `git pull` only (no application code); then the beta
@@ -326,7 +357,7 @@ is to go in front of end users for testing — put at the top of the plan.
 
 **Deploy note**
 - Backend and client changed: the server **rebuilds**. Then **hard-reload
-  the page** (Ctrl+F5, or Cmd+Shift+R on a Mac): a tab that stayed open
+  the page** (Ctrl+F5, or Cmd+Shift+R on macOS): a tab that stayed open
   keeps the old page code.
 
 ---
@@ -585,9 +616,10 @@ the sources, column by column: [`docs/09-registry-sources.md`](docs/09-registry-
   the 77 real structures is now drawn and analysed.
 - **Loading a large file was slow by design**: one commit per entry and a
   rescan of every identifier per insert. Identifiers come from one counter
-  and entries are written in batches; the export loads in six seconds on a
-  Mac. (Inside the container on macOS it still takes minutes, because the
-  mounted disk is slow for a database — a Mac artefact, not a server one.)
+  and entries are written in batches; the export loads in six seconds on
+  the development machine. (Inside the container on a desktop runtime it
+  still takes minutes, because the mounted disk is slow for a database — a
+  desktop artefact, not a server one.)
 - An entry merged from two sources keeps the first source's label; later
   sources are recorded under `merged_from`.
 
@@ -664,7 +696,7 @@ Phase CR-3. Tutorial:
 **Why the scripts cannot simply be run on the server**
 - They need the application's Python 3.12 and packages, which exist only
   inside the image; the server's own Python is 3.6 with none of them. On a
-  developer's Mac with the test environment they do run directly:
+  development machine with the test environment they do run directly:
   `cd backend && .venv/bin/python scripts/<name.py> …` against the local
   database.
 
@@ -752,7 +784,7 @@ Phase CR-6, from the owner's rule. Tutorial:
 
 **Fixed**
 - **The mirror no longer copies the public repository's tags.** The first
-  release tag, made on the Mac and fetched into the mirror folder along with
+  release tag, made on the development machine and fetched into the mirror folder along with
   the commits, took the name before the mirror's own commit could be tagged,
   and was pushed into the private repository pointing at the public commit.
   The mirror's setup now fetches the public remote with tags switched off,
@@ -1044,7 +1076,7 @@ changed is how surely two builds are the same, and who checks a push.
 **Changed**
 - RDKit is capped at the newest release with pre-built packages for every
   machine this project uses — the Linux image and VM, the macOS CI runner,
-  and the Intel Mac the code is developed on. The comment beside the cap
+  and Intel macOS, which newer releases no longer ship packages for. The comment beside the cap
   says how to check the next release before lifting it.
 - The publication gate is now run *after* `git add`, so new files are checked
   before their first commit; the contributing guide and the cheat sheet say so.

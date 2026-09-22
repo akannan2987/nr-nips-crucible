@@ -23,7 +23,7 @@ replacement for a Node/Express service, which has since been retired.)
 | Structures | RDKit | `app/utils/sdf.py` |
 | Tests | pytest | `tests/` |
 
-## Quickstart (macOS)
+## Quickstart (development machine)
 
 ![requirements.txt states ranges; pip resolves them inside the Python 3.12 image into requirements.lock; the Dockerfile, CI and the test environment install from the lock](../docs/img/fig_requirements_lock.svg)
 

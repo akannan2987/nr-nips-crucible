@@ -306,7 +306,7 @@ cd client && npm run build && cd ..                                     # ✓ bu
 curl --noproxy '*' -sS http://localhost:49160/api/chemicals/notices/summary
 ```
 
-**You should see** the five counts. On the Mac copy of the real export:
+**You should see** the five counts. On the development copy of the real export:
 
 ```
 {"nestle_id_pending":0,"cas_shared":419,"batch_conflicts":3,"formula":125,"attention":349}
@@ -317,7 +317,7 @@ curl --noproxy '*' -sS http://localhost:49160/api/chemicals/notices/summary
 ## How to test it, by every route
 
 Synthetic first: an empty registry, then two entries that share a CAS
-number, one of them with rows. The last column is the Mac copy of the real
+number, one of them with rows. The last column is the development copy of the real
 export (12,539 entries, no rows linked yet), which is what the server will
 show.
 

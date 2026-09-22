@@ -91,7 +91,7 @@ The section below deals with all three. It is short.
 **Time:** ~5 minutes, and by far the best-spent five minutes in this document.
 
 This is a **production** machine — take a final data backup and copy it to
-**another machine you trust** (e.g. your Mac) first, so the data survives even
+**another machine you trust** (e.g. your development machine) first, so the data survives even
 if the VM itself is later wiped or decommissioned:
 
 The emphasis on *another machine* is the whole point. A backup that lives only
@@ -131,7 +131,7 @@ beats none.
 `ls -lh data/` for a database of plausible size.
 
 ```bash
-# 2. From your OTHER machine (e.g. your Mac), pull the backup off the VM:
+# 2. From your OTHER machine (e.g. your development machine), pull the backup off the VM:
 scp <your-user>@<vm-hostname>:/path/to/crucible/backups/crucible-<stamp>.db ~/
 ```
 

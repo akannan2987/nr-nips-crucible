@@ -195,7 +195,7 @@ cd backend && .venv/bin/ruff check . && .venv/bin/pytest -q && cd ..
 and the image are rebuilt, and the rule is tried against a copy of real
 data before it goes anywhere near production.
 
-**How, on the Mac** (a Mac copy of the database with 120 compounds and
+**How, on the development machine** (a development copy of the database with 120 compounds and
 11,981 linked rows):
 
 ```bash
@@ -228,7 +228,7 @@ to deploy now and matters later, when the registry is refilled.
 
 ### The exact commands, on the server
 
-On a Mac replace `https://localhost` with `http://localhost` and drop `-k`.
+On the development machine replace `https://localhost` with `http://localhost` and drop `-k`.
 To try them on a registry with nothing linked, first add a test compound
 and link one row to it from the Screening Data page:
 

@@ -22,7 +22,7 @@
 > [glossary](00-glossary.md).
 >
 > **Grey boxes are commands.** On Windows you will type them into **Git Bash**
-> — a terminal window that understands the same commands as a Mac or Linux
+> — a terminal window that understands the same commands as a macOS or Linux
 > terminal, installed with Git in section 2. This project's scripts are
 > written for that kind of terminal, so using Git Bash means every command in
 > every other guide works here unchanged. (PowerShell, Windows' own terminal,

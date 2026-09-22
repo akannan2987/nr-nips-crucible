@@ -318,12 +318,12 @@ and, in a browser, an indigo *Prod* on a white bar at `:49160` and an amber
 
 ## How to test it, by every route
 
-The left column is the server; the right column is a Mac running the
+The left column is the server; the right column is the development machine running the
 default instance on 49160 (HTTP) and, for the rehearsal of this phase, a
 second copy started as `beta` on 49161 ([SH-12, Step 6](phase-sh-12-beta-instance.md#step-6--rehearse-it-on-a-laptop-first)).
 Replace `podman` with `docker` where that is the runtime.
 
-| Route | How | You should see (server) | Mac rehearsal |
+| Route | How | You should see (server) | Rehearsal on the development machine |
 |---|---|---|---|
 | **Browser, the pill** | open `https://<vm-hostname>:49160` and `:49161` | an indigo **Prod** pill on a white bar; an amber **Beta** pill on a pale amber bar with an amber line under it | `http://localhost:4916{0,1}`, the same |
 | **Browser, the tab** | look at the two tabs | `[Prod] Crucible: Pandora Toolbox Enhancement (v2.0) …` and `[Beta] Crucible: …` | the same |
@@ -335,7 +335,7 @@ Replace `podman` with `docker` where that is the runtime.
 | **Terminal, the override** | in the beta folder add `CRUCIBLE_INSTANCE_LABEL=Staging` to `.env.local`, `./container-py.sh rebuild`, curl `/api/instance`; then remove the line and rebuild again | `"label":"Staging"` with `"name":"beta"` unchanged; then `Beta` again | the same |
 | **Podman / Docker, the variable inside** | `podman exec crucible-py-beta sh -c 'echo $CRUCIBLE_INSTANCE'` · the same for `crucible-py` | `beta` · an empty line | the same |
 | **Podman / Docker, the whole environment** | `podman inspect crucible-py-beta --format '{{range .Config.Env}}{{println .}}{{end}}' \| grep CRUCIBLE` | `CRUCIBLE_INSTANCE=beta` and `CRUCIBLE_INSTANCE_LABEL=` | the same |
-| **Podman / Docker, the unit** | after Step 5: `grep -o 'CRUCIBLE_INSTANCE=[a-z]*' ~/.config/systemd/user/container-crucible-py-beta.service` | `CRUCIBLE_INSTANCE=beta` | — (no unit on the Mac) |
+| **Podman / Docker, the unit** | after Step 5: `grep -o 'CRUCIBLE_INSTANCE=[a-z]*' ~/.config/systemd/user/container-crucible-py-beta.service` | `CRUCIBLE_INSTANCE=beta` | — (no unit on the development machine) |
 | **Python directly, the rule** | `cd backend && .venv/bin/python -c "from app.instance import instance_label as L; print(L('', ''), L('beta', ''), L('beta', 'Staging'))"` | — | `Prod Beta Staging` |
 | **Python directly, the app** | `cd backend && CRUCIBLE_INSTANCE=beta PORT=8765 .venv/bin/python -m uvicorn app.main:app --port 8765` in one terminal, `curl -sS http://localhost:8765/api/instance` in another | — | `{"name":"beta","label":"Beta","port":8765,"https":false}` (Ctrl-C the server afterwards) |
 | **Database** | Query page: `SELECT name FROM sqlite_master WHERE name LIKE '%instance%'` | no rows: the label is derived, never stored | the same |
@@ -354,7 +354,7 @@ correct, and the promotion changes it.
 | **An active service is stopped first** | with the service active (it always is after v2.21.2): `./container-py.sh rebuild` | `Stopping the service container-crucible-py-beta.service first …`, then the build; afterwards the container has its name (`curl …/api/instance` → `Beta`) and the service is `active (enabled)` again |
 | **Both doors agree** | `./container-py.sh status \| head -5` and `systemctl --user status container-crucible-py-beta.service \| head -3` | the container row, `service …: active (enabled) — the service runs the application`, and `Active: active (running)` |
 | **Stop and start through either door** | `systemctl --user stop container-crucible-py-beta.service`, `./container-py.sh status`, then `./container-py.sh start` | no container row and `inactive (enabled)` after the stop; after the start, `Handing the container to the service …` and both doors say active |
-| **A Mac is unaffected** | `./container-py.sh rebuild` on a Mac | no service lines at all: there is no unit file and no `systemctl`; `✓ The application answers` still appears |
+| **A development machine is unaffected** | `./container-py.sh rebuild` on the development machine | no service lines at all: there is no unit file and no `systemctl`; `✓ The application answers` still appears |
 
 ---
 
@@ -370,8 +370,8 @@ correct, and the promotion changes it.
   deploy check. The pill is the person's check, and it is in the table.
 - **Guess the label from the port.** The port is not the instance; the
   name the scripts use is. Deriving from the same fact is the whole point.
-- **A Windows walk.** Nothing here is platform-specific; the Mac rehearsal
-  is what this tutorial records, and the Windows guide stays *untested*
+- **A Windows walk.** Nothing here is platform-specific; the rehearsal on the
+  development machine is what this tutorial records, and the Windows guide stays *untested*
   until SH-6.
 
 ---

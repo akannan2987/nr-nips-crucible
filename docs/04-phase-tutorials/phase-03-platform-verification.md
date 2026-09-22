@@ -76,7 +76,7 @@ or [`01-setup-rhel8.md` §5](../01-setup-rhel8.md#5-verification-checklist)
 and run each block. The first two on either platform:
 
 ```bash
-curl --noproxy '*' -sS  http://localhost:49160/api/stats     # macOS, HTTP
+curl --noproxy '*' -sS  http://localhost:49160/api/stats     # development machine, HTTP
 curl --noproxy '*' -sSk https://localhost:49160/api/stats    # RHEL 8, HTTPS
 ./container-py.sh status
 ```

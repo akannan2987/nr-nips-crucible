@@ -56,10 +56,10 @@ the induction course, the tasks page is the laminated card by the machine.
 
 | | |
 |---|---|
-| **Version** | 2.21.3 (2026-09-22, the six blocks of every change written down; 2.21.2 the same day, one supervisor: the service runs the application and the script hands over; the run-stop-status guide; 2.21.1 the same day, the script keeps the systemd unit current; 2.21.0 the same day, the instance label: *Prod* and *Beta* in the page; 2.20.0 to 2.20.2 the day before and the same morning: the beta instance built, corrected, live); the first tagged release was `v2.10.1` |
+| **Version** | 2.21.4 (2026-09-22, the development machine named by its role in every document, figure and comment; 2.21.3 the same day, the six blocks of every change written down; 2.21.2 the same day, one supervisor: the service runs the application and the script hands over; the run-stop-status guide; 2.21.1 the same day, the script keeps the systemd unit current; 2.21.0 the same day, the instance label: *Prod* and *Beta* in the page; 2.20.0 to 2.20.2 the day before and the same morning: the beta instance built, corrected, live); the first tagged release was `v2.10.1` |
 | **Status date** | 2026-09-22 |
 | **Tests** | 150 passing (`cd backend && .venv/bin/pytest`) |
-| **Last phase done** | **SH-13 — the instance label ✅ (2026-09-22, v2.21.0):** every page says *Prod* (indigo) or *Beta* (amber) in a pill and on the tab, derived from the same instance name the scripts use, through one open endpoint `GET /api/instance`; the first change to travel publish-then-promote with a rebuild — [phase SH-13](04-phase-tutorials/phase-sh-13-instance-label.md). Before it, **SH-12 — a beta instance for user testing ✅ (2026-09-21, v2.20.0, live on the server 2026-09-22):** a second, complete copy of the application beside production, named by one file (`CRUCIBLE_INSTANCE=beta`, `CRUCIBLE_PORT=49161`) that every script reads; its own container, image, data, unit and monitor line; `restore` takes a folder so beta is refreshed from production in two commands; the workflow now has two moments, publish to beta and promote to master; rehearsed on a Mac with two containers side by side; the server setup is [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta) — [phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md). Before it, CR-11 — counts, batch filters and source tags ✅ (2026-09-14): the strip of batch counts as filter buttons, six source tags derived from the data as chips in every view, filterable in combination, one summary endpoint and script — [phase CR-11](04-phase-tutorials/phase-cr-11-counts-and-tags.md). Before it, CR-10 — the attention page ✅ (2026-09-09): every flag in the browser with the buttons to act — merge, keep both, mark reviewed, set the identifier — behind one audit module the page, the API and the script all call; a review mark stored on the entry — [phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.md). Before it the same day, CR-2 with CR-1 — three views, sort and filter on the registry table ✅: every column (164), every batch (12,561), sorted and filtered on the server — [phase CR-2](04-phase-tutorials/phase-cr-2-views-sort-filter.md); and CR-9 — The real registry sources ✅: the Dotmatics export, the structure file and the limited list recognised by their columns and loaded by their own rules; batches folded, sources merged on DTXSID, shared identifiers flagged, structures read; a banner and the audit for what a person decides — [phase CR-9](04-phase-tutorials/phase-cr-9-real-registry-sources.md) · [the sources](09-registry-sources.md) |
+| **Last phase done** | **SH-13 — the instance label ✅ (2026-09-22, v2.21.0):** every page says *Prod* (indigo) or *Beta* (amber) in a pill and on the tab, derived from the same instance name the scripts use, through one open endpoint `GET /api/instance`; the first change to travel publish-then-promote with a rebuild — [phase SH-13](04-phase-tutorials/phase-sh-13-instance-label.md). Before it, **SH-12 — a beta instance for user testing ✅ (2026-09-21, v2.20.0, live on the server 2026-09-22):** a second, complete copy of the application beside production, named by one file (`CRUCIBLE_INSTANCE=beta`, `CRUCIBLE_PORT=49161`) that every script reads; its own container, image, data, unit and monitor line; `restore` takes a folder so beta is refreshed from production in two commands; the workflow now has two moments, publish to beta and promote to master; rehearsed on the development machine with two containers side by side; the server setup is [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta) — [phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md). Before it, CR-11 — counts, batch filters and source tags ✅ (2026-09-14): the strip of batch counts as filter buttons, six source tags derived from the data as chips in every view, filterable in combination, one summary endpoint and script — [phase CR-11](04-phase-tutorials/phase-cr-11-counts-and-tags.md). Before it, CR-10 — the attention page ✅ (2026-09-09): every flag in the browser with the buttons to act — merge, keep both, mark reviewed, set the identifier — behind one audit module the page, the API and the script all call; a review mark stored on the entry — [phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.md). Before it the same day, CR-2 with CR-1 — three views, sort and filter on the registry table ✅: every column (164), every batch (12,561), sorted and filtered on the server — [phase CR-2](04-phase-tutorials/phase-cr-2-views-sort-filter.md); and CR-9 — The real registry sources ✅: the Dotmatics export, the structure file and the limited list recognised by their columns and loaded by their own rules; batches folded, sources merged on DTXSID, shared identifiers flagged, structures read; a banner and the audit for what a person decides — [phase CR-9](04-phase-tutorials/phase-cr-9-real-registry-sources.md) · [the sources](09-registry-sources.md) |
 | **Phase in progress** | **R — the registry reset** 🔨 (tracks CR + SD): **R-1 and R-2 done on production 2026-09-08** — every row unlinked, then every entry removed; the registry is empty by design, the 664 entries held in a backup outside the repository; R-3 is now **SD-1, agreed ✅ 2026-09-08** — the registry-first rule, written from the owner's description and agreed the same day, D1–D11 as recommended — [phase R](04-phase-tutorials/phase-r-registry-reset.md) · [the specification](09-chemical-identification.md#the-next-rule-registry-first--specification) |
 | **Plan** | Six **tracks**, one per module and a shared spine, each with its next phase — [`05-roadmap.md`](05-roadmap.md). Next in order: ~~the owner loads the three real files~~ done 2026-09-09 (12,539 entries on production) → ~~CR-10 the attention page~~ done v2.16.0 → ~~CR-11 counts and tags~~ done v2.18.0 → ~~SH-12 the beta instance~~ done v2.20.0, live on the server 2026-09-22 → ~~SH-13 the instance label~~ done v2.21.0 → **SH-3a + SH-3b the login**, delivered to beta, tested by end users, then promoted to production (the owner's priority of 2026-09-21 — [`13-authentication.md`](13-authentication.md)) → CR-12 structures: derive, draw, edit ([specified](09-structures.md), three releases) → SD-1 build → CR-5 unregistered review → CR-4 incomplete entries → CR-8 merge a hand-picked pair → SH-2 schema normalisation; SH-3c single sign-on ⏸ the identity team's registration |
 | **Production** | one RHEL 8 VM, one container per instance — production on 49160 and, **since 2026-09-22, the beta instance on 49161** with its own copy of production's data (restored from the morning's backup), its own unit and monitor line — one SQLite file each: 49,065 screening rows, **12,539 registered chemicals** (the Dotmatics export, the structure file and the limited list, loaded by the owner on 2026-09-09 through the terminal shortcut), **0 rows linked** until SD-1 attaches them; 419 entries share an identifier, 3 have batch conflicts and 125 have a formula their names do not explain — 349 items on the attention page, for a person to decide; the 664 old entries stay in `~/data-backup-20260908-before-R2.db` on the server |
@@ -82,7 +82,7 @@ the induction course, the tasks page is the laminated card by the machine.
 | [§3 Set up your workshop](#3-day-0--set-up-your-workshop) | The app running on your machine, installed once, with proof it works | ~45 min | ✅ macOS · ✅ RHEL 8 · 🔨 Windows (guide written, untested) |
 | [§4 Run it and look around](#4-day-1--run-it-and-look-around) | You have loaded a file, looked at it in the browser, and asked the API a question | 1 h | ✅ |
 | [§5 Understand how it is built](#5-understand-how-it-is-built) | You can explain the one design rule and why the container is the isolation | 1–2 h | ✅ |
-| [§6 How a change travels](#6-how-a-change-travels) | You can take an edit from your Mac to production without leaking anything | 1 h reading, minutes per change | ✅ |
+| [§6 How a change travels](#6-how-a-change-travels) | You can take an edit from your development machine to production without leaking anything | 1 h reading, minutes per change | ✅ |
 | [§7 The build, phase by phase](#7-the-build-phase-by-phase) | You know what was built, in what order, and why | 1 h | ✅ tutorials 00–05b, R, SH-1 |
 | [§8 Operate it](#8-operate-it) | Update, back up, rotate certificates, monitor, uninstall | as needed | ✅ |
 | [§9 Work with real laboratory data](#9-work-with-real-laboratory-data) | A laboratory export loaded, its compounds identified, the registry audited | half a day | ✅ |
@@ -139,12 +139,13 @@ does not record a date, it says so rather than guessing.
 | 2026-09-14 | **v2.17.0.** The plan for CR-11 and CR-12 written first, at the owner's request, ahead of the screening rule. |
 | 2026-09-14 | **v2.18.0.** CR-11: the counts strip and the source tags on the registry page — where every compound came from, at a glance; one summary behind the browser, the API and a script. |
 | 2026-09-21 | **v2.19.0.** The beta instance and the login put at the top of the plan, at the owner's request, so end users can test without touching production; the local-accounts rung to be built in full. |
-| 2026-09-21 | **v2.20.0.** SH-12: the beta instance — every script reads its instance from one file, a second copy runs beside production and cannot touch it, the workflow gains publish-to-beta and promote-to-master; rehearsed on a Mac, ready for the server. |
+| 2026-09-21 | **v2.20.0.** SH-12: the beta instance — every script reads its instance from one file, a second copy runs beside production and cannot touch it, the workflow gains publish-to-beta and promote-to-master; rehearsed on the development machine, ready for the server. |
 | 2026-09-22 | **v2.20.2.** The beta instance set up on the server from the guide's §8: two containers, two units, two monitor lines, the same 12,539 compounds on both ports; the restart message says the right scheme. |
 | 2026-09-22 | **v2.21.0.** SH-13: the page says *Prod* or *Beta*, in a pill and on the tab, indigo or amber; one open endpoint; the first rebuild to go beta first, then promoted. |
 | 2026-09-22 | **v2.21.1.** The first beta deploy found the script and the systemd unit fighting over one container; the script now stops an active unit before touching the container and rewrites the unit afterwards (lesson 36). |
 | 2026-09-22 | **v2.21.2.** One supervisor: the script hands every container it creates to the service, and its status, stop, start and restart go through the service; a command returns only when the application answers; one page, `15-run-stop-status.md`, for is-it-running, stop, start and surviving a reboot (lesson 37). |
 | 2026-09-22 | **v2.21.3.** The route of every change since the beta instance written as six blocks in two moments, with why each block exists, in the workflow page, the handbook and a figure. |
+| 2026-09-22 | **v2.21.4.** Every document, figure and comment names the machine where the code is written by its role, *the development machine*, and a platform only where behaviour differs by platform; a contributing norm and a glossary entry. |
 | 2026-09-09 | **v2.14.0.** CR-9: the laboratory's three real registry files described as data — the master export, the structure file, the limited list — loaded by their own rules; the registry can now be refilled with 12,539 real entries. |
 | 2026-09-09 | **v2.13.0.** CR-3: every way into the registry through one door — JSON beside the spreadsheet and structure formats, import and export from the terminal, and the review loop that refills the registry from the pre-reset backup. |
 | 2026-09-09 | **v2.11.0.** CR-6: deleting a compound with linked rows is refused in the browser and the plain API; forced or from the script it unlinks first, then deletes. |
@@ -211,7 +212,7 @@ its expected output**, and ends with a numbered checklist:
 
 | Machine | Guide | Checklist | Status |
 |---|---|---|---|
-| A Mac, for development | [`01-setup-macos.md`](01-setup-macos.md) | V1–V7 | ✅ walked from a fresh clone |
+| A macOS machine | [`01-setup-macos.md`](01-setup-macos.md) | V1–V7 | ✅ walked from a fresh clone |
 | A RHEL 8 VM, for production | [`01-setup-rhel8.md`](01-setup-rhel8.md) — rootless podman, SELinux, the three firewall cases, corporate certificates, surviving a reboot | V1–V9 | ✅ walked on the real machine; V9 (reboot) ⏸ waits on a window |
 | A Windows PC | [`01-setup-windows.md`](01-setup-windows.md) — Docker Desktop, the scripts under Git Bash, or a Linux distribution under WSL 2 | V1–V7 (Windows variants) | 🔨 written, marked *untested* until walked on a real PC |
 
@@ -221,7 +222,7 @@ builds the image, starts the app, polls the API until it answers, and offers
 to install the health-monitoring cron. The guides exist so that you know what
 that command is doing rather than watching it scroll past.
 
-**Two repositories, one codebase.** A Mac clones the **public** repository;
+**Two repositories, one codebase.** The development machine clones the **public** repository;
 the production VM clones the **private** one. Content flows public → private
 only, through a mirror folder. You do not need to understand this to install,
 but you need it before §6: [`03-git-workflow.md` §1](03-git-workflow.md#1-the-two-repositories).
@@ -232,7 +233,7 @@ but you need it before §6: [`03-git-workflow.md` §1](03-git-workflow.md#1-the-
 particular when this prints a line containing `"chemicals"`:
 
 ```bash
-# macOS (HTTP)
+# development machine (HTTP)
 curl --noproxy '*' -sS http://localhost:49160/api/stats
 # RHEL 8 (HTTPS; localhost needs -k because the certificate names only the full hostname)
 curl --noproxy '*' -sSk https://localhost:49160/api/stats
@@ -323,15 +324,15 @@ value live, and what happens to it if a column is added to the table later?*
 
 ## §6 How a change travels
 
-**Goal:** you can take an edit from your Mac to production, and know at each
+**Goal:** you can take an edit from your development machine to production, and know at each
 step what would stop a secret from travelling with it.
 **Why it has its own document:** there are two repositories and three folders,
 and the gate between public and private is the reason internal names never
 reach the public one.
 
-![A Mac authoring folder pushes to the public repository; the VM's mirror folder fetches public and pushes private; the production folder pulls master from private](img/fig_machine_layout.svg)
+![The authoring folder on the development machine pushes to the public repository; the VM's mirror folder fetches public and pushes private; the production folder pulls master from private](img/fig_machine_layout.svg)
 
-*Everyday version:* a letter goes from your desk (the Mac) to the post office
+*Everyday version:* a letter goes from your desk (the development machine) to the post office
 (the public repository), where a clerk checks it carries no home address
 (the gate), then to the company mailroom (the private mirror), and only then to
 the person who acts on it (production). The route never runs backwards.
@@ -345,22 +346,22 @@ documentation. Read [§1 The two repositories](03-git-workflow.md#1-the-two-repo
 [Flow A](03-git-workflow.md#4-flow-a---a-change-from-start-to-finish) once;
 after that the cheat sheet in [§A](#a-cheat-sheet) is enough.
 
-![Seven steps: edit, test, gate, push on the Mac; mirror, deploy, confirm on the VM; then back to edit](img/fig_change_travels.svg)
+![Seven steps: edit, test, gate, push on the development machine; mirror, deploy, confirm on the VM; then back to edit](img/fig_change_travels.svg)
 
 **Since v2.20.0 the route has two moments and six blocks.** A *publish*
 pushes `develop` and `beta`, and the **beta instance** — the testers' copy
 on port 49161, [`14-beta-instance.md`](14-beta-instance.md) — pulls it the
-same day (blocks 1 to 3: Mac, mirror folder, beta folder). A *promotion*
+same day (blocks 1 to 3: development machine, mirror folder, beta folder). A *promotion*
 pushes `beta` to `master` by hand, on a day someone chooses, and production
-pulls it (blocks 4 to 6: Mac, mirror folder, production folder). A change
+pulls it (blocks 4 to 6: development machine, mirror folder, production folder). A change
 that fails on beta is never promoted. The six blocks, with why each exists,
 are the first table of [Flow A](03-git-workflow.md#the-six-blocks-at-a-glance).
 
-![Six blocks in two rows: publish (Mac, mirror, beta folder) then, after the testers agree, promote (Mac, mirror, production folder)](img/fig_six_blocks.svg)
+![Six blocks in two rows: publish (development machine, mirror, beta folder) then, after the testers agree, promote (development machine, mirror, production folder)](img/fig_six_blocks.svg)
 
 ![Three branch stations on one rail: develop, beta, master; publish pushes develop to beta, promotion pushes beta to master by hand](img/fig_publish_promote.svg)
 
-**Every session after setup** starts the same way, on the Mac:
+**Every session after setup** starts the same way, on the development machine:
 
 ```bash
 cd ~/Documents/Work/pandora_toolbox/nr-nips-crucible
@@ -427,7 +428,7 @@ code (`phase-cr-3-every-way-in.md`). What each track does next is
 | SH-1 | SH | Module names | *Chemicals*, *Samples*, *Screening* become *Chemical Registry*, *Sample Management*, *Screening Data* in the sidebar, the page headings, the dashboard tiles, the interactive architecture page and every document; no address or API path changed | [`phase-sh-1-module-names.md`](04-phase-tutorials/phase-sh-1-module-names.md) | 2026-09-08 (v2.9.0) | ✅ |
 | 06 (SH-2) | SH | Schema normalisation | The frequently-filtered fields promoted from JSON into indexed columns, without changing the API or breaking the design rule | `04-phase-tutorials/phase-06-schema-normalisation.md` | — | 🔜 |
 | SH-13 | SH | The instance label | Every page says which instance it is: an indigo *Prod* pill on a white bar, an amber *Beta* pill on an amber bar, `[Prod]`/`[Beta]` on the tab; `CRUCIBLE_INSTANCE` passed into the container, `GET /api/instance` open, the label derived from the name; five tests | [`phase-sh-13-instance-label.md`](04-phase-tutorials/phase-sh-13-instance-label.md) | 2026-09-22 (v2.21.0) | ✅ |
-| SH-12 | SH | A beta instance for user testing (live on the server 2026-09-22) | `CRUCIBLE_INSTANCE` and `CRUCIBLE_PORT` read from a folder's `.env.local` by `container-py.sh`, the setup script, the monitor and the uninstaller, each acting on its own folder's instance; a second, complete copy of the application beside production — `crucible-py-beta` on 49161, its own data, unit and monitor line — that no script in its folder can make touch production; `restore` takes a folder; the workflow gains *publish to beta* and *promote to master*; RHEL 8 guide §8; two figures; rehearsed on a Mac; planned in [`14-beta-instance.md`](14-beta-instance.md), decided in [ADR 0002](adr/0002-beta-instance.md) | [`phase-sh-12-beta-instance.md`](04-phase-tutorials/phase-sh-12-beta-instance.md) | 2026-09-21 (v2.20.0) · on the server 2026-09-22 | ✅ |
+| SH-12 | SH | A beta instance for user testing (live on the server 2026-09-22) | `CRUCIBLE_INSTANCE` and `CRUCIBLE_PORT` read from a folder's `.env.local` by `container-py.sh`, the setup script, the monitor and the uninstaller, each acting on its own folder's instance; a second, complete copy of the application beside production — `crucible-py-beta` on 49161, its own data, unit and monitor line — that no script in its folder can make touch production; `restore` takes a folder; the workflow gains *publish to beta* and *promote to master*; RHEL 8 guide §8; two figures; rehearsed on the development machine; planned in [`14-beta-instance.md`](14-beta-instance.md), decided in [ADR 0002](adr/0002-beta-instance.md) | [`phase-sh-12-beta-instance.md`](04-phase-tutorials/phase-sh-12-beta-instance.md) | 2026-09-21 (v2.20.0) · on the server 2026-09-22 | ✅ |
 | 07 (SH-3a/b/c) | SH | Authentication, as a ladder (agreed 2026-09-08; reordered to the top 2026-09-21) | A token gate (SH-3a), local accounts in full (SH-3b), single sign-on through the organisation's identity provider (SH-3c) — one flag, one guard on every route, one open health route; planned in [`13-authentication.md`](13-authentication.md), decided in [ADR 0001](adr/0001-authentication-ladder.md) | `04-phase-tutorials/phase-sh-3a-token-gate.md` and siblings | — | 🔜 SH-3a + SH-3b **next**, on beta first · ⏸ SH-3c on the registration |
 
 Version-by-version detail, including what each release deliberately did *not*
@@ -608,7 +609,7 @@ The full list, each with its lesson, is [`11-lessons-learned.md`](11-lessons-lea
 The commands I actually type, on one screen. The scripts are the same on both
 machines; they auto-detect podman or Docker.
 
-| | macOS (development) | RHEL 8 VM (production) |
+| | Development machine | RHEL 8 VM (production) |
 |---|---|---|
 | Start of session | `git switch develop && git pull --ff-only origin develop` | — |
 | Run the checks CI runs | `cd backend && .venv/bin/ruff check . && .venv/bin/pytest -q` | not possible on the VM (system Python 3.6); the container ships its own |
@@ -619,7 +620,7 @@ machines; they auto-detect podman or Docker.
 | Run a maintenance script (audit, remove, merge…) | `./container-py.sh script <name.py> [args]` — no name lists them; the scripts always report first and write only with `--apply` | same |
 | Load a chemicals file · export the registry | `./container-py.sh import chemicals <file>` (json, csv, tsv, xlsx, xls, sdf) · `./container-py.sh export chemicals <file.json>` | same |
 | The gate, before every push | `git add -A && ./check-public-safe.sh` → `✓ SAFE TO PUSH` · `python3 check-links.py` | — |
-| The whole route of a change, six blocks | [Flow A, the six blocks](03-git-workflow.md#the-six-blocks-at-a-glance): 1 Mac publish · 2 mirror · 3 beta folder · pause · 4 Mac promote · 5 mirror · 6 production folder | |
+| The whole route of a change, six blocks | [Flow A, the six blocks](03-git-workflow.md#the-six-blocks-at-a-glance): 1 development machine publish · 2 mirror · 3 beta folder · pause · 4 development machine promote · 5 mirror · 6 production folder | |
 | Publish (every change; the beta instance gets it) | `git push origin develop develop:beta` | beta folder: `git switch beta && git pull --ff-only origin beta`, rebuild only if code changed |
 | Promote (when the testers agree; production gets it) | `git fetch origin && git log --oneline origin/master..origin/beta` then `git push origin origin/beta:master` | mirror folder: `git fetch origin && git push origin origin/beta:master`; then production's deploy row |
 | Tag the release (every version that reaches production) | `git tag -a vX.Y.Z -m "vX.Y.Z — <NEWS subtitle>" && git push origin vX.Y.Z`, then the Release page | mirror folder: the same tag on the mirror's commit, then the Release page on the private host |

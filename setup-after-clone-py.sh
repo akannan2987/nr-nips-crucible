@@ -2,7 +2,7 @@
 
 # Crucible: Pandora Toolbox Enhancement (v2.0) - Python Backend Bootstrap
 #
-# One-shot setup after cloning, for BOTH macOS and the RHEL8 VM. It:
+# One-shot setup after cloning, for BOTH a development machine and the RHEL8 VM. It:
 #   1. (optional) copies SSL certificates into certs/  (VM: from the corporate cert store)
 #   2. builds the crucible-py image        (podman or docker, auto-detected)
 #   3. starts the container                (HTTPS when certs exist, else HTTP)
@@ -35,7 +35,7 @@ echo ""
 # Environment variables win over .env.local. Example .env.local:
 #   CERT_SOURCE=/path/to/corporate/cert/store
 #   CERT_HOSTNAME=your-vm.example.com   # optional; defaults to `hostname -f`
-# On a Mac neither is usually set → the app starts in HTTP mode.
+# On a development machine neither is usually set → the app starts in HTTP mode.
 if [ -f ".env.local" ]; then
     _env_cert_source="$CERT_SOURCE"; _env_cert_hostname="$CERT_HOSTNAME"
     _env_instance="${CRUCIBLE_INSTANCE:-}"; _env_port="${CRUCIBLE_PORT:-}"
@@ -87,7 +87,7 @@ elif [ -d "$CERT_SOURCE" ]; then
     fi
 else
     if [ -z "$CERT_SOURCE" ]; then
-        echo -e "  ${YELLOW}– No certificate store configured (normal on macOS)${NC}"
+        echo -e "  ${YELLOW}– No certificate store configured (normal on a development machine)${NC}"
     else
         echo -e "  ${YELLOW}– No certificate store at ${CERT_SOURCE}${NC}"
     fi

@@ -137,7 +137,7 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    # Bind 0.0.0.0 so the same container/image works on macOS and RHEL8;
+    # Bind 0.0.0.0 so the same container/image works on the development machine and on RHEL8;
     # the port comes from the PORT env var (default 49160).
     host = os.environ.get("HOST", "0.0.0.0")
 

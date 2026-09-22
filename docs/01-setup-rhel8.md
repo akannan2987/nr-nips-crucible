@@ -14,8 +14,8 @@ documents: [RHEL8 Uninstall](01-uninstall-rhel8.md) ·
 > **Repository for RHEL8:** clone from the **private** Nestlé repo
 > `https://github.com/nestle-it/nr-nips-crucible` (requires a Personal Access
 > Token over HTTPS, or an SSH key: `git@github.com:nestle-it/nr-nips-crucible.git`).
-> macOS development uses the public repo instead — see
-> [01-setup-macos.md](01-setup-macos.md).
+> A development machine uses the public repo instead — see
+> [01-setup-macos.md](01-setup-macos.md) or [01-setup-windows.md](01-setup-windows.md).
 >
 > This guide uses placeholders for internal values — `<vm-hostname>` for the
 > VM's FQDN and `<cert-store-path>` for the corporate certificate store. No
@@ -93,7 +93,7 @@ halves are packed into a single **container**.
 **Container** ([glossary](00-glossary.md#the-container-words)) — a sealed lunchbox
 holding an application plus every library it needs. It runs on your machine but
 brings its own private idea of what "the filesystem" contains, so it behaves
-identically on a Mac laptop and on this RHEL8 server. Nothing inside can see
+identically on a development laptop and on this RHEL8 server. Nothing inside can see
 your machine's files unless you deliberately hand a folder in.
 
 **Image** ([glossary](00-glossary.md#the-container-words)) — the recipe-plus-
@@ -499,8 +499,8 @@ other machines once the firewall allows it: `https://<vm-hostname>:49160`.
 **`0.0.0.0` versus `127.0.0.1`** — `127.0.0.1` (also called **localhost**) is
 this very machine and nowhere else; a program listening there is answering a
 door that only opens onto its own hallway. `0.0.0.0` means *every network
-address this machine has* — the front door onto the street. On a Mac the
-development setup deliberately uses `127.0.0.1`, so nobody else can reach it;
+address this machine has* — the front door onto the street. On a macOS
+development machine the scripts deliberately use `127.0.0.1`, so nobody else can reach it;
 on this server we want colleagues to reach it, so we use `0.0.0.0`. This is one
 of the genuine differences between a laptop install and a production one.
 
@@ -2002,7 +2002,7 @@ container.
 | Check it, stop it, start it, restart it | `./container-py.sh status` · `stop` · `start` · `restart` in this folder, or `systemctl --user … container-crucible-py-beta.service` from anywhere; both agree — [`15-run-stop-status.md`](15-run-stop-status.md) |
 | Give the testers a fresh copy of production | the two commands of 8.4 |
 | See what beta has that production does not | `git log --oneline origin/master..origin/beta` (after `git fetch origin`) |
-| Promote it to production | not from here — [`03-git-workflow.md` Step 11](03-git-workflow.md#step-11---promote-to-production-when-the-testers-agree), from the Mac and the mirror folder, then production's own folder |
+| Promote it to production | not from here — [`03-git-workflow.md` Step 11](03-git-workflow.md#step-11---promote-to-production-when-the-testers-agree), from the development machine and the mirror folder, then production's own folder |
 | Remove the beta instance | `./uninstall.sh --dry-run` here first: it opens with `Instance: beta` and lists only beta's container, image, unit and cron line; then the mode you mean. Production is not listed and not touched |
 
 The weekly certificate check (section 3.4) and the nightly backup (6.3)

@@ -140,7 +140,7 @@ disk must either be placed under `data/` first, or copied into the
 container. The `import` shortcut does the copy for you; the `script`
 shortcut expects a path the container can already see.
 
-**How, on the server** (or a Mac; the shortcuts find podman or Docker):
+**How, on the server** (or the development machine; the shortcuts find podman or Docker):
 
 ```bash
 ./container-py.sh import chemicals ~/registry-review.json          # copies the file in, imports it, prints the report
@@ -157,7 +157,7 @@ podman cp ~/registry-review.json crucible-py:/tmp/crucible-import/registry-revie
 podman exec crucible-py python /app/backend/scripts/import_file.py chemicals /tmp/crucible-import/registry-review.json
 ```
 
-**On a Mac with the test environment**, the scripts also run directly against
+**On the development machine with the test environment**, the scripts also run directly against
 the local database, no container involved:
 
 ```bash
@@ -224,7 +224,7 @@ cd client && npm run build && cd ..                                     # the JS
 
 ## How to test it, by every route
 
-Everything below was run against the Mac copy before this page was
+Everything below was run against the development copy before this page was
 written; the numbers are from the five-record synthetic template.
 
 | Route | How | You should see |
@@ -237,7 +237,7 @@ written; the numbers are from the five-record synthetic template.
 | **Terminal, shortcut** | `./container-py.sh import chemicals docs/excel-templates/chemicals/chemicals_template.json` | the same report as the API |
 | **Terminal, export shortcut** | `./container-py.sh export chemicals /tmp/registry-export.json && head -c 200 /tmp/registry-export.json` | *Wrote N chemicals to /tmp/crucible-export.json*, *Copied to …*, and the JSON list starts |
 | **Terminal, long form** | `podman cp … && podman exec crucible-py python /app/backend/scripts/import_file.py chemicals /tmp/crucible-import/…` | the same report — proves the shortcut is only a wrapper |
-| **Python directly, on a Mac** | `cd backend && .venv/bin/python scripts/import_file.py chemicals ../docs/excel-templates/chemicals/chemicals_template.json` | the same report, against the local database |
+| **Python directly, on the development machine** | `cd backend && .venv/bin/python scripts/import_file.py chemicals ../docs/excel-templates/chemicals/chemicals_template.json` | the same report, against the local database |
 | **Round trip** | export to a file, `DELETE …/all/clear?force=true`, import the file back | the same count and the same fields, `pubchem_cid` and all |
 | **Database** | Query page: `SELECT chemical_id, json_extract(doc,'$.name'), json_extract(doc,'$.cas_number') FROM chemicals ORDER BY chemical_id` | the five template rows, one with an empty CAS |
 | **Deploy check** | `./verify-deploy.sh https://localhost:49160` | `16 passed` |

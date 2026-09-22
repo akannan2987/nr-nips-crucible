@@ -13,7 +13,7 @@ Start at section 2 if you are setting up a machine for the first time.
 
 - [1. The two repositories](#1-the-two-repositories)
 - [2. One-time setup](#2-one-time-setup)
-  - [2.1 Mac - the authoring folder](#21-mac---the-authoring-folder)
+  - [2.1 The development machine - the authoring folder](#21-the-development-machine---the-authoring-folder)
   - [2.2 VM - the mirror folder](#22-vm---the-mirror-folder)
   - [2.3 VM - the production folder](#23-vm---the-production-folder)
   - [2.4 VM - the beta folder](#24-vm---the-beta-folder)
@@ -30,7 +30,7 @@ Start at section 2 if you are setting up a machine for the first time.
 
 ## 1. The two repositories
 
-![A Mac authoring folder pushes to the public repository; the VM's mirror folder fetches public and pushes private; the beta folder pulls beta and the production folder pulls master from private; content flows public to private only](img/fig_machine_layout.svg)
+![The authoring folder on the development machine pushes to the public repository; the VM's mirror folder fetches public and pushes private; the beta folder pulls beta and the production folder pulls master from private; content flows public to private only](img/fig_machine_layout.svg)
 
 | | **Private** | **Public** |
 |---|---|---|
@@ -44,7 +44,7 @@ Four folders, each with a fixed purpose:
 
 | # | Machine | Folder | `origin` remote | Extra remote | Branch | Purpose |
 |---|---------|--------|-----------------|--------------|--------|---------|
-| 1 | Mac | `~/Documents/Work/pandora_toolbox/nr-nips-crucible` | **public** | none | `develop` | Write and test changes |
+| 1 | Development machine | `~/Documents/Work/pandora_toolbox/nr-nips-crucible` | **public** | none | `develop` | Write and test changes |
 | 2 | VM | `~/work/Pandora_toolbox/crucible-mirror` | **private** | `public` (fetch only) | `develop` | Copy content public -> private |
 | 3 | VM | `~/work/Pandora_toolbox/nr-nips-crucible` | **private** | none | `master` | Run the live application (port 49160) |
 | 4 | VM | `~/work/Pandora_toolbox/nr-nips-crucible-beta` | **private** | none | `beta` | Run the **beta instance** the testers use (port 49161) — [`14-beta-instance.md`](14-beta-instance.md) |
@@ -55,7 +55,7 @@ Four folders, each with a fixed purpose:
 > use what it prints; a command run from the wrong folder is the most common
 > way this workflow goes wrong.
 
-> **One remote per purpose.** The Mac folder has no private credentials, so it
+> **One remote per purpose.** The development machine's folder has no private credentials, so it
 > *cannot* accidentally push to the private repo. The production folder never
 > touches the public repo. Only the mirror folder sees both - and it only ever
 > **fetches** from public, never pushes to it.
@@ -66,10 +66,10 @@ Four folders, each with a fixed purpose:
 
 Do this once per machine. Skip any folder that already exists.
 
-### 2.1 Mac - the authoring folder
+### 2.1 The development machine - the authoring folder
 
 ```bash
-# ▶ MAC
+# ▶ DEVELOPMENT MACHINE
 cd ~/Documents/Work/pandora_toolbox
 git clone https://github.com/akannan2987/nr-nips-crucible.git
 cd nr-nips-crucible
@@ -86,7 +86,7 @@ origin  https://github.com/akannan2987/nr-nips-crucible.git (fetch)
 origin  https://github.com/akannan2987/nr-nips-crucible.git (push)
 ```
 
-Then set the app up locally - see [01-setup-macos.md](01-setup-macos.md).
+Then set the app up locally - see the setup guide for your operating system, [01-setup-macos.md](01-setup-macos.md) or [01-setup-windows.md](01-setup-windows.md).
 
 ### 2.2 VM - the mirror folder
 
@@ -209,7 +209,7 @@ Do **not** add a `public` remote here either.
 
 ## 3. Golden rules
 
-1. **Author changes on the Mac** (public checkout). Content written there is
+1. **Author changes on the development machine** (public checkout). Content written there is
    sanitized by construction - you use `<vm-hostname>` and `<cert-store-path>`
    placeholders, never real values.
 2. **Content flows public -> private.** Never the other way through git.
@@ -228,10 +228,10 @@ Do **not** add a `public` remote here either.
 
 ## 4. Flow A - a change from start to finish
 
-![Seven steps: edit, test, gate, push on the Mac; mirror, deploy, confirm on the VM; then back to edit](img/fig_change_travels.svg)
+![Seven steps: edit, test, gate, push on the development machine; mirror, deploy, confirm on the VM; then back to edit](img/fig_change_travels.svg)
 
 The complete path for a normal change, in **two moments**. *Publish* (Steps
-1–10): you edit something on the Mac and finish with **both repositories'
+1–10): you edit something on the development machine and finish with **both repositories'
 `develop` and `beta` branches in sync** and the **beta instance** redeployed,
 so the testers see the change the same day. *Promote* (Step 11): when they
 are satisfied, `beta` is pushed to `master` by hand and **production** is
@@ -246,15 +246,15 @@ each moment, always in this order. This is the shape a release is handed
 over in; the detailed steps below, with expected output, are the same
 route cut finer.
 
-![Six blocks in two rows: publish (Mac, mirror, beta folder) then, after the testers agree, promote (Mac, mirror, production folder)](img/fig_six_blocks.svg)
+![Six blocks in two rows: publish (development machine, mirror, beta folder) then, after the testers agree, promote (development machine, mirror, production folder)](img/fig_six_blocks.svg)
 
 | Block | Where | What you do | Why this place | Detailed steps |
 |---|---|---|---|---|
-| **1** | Mac, your folder | commit; `git push origin develop develop:beta`; tag the version | The change is written and tested here; the push puts it in the **public** repository on `develop` and `beta`; the tag names the version | Steps 1–5 |
+| **1** | Development machine, your folder | commit; `git push origin develop develop:beta`; tag the version | The change is written and tested here; the push puts it in the **public** repository on `develop` and `beta`; the tag names the version | Steps 1–5 |
 | **2** | VM, mirror folder | `git fetch public`; `git checkout public/develop -- .`; commit; tag; `git push origin develop develop:beta` | Production and beta pull from the **private** repository, and the two repositories cannot push to each other ([§7](#7-why-the-histories-differ-and-why-that-is-fine)); the mirror is the one folder that sees both, so it copies the content across | Steps 6–9 |
 | **3** | VM, beta folder | `git pull --ff-only origin beta`; `./container-py.sh rebuild` if code changed | Beta runs the `beta` branch; the testers see the change; production has not moved | Step 10 |
 | *pause* | | The testers use it: minutes for a label, days for a login. A change that fails here is never promoted | | |
-| **4** | Mac | `git fetch origin`; `git push origin origin/beta:master` | Moves the public `master` to what beta has been running: the decision "this is good for the laboratory" | Step 11, Mac part |
+| **4** | Development machine | `git fetch origin`; `git push origin origin/beta:master` | Moves the public `master` to what beta has been running: the decision "this is good for the laboratory" | Step 11, development-machine part |
 | **5** | VM, mirror folder | `git fetch origin`; `git push origin origin/beta:master`; `git diff --stat public/develop develop` | The same decision on the private repository, then the check that the two repositories still agree (only the six workbooks differ) | Step 11, mirror part; Step 12 |
 | **6** | VM, production folder | backup; `git pull --ff-only origin master`; `./container-py.sh rebuild` if code changed | Production runs `master`; only now does the laboratory get the change | Step 11, production part |
 
@@ -273,7 +273,7 @@ restaurant kitchen starts cooking it.
 ### Step 1 - Make and test the change
 
 ```bash
-# ▶ MAC — ~/Documents/Work/pandora_toolbox/nr-nips-crucible
+# ▶ DEVELOPMENT MACHINE — ~/Documents/Work/pandora_toolbox/nr-nips-crucible
 git switch develop
 git pull --ff-only origin develop        # start from the latest
 
@@ -287,7 +287,7 @@ curl --noproxy '*' -sS http://localhost:49160/api/stats
 ### Step 2 - Safety gate
 
 ```bash
-# ▶ MAC
+# ▶ DEVELOPMENT MACHINE
 ./check-public-safe.sh
 ```
 
@@ -296,7 +296,7 @@ Must print **`✓ SAFE TO PUSH`**. If it fails, fix what it lists - do not conti
 ### Step 3 - Commit
 
 ```bash
-# ▶ MAC
+# ▶ DEVELOPMENT MACHINE
 git add -A
 git status                               # review before committing
 git commit -m "<what changed>"
@@ -305,7 +305,7 @@ git commit -m "<what changed>"
 ### Step 4 - Push to the public repo (develop and beta)
 
 ```bash
-# ▶ MAC
+# ▶ DEVELOPMENT MACHINE
 git fetch origin                         # confirm nobody else pushed
 git push origin develop develop:beta
 ```
@@ -340,7 +340,7 @@ if it was tagged. *Everyday version:* the branch is the running total in the
 ledger; the tag is the line you underline and date.
 
 ```bash
-# ▶ MAC — after Step 4's push, on the same commit
+# ▶ DEVELOPMENT MACHINE — after Step 4's push, on the same commit
 git tag -a v2.10.1 -m "v2.10.1 — <the NEWS.md subtitle>"
 git push origin v2.10.1
 git tag -l "v2.*"          # you should see the new tag in the list
@@ -360,7 +360,7 @@ page already uses.
 ### Step 5 - See where the branches stand
 
 ```bash
-# ▶ MAC
+# ▶ DEVELOPMENT MACHINE
 git fetch origin
 git log --oneline -1 origin/develop origin/beta origin/master
 ```
@@ -423,7 +423,7 @@ git commit -m "<what changed>"
 git push origin develop develop:beta
 ```
 
-As on the Mac, `master` stays where the last promotion left it.
+As on the development machine, `master` stays where the last promotion left it.
 
 ### Step 8b - Tag the mirror's commit with the same version
 
@@ -503,7 +503,7 @@ choose, after the testers have used beta for long enough — a day for a
 label change, a week for a login. **Never** as part of Step 4 or Step 8.
 
 ```bash
-# ▶ MAC
+# ▶ DEVELOPMENT MACHINE
 git fetch origin
 git log --oneline origin/master..origin/beta   # exactly what production is about to receive — read it
 git push origin origin/beta:master             # fast-forward; refused if master has diverged
@@ -511,7 +511,7 @@ git switch master && git pull --ff-only origin master && git switch develop
 ```
 
 **Why `origin/beta` and not `beta`.** The left side of a push refspec names
-something in *your* folder. Neither the Mac nor the mirror folder has a
+something in *your* folder. Neither the development machine nor the mirror folder has a
 local branch called `beta` — every publish pushes `develop` *to* the
 remote's `beta`, so the branch exists only on the remote and as the
 remote-tracking copy `origin/beta` that `git fetch` refreshes. Pushing that
@@ -576,7 +576,7 @@ promotions — read it before every Step 11.
 Sometimes a problem only appears on the server. **Do not push from the VM to the
 public repo** - the mirror folder carries the private history.
 
-Carry the change back to the Mac as a patch instead:
+Carry the change back to the development machine as a patch instead:
 
 ```bash
 # ▶ VM — with your fix applied but NOT committed
@@ -585,21 +585,21 @@ git diff > ~/fix.patch
 ```
 
 ```bash
-# ▶ MAC
+# ▶ DEVELOPMENT MACHINE
 scp <your-user>@<vm-hostname>:~/fix.patch .
 git apply fix.patch
 git diff                                 # review what it changed
 rm fix.patch
 ```
 
-Then run **Flow A from Step 1**. The fix is now authored on the Mac and travels the
+Then run **Flow A from Step 1**. The fix is now authored on the development machine and travels the
 normal one-way route - no exceptions to the rules.
 
 A similar scp-based route (this time with `git bundle`) covers the opposite
 problem - the VM cannot reach the public repo at all:
 
 ```bash
-# ▶ MAC
+# ▶ DEVELOPMENT MACHINE
 git bundle create ~/crucible-develop.bundle develop
 scp ~/crucible-develop.bundle <your-user>@<vm-hostname>:~/
 ```
@@ -663,7 +663,7 @@ sanitized content is identical** - while each keeps the history appropriate to i
 purpose. What protects the public repo is the redaction and `.gitignore`, not the
 short history.
 
-If you want full history on the Mac for `git log` / `git blame`, clone the private
+If you want full history on the development machine for `git log` / `git blame`, clone the private
 repo into a **separate folder** with only the private remote. Do not merge it with
 the authoring folder.
 

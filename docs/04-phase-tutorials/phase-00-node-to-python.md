@@ -119,7 +119,7 @@ run on any machine that has completed a setup guide.
 **How:**
 
 ```bash
-cd ~/Documents/Work/pandora_toolbox/nr-nips-crucible      # Mac; on the VM the tests cannot run (system Python 3.6)
+cd ~/Documents/Work/pandora_toolbox/nr-nips-crucible      # development machine; on the VM the tests cannot run (system Python 3.6)
 sed -n 1,40p backend/tests/test_parity_chemicals.py
 ```
 
@@ -207,7 +207,7 @@ the opening of a JSON object containing the same identifier, a name and the
 other fields as the upload provided them.
 
 **If instead:** `sqlite3: command not found` — install it (`brew install
-sqlite` on a Mac) or use the read-only SQL console in the application's Query
+sqlite` on the development machine) or use the read-only SQL console in the application's Query
 tab, which runs the same statement; see [`09-query-cookbook.md`](../09-query-cookbook.md).
 
 ---

@@ -247,7 +247,7 @@ first.*
 ---
 
 **32. A tag with the right name on the wrong commit.** The first release tag
-was made on the Mac and pushed to the public repository. On the VM, the
+was made on the development machine and pushed to the public repository. On the VM, the
 mirror's `git fetch public` copied that tag along with the commits, so
 `git tag -a v2.10.1` on the mirror's own commit failed with "already
 exists" — and the next command pushed the *copied* tag, pointing at the

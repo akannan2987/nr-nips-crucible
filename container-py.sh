@@ -16,7 +16,7 @@
 #                       script owns is named crucible-py-<name>
 #                       (docs/14-beta-instance.md)
 #   HOST_BIND=<ip>      published-port interface (see below)
-#   PLATFORM=linux/amd64  cross-build target (e.g. building amd64 on a Mac)
+#   PLATFORM=linux/amd64  cross-build target (e.g. building amd64 on an arm64 laptop)
 
 DATA_DIR="$(pwd)/data"
 BACKUP_DIR="${BACKUP_DIR:-$(pwd)/backups}"
@@ -298,7 +298,7 @@ build_image() {
     if [ "$RUNTIME" = "podman" ]; then
         build_args=(--format docker "${build_args[@]}")
     fi
-    # Optional cross-build, e.g. PLATFORM=linux/amd64 on an arm64 Mac.
+    # Optional cross-build, e.g. PLATFORM=linux/amd64 on an arm64 laptop.
     if [ -n "$PLATFORM" ]; then
         build_args=(--platform "$PLATFORM" "${build_args[@]}")
     fi

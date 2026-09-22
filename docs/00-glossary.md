@@ -31,7 +31,7 @@ find (`Ctrl+F` / `Cmd+F`) to jump to one.
 >
 > Everything the application needs lives inside the **container image**:
 > its own copy of Python, its own FastAPI, its own RDKit, even its own
-> miniature Linux operating system. None of it is installed on your Mac or on
+> miniature Linux operating system. None of it is installed on your own machine or on
 > the server. You can prove this on any machine that runs Crucible:
 >
 > ```bash
@@ -53,7 +53,7 @@ find (`Ctrl+F` / `Cmd+F`) to jump to one.
 > | The operating system | no | yes |
 > | The filesystem | no — sees your whole disk | yes — sees only what you mount |
 > | Networking and processes | no | yes |
-> | Behaves identically on macOS and RHEL8 | no | yes — the whole point |
+> | Behaves identically on every platform | no | yes — the whole point |
 >
 > Adding a virtual environment *inside* a container would be pointless: the
 > container already holds exactly one application, with nothing to collide
@@ -79,7 +79,7 @@ find (`Ctrl+F` / `Cmd+F`) to jump to one.
 **Container** — a sealed lunchbox for a program. Inside it sits the app
 *and* everything the app needs to run: the right Python version, the right
 libraries, the right folder layout. Because the lunchbox carries its own
-supplies, the app behaves identically on your Mac and on the company
+supplies, the app behaves identically on your machine and on the company
 server — even though those two machines are otherwise nothing alike. This
 is the single idea that makes "it works on my machine" stop being an
 excuse.
@@ -98,9 +98,9 @@ scripts work with either and pick whichever you have installed (Podman
 first if both). **Container runtime** is the umbrella term for "whichever
 one of these you're using".
 
-**Podman machine** — a wrinkle that only affects Macs. Containers are a
-Linux invention, so on macOS Podman quietly runs a small hidden Linux
-computer inside your Mac and puts the containers in there. You have to
+**Podman machine** — a wrinkle that only affects desktop machines. Containers are a
+Linux invention, so on macOS and Windows Podman quietly runs a small hidden Linux
+computer inside your machine and puts the containers in there. You have to
 switch it on (`podman machine start`) before anything works, and it does
 *not* start by itself when you log in. On the Linux server there is no such
 layer — containers run directly.
@@ -133,7 +133,7 @@ localhost, no one else in the world can reach it.
 
 **0.0.0.0** — "every door on every network card" — i.e. accept visitors
 from other machines too. The RHEL8 server publishes on `0.0.0.0` so
-colleagues can reach the app; your Mac publishes on `127.0.0.1` so nothing
+colleagues can reach the app; a macOS development machine publishes on `127.0.0.1` so nothing
 leaks onto the office network.
 
 **Bind mount** — a window cut between a folder on your real computer and a
@@ -214,7 +214,7 @@ disk space, no name, no purpose.
 
 **WSL 2 (Windows Subsystem for Linux)** — a small, real Linux machine that Windows keeps running invisibly, so that Linux programs (containers included) can run on a Windows PC. *Everyday version:* a kitchen in the basement that you order from upstairs.
 
-**Git Bash** — the terminal that comes with Git for Windows. It understands the same commands as a Mac or Linux terminal, which is why every command in this project's guides works on Windows unchanged when typed there.
+**Git Bash** — the terminal that comes with Git for Windows. It understands the same commands as a macOS or Linux terminal, which is why every command in this project's guides works on Windows unchanged when typed there.
 
 **PowerShell** — Windows' own command-line window. This project uses it for two commands at most; everything else runs in Git Bash.
 
@@ -228,7 +228,7 @@ disk space, no name, no purpose.
 
 **Server** — a computer whose job is answering requests from other
 computers. Also used for the *program* doing the answering. The RHEL8 VM is
-a server; your Mac is not (it just pretends to be one, for you alone).
+a server; your development machine is not (it just pretends to be one, for you alone).
 
 **Client** — whoever is asking. Your browser is a client. So is `curl`.
 
@@ -267,7 +267,7 @@ why the server's certificate is trusted inside the company network.
 
 **Self-signed certificate** — an ID card you printed yourself. It encrypts
 traffic perfectly well, but no authority vouches for it, so browsers show a
-scary warning. Fine for testing on your own Mac (`./setup-ssl.sh` makes
+scary warning. Fine for testing on your own development machine (`./setup-ssl.sh` makes
 one); not for production.
 
 **`-k` (in curl)** — "don't check the ID card". Needed for self-signed
@@ -338,7 +338,7 @@ React app, images), as opposed to answers calculated per request.
 
 **Relative URL** — a link written as `/api/chemicals` rather than
 `https://some-host/api/chemicals`. Because it names no host, the same code
-works on your Mac and the server unchanged. This project insists on them.
+works on your development machine and the server unchanged. This project insists on them.
 
 **SVG (Scalable Vector Graphics)** — a picture written as coordinates and
 shapes rather than as pixels, so it stays sharp at any size and can be edited
@@ -405,7 +405,7 @@ is one; the moving dots follow the same curves as the drawn arrows.
 
 **Instance label** — the word the page shows for the instance it belongs to, in a pill next to the title and at the start of the browser tab's title: *Prod* in indigo for the default instance, *Beta* in amber for the beta instance. Derived from the instance name the scripts use (never stored), answered by `GET /api/instance`, spelled differently with `CRUCIBLE_INSTANCE_LABEL`. Built as phase SH-13: [the tutorial](04-phase-tutorials/phase-sh-13-instance-label.md). *Everyday version:* the name tag on the kitchen door, and amber walls in the practice kitchen.
 
-**Hand-over (to the service)** — what `container-py.sh` does at the end of `rebuild`, `start`, `start-ssl` and `restore` on the server since v2.21.2: it rewrites the service's recipe card from the container it just created and starts the service, which takes the container over. From then on the service owns the application, and the script's `status`, `stop` and `restart` go through it, so the script and `systemctl` always agree. On a Mac or Windows there is no service and nothing to hand over to. The one page for running, stopping and checking is [`15-run-stop-status.md`](15-run-stop-status.md). *Everyday version:* the engineer installs the new stove, then hands the kitchen back to the caretaker.
+**Hand-over (to the service)** — what `container-py.sh` does at the end of `rebuild`, `start`, `start-ssl` and `restore` on the server since v2.21.2: it rewrites the service's recipe card from the container it just created and starts the service, which takes the container over. From then on the service owns the application, and the script's `status`, `stop` and `restart` go through it, so the script and `systemctl` always agree. On a development machine there is no service and nothing to hand over to. The one page for running, stopping and checking is [`15-run-stop-status.md`](15-run-stop-status.md). *Everyday version:* the engineer installs the new stove, then hands the kitchen back to the caretaker.
 
 **Publish (to beta)** — pushing a change to `develop` and `beta` (`git push origin develop develop:beta`), after which the beta instance pulls and rebuilds; every change is published, the same day. The first of the two moments of the workflow; *Promotion (beta to production)*, below, is the second. *Everyday version:* handing the trainee the new recipe.
 
@@ -551,7 +551,7 @@ backed up.
 
 **Repository (repo)** — the project folder plus its entire history. This
 project has two: a **public** one on a personal account (sanitised, used
-for development on the Mac) and a **private** corporate one (used to deploy
+for development) and a **private** corporate one (used to deploy
 the server).
 
 **Clone** — making your own complete copy of a repository, history and all.
@@ -826,8 +826,16 @@ restore for you. On the production server, treat creating it as step one.
 value would otherwise be published. The real values live only in
 `.env.local` on the machine that needs them.
 
-**Development vs. production** — development is where you try things (your
-Mac, HTTP, data you can throw away); production is the real deployment
+**Development machine** — the computer where the code is written and tested
+before it travels to the server: a laptop or desktop with a container
+runtime, running the application over HTTP on `localhost` with data you can
+throw away, cloned from the **public** repository. The documents name it by
+its role, never by its operating system, because any of the three platforms
+can be one; pick your setup guide by the operating system you have.
+*Everyday version:* the workbench, as opposed to the shop floor.
+
+**Development vs. production** — development is where you try things (the
+development machine, HTTP, data you can throw away); production is the real deployment
 other people depend on (the RHEL8 VM, HTTPS, real data). Different rules
 apply: back up before touching production.
 

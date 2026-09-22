@@ -6,7 +6,7 @@ Every recipe on this page is a command you can paste straight into a terminal, f
 
 An **API** — a website built for programs instead of for people. When you open Crucible in a browser you get buttons, colours and tables. When a program asks the same server for the same information, it does not want any of that; it wants the raw facts. So the server offers a second set of addresses that return plain data. Those addresses all start with `/api`, and this cookbook is a tour of them.
 
-**`curl`** — a small program that fetches a web address from the terminal instead of from a browser. It is already installed on macOS and on the RHEL8 VM. `curl http://example.com/thing` is the command-line equivalent of typing that address into Chrome and reading the page source.
+**`curl`** — a small program that fetches a web address from the terminal instead of from a browser. It is already installed on every platform this project runs on. `curl http://example.com/thing` is the command-line equivalent of typing that address into Chrome and reading the page source.
 
 **JSON** — a labelled text format that both people and programs can read. It is just names and values wrapped in braces: `{"total": 5}` means "the thing called total is 5". Square brackets `[ ... ]` mean a list of several items. Every answer in this cookbook is JSON.
 
@@ -21,7 +21,7 @@ Two flags appear in every command here:
 - `-s` — **silent**. Suppresses curl's download-progress meter, which would otherwise scribble over your JSON.
 - `--noproxy '*'` — on the corporate network your machine is told to send all web traffic through a proxy server. That proxy has no idea what `localhost` means and will hijack the request. This flag says "talk directly, never via the proxy". Leave it out and you will get confusing timeouts or proxy error pages instead of data.
 
-**Your base address** is `http://localhost:49160/api` on a macOS development machine, and `https://<vm-hostname>:49160/api` in production on the RHEL8 VM. Every recipe below uses the macOS form; swap the front half if you are on the VM.
+**Your base address** is `http://localhost:49160/api` on the development machine, and `https://<vm-hostname>:49160/api` in production on the RHEL8 VM. Every recipe below uses the development form; swap the front half if you are on the VM.
 
 ---
 

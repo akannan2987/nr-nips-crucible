@@ -1,7 +1,7 @@
 """Central configuration for the Crucible Python backend.
 
 Everything configurable comes from environment variables with sensible
-defaults, so the same code runs unmodified on macOS and on the RHEL8 VM.
+defaults, so the same code runs unmodified on the development machine and on the RHEL8 VM.
 
 Key settings:
     PORT          — HTTP port (default 49160)

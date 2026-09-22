@@ -34,7 +34,7 @@ if DATABASE_URL.startswith("sqlite"):
     #
     # Write-Ahead Logging would let readers continue during a write, which is
     # tempting because a long maintenance job otherwise blocks the API. But the
-    # database file is bind-mounted into a container, and on macOS that mount
+    # database file is bind-mounted into a container, and on a desktop runtime (macOS, Windows) that mount
     # crosses a virtual-machine boundary. WAL needs shared memory and real file
     # locking, neither of which behaves correctly across such a mount: enabling
     # it produced "database disk image is malformed" from the container while a

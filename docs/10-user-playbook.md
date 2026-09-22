@@ -154,7 +154,7 @@ If somebody has already set this up for you and given you a URL, skip to
 
 | You are on | Follow | Why |
 |---|---|---|
-| Your own Mac, to try things | [macOS Install](01-setup-macos.md) | Runs on `localhost`, nobody else can reach it |
+| Your own machine, to try things | [macOS Install](01-setup-macos.md) · [Windows Install](01-setup-windows.md) | Runs on `localhost`, nobody else can reach it |
 | The RHEL8 server, for real use | [RHEL8 Install](01-setup-rhel8.md) | HTTPS, real certificates, survives a reboot |
 
 Both come down to one command, `./setup-after-clone-py.sh`, but the guides walk
@@ -563,7 +563,7 @@ Chemical Registry module first. None of these buttons ever deletes a compound, a
 every unlink tells you how many rows of which chemical it detached.
 
 **The same from the terminal** (inside the container on the VM; `docker` for
-`podman` on a Mac with Docker):
+`podman` on a development machine with Docker):
 
 ```bash
 # every row of one or more chemicals, keeping the entries — report first, then --apply
@@ -916,13 +916,13 @@ Recipes and a troubleshooting section: [Query Cookbook](09-query-cookbook.md).
 
 ## Three folders, three jobs
 
-![Two repositories, three folders: the Mac authoring folder, the VM mirror folder, the VM production folder](img/fig_machine_layout.svg)
+![Two repositories, three folders: the authoring folder on the development machine, the VM mirror folder, the VM production folder](img/fig_machine_layout.svg)
 
 The everyday version:
 
 | Folder | Like | What it is for |
 |---|---|---|
-| Your Mac | Your desk | Where you write and test. Cannot reach the private repository — deliberately |
+| Your development machine | Your desk | Where you write and test. Cannot reach the private repository — deliberately |
 | The VM mirror | The post room | Copies work from the public repository into the private one |
 | The VM production folder | The noticeboard | What people actually use. Only ever receives; never sends |
 
@@ -930,7 +930,7 @@ Work flows **one way**: desk → post room → noticeboard. Never backwards.
 
 ## The sequence
 
-**1. On your Mac — write and check:**
+**1. On your development machine — write and check:**
 
 ```bash
 cd ~/Documents/Work/pandora_toolbox/nr-nips-crucible

@@ -9,8 +9,8 @@
 #
 # Run it after every redeploy, on either machine:
 #
-#   macOS : ./verify-deploy.sh
-#   RHEL8 : ./verify-deploy.sh https://localhost:49160
+#   development machine : ./verify-deploy.sh
+#   RHEL8 server        : ./verify-deploy.sh https://localhost:49160
 #
 # The database checks are skipped when the file is not beside you, so it is
 # safe to run from anywhere.

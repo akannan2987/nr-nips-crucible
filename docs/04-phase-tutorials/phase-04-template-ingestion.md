@@ -251,7 +251,7 @@ production on 2026-09-07: 49,065 and 43,399.
 **How:**
 
 ```bash
-./verify-deploy.sh                         # macOS
+./verify-deploy.sh                         # development machine
 ./verify-deploy.sh https://localhost:49160 # RHEL 8
 ```
 

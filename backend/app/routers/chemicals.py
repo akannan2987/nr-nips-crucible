@@ -51,7 +51,7 @@ from ..tags import filter_batches, filter_tags, registry_summary, tags_of
 # cached answer goes stale two ways: a write through this router (any non-GET
 # request bumps `epoch`, so the next GET recomputes), and a write from outside
 # the process — the import script inside the container, a direct Python
-# session on a Mac — which nothing here can see, so every answer also expires
+# session on the development machine — which nothing here can see, so every answer also expires
 # after `_CACHE_TTL` seconds. Keying on the entry count alone missed a
 # re-import that updated every entry in place (production, 2026-09-14);
 # keying on the newest `updated_at` cost a full scan per call. Recomputing

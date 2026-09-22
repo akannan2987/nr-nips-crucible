@@ -69,7 +69,7 @@ it at yours.
 | A clean codebase | 182 findings fixed: 180 automatically (import order, `Optional[X]` → `X \| None`), two by hand | `backend/app/`, `backend/scripts/` |
 | `.github/workflows/ci.yml` | Two jobs. *backend* on Linux and macOS: Python 3.12, install from the lock, `ruff`, `pytest`, figure determinism, link check, and — in the public repository only — the safety gate. *client*: Node 18, `npm ci`, build. The same file runs in both repositories | `.github/workflows/ci.yml` |
 | `check-links.py` | The documentation link checker as a tracked, cross-platform script, so CI and a laptop run the same one | `check-links.py` |
-| An RDKit cap | `rdkit<2025.9.4` in `requirements.txt`: the newest release with pre-built packages for *every* machine this project uses — the Linux image and VM, the macOS CI runner, and the Intel Mac the code is developed on. The comment beside it says how to check the next release before lifting the cap | `backend/requirements.txt` |
+| An RDKit cap | `rdkit<2025.9.4` in `requirements.txt`: the newest release with pre-built packages for *every* machine this project uses — the Linux image and VM, the macOS CI runner, and Intel macOS, which newer releases no longer ship packages for. The comment beside it says how to check the next release before lifting the cap | `backend/requirements.txt` |
 
 ```mermaid
 flowchart LR

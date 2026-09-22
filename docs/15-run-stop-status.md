@@ -4,7 +4,7 @@
 
 **Who this is for:** anyone who has to answer "is it running?", stop it,
 start it, or make sure it comes back after the server restarts, on the
-Mac where it is developed or on the RHEL 8 server where it runs. No
+development machine where it is developed or on the RHEL 8 server where it runs. No
 knowledge of containers or Linux services is assumed; every term is
 explained the first time and is in the [glossary](00-glossary.md).
 **Time to read:** ten minutes. **Time to do any one thing in it:** under a
@@ -44,9 +44,9 @@ back on if it ever dies. There are **two doors** into that room, and they
 lead to the same place:
 
 - **Door 1, the script**, `./container-py.sh`, run in the instance's
-  folder. It works on the Mac, on Windows and on the server.
+  folder. It works on the development machine and on the server.
 - **Door 2, the service**, `systemctl --user …`, run from anywhere on the
-  server. It does not exist on a Mac or Windows.
+  server. It does not exist on a development machine.
 
 Since v2.21.2 the two doors always agree: the script builds and updates
 the application, then hands the container to the service, and its
@@ -99,7 +99,7 @@ one line is the whole safeguard, so read it.
 
 ## The commands, in one table
 
-Both columns do the same thing on the server. On a Mac or Windows only
+Both columns do the same thing on the server. On a development machine only
 the left column exists.
 
 | I want to… | Door 1: the script, in the instance's folder | Door 2: the service, from anywhere (server) |

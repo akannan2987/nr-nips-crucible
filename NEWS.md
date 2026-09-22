@@ -10,6 +10,33 @@ change you are getting.
 
 ---
 
+## v2.21.1 — 2026-09-22 — "The script and the unit stop fighting"
+
+The first deploy of v2.21.0 to the beta instance showed a gap. Beta's
+systemd unit was active; the rebuild stopped and replaced the container
+with one carrying the new instance name; the unit, whose recorded command
+predated the name, noticed its container had died and replaced the
+script's container with its own. Port 49161 said *Prod*. Confirmed on
+the server by the container's creation time, its environment and the
+unit's status; lesson 36.
+
+**Fixed**
+- `container-py.sh` is now aware of the unit. Before `rebuild`, `stop`,
+  `start-ssl`, `restore` or `clean` touch the container it **stops the
+  unit if it is active**; after `rebuild`, `start`, `start-ssl` or
+  `restore` create a container it **rewrites the unit from that
+  container** and reloads systemd, and says so. `status` prints the unit's
+  state. Without a unit file, without `systemctl`, or with Docker, nothing
+  changes: macOS and Windows behave as before.
+- The manual "regenerate the unit" step is gone from the SH-13 tutorial's
+  deploy; the four commands stay in the operations page as the fallback.
+
+**Deploy**
+- Both instances rebuild once more (the script changed); this rebuild is
+  the first to keep the unit current by itself.
+
+---
+
 ## v2.21.0 — 2026-09-22 — "Prod and Beta, said in the page"
 
 Phase **SH-13**, asked for the morning the beta instance went live: the two

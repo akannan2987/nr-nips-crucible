@@ -329,6 +329,27 @@ used as a key, match its boundary, not its prefix.* *The shape:* an
 operation reporting one thing (cleaning up after itself) while doing
 another (cleaning up after its neighbour).
 
+**36. Two supervisors, one container.** The beta instance had a systemd
+unit, made the way the guide says, and the unit was active because it had
+started the container that morning. Then the first rebuild since arrived
+with two new environment variables. The script stopped the container,
+removed it and started a new one with the variables, and printed the
+right instance name. Seconds later the unit, whose job is to restart the
+container when it dies, ran the command it had recorded the day before
+and replaced the script's container with one that had no name. The page
+on port 49161 said *Prod*. Every command had done exactly what it was
+written to do; the two of them had never been told about each other. The
+diagnosis took three read-only commands: the container's creation time
+matched the unit's start time, not the script's, and its environment had
+no name. The fix is in the script, not in a warning: it stops an active
+unit before it touches the container and rewrites the unit from the
+container it created, so the boot-time recipe is never older than what
+runs. *Lesson: when two things are allowed to start the same process, one
+of them must know about the other; a documented rule that a person has to
+remember at the right second is not a fix.* *The shape:* an operation
+reporting one thing (the script's `instance: beta`) while another does
+the opposite (the unit's silent replacement).
+
 ---
 
 ## The one rule they add up to
@@ -345,4 +366,4 @@ and the setup guides; the identification rules and the audit are in
 [`09-chemical-identification.md`](09-chemical-identification.md); the remaining
 open behaviour (the delete endpoint) is on the [roadmap](05-roadmap.md).
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 22, 2026

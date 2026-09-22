@@ -251,28 +251,35 @@ particular to this change:
 
 1. **Both instances rebuild** (`git log --stat -1` shows `backend/`,
    `client/` and `container-py.sh`), each after its own backup.
-2. **Regenerate the service unit after the rebuild.** A unit written by
+2. **The service unit has to match the new container**, and, as of
+   v2.21.1, the script sees to it. A unit written by
    `podman generate systemd --new` records the exact `podman run` command
-   of the container it was made from. Beta's unit was made yesterday,
-   before the two `-e` lines existed; at the next boot it would start beta
-   *without* its name, and the page would say *Prod* on port 49161. Four
-   commands make the unit match the container again:
+   of the container it was made from *and restarts the container when it
+   dies*. Beta's unit was made the day before, without the two `-e` lines,
+   and it was **active**. The first deploy of v2.21.0 showed what that
+   means: the rebuild stopped the container, the unit noticed, ran its old
+   command and replaced the script's new container with a nameless one, so
+   port 49161 said *Prod* (lesson 36). Since v2.21.1 `container-py.sh`
+   stops an active unit before it touches the container and rewrites the
+   unit from the container it created:
 
 ```bash
-# ▶ VM — beta folder, after ./container-py.sh rebuild, with crucible-py-beta running
-podman generate systemd --new --name crucible-py-beta --files
-mv container-crucible-py-beta.service ~/.config/systemd/user/
-systemctl --user daemon-reload
+# ▶ VM — beta folder
+./container-py.sh rebuild
 grep -o 'CRUCIBLE_INSTANCE=[a-z]*' ~/.config/systemd/user/container-crucible-py-beta.service
+./container-py.sh status | head -4
 ```
 
-**You should see** `CRUCIBLE_INSTANCE=beta` from the `grep`. The unit is
-not restarted, only rewritten; the running container is untouched. The
-same four commands with `crucible-py` in production's folder keep its unit
-exact too (its name is empty, so the label would have been right anyway).
-The rule, for every later change: **a rebuild that changes how the
-container is created is followed by regenerating the unit**
-([`07-operations.md` → Auto-start on boot](../07-operations.md#auto-start-on-boot-systemd)).
+**You should see** in the rebuild's output `Stopping the systemd unit
+container-crucible-py-beta.service first` (only if it was active), then the
+build, then `Rewriting container-crucible-py-beta.service from the
+container just created` and `✓ … rewritten (enabled: enabled)`;
+`CRUCIBLE_INSTANCE=beta` from the `grep`; and in `status` a line
+`systemd unit container-crucible-py-beta.service: inactive (enabled)`, which
+is the normal state between a rebuild and a reboot. The same happens in
+production's folder for `crucible-py`. The manual four commands remain in
+[`07-operations.md` → Auto-start on boot](../07-operations.md#auto-start-on-boot-systemd)
+for the day the automatic step reports it could not run.
 
 **Why beta first, in practice.** Between the publish and the promotion the
 two tabs differ: beta says *Beta* in amber, production still says nothing.
@@ -337,6 +344,13 @@ Replace `podman` with `docker` where that is the runtime.
 before the promotion, `curl …:49160/api/instance` still answers
 `{"detail":"Not Found"}` and the production tab has no pill. That is
 correct, and the promotion changes it.
+
+| Route (v2.21.1) | How | You should see |
+|---|---|---|
+| **The unit follows the container** | beta folder: `./container-py.sh rebuild`, then `grep -c 'CRUCIBLE_INSTANCE=beta' ~/.config/systemd/user/container-crucible-py-beta.service` | the rebuild prints `Rewriting … rewritten (enabled: enabled)`; the grep prints `1` |
+| **An active unit is stopped first** | `systemctl --user start container-crucible-py-beta.service`, then `./container-py.sh rebuild` | `Stopping the systemd unit container-crucible-py-beta.service first …`, then the build; afterwards the container has its name (`curl …/api/instance` → `Beta`) and the unit is `inactive (enabled)` |
+| **Status shows both supervisors** | `./container-py.sh status \| head -4` | the container row and `systemd unit …: inactive (enabled) — inactive after a rebuild is normal; it starts the container at boot` |
+| **A Mac is unaffected** | `./container-py.sh rebuild` on a Mac | no unit lines at all: there is no unit file and no `systemctl` |
 
 ---
 

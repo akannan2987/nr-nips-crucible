@@ -492,13 +492,18 @@ instance it is: a **Prod** pill in indigo or a **Beta** pill in amber, and
 
 **Two supervisors, and how they relate.** The `container-py.sh` commands
 are the day-to-day tools and what the monitor uses. The systemd unit is
-the boot-time starter: it shows `inactive` after any `rebuild`, because
-the rebuild recreates the container outside systemd, and it takes over
-again at the next boot. `systemctl --user stop` and `start` also work and
-recreate the container from the same image. Either is fine; do not mix the
-two within one stop-and-start, and after a rebuild that changes how the
-container is created, regenerate the unit
-([Auto-start on boot](#auto-start-on-boot-systemd)).
+the boot-time starter. Since v2.21.1 the script keeps the two from
+fighting: before it stops or recreates a container it **stops the unit if
+the unit is active** (an active unit would otherwise recreate its own,
+older copy of the container underneath the script, which is what happened
+on the server on 2026-09-22, lesson 36), and after it creates a container
+it **rewrites the unit from that container** and reloads systemd, so the
+next boot starts exactly what was just started. The unit therefore shows
+`inactive` (and `enabled`) after any `rebuild`, `start` or `restore`; that
+is the normal state between a rebuild and a reboot, and `./container-py.sh status`
+prints it. `systemctl --user start` hands the container back to systemd
+at any time; the next script command takes it back. On a machine with no
+unit file, no `systemctl`, or Docker, none of this runs.
 
 **Refreshing beta from production** (one way, on request — never the reverse):
 
@@ -693,8 +698,13 @@ label, SH-13) and the beta folder's `data/` in `Volume=`
 the container it was made from: image, port, mounts, environment. Whenever
 a new version changes that command (v2.21.0 added the instance variables;
 a later one may add the login's), the unit must be written again after the
-rebuild, or the next boot starts the container the old way. Four commands,
-in the instance's folder, with its container running:
+rebuild, or the next boot starts the container the old way. **Since
+v2.21.1 `container-py.sh` does this itself** after every container it
+creates (`rebuild`, `start`, `start-ssl`, `restore`) whenever the unit file
+exists: you will see `Rewriting container-crucible-py-beta.service from the
+container just created` and `✓ … rewritten (enabled: enabled)`. By hand,
+should you ever need it, it is four commands in the instance's folder, with
+its container running:
 
 ```bash
 podman generate systemd --new --name crucible-py-beta --files     # crucible-py for production

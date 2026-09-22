@@ -162,6 +162,7 @@ production is not published to beta either.
 | `setup-after-clone-py.sh` | printed and probed port 49160; wrote the cron line for `crucible-py` and removed **every** other monitor line | names the image it builds, probes the folder's port, writes a cron line naming this folder's container and port, and replaces only **this folder's** previous line |
 | `monitor.sh` | `CONTAINER_NAME` and `API_URL` from the cron line, else `crucible-py` on 49160 | the cron line still wins; run by hand it reads the folder's `.env.local`, so `./monitor.sh` in the beta folder probes and restarts beta; one log per instance (`/tmp/crucible-monitor-beta.log`); the container's name in every line |
 | `uninstall.sh` | removed `crucible-py`, its unit, and **every** crucible cron line | reads `.env.local`; removes this instance's container, image, unit, Quadlet file, monitor log and only the cron lines naming this folder (matched with what follows the path, since the beta path begins with production's); says how many lines for other checkouts it left |
+| `container-py.sh`, from v2.21.1 | the service unit and the script could fight: an active unit recreated its old container underneath a `rebuild` | the script stops an active unit before it touches the container and rewrites the unit from the container it created, so the boot-time recipe always matches what runs (lesson 36) |
 | `verify-deploy.sh` | takes the base address | unchanged; run it against `https://localhost:49161` |
 | `healthcheck.py` | reads `PORT` inside the container | unchanged; each container has its own |
 

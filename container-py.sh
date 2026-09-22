@@ -155,6 +155,48 @@ check_podman_machine() {
     fi
 }
 
+# ── The systemd unit (Linux servers): the boot-time starter ─────────
+# A unit made by `podman generate systemd --new` (docs/07-operations.md →
+# Auto-start on boot) records the container's exact run command and
+# restarts the container when it dies. Two things follow, both learned on
+# the server on 2026-09-22 (lesson 36):
+#   1. if that unit is ACTIVE while this script stops and recreates the
+#      container, systemd recreates its own copy from the OLD recorded
+#      command and replaces ours underneath us — so the unit is stopped
+#      before the container is touched;
+#   2. after this script creates a container, the unit is rewritten from
+#      it, so the next boot starts exactly what was just started (new
+#      environment variables included) and nobody has to remember to.
+# No unit file, no systemctl, or Docker: both steps are silent no-ops,
+# so macOS and Windows behave as before.
+UNIT_DIR="${CRUCIBLE_UNIT_DIR:-$HOME/.config/systemd/user}"
+UNIT_NAME="container-${CONTAINER_NAME}.service"
+
+have_unit() {
+    [ "$RUNTIME" = "podman" ] && [ -f "${UNIT_DIR}/${UNIT_NAME}" ] && command -v systemctl >/dev/null 2>&1
+}
+
+stop_unit_if_active() {
+    have_unit || return 0
+    if systemctl --user is-active --quiet "${UNIT_NAME}" 2>/dev/null; then
+        echo -e "${YELLOW}Stopping the systemd unit ${UNIT_NAME} first (it would otherwise recreate the old container)...${NC}"
+        systemctl --user stop "${UNIT_NAME}"
+    fi
+}
+
+regenerate_unit() {
+    have_unit || return 0
+    echo -e "${YELLOW}Rewriting ${UNIT_NAME} from the container just created, so the next boot starts exactly this...${NC}"
+    # `generate systemd --files` writes into the current directory: run it
+    # in the unit folder so the file lands in place, replacing the old one.
+    if (cd "${UNIT_DIR}" && $RUNTIME generate systemd --new --name "${CONTAINER_NAME}" --files >/dev/null 2>&1) \
+        && systemctl --user daemon-reload; then
+        echo -e "${GREEN}✓ ${UNIT_NAME} rewritten (enabled: $(systemctl --user is-enabled "${UNIT_NAME}" 2>/dev/null || echo unknown))${NC}"
+    else
+        echo -e "${RED}✗ Could not rewrite ${UNIT_NAME} — do it by hand: docs/07-operations.md → Auto-start on boot${NC}"
+    fi
+}
+
 # ── Host interface for published ports ──
 # Linux (RHEL8 VM): 0.0.0.0 so the app is reachable from other machines.
 # macOS: Apple's remoted daemon occupies ports 49152+ on a link-local IPv6
@@ -240,7 +282,7 @@ start_container() {
     check_podman_machine
     # Set when we reuse an existing container: its published port is whatever
     # it was created with, NOT the current $PORT.
-    local running_port=""
+    local running_port="" created=""
     if $RUNTIME ps -a --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
         echo -e "${YELLOW}Container already exists. Starting...${NC}"
         $RUNTIME start ${CONTAINER_NAME}
@@ -276,10 +318,11 @@ start_container() {
             -e CRUCIBLE_INSTANCE_LABEL="${CRUCIBLE_INSTANCE_LABEL}" \
             "${pg_args[@]}" \
             --restart unless-stopped \
-            ${IMAGE_NAME}:latest
+            ${IMAGE_NAME}:latest && created="yes"
     fi
 
     if [ $? -eq 0 ]; then
+        [ -n "$created" ] && regenerate_unit
         local shown_port="${running_port:-${PORT}}"
         # An existing container keeps the mode it was created with: say
         # https:// when that is what it serves, or the line is a lie.
@@ -302,6 +345,7 @@ start_container() {
 
 stop_container() {
     check_podman_machine
+    stop_unit_if_active
     echo -e "${YELLOW}Stopping container '${CONTAINER_NAME}' (Python backend)...${NC}"
     if $RUNTIME stop ${CONTAINER_NAME} 2>/dev/null; then
         echo -e "${GREEN}✓ Container '${CONTAINER_NAME}' stopped${NC}"
@@ -331,6 +375,7 @@ rebuild() {
         | grep -q '^USE_HTTPS=true$'; then
         was_https="true"
     fi
+    stop_unit_if_active
     $RUNTIME stop ${CONTAINER_NAME} 2>/dev/null
     $RUNTIME rm ${CONTAINER_NAME} 2>/dev/null
     if [ "$was_https" = "true" ]; then
@@ -351,6 +396,7 @@ start_container_ssl() {
     fi
 
     # Recreate the container: TLS mode changes its env + mounts.
+    stop_unit_if_active
     if $RUNTIME ps -a --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
         echo -e "${YELLOW}Recreating container '${CONTAINER_NAME}' with HTTPS...${NC}"
         $RUNTIME stop ${CONTAINER_NAME} 2>/dev/null
@@ -381,6 +427,7 @@ start_container_ssl() {
         ${IMAGE_NAME}:latest
 
     if [ $? -eq 0 ]; then
+        regenerate_unit
         echo -e "${GREEN}✓ Container started with HTTPS${NC}"
         echo "  instance: ${CRUCIBLE_INSTANCE:-default} · container: ${CONTAINER_NAME} · image: ${IMAGE_NAME}:latest"
         echo ""
@@ -499,6 +546,7 @@ restore_data() {
     fi
 
     check_podman_machine
+    stop_unit_if_active
     echo -e "${YELLOW}Stopping container '${CONTAINER_NAME}' before restore...${NC}"
     $RUNTIME stop ${CONTAINER_NAME} 2>/dev/null
 
@@ -545,6 +593,9 @@ show_status() {
     check_podman_machine
     echo -e "${YELLOW}Container status (runtime: ${RUNTIME} · instance: ${CRUCIBLE_INSTANCE:-default} · folder: $(pwd)):${NC}"
     $RUNTIME ps -a --filter name=${CONTAINER_NAME} --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    if have_unit; then
+        echo "systemd unit ${UNIT_NAME}: $(systemctl --user is-active "${UNIT_NAME}" 2>/dev/null) ($(systemctl --user is-enabled "${UNIT_NAME}" 2>/dev/null)) — inactive after a rebuild is normal; it starts the container at boot"
+    fi
     echo ""
     if $RUNTIME ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
         echo -e "${GREEN}✓ Container is running${NC}"
@@ -616,6 +667,7 @@ open_shell() {
 clean_up() {
     check_podman_machine
     echo -e "${YELLOW}Cleaning up container '${CONTAINER_NAME}' and image '${IMAGE_NAME}:latest'...${NC}"
+    stop_unit_if_active
     $RUNTIME stop ${CONTAINER_NAME} 2>/dev/null
     $RUNTIME rm ${CONTAINER_NAME} 2>/dev/null
     $RUNTIME rmi ${IMAGE_NAME}:latest 2>/dev/null

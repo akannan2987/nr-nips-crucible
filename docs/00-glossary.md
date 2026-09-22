@@ -170,7 +170,7 @@ after the server reboots, systemd is who you ask.
 
 **systemd user unit** — a small recipe file telling systemd "run this, for
 this user, at boot". Crucible's is
-`~/.config/systemd/user/container-crucible-py.service`.
+`~/.config/systemd/user/container-crucible-py.service`. Since v2.21.1 `container-py.sh` stops the unit if it is active before it recreates the container, and rewrites the unit from the container it created, so the two never fight over one container (lesson 36).
 
 **Quadlet** — a newer, tidier way of writing that recipe for containers
 specifically (`crucible-py.container`). Same purpose, less boilerplate.

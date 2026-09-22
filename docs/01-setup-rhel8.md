@@ -1975,8 +1975,10 @@ column is the port the image *declares*; beta does not publish it
 
 **If instead** `list-units` shows only the beta unit: that command hides
 *inactive* units, and production's unit goes inactive every time
-`./container-py.sh rebuild` recreates its container outside systemd. It is
-still enabled, and at boot it starts the container itself
+`./container-py.sh rebuild` recreates its container outside systemd (since
+v2.21.1 the script stops an active unit on purpose before touching the
+container, and rewrites the unit afterwards). It is still enabled, and at
+boot it starts the container itself
 (`systemctl --user list-units --all 'container-crucible-py*'` should show
 production's as `loaded inactive dead`, and `is-enabled` should say
 `enabled` for both). Only `failed`, or a unit missing from `--all`, needs
@@ -1991,7 +1993,7 @@ container.
 
 | I want to… | Command (beta folder) |
 |---|---|
-| Update beta to what was just published | `git pull --ff-only origin beta`, then `./container-py.sh rebuild` if code changed — [`03-git-workflow.md` Step 10](03-git-workflow.md#step-10---deploy-to-the-beta-instance); if the release note says the container's command changed, regenerate the unit afterwards (8.5 again, four commands; [why](07-operations.md#auto-start-on-boot-systemd)) |
+| Update beta to what was just published | `git pull --ff-only origin beta`, then `./container-py.sh rebuild` if code changed — [`03-git-workflow.md` Step 10](03-git-workflow.md#step-10---deploy-to-the-beta-instance). The rebuild stops the unit if it is active and rewrites it from the new container (v2.21.1; [why](07-operations.md#auto-start-on-boot-systemd)) |
 | Check it, stop it, start it | `./container-py.sh status` · `stop` · `start` · `logs`, in this folder; the per-instance table is in [`07-operations.md` → Two instances](07-operations.md#two-instances-on-one-machine) |
 | Give the testers a fresh copy of production | the two commands of 8.4 |
 | See what beta has that production does not | `git log --oneline origin/master..origin/beta` (after `git fetch origin`) |

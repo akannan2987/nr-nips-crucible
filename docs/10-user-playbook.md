@@ -191,6 +191,13 @@ that is *correct* on a server configured for HTTPS. Use `https://`.
 > progress bar — never use plain `-s`, which hides failures too and makes a
 > broken command look like a silent success.
 
+## Is it running? Stop it, start it
+
+The everyday commands for the person who runs the server, with what each
+output means and how the application comes back after a reboot, are on
+one page: [`15-run-stop-status.md`](15-run-stop-status.md). This playbook
+assumes it is running.
+
 ## Which instance am I on?
 
 Since v2.20.0 the server runs **two** copies of the application: production

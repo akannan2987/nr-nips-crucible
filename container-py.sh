@@ -155,20 +155,22 @@ check_podman_machine() {
     fi
 }
 
-# ── The systemd unit (Linux servers): the boot-time starter ─────────
-# A unit made by `podman generate systemd --new` (docs/07-operations.md →
-# Auto-start on boot) records the container's exact run command and
-# restarts the container when it dies. Two things follow, both learned on
-# the server on 2026-09-22 (lesson 36):
-#   1. if that unit is ACTIVE while this script stops and recreates the
-#      container, systemd recreates its own copy from the OLD recorded
-#      command and replaces ours underneath us — so the unit is stopped
-#      before the container is touched;
-#   2. after this script creates a container, the unit is rewritten from
-#      it, so the next boot starts exactly what was just started (new
-#      environment variables included) and nobody has to remember to.
-# No unit file, no systemctl, or Docker: both steps are silent no-ops,
-# so macOS and Windows behave as before.
+# ── The systemd service (Linux servers) ─────────────────────────────
+# On the RHEL 8 server a systemd user unit made by `podman generate systemd
+# --new` (docs/07-operations.md → Auto-start on boot) is THE thing that runs
+# the application: it starts the container at boot, restarts it if it
+# dies, and owns it. This script builds and updates, and then hands the
+# container to the service, so `systemctl --user status|stop|start|restart`
+# and this script's status|stop|start|restart always agree. The rules,
+# learned the hard way (lessons 36 and 37, docs/15-run-stop-status.md):
+#   1. before this script stops or recreates the container, it stops the
+#      service if it is active (an active service would otherwise recreate
+#      its own, older copy of the container underneath us);
+#   2. after this script creates a container, it rewrites the unit from
+#      it (the unit records the exact run command) and then starts the
+#      service, which takes the container over.
+# No unit file, no systemctl, or Docker: every step is a silent no-op, so
+# macOS and Windows behave as before, with this script as the only tool.
 UNIT_DIR="${CRUCIBLE_UNIT_DIR:-$HOME/.config/systemd/user}"
 UNIT_NAME="container-${CONTAINER_NAME}.service"
 
@@ -176,17 +178,20 @@ have_unit() {
     [ "$RUNTIME" = "podman" ] && [ -f "${UNIT_DIR}/${UNIT_NAME}" ] && command -v systemctl >/dev/null 2>&1
 }
 
+unit_active() {
+    have_unit && systemctl --user is-active --quiet "${UNIT_NAME}" 2>/dev/null
+}
+
 stop_unit_if_active() {
-    have_unit || return 0
-    if systemctl --user is-active --quiet "${UNIT_NAME}" 2>/dev/null; then
-        echo -e "${YELLOW}Stopping the systemd unit ${UNIT_NAME} first (it would otherwise recreate the old container)...${NC}"
+    if unit_active; then
+        echo -e "${YELLOW}Stopping the service ${UNIT_NAME} first (it would otherwise recreate the old container)...${NC}"
         systemctl --user stop "${UNIT_NAME}"
     fi
 }
 
 regenerate_unit() {
     have_unit || return 0
-    echo -e "${YELLOW}Rewriting ${UNIT_NAME} from the container just created, so the next boot starts exactly this...${NC}"
+    echo -e "${YELLOW}Rewriting ${UNIT_NAME} from the container just created (the unit records the exact run command)...${NC}"
     # `generate systemd --files` writes into the current directory: run it
     # in the unit folder so the file lands in place, replacing the old one.
     if (cd "${UNIT_DIR}" && $RUNTIME generate systemd --new --name "${CONTAINER_NAME}" --files >/dev/null 2>&1) \
@@ -195,6 +200,33 @@ regenerate_unit() {
     else
         echo -e "${RED}✗ Could not rewrite ${UNIT_NAME} — do it by hand: docs/07-operations.md → Auto-start on boot${NC}"
     fi
+}
+
+handover_to_unit() {
+    have_unit || return 0
+    echo -e "${YELLOW}Handing the container to the service ${UNIT_NAME}, which runs it from now on...${NC}"
+    if systemctl --user start "${UNIT_NAME}"; then
+        echo -e "${GREEN}✓ ${UNIT_NAME} is active: the service runs the application (systemctl --user status ${UNIT_NAME})${NC}"
+    else
+        echo -e "${RED}✗ systemctl --user start ${UNIT_NAME} failed; the container this script started keeps running (podman ps). See docs/15-run-stop-status.md${NC}"
+    fi
+}
+
+# Wait until the application answers, so a command returns only when the
+# app is really up (a curl in the first seconds after a start used to fail
+# with "Connection reset by peer"; SH-9).
+wait_for_api() {
+    local url i
+    url="$(api_url)"
+    for i in $(seq 1 30); do
+        if curl --noproxy '*' -sk -m 5 "$url" 2>/dev/null | grep -q '"chemicals"'; then
+            echo -e "${GREEN}✓ The application answers at ${url}${NC}"
+            return 0
+        fi
+        sleep 2
+    done
+    echo -e "${YELLOW}⚠ The application did not answer within 60 s at ${url} — check: ./container-py.sh logs${NC}"
+    return 1
 }
 
 # ── Host interface for published ports ──
@@ -220,10 +252,11 @@ show_help() {
     echo ""
     echo "Commands:"
     echo "  build       Build the Python backend image"
-    echo "  start       Start the container (HTTP, port ${PORT})"
+    echo "  start       Start the application (HTTPS when .env.local says USE_HTTPS=true, else HTTP on port ${PORT});"
+    echo "              on a server with a systemd unit, the service takes the container over"
     echo "  start-ssl   Start with HTTPS (needs certs/server.crt + server.key)"
-    echo "  stop        Stop the container"
-    echo "  restart     Restart the container"
+    echo "  stop        Stop the application (through its service when the service runs it)"
+    echo "  restart     Restart the application (through its service when the service runs it)"
     echo "  rebuild     Rebuild image and restart container"
     echo "  backup      Consistent database backup → backups/ (safe while running)"
     echo "  restore <f> Restore a backup file (stops app, swaps db, restarts);"
@@ -323,6 +356,8 @@ start_container() {
 
     if [ $? -eq 0 ]; then
         [ -n "$created" ] && regenerate_unit
+        handover_to_unit
+        wait_for_api
         local shown_port="${running_port:-${PORT}}"
         # An existing container keeps the mode it was created with: say
         # https:// when that is what it serves, or the line is a lie.
@@ -345,7 +380,15 @@ start_container() {
 
 stop_container() {
     check_podman_machine
-    stop_unit_if_active
+    if unit_active; then
+        echo -e "${YELLOW}Stopping the application through its service ${UNIT_NAME}...${NC}"
+        if systemctl --user stop "${UNIT_NAME}"; then
+            echo -e "${GREEN}✓ ${UNIT_NAME} stopped; the container is removed (start, or the next boot, recreates it)${NC}"
+        else
+            echo -e "${RED}✗ systemctl --user stop ${UNIT_NAME} failed${NC}"
+        fi
+        return
+    fi
     echo -e "${YELLOW}Stopping container '${CONTAINER_NAME}' (Python backend)...${NC}"
     if $RUNTIME stop ${CONTAINER_NAME} 2>/dev/null; then
         echo -e "${GREEN}✓ Container '${CONTAINER_NAME}' stopped${NC}"
@@ -354,10 +397,25 @@ stop_container() {
     fi
 }
 
+# Plain `start`: HTTPS when .env.local or the environment says so.
+start_dispatch() {
+    if [ "${USE_HTTPS:-false}" = "true" ]; then
+        start_container_ssl
+    else
+        start_container
+    fi
+}
+
 restart_container() {
+    check_podman_machine
+    if unit_active; then
+        echo -e "${YELLOW}Restarting the application through its service ${UNIT_NAME}...${NC}"
+        systemctl --user restart "${UNIT_NAME}" && wait_for_api
+        return
+    fi
     stop_container
     sleep 2
-    start_container
+    start_dispatch
 }
 
 rebuild() {
@@ -428,6 +486,8 @@ start_container_ssl() {
 
     if [ $? -eq 0 ]; then
         regenerate_unit
+        handover_to_unit
+        wait_for_api
         echo -e "${GREEN}✓ Container started with HTTPS${NC}"
         echo "  instance: ${CRUCIBLE_INSTANCE:-default} · container: ${CONTAINER_NAME} · image: ${IMAGE_NAME}:latest"
         echo ""
@@ -560,12 +620,12 @@ restore_data() {
     echo -e "${GREEN}✓ Restored $(basename "$src") → data/crucible.db  (instance: ${CRUCIBLE_INSTANCE:-default})${NC}"
 
     # An existing container is simply started again and keeps its mode. If
-    # there is none (after `clean`), honour USE_HTTPS as plain `start` does.
-    if [ "${USE_HTTPS:-false}" = "true" ] \
-        && ! $RUNTIME ps -a --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
-        start_container_ssl
-    else
+    # there is none (the service removed it, or after `clean`), honour
+    # USE_HTTPS as plain `start` does.
+    if $RUNTIME ps -a --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
         start_container
+    else
+        start_dispatch
     fi
     echo ""
     echo "Verify with: curl --noproxy '*' -sk $(api_url)"
@@ -592,9 +652,15 @@ api_url() {
 show_status() {
     check_podman_machine
     echo -e "${YELLOW}Container status (runtime: ${RUNTIME} · instance: ${CRUCIBLE_INSTANCE:-default} · folder: $(pwd)):${NC}"
-    $RUNTIME ps -a --filter name=${CONTAINER_NAME} --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    # Exact match on the name: a filter would also match crucible-py-beta
+    # from the production folder.
+    $RUNTIME ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | awk -v n="${CONTAINER_NAME}" 'NR==1 || $1==n'
     if have_unit; then
-        echo "systemd unit ${UNIT_NAME}: $(systemctl --user is-active "${UNIT_NAME}" 2>/dev/null) ($(systemctl --user is-enabled "${UNIT_NAME}" 2>/dev/null)) — inactive after a rebuild is normal; it starts the container at boot"
+        if unit_active; then
+            echo "service ${UNIT_NAME}: active ($(systemctl --user is-enabled "${UNIT_NAME}" 2>/dev/null)) — the service runs the application"
+        else
+            echo "service ${UNIT_NAME}: inactive ($(systemctl --user is-enabled "${UNIT_NAME}" 2>/dev/null)) — the application is stopped, or runs outside the service; ./container-py.sh start hands it over"
+        fi
     fi
     echo ""
     if $RUNTIME ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
@@ -749,11 +815,7 @@ case "$1" in
     start)
         # USE_HTTPS=true (env or .env.local) makes plain `start` an HTTPS
         # start — the standing config for the production VM.
-        if [ "${USE_HTTPS:-false}" = "true" ]; then
-            start_container_ssl
-        else
-            start_container
-        fi
+        start_dispatch
         ;;
     start-ssl) start_container_ssl ;;
     stop)     stop_container ;;

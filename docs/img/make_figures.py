@@ -259,6 +259,44 @@ def fig_instance_label() -> None:
     write("fig_instance_label.svg", svg(W, H, "One name in the settings file travels through the container script and the app to become a word and a colour in the page's corner; production shows an indigo Prod pill on a white bar, beta an amber Beta pill on an amber bar", b))
 
 
+def fig_two_doors() -> None:
+    """One running application, two doors into the same room (v2.21.2)."""
+    W, H = 940, 440
+    mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
+    b = text(W/2, 34, "One application, two doors into the same room: whichever you use, the service is inside", 16, INK, "middle", "bold")
+    # the room
+    b += box(300, 70, 340, 250, "#eef2ff", COLOURS["chemical"], 12)
+    b += text(470, 96, "the running application", 13, COLOURS["chemical"], "middle", "bold")
+    b += text(470, 114, "one container per instance: crucible-py · crucible-py-beta", 10, MUTED)
+    # the caretaker (service) inside the room
+    b += box(330, 132, 280, 96, PAPER, COLOURS["chemical"], 8)
+    b += text(470, 154, "the service (systemd user unit)", 12, INK, "middle", "bold")
+    b += lines(470, 174, ["container-crucible-py[-beta].service", "starts it at boot · restarts it if it dies", "owns the container while it runs"], 10, INK, "middle", 15)
+    b += f"<circle cx='470' cy='268' r='14' fill='{PAPER}' stroke='{COLOURS['chemical']}' stroke-width='2'/>\n"
+    b += text(470, 273, "on", 10, COLOURS["chemical"], "middle", "bold")
+    b += text(470, 300, "status · stop · start · restart mean the same through either door", 10, MUTED)
+    # left door: the script
+    b += box(40, 120, 200, 150, "#fff7ed", COLOURS["screening"], 10)
+    b += text(140, 144, "door 1: the script", 12, COLOURS["screening"], "middle", "bold")
+    b += lines(140, 166, ["./container-py.sh status", "./container-py.sh stop", "./container-py.sh start", "./container-py.sh restart"], 10, INK, "middle", 16, "normal")
+    b += text(140, 250, "in the instance's folder · every platform", 9, MUTED)
+    b += arrow(242, 195, 298, 195, COLOURS["screening"])
+    # right door: systemctl
+    b += box(700, 120, 200, 150, "#f0fdf4", "#15803d", 10)
+    b += text(800, 144, "door 2: the service", 12, "#15803d", "middle", "bold")
+    b += lines(800, 166, ["systemctl --user status …", "systemctl --user stop …", "systemctl --user start …", "systemctl --user restart …"], 10, INK, "middle", 16, "normal")
+    b += text(800, 250, "RHEL 8 only · from any folder", 9, MUTED)
+    b += arrow(698, 195, 642, 195, "#15803d")
+    # boot
+    b += box(150, 336, 640, 40, PANEL, LINE, 8)
+    b += text(470, 352, "the building opens (the server reboots)", 10.5, INK, "middle", "bold")
+    b += text(470, 367, "lingering lets your services run while you are logged out; the enabled service switches the application on", 9, MUTED)
+    b += arrow(470, 334, 470, 322, LINE, dash=True)
+    b += text(W/2, 404, "the script builds and updates, then hands the container to the service; on a Mac or Windows there is no service and the script is the only door", 10.5, MUTED)
+    b += text(W/2, 422, "everyday version: two doors into one kitchen; the caretaker inside keeps the stove lit and relights it every morning", 10.5, MUTED)
+    write("fig_two_doors.svg", svg(W, H, "One running application per instance, with the systemd service inside it; two doors lead in, the script and systemctl, and the boot key underneath: lingering plus an enabled service switches it on when the server restarts", b))
+
+
 # ---------------------------------------------------------------- palette --
 INK = "#1f2937"        # text
 MUTED = "#6b7280"      # secondary text
@@ -861,5 +899,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, cover, logo):
         f()

@@ -194,11 +194,11 @@ and `status` say so ([Two instances on one machine](#two-instances-on-one-machin
 
 ```bash
 ./container-py.sh build       # Build image (node build stage + python:3.12-slim)
-./container-py.sh start       # Start on port 49160 (HTTP)
+./container-py.sh start       # Start (HTTPS when .env.local says so); on the server the service takes the container over; returns when the app answers
 ./container-py.sh start-ssl   # Start with HTTPS (certs/server.crt + server.key)
-./container-py.sh status      # Status + /api/stats healthcheck (HTTP or HTTPS, whichever is running)
+./container-py.sh status      # Container row, the service's state, and a /api/stats healthcheck — docs/15-run-stop-status.md
 ./container-py.sh logs        # View logs
-./container-py.sh stop        # Stop container
+./container-py.sh stop        # Stop (through the service when the service runs it)
 ./container-py.sh rebuild     # Rebuild image + restart, preserving HTTP/HTTPS mode
 ./container-py.sh script remove_chemicals.py CHEM-000042   # Run a maintenance script inside the container; no name = list them
 ./container-py.sh import chemicals ~/registry.json         # Load a chemicals file (json, csv, tsv, xlsx, xls, sdf) through the same code as the upload page
@@ -474,7 +474,9 @@ anything destructive. In a browser, the page's own corner says which
 instance it is: a **Prod** pill in indigo or a **Beta** pill in amber, and
 `[Prod]` or `[Beta]` on the tab (SH-13).
 
-**Status, stop, start, per instance.** The same commands in each folder:
+**Status, stop, start, per instance.** The everyday commands, what each
+output means, and surviving a reboot are on one page,
+[`15-run-stop-status.md`](15-run-stop-status.md); the short form:
 
 | I want to… | Production, in `~/work/Pandora_toolbox/nr-nips-crucible` | Beta, in `…/nr-nips-crucible-beta` |
 |---|---|---|
@@ -490,20 +492,20 @@ instance it is: a **Prod** pill in indigo or a **Beta** pill in amber, and
 | What the monitor saw | `tail -3 /tmp/crucible-monitor.log` | `tail -3 /tmp/crucible-monitor-beta.log` |
 | The boot-time unit | `systemctl --user status container-crucible-py.service` | `systemctl --user status container-crucible-py-beta.service` |
 
-**Two supervisors, and how they relate.** The `container-py.sh` commands
-are the day-to-day tools and what the monitor uses. The systemd unit is
-the boot-time starter. Since v2.21.1 the script keeps the two from
-fighting: before it stops or recreates a container it **stops the unit if
-the unit is active** (an active unit would otherwise recreate its own,
-older copy of the container underneath the script, which is what happened
-on the server on 2026-09-22, lesson 36), and after it creates a container
-it **rewrites the unit from that container** and reloads systemd, so the
-next boot starts exactly what was just started. The unit therefore shows
-`inactive` (and `enabled`) after any `rebuild`, `start` or `restore`; that
-is the normal state between a rebuild and a reboot, and `./container-py.sh status`
-prints it. `systemctl --user start` hands the container back to systemd
-at any time; the next script command takes it back. On a machine with no
-unit file, no `systemctl`, or Docker, none of this runs.
+**One supervisor, two doors.** Since v2.21.2 the systemd service is the
+thing that runs the application on the server, and `container-py.sh` is
+the tool that builds and updates it and then hands over: after every
+container the script creates (`rebuild`, `start`, `start-ssl`, `restore`)
+it rewrites the unit from that container, starts the service, which takes
+the container over, and waits until the application answers. Its `status`,
+`stop` and `restart` go through the service when the service is running
+it. So `systemctl --user status|stop|start|restart container-crucible-py[-beta].service`
+and the script's `status|stop|start|restart` always agree, and the unit is
+`active (enabled)` whenever the application runs. Before it touches a
+container the script still stops an active service first (lesson 36).
+The whole story, step by step, is [`15-run-stop-status.md`](15-run-stop-status.md).
+On a machine with no unit file, no `systemctl`, or Docker, none of this
+runs and the script is the only door.
 
 **Refreshing beta from production** (one way, on request — never the reverse):
 
@@ -701,8 +703,10 @@ a later one may add the login's), the unit must be written again after the
 rebuild, or the next boot starts the container the old way. **Since
 v2.21.1 `container-py.sh` does this itself** after every container it
 creates (`rebuild`, `start`, `start-ssl`, `restore`) whenever the unit file
-exists: you will see `Rewriting container-crucible-py-beta.service from the
-container just created` and `✓ … rewritten (enabled: enabled)`. By hand,
+exists, and since v2.21.2 it then starts the service so that the service
+owns the container: you will see `Rewriting container-crucible-py-beta.service
+from the container just created`, `✓ … rewritten (enabled: enabled)`,
+`Handing the container to the service …` and `✓ … is active`. By hand,
 should you ever need it, it is four commands in the instance's folder, with
 its container running:
 

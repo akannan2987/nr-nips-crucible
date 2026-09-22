@@ -350,6 +350,15 @@ Git Bash `./container-py.sh start`.
 
 ---
 
+### Is it running? Stop, start, restart
+
+`./container-py.sh status`, `stop`, `start` and `restart`, run in the
+project folder, are the whole story on a PC: there is no service here,
+the script is the only door, and since v2.21.2 `start` returns only when
+the application answers. What each output means, and how the server
+differs (a service that keeps it running across reboots), is on one page:
+[`15-run-stop-status.md`](15-run-stop-status.md).
+
 ### Two copies on one PC
 
 Since v2.20.0 a second, separate copy of the application can run beside the
@@ -472,4 +481,4 @@ Docker Desktop from Windows Settings → Apps if you no longer need it. The
 | `.venv/bin/pytest: No such file` | Windows virtual-environment layout | use `.venv/Scripts/pytest` |
 | very slow first build | antivirus scanning Docker's data folder | ask IT about excluding Docker Desktop's data directory |
 
-**Last Updated:** September 21, 2026 — **untested on a real Windows machine**
+**Last Updated:** September 22, 2026 — **untested on a real Windows machine**

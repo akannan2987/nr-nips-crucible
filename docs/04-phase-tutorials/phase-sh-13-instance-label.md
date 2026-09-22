@@ -270,15 +270,18 @@ grep -o 'CRUCIBLE_INSTANCE=[a-z]*' ~/.config/systemd/user/container-crucible-py-
 ./container-py.sh status | head -4
 ```
 
-**You should see** in the rebuild's output `Stopping the systemd unit
+**You should see** in the rebuild's output `Stopping the service
 container-crucible-py-beta.service first` (only if it was active), then the
 build, then `Rewriting container-crucible-py-beta.service from the
-container just created` and `✓ … rewritten (enabled: enabled)`;
+container just created`, `✓ … rewritten (enabled: enabled)`, `Handing the
+container to the service …`, `✓ … is active` and `✓ The application
+answers` (the hand-over and the wait came with v2.21.2, the same day);
 `CRUCIBLE_INSTANCE=beta` from the `grep`; and in `status` a line
-`systemd unit container-crucible-py-beta.service: inactive (enabled)`, which
-is the normal state between a rebuild and a reboot. The same happens in
-production's folder for `crucible-py`. The manual four commands remain in
-[`07-operations.md` → Auto-start on boot](../07-operations.md#auto-start-on-boot-systemd)
+`service container-crucible-py-beta.service: active (enabled) — the service
+runs the application`. The same happens in production's folder for
+`crucible-py`. Everything about running, stopping and checking is on one
+page, [`15-run-stop-status.md`](../15-run-stop-status.md); the manual four
+commands remain in [`07-operations.md` → Auto-start on boot](../07-operations.md#auto-start-on-boot-systemd)
 for the day the automatic step reports it could not run.
 
 **Why beta first, in practice.** Between the publish and the promotion the
@@ -345,12 +348,13 @@ before the promotion, `curl …:49160/api/instance` still answers
 `{"detail":"Not Found"}` and the production tab has no pill. That is
 correct, and the promotion changes it.
 
-| Route (v2.21.1) | How | You should see |
+| Route (v2.21.1 and v2.21.2) | How | You should see |
 |---|---|---|
-| **The unit follows the container** | beta folder: `./container-py.sh rebuild`, then `grep -c 'CRUCIBLE_INSTANCE=beta' ~/.config/systemd/user/container-crucible-py-beta.service` | the rebuild prints `Rewriting … rewritten (enabled: enabled)`; the grep prints `1` |
-| **An active unit is stopped first** | `systemctl --user start container-crucible-py-beta.service`, then `./container-py.sh rebuild` | `Stopping the systemd unit container-crucible-py-beta.service first …`, then the build; afterwards the container has its name (`curl …/api/instance` → `Beta`) and the unit is `inactive (enabled)` |
-| **Status shows both supervisors** | `./container-py.sh status \| head -4` | the container row and `systemd unit …: inactive (enabled) — inactive after a rebuild is normal; it starts the container at boot` |
-| **A Mac is unaffected** | `./container-py.sh rebuild` on a Mac | no unit lines at all: there is no unit file and no `systemctl` |
+| **The unit follows the container** | beta folder: `./container-py.sh rebuild`, then `grep -c 'CRUCIBLE_INSTANCE=beta' ~/.config/systemd/user/container-crucible-py-beta.service` | the rebuild prints `Rewriting … rewritten (enabled: enabled)`, then `Handing the container to the service …`, `✓ … is active`, `✓ The application answers`; the grep prints `1` |
+| **An active service is stopped first** | with the service active (it always is after v2.21.2): `./container-py.sh rebuild` | `Stopping the service container-crucible-py-beta.service first …`, then the build; afterwards the container has its name (`curl …/api/instance` → `Beta`) and the service is `active (enabled)` again |
+| **Both doors agree** | `./container-py.sh status \| head -5` and `systemctl --user status container-crucible-py-beta.service \| head -3` | the container row, `service …: active (enabled) — the service runs the application`, and `Active: active (running)` |
+| **Stop and start through either door** | `systemctl --user stop container-crucible-py-beta.service`, `./container-py.sh status`, then `./container-py.sh start` | no container row and `inactive (enabled)` after the stop; after the start, `Handing the container to the service …` and both doors say active |
+| **A Mac is unaffected** | `./container-py.sh rebuild` on a Mac | no service lines at all: there is no unit file and no `systemctl`; `✓ The application answers` still appears |
 
 ---
 

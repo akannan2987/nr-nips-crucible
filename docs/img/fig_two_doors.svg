@@ -1,0 +1,38 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 440' width='940' height='440' role='img' aria-label='One running application per instance, with the systemd service inside it; two doors lead in, the script and systemctl, and the boot key underneath: lingering plus an enabled service switches it on when the server restarts' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='439' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>One application, two doors into the same room: whichever you use, the service is inside</text>
+<rect x='300' y='70' width='340' height='250' rx='12' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='470' y='96' font-size='13' fill='#4f46e5' text-anchor='middle' font-weight='bold'>the running application</text>
+<text x='470' y='114' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>one container per instance: crucible-py · crucible-py-beta</text>
+<rect x='330' y='132' width='280' height='96' rx='8' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='470' y='154' font-size='12' fill='#1f2937' text-anchor='middle' font-weight='bold'>the service (systemd user unit)</text>
+<text x='470' y='174' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>container-crucible-py[-beta].service</text>
+<text x='470' y='189' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>starts it at boot · restarts it if it dies</text>
+<text x='470' y='204' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>owns the container while it runs</text>
+<circle cx='470' cy='268' r='14' fill='#ffffff' stroke='#4f46e5' stroke-width='2'/>
+<text x='470' y='273' font-size='10' fill='#4f46e5' text-anchor='middle' font-weight='bold'>on</text>
+<text x='470' y='300' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>status · stop · start · restart mean the same through either door</text>
+<rect x='40' y='120' width='200' height='150' rx='10' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='140' y='144' font-size='12' fill='#d97706' text-anchor='middle' font-weight='bold'>door 1: the script</text>
+<text x='140' y='166' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>./container-py.sh status</text>
+<text x='140' y='182' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>./container-py.sh stop</text>
+<text x='140' y='198' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>./container-py.sh start</text>
+<text x='140' y='214' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>./container-py.sh restart</text>
+<text x='140' y='250' font-size='9' fill='#6b7280' text-anchor='middle' font-weight='normal'>in the instance&apos;s folder · every platform</text>
+<line x1='242' y1='195' x2='298' y2='195' stroke='#d97706' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='700' y='120' width='200' height='150' rx='10' fill='#f0fdf4' stroke='#15803d' stroke-width='1.2'/>
+<text x='800' y='144' font-size='12' fill='#15803d' text-anchor='middle' font-weight='bold'>door 2: the service</text>
+<text x='800' y='166' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>systemctl --user status …</text>
+<text x='800' y='182' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>systemctl --user stop …</text>
+<text x='800' y='198' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>systemctl --user start …</text>
+<text x='800' y='214' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>systemctl --user restart …</text>
+<text x='800' y='250' font-size='9' fill='#6b7280' text-anchor='middle' font-weight='normal'>RHEL 8 only · from any folder</text>
+<line x1='698' y1='195' x2='642' y2='195' stroke='#15803d' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='150' y='336' width='640' height='40' rx='8' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='470' y='352' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>the building opens (the server reboots)</text>
+<text x='470' y='367' font-size='9' fill='#6b7280' text-anchor='middle' font-weight='normal'>lingering lets your services run while you are logged out; the enabled service switches the application on</text>
+<line x1='470' y1='334' x2='470' y2='322' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)' stroke-dasharray='6 4'/>
+<text x='470.0' y='404' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>the script builds and updates, then hands the container to the service; on a Mac or Windows there is no service and the script is the only door</text>
+<text x='470.0' y='422' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>everyday version: two doors into one kitchen; the caretaker inside keeps the stove lit and relights it every morning</text>
+</svg>

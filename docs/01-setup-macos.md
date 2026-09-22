@@ -645,6 +645,15 @@ saved preference. (To make one permanent for this machine, put it in
 
 ---
 
+### Is it running? Stop, start, restart
+
+`./container-py.sh status`, `stop`, `start` and `restart`, run in the
+project folder, are the whole story on a Mac: there is no service here,
+the script is the only door, and since v2.21.2 `start` returns only when
+the application answers. What each output means, and how the server
+differs (a service that keeps it running across reboots), is on one page:
+[`15-run-stop-status.md`](15-run-stop-status.md).
+
 ### Two copies on one Mac
 
 Since v2.20.0 a second, separate copy of the application can run beside the
@@ -822,7 +831,7 @@ the last line: `✓ Image built successfully` or `✗ Failed to build image`.
 **See also:** [macOS Uninstall](01-uninstall-macos.md) ·
 [Full deployment guide](07-operations.md) · [Project README](../README.md)
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 22, 2026
 
 ---
 

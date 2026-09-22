@@ -333,11 +333,13 @@ re-run `SETUP_MONITOR=y ./setup-after-clone-py.sh` in the beta folder; it
 replaces its own line only.
 
 **If instead** `systemctl --user list-units 'container-crucible-py*'` lists
-only beta: production's unit is *inactive*, not gone. Every
-`./container-py.sh rebuild` recreates the container outside systemd, and the
-unit stays enabled for the next boot. `list-units --all` shows it as
-`loaded inactive dead`; that is the expected state between a rebuild and a
-reboot (seen on the server on 2026-09-22).
+only beta: production's unit is *inactive*, not gone; before v2.21.2 every
+`./container-py.sh rebuild` recreated the container outside systemd and
+left the unit enabled but inactive (seen on the server on 2026-09-22).
+Since v2.21.2 the script hands every container it creates to the service,
+so a unit is active whenever its application runs; an inactive unit beside
+a running container just needs `./container-py.sh start` in that folder.
+The one page for all of this is [`15-run-stop-status.md`](../15-run-stop-status.md).
 
 ---
 

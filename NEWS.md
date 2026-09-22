@@ -10,6 +10,47 @@ change you are getting.
 
 ---
 
+## v2.21.2 — 2026-09-22 — "One supervisor, two doors, one page"
+
+v2.21.1 stopped the script and the service from fighting, and left the
+confusing part in place: the service was inactive whenever the script had
+started the application, `systemctl status` said "dead" about an
+application that answered, and whether `stop` worked through the service
+depended on who had started it. The owner could not follow the pages that
+explained this, rightly. This release makes the design simple and then
+documents it once.
+
+**Changed**
+- **The service runs the application on the server.** After every
+  container `container-py.sh` creates (`rebuild`, `start`, `start-ssl`,
+  `restore`) it rewrites the unit from that container, starts the service,
+  which takes the container over, and waits until the application answers.
+  Its `status`, `stop` and `restart` go through the service when the
+  service is running it. `systemctl --user status|stop|start|restart` and
+  the script's commands therefore always agree, and the unit is `active
+  (enabled)` whenever the application runs. On a Mac, Windows or Docker
+  nothing changes: the script is the only door.
+- **A command returns only when the application answers** (SH-9, the
+  wait-for-ready): no more `Connection reset by peer` from a curl typed in
+  the first seconds after a start.
+- **`status` matches the container name exactly**; run in production's
+  folder it no longer lists beta's row as well.
+- **The monitor restarts through the service** when the service is running
+  the application.
+
+**Added**
+- [`docs/15-run-stop-status.md`](docs/15-run-stop-status.md): the one page
+  for "is it running?", stop, start, restart, and keeping it running after
+  the server reboots, for the Mac and the server, with what every output
+  means, a table of what can look wrong, and what not to do. Every other
+  page points to it; a figure, `fig_two_doors.svg`; lesson 37.
+
+**Deploy**
+- Both instances rebuild once more; from this rebuild on, `systemctl --user status`
+  says `active` while the application runs.
+
+---
+
 ## v2.21.1 — 2026-09-22 — "The script and the unit stop fighting"
 
 The first deploy of v2.21.0 to the beta instance showed a gap. Beta's

@@ -350,6 +350,26 @@ remember at the right second is not a fix.* *The shape:* an operation
 reporting one thing (the script's `instance: beta`) while another does
 the opposite (the unit's silent replacement).
 
+**37. A rule a person must remember at the right second is not a fix.**
+After lesson 36 the script stopped an active service before touching the
+container and rewrote the service's recipe afterwards. Correct, and still
+confusing: the service was inactive whenever the script had started the
+application, so `systemctl status` said "dead" about an application that
+was answering, and whether `stop` worked through the service depended on
+who had started it. The owner read the pages that explained this and
+could not follow them, and said so. The explanation was accurate and the
+design was wrong: two things were allowed to run the same application, so
+every honest sentence about it had a condition in it. The fix was to make
+one of them the owner. The script now builds, hands the container to the
+service, and drives status, stop, start and restart *through* the service;
+the service is active whenever the application runs; both doors always
+show and change the same thing. Then one page could be written without a
+single "it depends", and every other page points to it. *Lesson: when a
+document about an everyday task needs a paragraph called "how the two
+relate", change the two, not the paragraph.* *The shape:* a status that
+reported one thing (`inactive`) while the application did another
+(answered).
+
 ---
 
 ## The one rule they add up to

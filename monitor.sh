@@ -51,7 +51,15 @@ check_health() {
 
 restart_container() {
     log "⚠️  Container ${CONTAINER_NAME} unhealthy, restarting..."
-    $RUNTIME restart "$CONTAINER_NAME"
+    # On the server the systemd service owns the container (v2.21.2):
+    # restart through it, or systemd and podman fight over one container.
+    local unit="container-${CONTAINER_NAME}.service"
+    if command -v systemctl >/dev/null 2>&1 && systemctl --user is-active --quiet "$unit" 2>/dev/null; then
+        log "   through the service ${unit}"
+        systemctl --user restart "$unit"
+    else
+        $RUNTIME restart "$CONTAINER_NAME"
+    fi
     sleep 5
     
     if check_health; then

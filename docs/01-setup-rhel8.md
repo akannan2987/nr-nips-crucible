@@ -941,6 +941,10 @@ place. Delete, then copy, then restart.
 
 **Time:** ~10 minutes.
 
+> **The everyday commands** (is it running, stop, start, restart, and what
+> the service does at boot) are on one page, [`15-run-stop-status.md`](15-run-stop-status.md).
+> This section sets the service up once.
+
 ### 4.1 Why a container is not enough
 
 Rootless containers die with your login session — `--restart unless-stopped`
@@ -1631,7 +1635,9 @@ backup will restore for you.
 
 **Survival.** Lingering is enabled, so your programs outlive your logout. A
 systemd user unit is enabled, so the container comes back after a reboot without
-anyone logging in.
+anyone logging in; the script rewrites that unit after every container it
+creates and hands the container to it, so what boots is what runs
+([`15-run-stop-status.md`](15-run-stop-status.md)).
 
 **Watchfulness.** A cron entry every five minutes checking the app's health and
 restarting it if it has wedged; another every Monday at 08:00 warning you a
@@ -1973,16 +1979,15 @@ and sixteen checks passing on each. The bare `49160/tcp` in beta's `PORTS`
 column is the port the image *declares*; beta does not publish it
 (`podman port crucible-py-beta` prints only `49161/tcp -> 0.0.0.0:49161`).
 
-**If instead** `list-units` shows only the beta unit: that command hides
-*inactive* units, and production's unit goes inactive every time
-`./container-py.sh rebuild` recreates its container outside systemd (since
-v2.21.1 the script stops an active unit on purpose before touching the
-container, and rewrites the unit afterwards). It is still enabled, and at
-boot it starts the container itself
-(`systemctl --user list-units --all 'container-crucible-py*'` should show
-production's as `loaded inactive dead`, and `is-enabled` should say
-`enabled` for both). Only `failed`, or a unit missing from `--all`, needs
-action: `reset-failed`, or section 4.2 again.
+**If instead** `list-units` shows only one of the two units: that command
+hides *inactive* units. Since v2.21.2 a unit is active whenever its
+application runs, because every script command hands the container to
+the service; an inactive unit beside a running container means an older
+version started it, and `./container-py.sh start` in that folder hands it
+over. Only `failed`, or a unit missing from
+`systemctl --user list-units --all 'container-crucible-py*'`, needs action:
+`reset-failed`, or section 4.2 again. The full table of what you can see
+and what to do is in [`15-run-stop-status.md`](15-run-stop-status.md#when-something-looks-wrong).
 
 **If instead** the restore's final lines said `http://localhost:49161`: the
 container it restarted still serves HTTPS — `curl -k https://…` proves it —
@@ -1993,8 +1998,8 @@ container.
 
 | I want to… | Command (beta folder) |
 |---|---|
-| Update beta to what was just published | `git pull --ff-only origin beta`, then `./container-py.sh rebuild` if code changed — [`03-git-workflow.md` Step 10](03-git-workflow.md#step-10---deploy-to-the-beta-instance). The rebuild stops the unit if it is active and rewrites it from the new container (v2.21.1; [why](07-operations.md#auto-start-on-boot-systemd)) |
-| Check it, stop it, start it | `./container-py.sh status` · `stop` · `start` · `logs`, in this folder; the per-instance table is in [`07-operations.md` → Two instances](07-operations.md#two-instances-on-one-machine) |
+| Update beta to what was just published | `git pull --ff-only origin beta`, then `./container-py.sh rebuild` if code changed — [`03-git-workflow.md` Step 10](03-git-workflow.md#step-10---deploy-to-the-beta-instance). The rebuild stops the service if it is active, rewrites the unit from the new container and hands the container to the service ([why](07-operations.md#auto-start-on-boot-systemd)) |
+| Check it, stop it, start it, restart it | `./container-py.sh status` · `stop` · `start` · `restart` in this folder, or `systemctl --user … container-crucible-py-beta.service` from anywhere; both agree — [`15-run-stop-status.md`](15-run-stop-status.md) |
 | Give the testers a fresh copy of production | the two commands of 8.4 |
 | See what beta has that production does not | `git log --oneline origin/master..origin/beta` (after `git fetch origin`) |
 | Promote it to production | not from here — [`03-git-workflow.md` Step 11](03-git-workflow.md#step-11---promote-to-production-when-the-testers-agree), from the Mac and the mirror folder, then production's own folder |

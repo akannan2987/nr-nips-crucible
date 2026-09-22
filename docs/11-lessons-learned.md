@@ -419,6 +419,18 @@ the changer out; and the only way to see a race is to drive the real page
 against real data, where requests are slow enough to overlap.* *The shape:*
 a success (password changed) reported as a failure (signed out).
 
+**41. A helper that borrows the terminal eats the lines pasted after it.**
+The `users` shortcut ran the management script inside the container with
+the terminal's input attached, so that a password could be typed or piped
+in. Attached for every verb, it also received whatever the operator had
+pasted after the command: two proof lines of a deploy block vanished into
+the container's input instead of running in the shell, with no error
+anywhere. The fix attaches the input only for the two verbs that read a
+password. *The lesson: a command should take only the input it will
+read; the operator pastes blocks, and a block must run as one.* *The
+shape:* two commands that reported nothing because a third had swallowed
+them.
+
 ---
 
 ## The one rule they add up to

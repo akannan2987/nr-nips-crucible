@@ -814,16 +814,24 @@ manage_users() {
     # The login's accounts (AUTH_MODE=local, docs/13-authentication.md):
     # backend/scripts/manage_users.py, inside the container, against the
     # database directly, so it works whatever the mode says and can never
-    # lock the operator out. -i keeps stdin open for --password-stdin; -t
-    # only when this terminal is one, so --prompt can hide what is typed.
+    # lock the operator out. Stdin is attached (-i) ONLY for the two verbs
+    # that read a password from it, --password-stdin and --prompt (with -t
+    # when this terminal is one, so --prompt can hide what is typed). For
+    # every other verb the container gets no stdin at all: with it attached,
+    # the lines pasted into the terminal after a `users` command were read
+    # by the container instead of run by the shell (lesson 41).
     check_podman_machine
     if ! $RUNTIME ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
         echo -e "${RED}✗ ${CONTAINER_NAME} is not running: the accounts live in its database (./container-py.sh start)${NC}"
         return 1
     fi
-    local tty=()
-    [ -t 0 ] && tty=(-t)
-    $RUNTIME exec -i "${tty[@]}" ${CONTAINER_NAME} python /app/backend/scripts/manage_users.py "$@"
+    local io=()
+    case " $* " in
+        *" --password-stdin "*|*" --prompt "*)
+            io=(-i)
+            [ -t 0 ] && io+=(-t) ;;
+    esac
+    $RUNTIME exec "${io[@]}" ${CONTAINER_NAME} python /app/backend/scripts/manage_users.py "$@"
 }
 
 import_file() {

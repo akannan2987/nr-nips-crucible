@@ -355,8 +355,9 @@ it, and without the operator ever seeing a password twice.
 
 **How:** `backend/scripts/manage_users.py` inside the image, run as
 `./container-py.sh users <verb> …` from the instance's folder (which is
-`podman exec -i <container> python /app/backend/scripts/manage_users.py …`
-with a terminal attached when there is one):
+`podman exec <container> python /app/backend/scripts/manage_users.py …`,
+with the terminal's input attached only for `--password-stdin` and
+`--prompt`, the two verbs that read a password from it):
 
 | Verb | What it does | What it prints |
 |---|---|---|
@@ -423,7 +424,13 @@ case-sensitive either.
 **If instead:** `✗ crucible-py is not running: the accounts live in its
 database` — the script needs the container up (`./container-py.sh start`).
 `✗ a username is 2 to 32 lowercase letters, digits, dots, hyphens or
-underscores` — a space or a symbol in the name.
+underscores` — a space or a symbol in the name. The lines you pasted
+*after* a `users` command did not run, with no error — the v2.23.0
+shortcut attached the terminal's input to the container for every verb,
+and the container read the rest of the paste (seen on the server while
+proving block 3; [lesson 41](../11-lessons-learned.md)); since v2.23.1
+only the two password-reading verbs attach it, and a pasted block runs as
+one.
 
 ---
 

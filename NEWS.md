@@ -10,6 +10,27 @@ change you are getting.
 
 ---
 
+## v2.23.1 — 2026-09-22 — "The users command and the pasted lines"
+
+A helper script and documents, found while proving block 3 of v2.23.0 on
+the server.
+
+**Fixed**
+- **`./container-py.sh users …` swallowed the lines pasted after it.** The
+  shortcut ran the management script inside the container with the
+  terminal's input attached for every verb, so that a password could be
+  typed or piped in; attached for `list`, it also received the two proof
+  lines the operator had pasted after it, which never ran and reported
+  nothing (lesson 41). It now attaches the input only for the two verbs
+  that read a password, `--password-stdin` and `--prompt`; every other
+  verb leaves the terminal to the shell, and a pasted block runs as one.
+
+**Deploy**
+- A helper script and documents: blocks 3 and 6 are a `git pull` each, no
+  rebuild (the shortcut runs from the folder, not from the image).
+
+---
+
 ## v2.23.0 — 2026-09-22 — "Local accounts"
 
 The second rung of the authentication ladder ([`13-authentication.md`](docs/13-authentication.md)),

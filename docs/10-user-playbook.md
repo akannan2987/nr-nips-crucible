@@ -282,8 +282,11 @@ header on every call, `-H "Authorization: Bearer <the token>"`: the shared
 token on the first rung, or, with accounts, a **personal token** the
 operator issues for you (`<your-username>:…`, shown once; it carries your
 role); the [API cookbook](08-api-cookbook.md#signing-in-from-a-script)
-shows it. The one address that never needs it is `/api/health`, which is
-how the monitor knows the application is alive.
+shows it, and walks a script through it from start to finish, asking for
+the token, keeping it, calling with it, cancelling it:
+[A script with a personal token, start to finish](08-api-cookbook.md#a-script-with-a-personal-token-start-to-finish).
+The one address that never needs it is `/api/health`, which is how the
+monitor knows the application is alive.
 
 ![Three callers meet one guard in front of every module: a browser with a cookie and a script with a bearer header pass, anyone else gets 401; health, instance and the login routes stay open](img/fig_token_gate.svg)
 

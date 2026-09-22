@@ -2,7 +2,7 @@
 
 # Phase SH-3b — Local accounts: one login per person, three roles, a signed session, personal tokens
 
-**Version shipped:** 2.23.0 · **Date:** 2026-09-22 · **Status:** complete (built and rehearsed on the development machine; on the **beta instance** by [Step 9](#step-9--turn-it-on-beta-first); on **production** by [Step 10](#step-10--production-when-its-accounts-exist), at a moment of the owner's choosing, once its accounts exist)
+**Version shipped:** 2.23.0 · **Date:** 2026-09-22 · **Status:** complete (built and rehearsed on the development machine; on the **beta instance** since 19:58 the same day by [Step 9](#step-9--turn-it-on-beta-first), three accounts, confirmed in the browser; on **production** by [Step 10](#step-10--production-when-its-accounts-exist), at a moment of the owner's choosing, once its accounts exist)
 **Track:** SH, the shared spine ([roadmap](../05-roadmap.md#sh--shared-spine)); the second rung of the authentication ladder planned in [`13-authentication.md`](../13-authentication.md) and decided in [ADR 0001](../adr/0001-authentication-ladder.md); the owner's go of 2026-09-22, "build on what you have planned".
 **Prerequisites:** [Phase SH-3a](phase-sh-3a-token-gate.md) (the guard, the login page, the open health route: this rung drops into all three), [Phase SH-12](phase-sh-12-beta-instance.md) (the beta instance, where the accounts land first); the plan read once; a setup guide completed for your platform; the test virtual environment from its V7 check if you want to run the Python route.
 **Learning goal:** you understand what an account is made of and why a password is never stored, how a browser is remembered by a note it can read but cannot forge, why the ten hours now count from your last click, how three roles are decided by one rule rather than a hundred, how a script gets in without a password, how the operator creates, resets, disables and lists accounts from the terminal without ever seeing a password twice, and how to test every one of those claims from the browser, the API, the terminal, the container, Python and the database.
@@ -534,7 +534,10 @@ $ CRUCIBLE_TOKEN="ada:…" ./verify-deploy.sh http://localhost:49160 | grep -E '
 
 **What it means:** the token carries the account's identity and role (an
 editor's token cannot delete either), and the deploy checks run through
-the gate and name the caller.
+the gate and name the caller. The whole walk for a script, from asking for
+the token to cancelling it, with a shell script and a Python script that
+use it, is one section of the cookbook:
+[A script with a personal token, start to finish](../08-api-cookbook.md#a-script-with-a-personal-token-start-to-finish).
 
 **If instead:** `401` with a token you just issued — a character was lost
 in the copy (the token is one line, colon included), or the account was

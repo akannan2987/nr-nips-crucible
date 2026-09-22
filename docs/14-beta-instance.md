@@ -347,9 +347,11 @@ build ("build on what you have planned").
   ([phase SH-3a → Step 7](04-phase-tutorials/phase-sh-3a-token-gate.md#step-7--turn-it-on-beta-first));
   production followed at 18:06 with its own token
   ([Step 8](04-phase-tutorials/phase-sh-3a-token-gate.md#step-8--turn-it-on-for-production-its-own-token)).
-- 🔜 **The login's second rung, v2.23.0 (SH-3b):** one account per tester
-  with a role, created in this folder, the mode switched to `local` with
-  its own `SESSION_SECRET`
+- ✅ **The login's second rung, 2026-09-22 (v2.23.0, SH-3b):** three
+  accounts created in this folder (the operator as admin, one editor and
+  one viewer tester), the mode switched to `local` with its own
+  `SESSION_SECRET` at 19:58, the deploy checks passing with the operator's
+  personal token, the login page and the top bar confirmed in the browser
   ([phase SH-3b → Step 9](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first));
   production when its accounts exist ([Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-when-its-accounts-exist)).
 

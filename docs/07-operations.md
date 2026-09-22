@@ -1061,7 +1061,7 @@ bar. Each instance has its own accounts and its own `SESSION_SECRET`
 | a leaver | `./container-py.sh users disable <name>`: refused at the login page, by cookie and by token | at once |
 | back in | `./container-py.sh users enable <name>` | at once |
 | ten wrong passwords | `./container-py.sh users unlock <name>` (or wait fifteen minutes) | at once |
-| a script needs in | `./container-py.sh users token <name>`: `<name>:…`, shown once; sent as `-H "Authorization: Bearer <it>"`, with the account's role | at once |
+| a script needs in | `./container-py.sh users token <name>`: `<name>:…`, shown once; sent as `-H "Authorization: Bearer <it>"`, with the account's role — the walk, start to finish, with a shell and a Python script: [the cookbook](08-api-cookbook.md#a-script-with-a-personal-token-start-to-finish) | at once |
 | that script is retired | `./container-py.sh users token <name> --revoke` | at once |
 | the account itself gone | `./container-py.sh users remove <name> --apply` (a report without `--apply`); `disable` is usually the better choice | at once |
 

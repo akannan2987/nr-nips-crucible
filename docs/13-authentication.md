@@ -5,7 +5,7 @@
 **Prerequisites:** none. Every term is explained here with an everyday comparison. [`02-architecture.md`](02-architecture.md) helps for *where* the pieces go; [`07-operations.md`](07-operations.md) for how the server is run today.
 **Learning goal:** you understand what a login actually is (three separate ideas people run together), why Crucible has none yet and what that exposes, the three secure ways to add one, why they are built in that order, what each one needs from the organisation, and how a person and a script log in at each step.
 **Deliverable of this page:** the plan for phases **SH-3a**, **SH-3b** and **SH-3c** of the shared spine ([roadmap](05-roadmap.md#sh--shared-spine)): three rungs of one ladder, each secure on its own, the last one **single sign-on**, which is the destination. The decision itself is recorded in [ADR 0001](adr/0001-authentication-ladder.md).
-**Status:** ✅ agreed 2026-09-08 (decision log at the end). **Rung 1 built and shipped as v2.22.0 ([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md), 2026-09-22): on the beta instance at 17:31 and on production at 18:06 the same day, each with its own token (A11). Rung 2 built and shipped as v2.23.0 ([phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md), 2026-09-22): usernames, passwords, roles and personal tokens, delivered to beta first; production keeps the token until its own accounts exist.** Rung 3 waits: no single sign-on for the moment, the owner's decision of 2026-09-22.
+**Status:** ✅ agreed 2026-09-08 (decision log at the end). **Rung 1 built and shipped as v2.22.0 ([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md), 2026-09-22): on the beta instance at 17:31 and on production at 18:06 the same day, each with its own token (A11). Rung 2 built and shipped as v2.23.0 ([phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md), 2026-09-22): usernames, passwords, roles and personal tokens, on the beta instance since 19:58 the same day with one account per tester; production keeps the token until its own accounts exist.** Rung 3 waits: no single sign-on for the moment, the owner's decision of 2026-09-22.
 
 ![Three rungs: a shared token gate, local accounts with passwords, and single sign-on through the corporate identity provider; each rung keeps what the one below gave](img/fig_auth_ladder.svg)
 
@@ -35,9 +35,10 @@
 > session, the three roles enforced by one rule, `manage_users.py` behind
 > `./container-py.sh users`, the login page's username-and-password form,
 > a change-password dialog, personal tokens for scripts, the lockout, and
-> the users table kept out of the query console. Delivered to the beta
-> instance first by [Step 9 of its tutorial](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first);
-> production follows when its accounts exist ([Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-when-its-accounts-exist)).
+> the users table kept out of the query console. On the beta instance
+> since 19:58 the same day by [Step 9 of its tutorial](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first),
+> three accounts, confirmed in the browser; production follows when its
+> accounts exist ([Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-when-its-accounts-exist)).
 
 ## Contents
 
@@ -432,7 +433,7 @@ required, why, benefit and cost — and a verdict with a trigger.
 | | Rung 1 · token | Rung 2 · local | Rung 3 · SSO |
 |---|---|---|---|
 | A person, in the browser | Pastes the shared token once into the login page; a cookie remembers the browser for ten hours, or until *Sign out* | Username and password on the login page | Clicks *Sign in with the organisation*; usually no prompt at all |
-| A script or `curl` | `-H "Authorization: Bearer <token>"` | A personal token issued by the admin, same header | The same, issued per service |
+| A script or `curl` | `-H "Authorization: Bearer <token>"` | A personal token issued by the admin, same header ([start to finish](08-api-cookbook.md#a-script-with-a-personal-token-start-to-finish)) | The same, issued per service |
 | `verify-deploy.sh` | `--token` or `CRUCIBLE_TOKEN` in the shell | the same | the same |
 | The maintenance scripts inside the container | unchanged — they never use HTTP | unchanged | unchanged |
 | The cron monitor and the container probe | `/api/health`, open | the same | the same |
@@ -536,7 +537,7 @@ details, which this public page does not carry.
 | SH-3a | **built and shipped, v2.22.0**: the rung-1 cookie is a keyed hash of the token (no new dependency), ten hours fixed, not sliding; the cross-origin policy closed (A7); the guard declared once per router | 2026-09-22 |
 | Single sign-on | **not needed for the moment**; the owner will revisit. SH-3c on hold; SH-3b, local accounts, goes ahead | 2026-09-22 |
 | A11, production | **one token per instance**, agreed; production's login turned on at 18:06 the same day with its own token, after beta's at 17:31 (v2.22.1) | 2026-09-22 |
-| SH-3b, A12–A14 | **built and shipped, v2.23.0** with the go for rung 2 ("build on what you have planned"): `SESSION_SECRET` its own line; one personal token per account, named; roles by one rule from the verb and the path; a change-password dialog added; delivered to beta first, production when its accounts exist | 2026-09-22 |
+| SH-3b, A12–A14 | **built and shipped, v2.23.0** with the go for rung 2 ("build on what you have planned"): `SESSION_SECRET` its own line; one personal token per account, named; roles by one rule from the verb and the path; a change-password dialog added; on beta since 19:58 the same day (three accounts), production when its accounts exist | 2026-09-22 |
 
 ## The phases
 

@@ -10,6 +10,31 @@ change you are getting.
 
 ---
 
+## v2.23.2 — 2026-09-22 — "A script with a personal token, start to finish"
+
+Documents only. The beta instance moved to accounts at 19:58 and the
+pages that still called that the next step now say it is done; and the
+one question the operator asked first, *how does a script use a token,
+step by step*, gets one answer in one place.
+
+**Added**
+- **[A script with a personal token, start to finish](docs/08-api-cookbook.md#a-script-with-a-personal-token-start-to-finish)**
+  in the API cookbook: ask for the token, keep it in the terminal hidden,
+  one call, a shell script that uses it, a Python script that uses it, the
+  deploy check, the refusal without it, the revoke; every step with what
+  it prints. Linked from the tutorial's Step 7, the playbook's *Signing
+  in*, the operations runbook and the authentication page.
+
+**Changed**
+- The handbook, the beta-instance page, the authentication page and the
+  tutorial header record beta on accounts since 2026-09-22 19:58, three
+  accounts, confirmed in the browser.
+
+**Deploy**
+- Documents: blocks 3 and 6 are a `git pull` each, no rebuild.
+
+---
+
 ## v2.23.1 — 2026-09-22 — "The users command and the pasted lines"
 
 A helper script and documents, found while proving block 3 of v2.23.0 on

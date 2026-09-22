@@ -190,6 +190,162 @@ The last line is an editor trying to delete: reading needs a viewer,
 writing an editor, deleting an admin ([the rule](13-authentication.md#rung-2--local-accounts)).
 Whoever runs the instance changes a role with `./container-py.sh users role <name> admin`.
 
+## A script with a personal token, start to finish
+
+One walk, in order, for anyone who has never done it: how a script (a
+`curl` line, a shell script, a Python file) gets into an instance that
+has accounts (`AUTH_MODE=local`, v2.23.0). The browser never needs any of
+this: a person signs in with a username and a password. A script has no
+login page to type into, so it presents a **personal token** instead: a
+key cut in your name, sent as one header on every call.
+
+Run it in the instance's folder on the server (the beta folder here;
+`<you>` is your username on that instance). Each step says what you see.
+
+**1. Ask for your token.** It is printed once; nothing but its fingerprint
+is kept.
+
+```bash
+cd ~/work/Pandora_toolbox/nr-nips-crucible-beta
+./container-py.sh users token <you>
+```
+
+```
+✓ Personal token for <you> (any older one is void):
+  <you>:zvuYd8_gcn3rQ74vuSoXJ1OqM1lI5Nmk6kQpSmQQbIO4sPfz
+  Shown once. Scripts send it as:  -H "Authorization: Bearer <the token>"
+```
+
+Copy the middle line, the whole of it, colon included. Asking again later
+prints a new one and voids this one.
+
+**2. Keep it in the terminal, hidden.** Type nothing after the prompt:
+paste the token and press Enter. It goes into a shell variable,
+`CRUCIBLE_TOKEN`, and not into your command history.
+
+```bash
+read -rsp 'Paste the token: ' CRUCIBLE_TOKEN; echo; export CRUCIBLE_TOKEN
+echo "kept, ${#CRUCIBLE_TOKEN} characters"
+```
+
+```
+kept, 59 characters
+```
+
+The variable lives as long as this terminal window. Closing the window
+forgets it (the token itself stays valid on the server); open a new
+window and do step 2 again, or step 1 for a fresh one. To keep it for
+good, store the printed line in your password manager.
+
+**3. One call.** The header is the whole trick; every call carries it.
+
+```bash
+curl --noproxy '*' -sSk -H "Authorization: Bearer $CRUCIBLE_TOKEN" https://localhost:49161/api/auth/me; echo
+curl --noproxy '*' -sSk -H "Authorization: Bearer $CRUCIBLE_TOKEN" https://localhost:49161/api/stats | head -c 80; echo
+curl --noproxy '*' -sSk -H "Authorization: Bearer $CRUCIBLE_TOKEN" "https://localhost:49161/api/chemicals?limit=1&search=caffeine" | python3 -m json.tool | head -12
+```
+
+```
+{"mode":"local","authenticated":true,"user":{"subject":"<you>","display_name":"<Your Name>","roles":["admin"],"via":"token"}}
+{"chemicals":{"total":12539,"max":15000},"samples":{"total":0,"max":1000},"screening":{"total":4
+{
+    "data": [
+        {
+            "chemical_id": "CHEM-…",
+```
+
+The first answer names you and your role: the token carries the role of
+its account, so a viewer's token reads and a viewer's token cannot delete.
+`-k` is needed on `localhost` because the certificate names only the
+server's full name; from another machine, use the full name and drop `-k`.
+
+**4. A shell script that uses it.** The token comes from the environment
+(step 2), never from the file, so the file can be kept anywhere.
+
+```bash
+cat > ~/count-crucible.sh <<'EOS'
+#!/bin/bash
+# Counts the registry on beta. Needs CRUCIBLE_TOKEN in the environment (a personal token from ./container-py.sh users token <you>).
+curl --noproxy '*' -sSk -H "Authorization: Bearer $CRUCIBLE_TOKEN" https://localhost:49161/api/chemicals/summary
+echo
+EOS
+chmod +x ~/count-crucible.sh
+~/count-crucible.sh
+```
+
+```
+{"total":12539,"one_batch":12533,"several_batches":6,"batch_rows":12561,"tags":{"Dotmatics ID":9193,"Excel upload":12539,…}}
+```
+
+**5. A Python script that uses it.** The same header, from the same
+variable; the standard library is enough.
+
+```bash
+cat > ~/count_crucible.py <<'EOS'
+#!/usr/bin/env python3
+"""Counts the registry on beta. Needs CRUCIBLE_TOKEN in the environment."""
+import json, os, ssl, urllib.request
+
+token = os.environ["CRUCIBLE_TOKEN"]
+request = urllib.request.Request(
+    "https://localhost:49161/api/stats",
+    headers={"Authorization": f"Bearer {token}"},
+)
+context = ssl._create_unverified_context()  # localhost only: the certificate names the full hostname
+with urllib.request.urlopen(request, context=context) as answer:
+    print(json.load(answer)["counts"])
+EOS
+python3 ~/count_crucible.py
+```
+
+```
+{'chemicals': 12539, 'samples': 0, 'screening': 49065, 'toxicology': 0}
+```
+
+**6. The deploy check** reads the same variable, and its nineteenth line
+says whose token it was given.
+
+```bash
+./verify-deploy.sh https://localhost:49161 | grep -E 'belongs|passed'
+```
+
+```
+   PASS  the server says who this token belongs to: <you> (admin) via token
+  19 passed, 0 failed
+```
+
+**7. Without the header: refused.** That is the gate doing its job, and
+what any script sees when its token was revoked or its account disabled.
+
+```bash
+curl --noproxy '*' -sSk https://localhost:49161/api/stats; echo
+```
+
+```
+{"error":"Not authenticated"}
+```
+
+**8. Finished with scripts for now: cancel the key.** The browser login
+is untouched; the next script needs step 1 again.
+
+```bash
+./container-py.sh users token <you> --revoke
+```
+
+```
+✓ Token revoked for <you>: a script presenting it is refused from now
+```
+
+*Everyday version:* the badge gets you through reception; the machine in
+the basement cannot show a badge, so you have a key cut in your name for
+it, you keep the key on your own ring, and you hand it back when the job
+is done.
+
+What the same walk looks like on the token rung (`AUTH_MODE=token`, one
+shared token from the instance's `.env.local`): steps 3 to 7 unchanged,
+with the shared token in the variable; there is no step 1 or 8, because
+the key is the instance's, not yours.
+
 ## Loading data in
 
 All four uploads work the same way: `-F "file=@<path>"` attaches a file to the request, exactly as if you had picked it in a browser's file-chooser. Run these from the project root so the template paths resolve.

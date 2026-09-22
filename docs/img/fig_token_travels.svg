@@ -1,0 +1,48 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 450' width='940' height='450' role='img' aria-label='The token goes from the owner-only settings file through the container script into the container and the guard; a browser gets a cookie that is a keyed hash, a script sends a bearer header; the token is never in git, logs, errors or the page' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='449' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>Where the token lives, how it travels, and where it never goes</text>
+<rect x='30' y='70' width='190' height='120' rx='10' fill='#ffffff' stroke='#d97706' stroke-width='1.2'/>
+<text x='125' y='94' font-size='12.5' fill='#1f2937' text-anchor='middle' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>.env.local</text>
+<text x='125' y='116' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>AUTH_MODE=token</text>
+<text x='125' y='131' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>CRUCIBLE_TOKEN=…</text>
+<text x='125' y='146' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>owner-only file (600)</text>
+<text x='125' y='161' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>gitignored</text>
+<line x1='223' y1='130' x2='277' y2='130' stroke='#d97706' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='250' y='70' width='190' height='120' rx='10' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='345' y='94' font-size='12.5' fill='#1f2937' text-anchor='middle' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>container-py.sh</text>
+<text x='345' y='116' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>reads the file</text>
+<text x='345' y='131' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>-e AUTH_MODE</text>
+<text x='345' y='146' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>-e CRUCIBLE_TOKEN</text>
+<text x='345' y='161' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>never prints it</text>
+<line x1='443' y1='130' x2='497' y2='130' stroke='#d97706' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='470' y='70' width='190' height='120' rx='10' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='565' y='94' font-size='12.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>the container</text>
+<text x='565' y='116' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>environment variables</text>
+<text x='565' y='131' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>the unit file, 600</text>
+<text x='565' y='146' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>podman inspect shows</text>
+<text x='565' y='161' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>them to you alone</text>
+<line x1='663' y1='130' x2='717' y2='130' stroke='#d97706' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='690' y='70' width='190' height='120' rx='10' fill='#ffffff' stroke='#d97706' stroke-width='1.2'/>
+<text x='785' y='94' font-size='12.5' fill='#1f2937' text-anchor='middle' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>the application</text>
+<text x='785' y='116' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>require_user</text>
+<text x='785' y='131' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>hmac.compare_digest</text>
+<text x='785' y='146' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>constant time</text>
+<text x='785' y='161' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>401 or the answer</text>
+<rect x='30' y='220' width='430' height='118' rx='10' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='245' y='244' font-size='12' fill='#4f46e5' text-anchor='middle' font-weight='bold'>a person: the login page, once</text>
+<text x='245' y='266' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>POST /api/auth/login {token}</text>
+<text x='245' y='281' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>→ Set-Cookie: crucible_session = a keyed hash, not the token</text>
+<text x='245' y='296' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>HttpOnly · SameSite=Lax · Secure on HTTPS · ten hours</text>
+<text x='245' y='311' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>a new token signs every browser out at once</text>
+<rect x='480' y='220' width='430' height='118' rx='10' fill='#f0fdf4' stroke='#0d9488' stroke-width='1.2'/>
+<text x='695' y='244' font-size='12' fill='#0d9488' text-anchor='middle' font-weight='bold'>a script: the header, every time</text>
+<text x='695' y='266' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>curl -H "Authorization: Bearer $CRUCIBLE_TOKEN" …</text>
+<text x='695' y='281' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>verify-deploy.sh --token … · CRUCIBLE_TOKEN in the shell</text>
+<text x='695' y='296' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>the maintenance scripts inside the container: unchanged,</text>
+<text x='695' y='311' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>they read the database, not the API</text>
+<rect x='30' y='358' width='880' height='40' rx='8' fill='#fef2f2' stroke='#be123c' stroke-width='1.2'/>
+<text x='470' y='383' font-size='10.5' fill='#991b1b' text-anchor='middle' font-weight='bold'>never: in git · in a log line · in an error message · in the page · in a chat or an e-mail body — .env.local and its off-repository backup only</text>
+<text x='470.0' y='424' font-size='11' fill='#1f2937' text-anchor='middle' font-weight='normal'>everyday version: the key stays in the safe; the visitor sticker the receptionist hands out is not the key, and a new key voids every sticker</text>
+<text x='470.0' y='442' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>rotate it: a new value in .env.local, ./container-py.sh rebuild, everyone pastes the new one (docs/07-operations.md → Security)</text>
+</svg>

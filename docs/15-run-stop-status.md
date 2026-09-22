@@ -140,14 +140,18 @@ service container-crucible-py-beta.service: active (enabled) — the service run
 
 ✓ Container is running
 
-Testing API endpoint (https://localhost:49161/api/stats)...
+Testing API endpoint (https://localhost:49161/api/health)...
+{"status":"ok"}
+login: token — the page asks for it once; scripts send it as Authorization: Bearer (docs/13-authentication.md)
 {"chemicals":{"total":12539,"max":15000},...
 ```
 
 **What it means**, line by line: the folder and instance the command acted
 on; one row for this instance's container, `Up` and `healthy`; the service
 is `active` (running it now) and `enabled` (will start it at boot); and the
-application answered a real request with the counts.
+application answered the open health route; since v2.22.0 the next line
+says whether the login is on (`login: off` until it is), and the counts
+follow, fetched with the token when there is one.
 
 **You should see**, when it is stopped:
 
@@ -255,7 +259,7 @@ Rewriting container-crucible-py-beta.service from the container just created (th
 ✓ container-crucible-py-beta.service rewritten (enabled: enabled)
 Handing the container to the service container-crucible-py-beta.service, which runs it from now on...
 ✓ container-crucible-py-beta.service is active: the service runs the application (systemctl --user status container-crucible-py-beta.service)
-✓ The application answers at https://localhost:49161/api/stats
+✓ The application answers at https://localhost:49161/api/health
 ✓ Container started with HTTPS
 ```
 
@@ -357,8 +361,9 @@ been waiting on a maintenance window since 2026-08-25.
 ## The monitor: who restarts it at 3 am
 
 A scheduled command (a **cron** job, one line per instance in `crontab -l`)
-runs `monitor.sh` every five minutes. It asks the application for its
-counts; if the answer is not a `200`, it restarts the instance, through
+runs `monitor.sh` every five minutes. It asks the application's open
+health route, `/api/health` (no login needed, so the gate cannot fool it);
+if the answer is not a `200`, it restarts the instance, through
 the service when the service runs it, and writes what it did to a log:
 
 ```bash

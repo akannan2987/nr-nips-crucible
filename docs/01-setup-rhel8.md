@@ -575,6 +575,8 @@ EOF
 #   HTTPS even when no container exists yet (fresh install, or right after an
 #   uninstall). Without it, `rebuild` can only preserve the mode of an
 #   EXISTING container — from scratch it would default to HTTP.
+# AUTH_MODE / CRUCIBLE_TOKEN → the login, two more lines once you turn it on
+#   (off by default; docs/13-authentication.md, phase SH-3a Step 7).
 ./setup-after-clone-py.sh
 ```
 
@@ -1060,12 +1062,12 @@ no.
 ```bash
 SETUP_MONITOR=y ./setup-after-clone-py.sh     # installs/refreshes THIS folder's cron line
 crontab -l | grep monitor.sh                  # verify; the installed entry is ONE line per instance:
-# */5 * * * * cd <repo> && USER=<user> XDG_RUNTIME_DIR=/run/user/<uid> CONTAINER_NAME=crucible-py API_URL=https://localhost:49160/api/stats ./monitor.sh
+# */5 * * * * cd <repo> && USER=<user> XDG_RUNTIME_DIR=/run/user/<uid> CONTAINER_NAME=crucible-py API_URL=https://localhost:49160/api/health ./monitor.sh
 tail -5 /tmp/crucible-monitor.log
 ```
 
 (With the beta instance of section 8 installed there is a second line
-ending `CONTAINER_NAME=crucible-py-beta API_URL=https://localhost:49161/api/stats ./monitor.sh`,
+ending `CONTAINER_NAME=crucible-py-beta API_URL=https://localhost:49161/api/health ./monitor.sh`,
 and a second log, `/tmp/crucible-monitor-beta.log`. Re-running the setup in
 one folder replaces only that folder's line.)
 
@@ -1256,7 +1258,7 @@ crash-looping. Read the lines immediately before each restart.
 # V5. Health monitor runs (logs to /tmp/crucible-monitor.log)
 # On this VM the app is HTTPS, so API_URL is REQUIRED — monitor.sh defaults to
 # http:// and would otherwise report a healthy app as dead.
-API_URL=https://localhost:49160/api/stats ./monitor.sh
+API_URL=https://localhost:49160/api/health ./monitor.sh
 
 # Then confirm the installed cron line carries the same URL:
 crontab -l | grep monitor.sh
@@ -1266,7 +1268,7 @@ This runs one round of the monitor by hand, so you find out now whether it
 works rather than discovering at 3 a.m. that it never did.
 
 > ⚠️ **Do not run bare `./monitor.sh` on an HTTPS deployment.** Its built-in
-> default is `http://localhost:<port>/api/stats`, which a TLS listener refuses —
+> default is `http://localhost:<port>/api/health`, which a TLS listener refuses —
 > so the monitor concludes the app is dead and **restarts your container**. What
 > you see is alarming and entirely self-inflicted:
 >
@@ -1282,7 +1284,7 @@ works rather than discovering at 3 a.m. that it never did.
 > restarts production every five minutes, indefinitely, while reporting that it
 > is doing its job. That is why the `crontab -l` check above is part of V5 and
 > not an afterthought — the installed line must contain
-> `API_URL=https://localhost:49160/api/stats`.
+> `API_URL=https://localhost:49160/api/health`.
 >
 > The monitor already passes `-k`, so the certificate naming the FQDN rather
 > than `localhost` is not a problem here.
@@ -1882,7 +1884,7 @@ Step 4: Verifying the API...
 {"chemicals":{"total":0,"max":15000},...
 Step 5: Health monitoring (cron job, every 5 minutes)
   ✓ Monitoring cron installed (old monitor.sh entries replaced):
-    */5 * * * * cd /home/<your-user>/work/Pandora_toolbox/nr-nips-crucible-beta && ... CONTAINER_NAME=crucible-py-beta API_URL=https://localhost:49161/api/stats ./monitor.sh
+    */5 * * * * cd /home/<your-user>/work/Pandora_toolbox/nr-nips-crucible-beta && ... CONTAINER_NAME=crucible-py-beta API_URL=https://localhost:49161/api/health ./monitor.sh
 ```
 
 **What it means:** two containers now run on this VM. Beta is **empty**
@@ -1964,8 +1966,8 @@ systemctl --user list-units 'container-crucible-py*' --no-legend
 NAMES             STATUS                  PORTS
 crucible-py       Up 3 days (healthy)     0.0.0.0:49160->49160/tcp
 crucible-py-beta  Up 5 minutes (healthy)  0.0.0.0:49161->49161/tcp, 49160/tcp
-CONTAINER_NAME=crucible-py API_URL=https://localhost:49160/api/stats ./monitor.sh
-CONTAINER_NAME=crucible-py-beta API_URL=https://localhost:49161/api/stats ./monitor.sh
+CONTAINER_NAME=crucible-py API_URL=https://localhost:49160/api/health ./monitor.sh
+CONTAINER_NAME=crucible-py-beta API_URL=https://localhost:49161/api/health ./monitor.sh
 container-crucible-py.service       loaded active running ...
 container-crucible-py-beta.service  loaded active running ...
   16 passed, 0 failed
@@ -2003,6 +2005,7 @@ container.
 | Give the testers a fresh copy of production | the two commands of 8.4 |
 | See what beta has that production does not | `git log --oneline origin/master..origin/beta` (after `git fetch origin`) |
 | Promote it to production | not from here — [`03-git-workflow.md` Step 11](03-git-workflow.md#step-11---promote-to-production-when-the-testers-agree), from the development machine and the mirror folder, then production's own folder |
+| Turn the login on (since v2.22.0) | two lines in this folder's `.env.local`, then `./container-py.sh stop` and `start` — [phase SH-3a, Step 7](04-phase-tutorials/phase-sh-3a-token-gate.md#step-7--turn-it-on-beta-first); the testers get the token out of band; production's port stays open |
 | Remove the beta instance | `./uninstall.sh --dry-run` here first: it opens with `Instance: beta` and lists only beta's container, image, unit and cron line; then the mode you mean. Production is not listed and not touched |
 
 The weekly certificate check (section 3.4) and the nightly backup (6.3)

@@ -13,6 +13,14 @@ const api = axios.create({
 export const getStats = () => api.get('/stats');
 // SH-13: which instance is answering (name, label, port, https); open, no data
 export const getInstance = () => api.get('/instance');
+// SH-3a: the login (docs/13-authentication.md). /auth/me is open and says
+// whether a login is needed and whether this browser is signed in; login
+// posts the token once and the server answers with a cookie the browser
+// then sends on every request (downloads included, which a header could
+// not cover); logout clears it.
+export const getAuthMe = () => api.get('/auth/me');
+export const login = (token) => api.post('/auth/login', { token });
+export const logout = () => api.post('/auth/logout');
 
 // Chemicals
 // `config` may carry an AbortController signal so a superseded list request is cancelled (v2.18.2).
@@ -112,5 +120,23 @@ export const uploadToxicologyExcel = (formData) =>
   api.post('/toxicology/upload/excel', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+
+// SH-3a, the 401 handler: an answer of 401 from any call means "not signed
+// in". The API layer raises one event; AuthGate listens and shows the
+// login page, and the page that asked is mounted again after the login, so
+// it asks again. The auth calls themselves are left alone: a wrong token on
+// the login page is that page's own business.
+export const UNAUTHENTICATED_EVENT = 'crucible:unauthenticated';
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const url = error?.config?.url || '';
+    if (status === 401 && !url.startsWith('/auth/')) {
+      window.dispatchEvent(new Event(UNAUTHENTICATED_EVENT));
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

@@ -21,6 +21,8 @@ Two flags appear in every command here:
 - `-s` — **silent**. Suppresses curl's download-progress meter, which would otherwise scribble over your JSON.
 - `--noproxy '*'` — on the corporate network your machine is told to send all web traffic through a proxy server. That proxy has no idea what `localhost` means and will hijack the request. This flag says "talk directly, never via the proxy". Leave it out and you will get confusing timeouts or proxy error pages instead of data.
 
+**One header, when the login is on.** Since v2.22.0 an instance can ask for an access token ([`13-authentication.md`](13-authentication.md)); the beta instance does. Every recipe below then needs one more flag, `-H "Authorization: Bearer $CRUCIBLE_TOKEN"`, with the token in a shell variable set once (`export CRUCIBLE_TOKEN='…'`, from whoever runs the instance). Without it the server answers `{"error":"Not authenticated"}` and status 401, which is the gate doing its job, not a fault. [Signing in from a script](#signing-in-from-a-script) shows the three ways to carry it.
+
 **Your base address** is `http://localhost:49160/api` on the development machine, and `https://<vm-hostname>:49160/api` in production on the RHEL8 VM. Every recipe below uses the development form; swap the front half if you are on the VM.
 
 ---
@@ -107,6 +109,54 @@ name=$(curl --noproxy '*' -sSk "$BASE/api/instance" | python3 -c 'import json,sy
 The same word is the pill in the page's corner and the `instance:` in
 `./container-py.sh help`, because all three come from one setting
 ([phase SH-13](04-phase-tutorials/phase-sh-13-instance-label.md)).
+
+## Signing in from a script
+
+Three ways to carry the token ([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)),
+same result. `$CRUCIBLE_TOKEN` holds it.
+
+**The header, on every call** (what scripts do):
+
+```bash
+curl --noproxy '*' -sSk -H "Authorization: Bearer $CRUCIBLE_TOKEN" https://localhost:49161/api/stats | python3 -m json.tool | head -4
+```
+
+```json
+{
+    "chemicals": {
+        "total": 12539,
+        "max": 15000,
+```
+
+**A cookie jar, like a browser** (log in once, reuse the jar; this is also
+the only way a *download* can carry the token, since a link has no header):
+
+```bash
+curl --noproxy '*' -sSk -c jar.txt -H 'Content-Type: application/json' -d "{\"token\":\"$CRUCIBLE_TOKEN\"}" https://localhost:49161/api/auth/login
+curl --noproxy '*' -sSk -b jar.txt "https://localhost:49161/api/screening/export?format=csv&columns=lims_id,compound_name" | head -1
+curl --noproxy '*' -sSk -b jar.txt -c jar.txt -X POST https://localhost:49161/api/auth/logout
+```
+
+```json
+{"mode":"token","authenticated":true,"user":{"subject":"token","display_name":"Token holder","roles":["admin"],"via":"token"}}
+lims,name
+{"mode":"token","authenticated":false,"user":null}
+```
+
+**Am I signed in?** One open call answers for either method:
+
+```bash
+curl --noproxy '*' -sSk -H "Authorization: Bearer $CRUCIBLE_TOKEN" https://localhost:49161/api/auth/me
+```
+
+```json
+{"mode":"token","authenticated":true,"user":{"subject":"token","display_name":"Token holder","roles":["admin"],"via":"token"}}
+```
+
+What needs no token at all: `/api/health` (`{"status":"ok"}`),
+`/api/instance`, and `/api/auth/me` itself. A wrong token gets exactly
+`{"error":"Not authenticated"}`, never a hint. The deploy checks run through
+the gate with `./verify-deploy.sh <base> --token "$CRUCIBLE_TOKEN"`.
 
 ## Loading data in
 

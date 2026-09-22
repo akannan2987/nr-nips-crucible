@@ -2,7 +2,7 @@
 
 # ADR 0001 — Authentication as a ladder, with single sign-on as the destination
 
-**Status:** accepted 2026-09-08 (decisions A1–A8 agreed as recommended; log in [`13-authentication.md`](../13-authentication.md#decision-log)) · **Date:** 2026-09-08
+**Status:** accepted 2026-09-08 (decisions A1–A8 agreed as recommended; log in [`13-authentication.md`](../13-authentication.md#decision-log)) · **Date:** 2026-09-08 · **Rung 1 shipped** 2026-09-22 as v2.22.0 ([phase SH-3a](../04-phase-tutorials/phase-sh-3a-token-gate.md)); rung 3 on hold, not needed for the moment (the owner, 2026-09-22)
 
 ## Context
 

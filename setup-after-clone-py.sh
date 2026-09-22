@@ -39,6 +39,7 @@ echo ""
 if [ -f ".env.local" ]; then
     _env_cert_source="$CERT_SOURCE"; _env_cert_hostname="$CERT_HOSTNAME"
     _env_instance="${CRUCIBLE_INSTANCE:-}"; _env_port="${CRUCIBLE_PORT:-}"
+    _env_auth="${AUTH_MODE:-}"
     # shellcheck disable=SC1091
     . ./.env.local
     # values already set in the environment take precedence over .env.local
@@ -46,8 +47,13 @@ if [ -f ".env.local" ]; then
     CERT_HOSTNAME="${_env_cert_hostname:-$CERT_HOSTNAME}"
     CRUCIBLE_INSTANCE="${_env_instance:-${CRUCIBLE_INSTANCE:-}}"
     CRUCIBLE_PORT="${_env_port:-${CRUCIBLE_PORT:-}}"
+    AUTH_MODE="${_env_auth:-${AUTH_MODE:-}}"
 fi
 CERT_SOURCE="${CERT_SOURCE:-}"
+# The login (docs/13-authentication.md): container-py.sh reads the mode and
+# the token from the same file itself; this script only needs the mode for
+# its messages and never touches the token.
+AUTH_MODE="${AUTH_MODE:-off}"
 CERT_HOSTNAME="${CERT_HOSTNAME:-$(hostname -f 2>/dev/null || hostname)}"
 
 # ── Which instance is this folder? ──────────────────────────────────
@@ -114,17 +120,24 @@ fi
 echo ""
 
 # ── Step 4: verify ─────────────────────────────────────────────
+# /api/health is the route that stays open when the login is on; it says
+# {"status":"ok"} and nothing else (docs/13-authentication.md).
 echo "Step 4: Verifying the API..."
 ok=""
 for i in $(seq 1 30); do
-    if curl --noproxy '*' -ks "${PROTO}://localhost:${APP_PORT}/api/stats" | grep -q '"chemicals"'; then
+    if curl --noproxy '*' -ks "${PROTO}://localhost:${APP_PORT}/api/health" | grep -q '"ok"'; then
         ok=1; break
     fi
     sleep 2
 done
 if [ -n "$ok" ]; then
     echo -e "  ${GREEN}✓ API is answering:${NC}"
-    curl --noproxy '*' -ks "${PROTO}://localhost:${APP_PORT}/api/stats" | head -c 200; echo ""
+    curl --noproxy '*' -ks "${PROTO}://localhost:${APP_PORT}/api/health"; echo ""
+    if [ "$AUTH_MODE" = "token" ]; then
+        echo "    login: on (AUTH_MODE=token) — the page asks for the token once; scripts send it as Authorization: Bearer"
+    else
+        echo "    login: off — every route answers anyone (docs/13-authentication.md to turn it on)"
+    fi
 else
     echo -e "  ${RED}✗ API did not answer within 60s — check: ./container-py.sh logs${NC}"
     exit 1
@@ -148,7 +161,7 @@ if [[ "$REPLY" =~ ^[Yy]$ ]]; then
     # container runtime and could never restart anything.
     RUNTIME_BIN="$(command -v podman 2>/dev/null || command -v docker 2>/dev/null)"
     RUNTIME_DIR="$(dirname "${RUNTIME_BIN:-/usr/bin/true}")"
-    CRON_LINE="*/5 * * * * cd $(pwd) && PATH=${RUNTIME_DIR}:/usr/local/bin:/usr/bin:/bin USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u) CONTAINER_NAME=${CONTAINER_NAME} API_URL=${PROTO}://localhost:${APP_PORT}/api/stats ./monitor.sh"
+    CRON_LINE="*/5 * * * * cd $(pwd) && PATH=${RUNTIME_DIR}:/usr/local/bin:/usr/bin:/bin USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u) CONTAINER_NAME=${CONTAINER_NAME} API_URL=${PROTO}://localhost:${APP_PORT}/api/health ./monitor.sh"
     # Replace any previous monitor.sh entry FOR THIS FOLDER so re-runs don't
     # stack duplicate lines — and only this folder's: on a machine with a
     # production and a beta checkout each has its own monitor line, and the
@@ -176,6 +189,9 @@ echo ""
 echo "Access the application at:"
 echo "  ${PROTO}://localhost:${APP_PORT}"
 echo "  ${PROTO}://$(hostname):${APP_PORT}   (from another machine)"
+if [ "$AUTH_MODE" = "token" ]; then
+    echo "  The page asks for the access token (CRUCIBLE_TOKEN in this folder's .env.local); paste it once."
+fi
 echo ""
 echo "Useful commands:"
 echo "  ./container-py.sh status    - container + API health"

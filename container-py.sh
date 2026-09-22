@@ -17,6 +17,8 @@
 #                       (docs/14-beta-instance.md)
 #   HOST_BIND=<ip>      published-port interface (see below)
 #   PLATFORM=linux/amd64  cross-build target (e.g. building amd64 on an arm64 laptop)
+#   AUTH_MODE=off|token  the login (docs/13-authentication.md); with token,
+#   CRUCIBLE_TOKEN=<secret>  is required. Both normally live in .env.local.
 
 DATA_DIR="$(pwd)/data"
 BACKUP_DIR="${BACKUP_DIR:-$(pwd)/backups}"
@@ -29,6 +31,9 @@ CERTS_DIR="$(pwd)/certs"
 # and the beta checkout beside it (docs/14-beta-instance.md) sets:
 #   CRUCIBLE_INSTANCE=beta
 #   CRUCIBLE_PORT=49161
+# and an instance with the login on (docs/13-authentication.md) sets:
+#   AUTH_MODE=token
+#   CRUCIBLE_TOKEN=<a long random secret>
 # Environment variables always override .env.local. Same mechanism as
 # setup-after-clone-py.sh (which reads CERT_SOURCE/CERT_HOSTNAME from it).
 if [ -f "$(pwd)/.env.local" ]; then
@@ -37,6 +42,8 @@ if [ -f "$(pwd)/.env.local" ]; then
     _env_instance="${CRUCIBLE_INSTANCE:-}"
     _env_label="${CRUCIBLE_INSTANCE_LABEL:-}"
     _env_port="${CRUCIBLE_PORT:-}"
+    _env_auth_mode="${AUTH_MODE:-}"
+    _env_token="${CRUCIBLE_TOKEN:-}"
     # shellcheck disable=SC1091
     . "$(pwd)/.env.local"
     USE_HTTPS="${_env_use_https:-${USE_HTTPS:-}}"
@@ -44,6 +51,8 @@ if [ -f "$(pwd)/.env.local" ]; then
     CRUCIBLE_INSTANCE="${_env_instance:-${CRUCIBLE_INSTANCE:-}}"
     CRUCIBLE_INSTANCE_LABEL="${_env_label:-${CRUCIBLE_INSTANCE_LABEL:-}}"
     CRUCIBLE_PORT="${_env_port:-${CRUCIBLE_PORT:-}}"
+    AUTH_MODE="${_env_auth_mode:-${AUTH_MODE:-}}"
+    CRUCIBLE_TOKEN="${_env_token:-${CRUCIBLE_TOKEN:-}}"
 fi
 
 # ── Instance name ───────────────────────────────────────────────────
@@ -72,6 +81,34 @@ CONTAINER_NAME="crucible-py${INSTANCE_SUFFIX}"
 # container as an environment variable, and an optional label spells it
 # the way you want ("Production" instead of "Prod").
 CRUCIBLE_INSTANCE_LABEL="${CRUCIBLE_INSTANCE_LABEL:-}"
+
+# ── The login (phase SH-3a; docs/13-authentication.md) ──────────────
+# AUTH_MODE=off (the default) leaves every route open, as before v2.22.0.
+# AUTH_MODE=token with CRUCIBLE_TOKEN=<a long random secret> makes every
+# /api route except health, instance and the login answer 401 without it.
+# Both travel into the container as environment variables. This script
+# never prints the token, and the file that holds it is kept owner-only.
+AUTH_MODE="${AUTH_MODE:-off}"
+CRUCIBLE_TOKEN="${CRUCIBLE_TOKEN:-}"
+case "$AUTH_MODE" in
+    off|token) ;;
+    *)  echo "✗ AUTH_MODE='$AUTH_MODE' must be off or token (docs/13-authentication.md)"
+        exit 1 ;;
+esac
+if [ "$AUTH_MODE" = "token" ]; then
+    if [ "${#CRUCIBLE_TOKEN}" -lt 32 ]; then
+        echo "✗ AUTH_MODE=token needs CRUCIBLE_TOKEN of at least 32 characters (in .env.local, or the environment)."
+        echo "  Generate one:  python3 -c 'import secrets; print(secrets.token_urlsafe(48))'"
+        exit 1
+    fi
+    if [ -f "$(pwd)/.env.local" ] && grep -q '^CRUCIBLE_TOKEN=' "$(pwd)/.env.local" 2>/dev/null; then
+        _perm="$(stat -c %a "$(pwd)/.env.local" 2>/dev/null || stat -f %Lp "$(pwd)/.env.local" 2>/dev/null)"
+        if [ -n "$_perm" ] && [ "$_perm" != "600" ]; then
+            chmod 600 "$(pwd)/.env.local" 2>/dev/null \
+                && echo "ℹ  .env.local holds the token: its permissions are now 600 (owner only)"
+        fi
+    fi
+fi
 
 # ── PostgreSQL (optional) ───────────────────────────────────────────
 # SQLite (data/crucible.db) is the DEFAULT and needs nothing extra. Set
@@ -194,7 +231,10 @@ regenerate_unit() {
     echo -e "${YELLOW}Rewriting ${UNIT_NAME} from the container just created (the unit records the exact run command)...${NC}"
     # `generate systemd --files` writes into the current directory: run it
     # in the unit folder so the file lands in place, replacing the old one.
+    # The unit records the exact run command, the token included, so the
+    # file is made owner-only: your own systemd reads it, nobody else needs to.
     if (cd "${UNIT_DIR}" && $RUNTIME generate systemd --new --name "${CONTAINER_NAME}" --files >/dev/null 2>&1) \
+        && chmod 600 "${UNIT_DIR}/${UNIT_NAME}" \
         && systemctl --user daemon-reload; then
         echo -e "${GREEN}✓ ${UNIT_NAME} rewritten (enabled: $(systemctl --user is-enabled "${UNIT_NAME}" 2>/dev/null || echo unknown))${NC}"
     else
@@ -219,7 +259,7 @@ wait_for_api() {
     local url i
     url="$(api_url)"
     for i in $(seq 1 30); do
-        if curl --noproxy '*' -sk -m 5 "$url" 2>/dev/null | grep -q '"chemicals"'; then
+        if api_answers; then
             echo -e "${GREEN}✓ The application answers at ${url}${NC}"
             return 0
         fi
@@ -248,7 +288,7 @@ show_help() {
     echo "║      Python Backend Container Management                  ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo ""
-    echo "Usage: $0 [command]        (runtime: $RUNTIME · instance: ${CRUCIBLE_INSTANCE:-default} → ${CONTAINER_NAME}, port ${PORT})"
+    echo "Usage: $0 [command]        (runtime: $RUNTIME · instance: ${CRUCIBLE_INSTANCE:-default} → ${CONTAINER_NAME}, port ${PORT} · login: ${AUTH_MODE})"
     echo ""
     echo "Commands:"
     echo "  build       Build the Python backend image"
@@ -263,7 +303,7 @@ show_help() {
     echo "              given a FOLDER, restores the newest crucible-*.db in it"
     echo "  lock        Regenerate backend/requirements.lock inside the base image"
     echo "  logs        Show container logs (follow)"
-    echo "  status      Show container status + /api/stats healthcheck"
+    echo "  status      Show container status, the service, the /api/health probe and the counts"
     echo "  script <name> [args]  Run a maintenance script inside the container"
     echo "  import chemicals <file>   Load a .json/.csv/.tsv/.xlsx/.xls/.sdf file into the registry"
     echo "  export chemicals <file>   Write every registry entry to a JSON file (reviewable, re-importable)"
@@ -281,6 +321,8 @@ show_help() {
     echo "  CRUCIBLE_INSTANCE=<name>          a second instance from another checkout: image, container"
     echo "                                    and db resources named crucible-py-<name> (docs/14-beta-instance.md)"
     echo "  CRUCIBLE_INSTANCE_LABEL=<word>    what the page's corner says (default: Prod, or the name capitalised)"
+    echo "  AUTH_MODE=off|token               the login (default off); token needs CRUCIBLE_TOKEN (docs/13-authentication.md)"
+    echo "  CRUCIBLE_TOKEN=<secret>           the shared secret of the token mode; keep it in .env.local, never printed"
     echo "  HOST_BIND=<ip>                    published-port interface"
     echo "  PLATFORM=linux/amd64              cross-build target platform"
     echo "  USE_POSTGRES=true                 run the app against PostgreSQL (default: SQLite)"
@@ -330,6 +372,15 @@ start_container() {
             echo -e "  Env changes need: ./container-py.sh rebuild${NC}"
         fi
     else
+        # Rule 2 of docs/13-authentication.md: a credential over plain HTTP is
+        # a credential on a postcard. Loopback (127.0.0.1) is the development
+        # exception; anything wider needs HTTPS, or an explicit override.
+        if [ "$AUTH_MODE" != "off" ] && [ "$HOST_BIND" != "127.0.0.1" ] && [ "${CRUCIBLE_ALLOW_HTTP_LOGIN:-}" != "true" ]; then
+            echo -e "${RED}✗ AUTH_MODE=${AUTH_MODE} over plain HTTP on ${HOST_BIND}: the token would cross the network unencrypted.${NC}"
+            echo "  Use HTTPS (USE_HTTPS=true in .env.local, certificates in certs/), or, on a machine only you can reach:"
+            echo "  CRUCIBLE_ALLOW_HTTP_LOGIN=true ./container-py.sh start"
+            exit 1
+        fi
         echo -e "${YELLOW}Creating and starting container (runtime: ${RUNTIME}, port: ${PORT})...${NC}"
         mkdir -p "${DATA_DIR}"
 
@@ -349,6 +400,8 @@ start_container() {
             -e PORT=${PORT} \
             -e CRUCIBLE_INSTANCE="${CRUCIBLE_INSTANCE}" \
             -e CRUCIBLE_INSTANCE_LABEL="${CRUCIBLE_INSTANCE_LABEL}" \
+            -e AUTH_MODE="${AUTH_MODE}" \
+            -e CRUCIBLE_TOKEN="${CRUCIBLE_TOKEN}" \
             "${pg_args[@]}" \
             --restart unless-stopped \
             ${IMAGE_NAME}:latest && created="yes"
@@ -477,6 +530,8 @@ start_container_ssl() {
         -e PORT=${PORT} \
         -e CRUCIBLE_INSTANCE="${CRUCIBLE_INSTANCE}" \
         -e CRUCIBLE_INSTANCE_LABEL="${CRUCIBLE_INSTANCE_LABEL}" \
+        -e AUTH_MODE="${AUTH_MODE}" \
+        -e CRUCIBLE_TOKEN="${CRUCIBLE_TOKEN}" \
         -e USE_HTTPS=true \
         -e SSL_CERT_PATH=/app/certs/server.crt \
         -e SSL_KEY_PATH=/app/certs/server.key \
@@ -640,13 +695,34 @@ show_logs() {
 # Echo the URL the app is actually answering on. In TLS mode (start-ssl) the
 # app serves HTTPS on the SAME port and refuses plain HTTP, so a hardcoded
 # http:// probe silently returns nothing.
-api_url() {
+api_base() {
     if $RUNTIME inspect ${CONTAINER_NAME} --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null \
         | grep -q '^USE_HTTPS=true$'; then
-        echo "https://localhost:${PORT}/api/stats"
+        echo "https://localhost:${PORT}"
     else
-        echo "http://localhost:${PORT}/api/stats"
+        echo "http://localhost:${PORT}"
     fi
+}
+
+# The probe is /api/health: the one route that stays open when the login
+# is on (docs/13-authentication.md). It says {"status":"ok"} and nothing
+# else. /api/stats, the probe before v2.22.0, answers 401 without a token.
+api_url() {
+    echo "$(api_base)/api/health"
+}
+
+# True when the application answers: 200 at /api/health, or, for a
+# container built from an image older than v2.22.0 (no /api/health, so 404),
+# the counts at /api/stats.
+api_answers() {
+    local base code
+    base="$(api_base)"
+    code=$(curl --noproxy '*' -sk -m 5 -o /dev/null -w '%{http_code}' "${base}/api/health" 2>/dev/null)
+    [ "$code" = "200" ] && return 0
+    if [ "$code" = "404" ]; then
+        curl --noproxy '*' -sk -m 5 "${base}/api/stats" 2>/dev/null | grep -q '"chemicals"' && return 0
+    fi
+    return 1
 }
 
 show_status() {
@@ -668,7 +744,16 @@ show_status() {
         echo ""
         # -k so a self-signed dev certificate doesn't fail the check.
         echo "Testing API endpoint ($(api_url))..."
-        curl --noproxy '*' -sk "$(api_url)" | head -100
+        curl --noproxy '*' -sk "$(api_url)"; echo ""
+        # The counts, with the token when the login is on (this script has
+        # it; the token itself is never printed).
+        if [ "$AUTH_MODE" = "token" ]; then
+            echo "login: token — the page asks for it once; scripts send it as Authorization: Bearer (docs/13-authentication.md)"
+            curl --noproxy '*' -sk -H "Authorization: Bearer ${CRUCIBLE_TOKEN}" "$(api_base)/api/stats" | head -c 300; echo ""
+        else
+            echo "login: off — every route answers anyone"
+            curl --noproxy '*' -sk "$(api_base)/api/stats" | head -c 300; echo ""
+        fi
         echo ""
     else
         echo -e "${RED}✗ Container is not running${NC}"

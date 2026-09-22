@@ -5,7 +5,7 @@
 **Prerequisites:** none. Every term is explained here with an everyday comparison. [`02-architecture.md`](02-architecture.md) helps for *where* the pieces go; [`07-operations.md`](07-operations.md) for how the server is run today.
 **Learning goal:** you understand what a login actually is (three separate ideas people run together), why Crucible has none yet and what that exposes, the three secure ways to add one, why they are built in that order, what each one needs from the organisation, and how a person and a script log in at each step.
 **Deliverable of this page:** the plan for phases **SH-3a**, **SH-3b** and **SH-3c** of the shared spine ([roadmap](05-roadmap.md#sh--shared-spine)): three rungs of one ladder, each secure on its own, the last one **single sign-on**, which is the destination. The decision itself is recorded in [ADR 0001](adr/0001-authentication-ladder.md).
-**Status:** ✅ agreed 2026-09-08 (decision log at the end), nothing built yet. SH-3a is ready to start.
+**Status:** ✅ agreed 2026-09-08 (decision log at the end). **Rung 1 built and shipped as v2.22.0 ([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md), 2026-09-22), delivered to the beta instance first.** Rung 2 (SH-3b) is next; rung 3 waits: no single sign-on for the moment, the owner's decision of 2026-09-22.
 
 ![Three rungs: a shared token gate, local accounts with passwords, and single sign-on through the corporate identity provider; each rung keeps what the one below gave](img/fig_auth_ladder.svg)
 
@@ -21,6 +21,13 @@
 > were agreed with the go for SH-12. **Open routes:** `/api/health` and,
 > since v2.21.0, `/api/instance` (the page's *Prod* / *Beta* label, which
 > the login page itself must be able to show) stay outside the guard.
+>
+> **2026-09-22 — rung 1 is built.** SH-3a shipped as v2.22.0: the flag,
+> the guard, the open health route, the login page, the 401 handler, the
+> deploy check with a token, the closed cross-origin policy; on beta by
+> [Step 7 of its tutorial](04-phase-tutorials/phase-sh-3a-token-gate.md#step-7--turn-it-on-beta-first).
+> The same day the owner decided that **single sign-on is not needed for
+> the moment**; SH-3c is on hold and SH-3b, local accounts, goes next.
 
 ## Contents
 
@@ -140,7 +147,7 @@ per-person logins in the meantime. That is decision A3 below.
 
 ## What every rung shares
 
-Built once, in SH-3a, and reused by the rungs above.
+Built once, in SH-3a (✅ v2.22.0), and reused by the rungs above.
 
 | Piece | What it is | Where |
 |---|---|---|
@@ -173,37 +180,47 @@ once into the login page.
 sequenceDiagram
     participant B as browser
     participant A as Crucible API
-    B->>A: GET /api/chemicals (no token yet)
-    A-->>B: 401
-    B->>B: show the login page; the user pastes the token once
-    B->>A: GET /api/chemicals · Authorization: Bearer <token>
+    B->>A: GET /api/auth/me (open)
+    A-->>B: {"mode":"token","authenticated":false}: the page shows the login
+    B->>A: POST /api/auth/login {token}, pasted once
     A->>A: compare with CRUCIBLE_TOKEN in constant time
+    A-->>B: Set-Cookie: crucible_session — a keyed hash of the token, not the token; HttpOnly, SameSite=Lax, Secure, ten hours
+    B->>A: GET /api/chemicals · Cookie: crucible_session
     A-->>B: 200, the data
-    Note over B: the token is kept in the browser's session storage<br/>and sent on every later request; closing the tab forgets it
+    Note over B: a script sends Authorization: Bearer <token> instead, on every request;<br/>a new token voids every cookie at once
 ```
+
+![Three callers meet one guard in front of every module: a browser with a cookie and a script with a bearer header pass, anyone else gets 401; health, instance and the login routes stay open](img/fig_token_gate.svg)
 
 **Why first:** it is the smallest change that closes the open port, it
 needs nothing from anyone else, and it stays useful forever — scripts and
 service accounts use tokens on every rung.
 
-**What the operator does, on the server:**
+**What the operator does, on the server** (beta first; the full walk with
+every output is [Step 7 of the tutorial](04-phase-tutorials/phase-sh-3a-token-gate.md#step-7--turn-it-on-beta-first)):
 
 ```bash
-cd ~/work/Pandora_toolbox/nr-nips-crucible
-python3 -c "import secrets; print(secrets.token_urlsafe(48))"     # generate; copy the output
-printf 'AUTH_MODE=token\nCRUCIBLE_TOKEN=<paste it here>\n' >> .env.local
-./container-py.sh restart
-curl --noproxy '*' -sSk https://localhost:49160/api/chemicals?limit=1 | head -c 60; echo      # expect: {"error":"Not authenticated"} · 401
-curl --noproxy '*' -sSk -H "Authorization: Bearer <the token>" https://localhost:49160/api/chemicals?limit=1 | head -c 60; echo   # expect: data
+cd ~/work/Pandora_toolbox/nr-nips-crucible-beta
+# the token is generated straight into the file: never on screen, never in the shell history
+printf 'AUTH_MODE=token\nCRUCIBLE_TOKEN=%s\n' "$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" >> .env.local
+chmod 600 .env.local
+./container-py.sh backup
+./container-py.sh stop && ./container-py.sh start      # a setting reaches a container only when it is created
+curl --noproxy '*' -sSk https://localhost:49161/api/stats; echo            # {"error":"Not authenticated"}
+curl --noproxy '*' -sSk -H "Authorization: Bearer $(grep '^CRUCIBLE_TOKEN=' .env.local | cut -d= -f2-)" https://localhost:49161/api/stats | head -c 60; echo   # the counts
 ```
 
-Rotating the token is the same three lines with a new value; everyone
-pastes the new one. That is the cost of a shared secret, and the reason
-this is a rung and not the destination.
+Rotating the token is a new value on the same line and the same `stop` and
+`start`; every browser is signed out at once and everyone pastes the new
+one ([how](04-phase-tutorials/phase-sh-3a-token-gate.md#rotate-the-token-or-turn-the-gate-off)).
+That is the cost of a shared secret, and the reason this is a rung and not
+the destination.
 
 **What it does not give:** *who*. Every user is "the token". A leaver keeps
 access until the token is rotated. There are no roles. Fine for one
 laboratory for a few weeks; not fine for longer.
+
+**Built:** [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md), v2.22.0, 2026-09-22; nineteen tests; the cookie is a keyed hash of the token (`hmac`, standard library, no new dependency), ten hours fixed rather than sliding (the sliding session arrives with rung 2's signed cookie).
 
 **Effort:** about two days, including the shared pieces above, the tests
 and the documentation. No new dependency: FastAPI already provides the
@@ -374,7 +391,7 @@ required, why, benefit and cost — and a verdict with a trigger.
 
 | | Rung 1 · token | Rung 2 · local | Rung 3 · SSO |
 |---|---|---|---|
-| A person, in the browser | Pastes the shared token once per browser session | Username and password on the login page | Clicks *Sign in with the organisation*; usually no prompt at all |
+| A person, in the browser | Pastes the shared token once into the login page; a cookie remembers the browser for ten hours, or until *Sign out* | Username and password on the login page | Clicks *Sign in with the organisation*; usually no prompt at all |
 | A script or `curl` | `-H "Authorization: Bearer <token>"` | A personal token issued by the admin, same header | The same, issued per service |
 | `verify-deploy.sh` | `--token` or `CRUCIBLE_TOKEN` in the shell | the same | the same |
 | The maintenance scripts inside the container | unchanged — they never use HTTP | unchanged | unchanged |
@@ -467,14 +484,16 @@ details, which this public page does not carry.
 | Registration request | the owner sends it this week, from the draft above | 2026-09-08 |
 | A3 revisited, A9, A10 | **agreed 2026-09-21** (with the go for SH-12): rung 2 in full, on the beta instance first, accounts created by the operator | 2026-09-21 |
 | Licence question | on hold with the organisation | 2026-09-08 |
+| SH-3a | **built and shipped, v2.22.0**: the rung-1 cookie is a keyed hash of the token (no new dependency), ten hours fixed, not sliding; the cross-origin policy closed (A7); the guard declared once per router | 2026-09-22 |
+| Single sign-on | **not needed for the moment**; the owner will revisit. SH-3c on hold; SH-3b, local accounts, goes ahead | 2026-09-22 |
 
 ## The phases
 
 | Phase | What ships | Waits on | "Done" means |
 |---|---|---|---|
-| **SH-3a · Token gate** | The shared pieces (`AUTH_MODE`, `require_user`, `/api/health`, the login page, the 401 handler, `verify-deploy.sh --token`), the token mode, tests, runbook in [`07-operations.md`](07-operations.md), the setup guides' `.env.local` step updated | ~~SH-12~~ ✅ v2.20.0 (the beta instance to deliver it to — [phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md)); decisions A2, A4, A7 — agreed | on **beta**, `AUTH_MODE=token`: an unauthenticated call answers 401, an authenticated one answers as before, the monitor is green, 16 deploy checks pass with `--token`; production untouched |
-| **SH-3b · Local accounts** | The `users` table and migration, Argon2 hashing, the signed session, `manage_users.py`, the login form, roles, per-person tokens — **in full** (A3 revisited) | SH-3a; built in the same run, on beta | each tester logs in with a username and password on beta, a disabled account is refused, a viewer cannot delete; after the test, the same on production |
-| **SH-3c · Single sign-on** | The OpenID Connect flow, group-to-role mapping, the sign-in button, a fake provider for the tests, the runbook; rung 2's unused pieces removed | SH-3a; the registration from the organisation; decisions A1, A5, A6, A8 | a person signs in with the corporate login and lands with the right role; the break-glass admin still works with the provider unreachable; a service token still works |
+| **SH-3a · Token gate** ✅ v2.22.0 — [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md) | The shared pieces (`AUTH_MODE`, `require_user`, `/api/health`, the login page, the 401 handler, `verify-deploy.sh --token`), the token mode, tests, runbook in [`07-operations.md`](07-operations.md), the setup guides' `.env.local` step updated | ~~SH-12~~ ✅ v2.20.0 (the beta instance to deliver it to — [phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md)); decisions A2, A4, A7 — agreed | on **beta**, `AUTH_MODE=token`: an unauthenticated call answers 401, an authenticated one answers as before, the monitor is green, 18 deploy checks pass with `--token` (the sixteen plus two that prove the gate); production untouched — **built and rehearsed 2026-09-22; on beta by Step 7 of the tutorial** |
+| **SH-3b · Local accounts** | The `users` table and migration, Argon2 hashing, the signed session, `manage_users.py`, the login form, roles, per-person tokens — **in full** (A3 revisited) | ~~SH-3a~~ ✅ v2.22.0; next, on beta | each tester logs in with a username and password on beta, a disabled account is refused, a viewer cannot delete; after the test, the same on production |
+| **SH-3c · Single sign-on** | The OpenID Connect flow, group-to-role mapping, the sign-in button, a fake provider for the tests, the runbook; rung 2's unused pieces removed | SH-3a; the registration from the organisation; decisions A1, A5, A6, A8; **on hold: no single sign-on for the moment (the owner, 2026-09-22), to be revisited** | a person signs in with the corporate login and lands with the right role; the break-glass admin still works with the provider unreachable; a service token still works |
 | SH-4 · Roles everywhere, audit trail, rate limiting | What identity makes possible ([`06-product-and-technology-roadmap.md`](06-product-and-technology-roadmap.md#4-identity-and-access)) | SH-3b or SH-3c | — |
 
 Each ships with its tutorial in `04-phase-tutorials/` (`phase-sh-3a-token-gate.md`

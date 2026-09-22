@@ -728,6 +728,105 @@ def fig_auth_ladder() -> None:
     b += text(W/2, 430, "everyday version: fit a lock this week, keep the key for the cleaners, and install the badge reader when the badge office delivers", 10.5, MUTED)
     write("fig_auth_ladder.svg", svg(W, H, "Three rungs from an open port to single sign-on: a token gate, local accounts, then the corporate identity provider; one feature flag; each rung keeps what the one below gave", b))
 
+def _lock(cx: float, cy: float, s: float, col: str, open_: bool = False) -> str:
+    """A padlock glyph; open_ swings the shackle aside."""
+    body = f"<rect x='{cx-s*0.6}' y='{cy-s*0.1}' width='{s*1.2}' height='{s*0.9}' rx='{s*0.15}' fill='{col}' fill-opacity='0.18' stroke='{col}' stroke-width='2'/>\n"
+    dx = s * 0.55 if open_ else 0
+    shackle = f"<path d='M {cx-s*0.35+dx} {cy-s*0.1} V {cy-s*0.45} A {s*0.35} {s*0.35} 0 0 1 {cx+s*0.35+dx} {cy-s*0.45} V {cy-s*0.1}' fill='none' stroke='{col}' stroke-width='2.4'/>\n"
+    return body + shackle
+
+
+def fig_token_gate() -> None:
+    """SH-3a: one guard on every router; three doors stay open."""
+    W, H = 940, 500
+    mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
+    tok = COLOURS["screening"]
+    b = text(W/2, 34, "The token gate (SH-3a): one guard in front of every module, three doors that stay open", 16, INK, "middle", "bold")
+    # the three callers
+    callers = [
+        (70, "a person, in the browser", ["pasted the token once", "cookie on every request"], COLOURS["chemical"], True),
+        (70, "a script, or curl", ["Authorization: Bearer <token>", "on every request"], COLOURS["sample"], True),
+        (70, "anyone else", ["no token", "answer: 401 Not authenticated"], COLOURS["toxicology"], False),
+    ]
+    for i, (x, title, rows, col, ok) in enumerate(callers):
+        y = 74 + i * 90
+        b += box(30, y, 230, 78, PAPER, col, 10)
+        b += text(145, y + 20, title, 12, col, "middle", "bold")
+        b += lines(145, y + 40, rows, 10.5, INK, "middle", 15)
+        b += arrow(262, y + 39, 322, 250, col if ok else LINE, dash=not ok)
+        if not ok:
+            # a small cross on the refused path
+            b += f"<path d='M 284 252 L 296 264 M 296 252 L 284 264' stroke='{col}' stroke-width='2.4' fill='none'/>\n"
+    # the guard
+    b += box(325, 186, 150, 128, "#fffbeb", tok, 12)
+    b += _lock(400, 222, 22, tok, False)
+    b += text(400, 262, "require_user", 12, tok, "middle", "bold", mono)
+    b += lines(400, 280, ["compares in constant time", "AUTH_MODE=token"], 9.5, MUTED, "middle", 13)
+    # the guarded rooms
+    b += box(500, 80, 410, 250, PANEL, LINE, 12, dash=True)
+    b += text(705, 102, "behind the guard: every route of every module", 11.5, MUTED, "middle", "bold")
+    rooms = [("chemicals", "chemical"), ("samples", "sample"), ("screening", "screening"), ("toxicology", "toxicology")]
+    for i, (name, kind) in enumerate(rooms):
+        x = 520 + i * 97
+        b += box(x, 122, 90, 78, PAPER, COLOURS[kind], 8)
+        b += symbol(kind, x + 45, 152, 13)
+        b += text(x + 45, 188, "/api/" + name, 9.5, INK, "middle", "normal", mono)
+    for i, name in enumerate(["/api/stats", "/api/query"]):
+        x = 560 + i * 160
+        b += box(x, 220, 130, 44, PAPER, ACCENT, 8)
+        b += text(x + 65, 247, name, 10.5, INK, "middle", "normal", mono)
+    b += text(705, 300, "the answer is exactly what it was before v2.22.0; only 401 is new", 10, MUTED)
+    b += arrow(478, 250, 498, 250, tok)
+    # the open doors
+    b += box(325, 346, 585, 96, "#ecfdf5", "#059669", 12)
+    b += _lock(360, 386, 16, "#059669", True)
+    b += text(392, 370, "open on every rung, no token needed", 11.5, "#065f46", "start", "bold")
+    b += text(392, 390, "/api/health → {\"status\":\"ok\"}: the monitor and the container probe", 9.5, INK, "start", "normal", mono)
+    b += text(392, 408, "/api/instance → Prod or Beta for the login page · /api/auth/* → the door itself", 9.5, INK, "start", "normal", mono)
+    b += text(392, 428, "and the page's own files: the login page must load before anyone is signed in", 9.5, MUTED, "start")
+    b += box(30, 346, 270, 96, PANEL, LINE, 10)
+    b += lines(165, 376, ["AUTH_MODE=off (the default)", "the guard waves everyone through:", "every version before v2.22.0"], 10.5, INK, "middle", 17, "bold")
+    b += text(W/2, 462, "everyday version: one receptionist at one desk checks badges for every corridor; the notice board in the lobby needs none", 11, INK)
+    b += text(W/2, 482, "docs/13-authentication.md · one flag, one dependency, the same identity shape on every rung", 10.5, MUTED)
+    write("fig_token_gate.svg", svg(W, H, "Three callers meet one guard in front of every module: a browser with a cookie and a script with a bearer header pass, anyone else gets 401; health, instance and the login routes stay open", b))
+
+
+def fig_token_travels() -> None:
+    """SH-3a: where the shared secret lives, how it travels, and where it never goes."""
+    W, H = 940, 450
+    mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
+    tok = COLOURS["screening"]
+    b = text(W/2, 34, "Where the token lives, how it travels, and where it never goes", 16, INK, "middle", "bold")
+    # the chain on the server
+    chain = [
+        (30, ".env.local", ["AUTH_MODE=token", "CRUCIBLE_TOKEN=…", "owner-only file (600)", "gitignored"]),
+        (250, "container-py.sh", ["reads the file", "-e AUTH_MODE", "-e CRUCIBLE_TOKEN", "never prints it"]),
+        (470, "the container", ["environment variables", "the unit file, 600", "podman inspect shows", "them to you alone"]),
+        (690, "the application", ["require_user", "hmac.compare_digest", "constant time", "401 or the answer"]),
+    ]
+    for i, (x, title, rows) in enumerate(chain):
+        b += box(x, 70, 190, 120, PAPER, tok if i in (0, 3) else LINE, 10)
+        b += text(x + 95, 94, title, 12.5, INK, "middle", "bold", mono if i != 2 else None)
+        b += lines(x + 95, 116, rows, 10, MUTED, "middle", 15)
+        if i < 3:
+            b += arrow(x + 193, 130, x + 247, 130, tok)
+    # the two ways in
+    b += box(30, 220, 430, 118, "#eef2ff", COLOURS["chemical"], 10)
+    b += text(245, 244, "a person: the login page, once", 12, COLOURS["chemical"], "middle", "bold")
+    b += lines(245, 266, ["POST /api/auth/login {token}", "→ Set-Cookie: crucible_session = a keyed hash, not the token",
+                          "HttpOnly · SameSite=Lax · Secure on HTTPS · ten hours", "a new token signs every browser out at once"], 10, INK, "middle", 15)
+    b += box(480, 220, 430, 118, "#f0fdf4", COLOURS["sample"], 10)
+    b += text(695, 244, "a script: the header, every time", 12, COLOURS["sample"], "middle", "bold")
+    b += lines(695, 266, ["curl -H \"Authorization: Bearer $CRUCIBLE_TOKEN\" …", "verify-deploy.sh --token … · CRUCIBLE_TOKEN in the shell",
+                          "the maintenance scripts inside the container: unchanged,", "they read the database, not the API"], 10, INK, "middle", 15)
+    # never
+    b += box(30, 358, 880, 40, "#fef2f2", COLOURS["toxicology"], 8)
+    b += text(470, 383, "never: in git · in a log line · in an error message · in the page · in a chat or an e-mail body — .env.local and its off-repository backup only", 10.5, "#991b1b", "middle", "bold")
+    b += text(W/2, 424, "everyday version: the key stays in the safe; the visitor sticker the receptionist hands out is not the key, and a new key voids every sticker", 11, INK)
+    b += text(W/2, 442, "rotate it: a new value in .env.local, ./container-py.sh rebuild, everyone pastes the new one (docs/07-operations.md → Security)", 10.5, MUTED)
+    write("fig_token_travels.svg", svg(W, H, "The token goes from the owner-only settings file through the container script into the container and the guard; a browser gets a cookie that is a keyed hash, a script sends a bearer header; the token is never in git, logs, errors or the page", b))
+
+
 def fig_delete_gate() -> None:
     W, H = 940, 400
     b = text(W/2, 34, "Deleting a compound after CR-6: the clerk refuses, the archivist empties the folder first", 16, INK, "middle", "bold")
@@ -940,5 +1039,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, cover, logo):
         f()

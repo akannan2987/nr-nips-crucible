@@ -492,7 +492,7 @@
               <li><code>GET/POST/PUT/DELETE /api/chemicals</code> — CRUD operations for chemical records.</li>
               <li><code>POST /api/chemicals/upload/excel</code> — bulk import from Excel via UploadFile + openpyxl.</li>
               <li><code>GET/POST /api/samples</code>, <code>/api/screening</code>, <code>/api/toxicology</code> — similar patterns for other collections.</li>
-              <li><code>GET /api/stats</code> — health check and record counts (used by the container healthcheck and monitoring cron).</li>
+              <li><code>GET /api/health</code> — the open health probe (container healthcheck, monitoring cron); <code>GET /api/stats</code> — record counts, behind the login when it is on.</li>
               <li><b>External API proxy:</b> can call PubChem or LabKey to enrich or sync data without exposing credentials to the frontend.</li>
               <li>Also serves the compiled React static files (HTML/JS/CSS) so only one port is needed — plus free interactive API docs at <code>/docs</code>.</li>
             </ul>
@@ -838,7 +838,7 @@
           </div>
           <div class="glass rounded-lg p-4 lift cursor-pointer" onclick="document.getElementById('cron-why').classList.toggle('hidden')">
             <div class="flex items-center gap-2"><span class="text-xl">⏰</span><b>Cron + monitor.sh</b> <span class="text-xs text-indigo-300 ml-auto">▶ click</span></div>
-            <p class="text-xs text-slate-400 mt-1">System cron job runs every 5 minutes. Hits the /api/stats health endpoint; if it fails, automatically restarts the container. Simple, reliable, zero-dependency monitoring.</p>
+            <p class="text-xs text-slate-400 mt-1">System cron job runs every 5 minutes. Hits the open /api/health route; if it fails, automatically restarts the container. Simple, reliable, zero-dependency monitoring.</p>
             <div id="cron-why" class="hidden mt-3 p-3 rounded-lg border border-yellow-400/30 bg-slate-900/60 text-xs space-y-2">
               <p class="font-semibold text-yellow-200">🤔 Why cron over monitoring tools?</p>
               <table class="w-full text-left text-slate-300">

@@ -30,7 +30,7 @@ else echo "Neither podman nor docker found"; exit 1; fi
 # Default: plain HTTP (./container-py.sh start), or HTTPS when the folder's
 # .env.local says USE_HTTPS=true. The cron line sets API_URL explicitly.
 if [ "${USE_HTTPS:-false}" = "true" ]; then _scheme="https"; else _scheme="http"; fi
-API_URL="${API_URL:-${_scheme}://localhost:${PORT}/api/stats}"
+API_URL="${API_URL:-${_scheme}://localhost:${PORT}/api/health}"
 # One log per instance, so two monitors on one machine never interleave.
 LOG_FILE="${LOG_FILE:-/tmp/crucible-monitor${CRUCIBLE_INSTANCE:+-$CRUCIBLE_INSTANCE}.log}"
 
@@ -39,14 +39,24 @@ log() {
 }
 
 check_health() {
-    # Try to access the API
-    response=$(curl --noproxy '*' -k -s -w "%{http_code}" -o /dev/null "$API_URL" --max-time 10)
-    
-    if [ "$response" = "200" ]; then
+    # Since v2.22.0 the probe is /api/health: the one route that stays open
+    # when the login is on, answering 200 with no data. An older cron line
+    # may still name /api/stats, which answers 401 once the login is on and
+    # would have this monitor restart a healthy application every five
+    # minutes. So the probe always tries /api/health at the same address
+    # first, and falls back to the named URL only when /api/health does not
+    # exist there (a container older than v2.22.0 answers 404).
+    local base code
+    base="${API_URL%/api/*}"
+    code=$(curl --noproxy '*' -k -s -w "%{http_code}" -o /dev/null "${base}/api/health" --max-time 10)
+    if [ "$code" = "200" ]; then
         return 0  # Healthy
-    else
-        return 1  # Unhealthy
     fi
+    if [ "$code" = "404" ]; then
+        code=$(curl --noproxy '*' -k -s -w "%{http_code}" -o /dev/null "$API_URL" --max-time 10)
+        [ "$code" = "200" ] && return 0
+    fi
+    return 1  # Unhealthy
 }
 
 restart_container() {

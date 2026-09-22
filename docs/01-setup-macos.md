@@ -499,7 +499,7 @@ are currently watching. The container keeps running.
 
 ```bash
 # V5. Health monitor runs (logs to /tmp/crucible-monitor.log)
-./monitor.sh                 # HTTPS mode: API_URL=https://localhost:49160/api/stats ./monitor.sh
+./monitor.sh                 # HTTPS mode: API_URL=https://localhost:49160/api/health ./monitor.sh
 ```
 
 **You should see:** two timestamped lines, ending in `✓ Application is healthy`.
@@ -517,7 +517,7 @@ unresponsive it restarts the container and says so.
 > ✗ Container restart failed
 > ```
 >
-> `monitor.sh` defaults to `http://localhost:<port>/api/stats`, which a TLS
+> `monitor.sh` defaults to `http://localhost:<port>/api/health`, which a TLS
 > listener refuses — so it concludes the app is dead and restarts your
 > container. The last line is the second HTTP check failing after the restart,
 > not a container that would not start. Use the `API_URL=https://...` form
@@ -667,6 +667,25 @@ touched — the exact commands, and a test for every route, are in
 [phase SH-12 → Step 6](04-phase-tutorials/phase-sh-12-beta-instance.md#step-6--rehearse-it-on-a-laptop-first).
 The scripts read a file and append a word to a name; nothing in them is
 Linux-specific.
+
+### Trying the login on your own machine
+
+Since v2.22.0 an instance can be closed with an access token
+([`13-authentication.md`](13-authentication.md)). On a laptop nothing is
+closed unless you say so; to rehearse it, pass the two settings for one
+command rather than writing them into a file:
+
+```bash
+AUTH_MODE=token CRUCIBLE_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" ./container-py.sh rebuild
+```
+
+The page then asks for the token, `curl` gets `{"error":"Not authenticated"}`
+without `-H "Authorization: Bearer …"`, and `/api/health` still answers.
+Plain HTTP is allowed here only because macOS publishes on `127.0.0.1`,
+where nobody else can listen. To go back, recreate the container without
+the two variables (`stop`, remove it, `start`). Every route, with its
+expected output, is in
+[phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md#how-to-test-it-by-every-route).
 
 ---
 

@@ -11,13 +11,29 @@
 #
 #   development machine : ./verify-deploy.sh
 #   RHEL8 server        : ./verify-deploy.sh https://localhost:49160
+#   with the login on   : ./verify-deploy.sh https://localhost:49161 --token <the token>
+#                         (or CRUCIBLE_TOKEN=<the token> in the shell)
+#
+# With a token the script also proves the gate: a call without the token
+# must be refused, and /api/health must stay open (docs/13-authentication.md).
 #
 # The database checks are skipped when the file is not beside you, so it is
 # safe to run from anywhere.
 #
-# Usage: ./verify-deploy.sh [base-url] [path-to-crucible.db]
-BASE="${1:-http://localhost:49160}"
-DB="${2:-data/crucible.db}"
+# Usage: ./verify-deploy.sh [base-url] [path-to-crucible.db] [--token <t>]
+TOKEN="${CRUCIBLE_TOKEN:-}"
+args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --token)   TOKEN="$2"; shift 2 ;;
+    --token=*) TOKEN="${1#--token=}"; shift ;;
+    *)         args+=("$1"); shift ;;
+  esac
+done
+BASE="${args[0]:-http://localhost:49160}"
+DB="${args[1]:-data/crucible.db}"
+AUTH=()
+[ -n "$TOKEN" ] && AUTH=(-H "Authorization: Bearer $TOKEN")
 # Retry transient network faults. A background job writing to the database can
 # briefly reset a connection; without a retry that shows up as a FAIL against a
 # feature that is in fact working, which is worse than no check at all.
@@ -28,7 +44,7 @@ DB="${2:-data/crucible.db}"
 C(){
   local attempt out
   for attempt in 1 2 3; do
-    if out=$(curl --noproxy '*' -sSk -m 30 "$@"); then
+    if out=$(curl --noproxy '*' -sSk -m 30 "${AUTH[@]}" "$@"); then
       printf '%s' "$out"; return 0
     fi
     sleep 2
@@ -41,6 +57,21 @@ no(){ printf '  \033[0;31m FAIL \033[0m %s\n     -> %s\n' "$1" "$2"; fail=$((fai
 j(){ python3 -c "import json,sys;d=json.load(sys.stdin);print($1)" 2>/dev/null; }
 
 echo "Verifying $BASE"; echo
+
+# 0 — the gate. Without a token, an instance that needs one is reported as
+# such rather than as sixteen failures; with one, the gate itself is checked.
+code=$(curl --noproxy '*' -sSk -m 30 -o /dev/null -w '%{http_code}' "$BASE/api/stats" 2>/dev/null)
+if [ "$code" = "401" ] && [ -z "$TOKEN" ]; then
+  printf '  this instance needs a token (a call without one answers 401):\n'
+  printf '     ./verify-deploy.sh %s --token <the token>   (or CRUCIBLE_TOKEN=<the token> in the shell)\n' "$BASE"
+  exit 2
+fi
+if [ -n "$TOKEN" ]; then
+  [ "$code" = "401" ] && ok "the login is on: a call without the token is refused (401)" \
+                      || no "login gate" "a call without the token answered HTTP $code"
+  hc=$(curl --noproxy '*' -sSk -m 30 -o /dev/null -w '%{http_code}' "$BASE/api/health" 2>/dev/null)
+  [ "$hc" = "200" ] && ok "health route stays open without the token" || no "health route" "HTTP $hc"
+fi
 
 # 1 — the page loads at all (the sort_numeric 400)
 code=$(C -o /tmp/v1.json -w '%{http_code}' "$BASE/api/screening?page=1&limit=50&search=&chemical_id=&tag=&sort=&dir=asc&sort_numeric=&duplicates=")

@@ -156,7 +156,8 @@ allowed to use it". Every mount in this project carries it. It does nothing
 at all on macOS, harmlessly.
 
 **Healthcheck** — a heartbeat monitor baked into the image. Every 30
-seconds the container asks itself "am I still answering?" and reports
+seconds the container asks itself "am I still answering?" (at `/api/health`,
+the route that needs no login) and reports
 `healthy` or `unhealthy`. This is why `./container-py.sh status` can tell
 you the app is alive rather than merely running.
 
@@ -353,19 +354,33 @@ is one; the moving dots follow the same curves as the drawn arrows.
 
 **SSO / OIDC** — *single sign-on*: the organisation's existing identity service vouches for a user, so there is no separate password. *OpenID Connect* is the standard protocol it speaks. *Everyday version:* the building's badge system. The alternative, a **token scheme**, is a long secret in a request header — a key cut per person. Crucible's plan uses both, as rungs of one ladder: [`13-authentication.md`](13-authentication.md).
 
-**Authentication vs authorisation** — *authentication* is proving who you are (showing the badge); *authorisation* is what you may then do (which doors it opens). Crucible has neither yet; the plan adds the first in three rungs and the second as roles.
+**Authentication vs authorisation** — *authentication* is proving who you are (showing the badge); *authorisation* is what you may then do (which doors it opens). Crucible has the first since v2.22.0, as a shared token (rung 1 of three); the second arrives as roles with rung 2.
 
 **Identity provider** — the organisation's central login service, which already knows every employee and vouches for them to applications. *Everyday version:* the badge office. Single sign-on is an application trusting it instead of keeping its own passwords.
 
-**Token (API key)** — a long random string sent in a request header; whoever holds it is trusted. The first rung of the authentication ladder, and the way scripts log in on every rung. *Everyday version:* a key cut for a door — useful, but it does not say who is holding it.
+**Token (API key)** — a long random string sent in a request header; whoever holds it is trusted. The first rung of the authentication ladder (built in v2.22.0: `AUTH_MODE=token` and `CRUCIBLE_TOKEN` in an instance's `.env.local`), and the way scripts log in on every rung. *Everyday version:* a key cut for a door — useful, but it does not say who is holding it.
 
-**Session and cookie** — after a login the server remembers *this browser* for a while (the session) by giving it a small signed note it sends back with every request (the cookie). *Everyday version:* the visitor sticker you wear all day after signing in at reception. Flags on the cookie (`HttpOnly`, `Secure`, `SameSite`) stop scripts, plain-HTTP connections and other websites from using it.
+**Session and cookie** — after a login the server remembers *this browser* for a while (the session) by giving it a small signed note it sends back with every request (the cookie). *Everyday version:* the visitor sticker you wear all day after signing in at reception. Flags on the cookie (`HttpOnly`, `Secure`, `SameSite`) stop scripts, plain-HTTP connections and other websites from using it. Crucible's rung-1 cookie, `crucible_session`, is a keyed hash of the token, not the token: a leaked cookie cannot be replayed as a header, and a new token voids every cookie at once.
 
 **Password hashing** — storing a scrambled, one-way version of a password so that the database can check one but never reveal it. *Everyday version:* keeping a fingerprint of the key rather than the key. The plan uses Argon2id, the current recommendation, through a library — never home-made.
 
 **Feature flag** — a setting that turns a capability on or off without changing code. `AUTH_MODE` (`off`, `token`, `local`, `sso`) is one; it lets the login be introduced without locking anyone out mid-week and lets tests run with it off.
 
 **Break-glass account** — one local administrator login kept for the day the identity provider is unreachable or a role mapping is wrong. *Everyday version:* the physical key in the box marked *emergency*.
+
+**Bearer header** — the one line a script or `curl` adds to a request to present a token: `Authorization: Bearer <token>`. "Bearer" means what it says: whoever bears the token is let in. *Everyday version:* holding the key up at the desk. A browser does not use it; it presents the login page's cookie instead.
+
+**401 Unauthorized** — the web's answer for "you have not shown me who you are". Since v2.22.0 it is the one new answer the API gives: `{"error":"Not authenticated"}`, with a `WWW-Authenticate: Bearer` header saying how to log in. The same words for a missing and a wrong token, on purpose. *Everyday version:* "badge, please".
+
+**Login page** — the page shown instead of the application when the instance asks for a token and this browser has not presented one. It shows the instance pill first, takes the token once, and sets the cookie; *Sign out* in the top bar clears it. Any 401 from any call brings it back.
+
+**Health route** — `GET /api/health`: answers `{"status":"ok"}` and nothing else, after checking the database is reachable, and needs no login. It exists so the container's probe and the monitor can ask "are you alive?" without a token; they used to ask `/api/stats`, which answers 401 once the login is on and would be read as "dead". *Everyday version:* the notice board in the lobby.
+
+**Keyed hash (HMAC)** — a one-way scramble of a fixed text using a secret as the key. Anyone holding the secret can compute it; nobody holding the result can recover the secret. Crucible's login cookie is one, computed from the token. *Everyday version:* a stamp that only the desk's own stamp can make.
+
+**Constant-time comparison** — checking a secret so that the check takes the same time whether the first or the last character is wrong; otherwise the time an answer takes tells a guesser how many characters were right. Python's `hmac.compare_digest` does it; every comparison of the token uses it.
+
+**Cross-origin policy (CORS)** — the rule that says which *other* web sites a browser may let call this API. Closed since v2.22.0: the page is served by the same process, so no other site needs in; `CORS_ORIGINS` names one if ever one does. *Everyday version:* whether a neighbouring firm's staff may use your reception.
 
 **Redirect URI, client ID, client secret, claim** — the four words the identity team will use when registering Crucible for single sign-on: where to send the user back after login; the application's own identifier; the application's own secret (into `.env.local`, never git); and one fact the provider states about the user (name, e-mail, groups). All four are explained with the flow in [`13-authentication.md`](13-authentication.md#rung-3--single-sign-on).
 
@@ -855,7 +870,8 @@ interruption is never dangerous.
 `./uninstall.sh --dry-run` is the safest command in the project.
 
 **Health monitoring** — `monitor.sh`, run every 5 minutes by cron, checks
-the app answers and restarts it if not.
+the app answers at `/api/health` (open whatever the login says) and restarts
+it if not.
 
 **GitOps** — treating the Git repository as the single source of truth for
 what should be deployed: you change code by committing, and deployment

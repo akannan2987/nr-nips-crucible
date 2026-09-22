@@ -56,8 +56,9 @@ ENV AUTO_INIT_DB=false
 
 EXPOSE 49160
 
-# Health check against the stats endpoint — tries HTTP then HTTPS, so the
-# same image is healthy in both modes (see backend/scripts/healthcheck.py).
+# Health check against /api/health, the route that stays open when the
+# login is on — tries HTTP then HTTPS, so the same image is healthy in both
+# modes (see backend/scripts/healthcheck.py).
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD python /app/backend/scripts/healthcheck.py || exit 1
 

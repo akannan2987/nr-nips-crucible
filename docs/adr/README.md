@@ -16,7 +16,7 @@ supersedes the old one.
 
 | # | Decision | Status |
 |---|---|---|
-| [0001](0001-authentication-ladder.md) | Authentication is added as a ladder — token gate, local accounts, single sign-on — behind one feature flag, with single sign-on as the destination | accepted |
+| [0001](0001-authentication-ladder.md) | Authentication is added as a ladder — token gate, local accounts, single sign-on — behind one feature flag, with single sign-on as the destination | accepted; rung 1 built (v2.22.0, SH-3a); rung 3 on hold at the owner's request (2026-09-22) |
 | [0002](0002-beta-instance.md) | A beta instance runs beside production on the same server, on the `beta` branch, with its own container, port and data; production moves only by promotion | accepted (v2.20.0) |
 
 Decisions made before this folder existed live in the documents that made

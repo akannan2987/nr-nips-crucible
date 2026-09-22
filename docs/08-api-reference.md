@@ -8,6 +8,8 @@ Complete REST API reference for the Chemical and Sample Management System.
 **Development URL:** `http://localhost:49160/api`
 
 > 🔒 **Note:** Production endpoints use HTTPS. Add `-k` flag to `curl` commands if using self-signed certificates. All examples below show production HTTPS URLs.
+>
+> 🔑 **Since v2.22.0:** with the login on (`AUTH_MODE=token`), add `-H "Authorization: Bearer <the token>"` to every command below except the three open routes — [Authentication](#authentication) · [Health and login](#health-and-login).
 
 ---
 
@@ -19,6 +21,7 @@ Complete REST API reference for the Chemical and Sample Management System.
 - [Response Format](#response-format)
 - [Statistics & Dashboard](#statistics--dashboard)
 - [Which instance is answering](#which-instance-is-answering)
+- [Health and login](#health-and-login)
 - [Chemicals](#chemicals)
 - [Samples](#samples)
 - [Screening](#screening)
@@ -130,7 +133,21 @@ All API endpoints return JSON responses. The API supports:
 
 ### Authentication
 
-Currently, no authentication is required. Future versions will implement SSO.
+Since v2.22.0 an instance can be closed with a **token gate**
+([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md); the plan is
+[`13-authentication.md`](13-authentication.md)). With `AUTH_MODE=token` in
+the instance's `.env.local`, every route on this page except
+[health, instance and the login](#health-and-login) answers
+`401 {"error":"Not authenticated"}` unless the request carries the token:
+
+```bash
+curl --noproxy '*' -sSk -H "Authorization: Bearer <the token>" https://<vm-hostname>:49161/api/stats
+```
+
+A browser presents the same token once on the login page and is then
+remembered by a cookie. With `AUTH_MODE=off`, the default and production's
+state until its operator turns the gate on, nothing is required. Accounts,
+roles and single sign-on are later rungs of the same ladder.
 
 ### Rate Limiting
 
@@ -291,6 +308,62 @@ curl --noproxy '*' -sSk https://localhost:49161/api/instance
 
 Production answers `{"name": "", "label": "Prod", "port": 49160, "https": true}`.
 The `/api/stats` shape is unchanged; this is a separate endpoint on purpose.
+
+## Health and login
+
+Three routes that stay open whatever `AUTH_MODE` says (v2.22.0,
+[phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)).
+
+### Health
+
+`GET /api/health` — `{"status":"ok"}` after the cheapest possible database
+statement, or `503 {"error":"database not reachable"}`. No counts, no
+version: nothing worth reading without a login. The container's own probe,
+the cron monitor and `container-py.sh` ask this route.
+
+```bash
+curl --noproxy '*' -sSk https://localhost:49161/api/health
+```
+
+```json
+{"status": "ok"}
+```
+
+### Who am I
+
+`GET /api/auth/me` — always 200: which mode is on, and whether *this*
+caller (by header or by cookie) is signed in. The page calls it once on
+load to decide whether to show the login.
+
+```json
+{"mode": "token", "authenticated": false, "user": null}
+{"mode": "token", "authenticated": true, "user": {"subject": "token", "display_name": "Token holder", "roles": ["admin"], "via": "token"}}
+{"mode": "off", "authenticated": true, "user": {"subject": "anyone", "display_name": "Anyone (login off)", "roles": ["admin"], "via": "off"}}
+```
+
+| Field of `user` | Meaning |
+|---|---|
+| `subject` | Who: `anyone` with the login off, `token` on rung 1; a username on later rungs |
+| `display_name` | What a page may show |
+| `roles` | `["admin"]` on rungs 0 and 1 (every holder may do everything); *viewer*, *editor*, *admin* from rung 2 |
+| `via` | How the identity was established: `off`, `token`; later `local`, `sso` |
+
+### Log in
+
+`POST /api/auth/login` with `{"token": "<the token>"}` — on success 200 and
+`Set-Cookie: crucible_session=…; HttpOnly; Max-Age=36000; Path=/; SameSite=lax`
+(plus `Secure` over HTTPS); the value is a keyed hash of the token, not the
+token. A wrong token: 401 with the same body as a missing one, after a
+quarter of a second, and no cookie. With the login off: 400.
+
+```bash
+curl --noproxy '*' -sSk -c jar.txt -H 'Content-Type: application/json' -d '{"token":"<the token>"}' https://localhost:49161/api/auth/login
+curl --noproxy '*' -sSk -b jar.txt https://localhost:49161/api/stats | head -c 60
+```
+
+### Log out
+
+`POST /api/auth/logout` — clears the cookie; 200 whether or not one was set.
 
 ## Chemicals
 
@@ -1587,8 +1660,10 @@ Records are addressed by their `id` (UUID, returned on create).
 | 200 | Success |
 | 201 | Created |
 | 400 | Bad Request (validation error) |
+| 401 | Not authenticated: the login is on and no valid token (header) or cookie was presented — [Authentication](#authentication) |
 | 404 | Not Found |
 | 500 | Internal Server Error |
+| 503 | `/api/health` only: the database is not reachable |
 
 **Example Error Response:**
 

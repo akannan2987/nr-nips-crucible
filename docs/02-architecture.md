@@ -99,7 +99,7 @@ flowchart TB
     end
     subgraph container["Container crucible-py — one Python process (uvicorn)"]
         direction TB
-        RT["Routers  /api/*<br/>chemicals · samples · screening · toxicology · stats · query · instance"]
+        RT["Routers  /api/*<br/>chemicals · samples · screening · toxicology · stats · query · instance · health · auth"]
         UP["Upload parsers<br/>openpyxl · RDKit · template specs"]
         ST["Static + SPA serving<br/>client/dist · /architecture"]
         ORM["SQLAlchemy 2 ORM<br/>store.py · models.py"]
@@ -312,8 +312,16 @@ backend/app/routers/
 ├── screening.py       # Screening data
 ├── toxicology.py      # Toxicology data
 ├── stats.py           # Dashboard statistics
-└── instance.py        # Which instance is answering: name, label, port (SH-13)
+├── instance.py        # Which instance is answering: name, label, port (SH-13)
+├── health.py          # GET /api/health, open on every rung: ok, or 503 (SH-3a)
+└── auth.py            # /api/auth: who am I, log in, log out (SH-3a)
 ```
+
+The guard every protected router declares, `require_user`, lives in
+`backend/app/auth.py` and is attached once per router in `main.py`, so a
+route added later is guarded without anyone remembering to guard it
+([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)). The three
+routers above that stay open are registered without it.
 
 ### 3. Business Logic Layer
 
@@ -557,7 +565,7 @@ Stage 2: docker.io/library/python:3.12-slim
     → pip install -r backend/requirements.lock  (exact versions; RDKit et al. as wheels)
     → copy backend/app, backend/scripts, backend/alembic, docs, client/dist
     → HEALTHCHECK: python backend/scripts/healthcheck.py
-      (probes /api/stats — tries HTTP then HTTPS, so the same image is
+      (probes /api/health — tries HTTP then HTTPS, so the same image is
       healthy in both modes)
     → CMD sh backend/scripts/entrypoint.sh
       (db_bootstrap.py: alembic upgrade head → uvicorn on 0.0.0.0:$PORT,
@@ -589,12 +597,12 @@ flowchart TB
         subgraph C["Container crucible-py (podman or docker)"]
             direction TB
             U["uvicorn + FastAPI, Python 3.12<br/>serves the React app · /api · /docs · /architecture"]
-            H["HEALTHCHECK every 30 s → /api/stats<br/>HTTP first, then HTTPS, so one image is healthy in both modes"]
+            H["HEALTHCHECK every 30 s → /api/health<br/>HTTP first, then HTTPS, so one image is healthy in both modes"]
             U --- H
         end
         V[("./data → /app/data (:Z)<br/>crucible.db — survives every rebuild")]
         K["./certs → /app/certs, read-only<br/>server.crt · server.key (HTTPS mode)"]
-        M["cron every 5 min: monitor.sh<br/>GET /api/stats, restart on failure"]
+        M["cron every 5 min: monitor.sh<br/>GET /api/health, restart on failure"]
         S["systemd user unit + lingering (RHEL 8)<br/>starts the container at boot"]
         U -- "SQLAlchemy" --> V
         K -.-> U
@@ -633,8 +641,10 @@ uvicorn `--workers N`, and a caching layer if ever needed.
 
 ### Current Implementation
 
-- **CORS**: open (same as the legacy API) — acceptable on the internal network,
-  revisit with SSO
+- **Login**: a token gate since v2.22.0 (`AUTH_MODE=token`; one guard declared per
+  router, a login page, a cookie that is a keyed hash of the token; off by
+  default) — [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)
+- **CORS**: closed since v2.22.0 (decision A7); `CORS_ORIGINS` reopens it for a named site
 - **Input Validation**: server-side checks (duplicate IDs, required references);
   Pydantic models kept lenient on purpose to preserve the API contract
 - **Error Handling**: no stack traces or sensitive data in error responses
@@ -645,9 +655,9 @@ uvicorn `--workers N`, and a caching layer if ever needed.
 
 ### Future Enhancements
 
-- [ ] Authentication — planned as a ladder (token gate → local accounts →
-      single sign-on), one guard dependency on every route, one open health
-      route: [`13-authentication.md`](13-authentication.md), [ADR 0001](adr/0001-authentication-ladder.md)
+- [x] Authentication, rung 1 — the token gate (v2.22.0); rungs 2 and 3, local
+      accounts and single sign-on, drop into the same guard:
+      [`13-authentication.md`](13-authentication.md), [ADR 0001](adr/0001-authentication-ladder.md)
 - [ ] Authorization (role-based access) — after identity, see the same plan
 - [ ] Rate limiting
 - [ ] Audit logging
@@ -656,11 +666,11 @@ uvicorn `--workers N`, and a caching layer if ever needed.
 
 ## Monitoring & Observability
 
-- **Container HEALTHCHECK**: every 30 s against `/api/stats` (`127.0.0.1` on
+- **Container HEALTHCHECK**: every 30 s against `/api/health` (`127.0.0.1` on
   purpose — in-container `localhost` resolves to `::1` while the server binds
   IPv4)
 - **Health monitor**: `CONTAINER_NAME=crucible-py ./monitor.sh` via cron —
-  curls `/api/stats`, restarts the container on failure
+  curls `/api/health` (open whatever the login says), restarts the container on failure
 - **Status command**: `./container-py.sh status` — container state + live API check
 - **Dashboard**: real-time statistics with 5 s auto-refresh
 - **Planned**: metrics (Prometheus), error tracking, certificate expiry alerts

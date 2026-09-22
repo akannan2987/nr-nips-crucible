@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { getChemicalNotices, getInstance } from '../services/api'
+import { BASE_TITLE, styleFor } from './instanceStyle'
+import { useAuth } from './AuthGate'
 import {
   BeakerIcon,
   HomeIcon,
@@ -13,26 +15,11 @@ import {
   CubeIcon,
   CommandLineIcon,
   FlagIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline'
 
-// SH-13: the page says which instance it is, in words and in colour, so
-// that a tester with two tabs open never confuses beta with production.
-// The colours are the ones the documents use: indigo for production, amber
-// for beta (docs/14-beta-instance.md). Class names are written out in full
-// so the style build can find them.
-const INSTANCE_STYLE = {
-  default: {
-    bar: 'bg-white border-b',
-    pill: 'bg-indigo-100 text-indigo-800 border-indigo-300',
-    title: 'the default instance: the real registry',
-  },
-  named: {
-    bar: 'bg-amber-50 border-b-2 border-amber-300',
-    pill: 'bg-amber-100 text-amber-900 border-amber-400',
-    title: 'a named instance: a copy for testing, separate from production',
-  },
-}
-const BASE_TITLE = document.title
+// SH-13: the instance colours and the base tab title live in instanceStyle.js,
+// shared with the login page (SH-3a).
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
@@ -89,7 +76,10 @@ export default function Layout() {
       })
       .catch(() => setInstance(null))
   }, [])
-  const instanceStyle = instance && instance.name ? INSTANCE_STYLE.named : INSTANCE_STYLE.default
+  const instanceStyle = styleFor(instance)
+  // SH-3a: with a login on, the top bar offers to sign out (forget this
+  // browser's cookie); with the login off there is nothing to sign out of.
+  const auth = useAuth()
 
   const [expandedMenu, setExpandedMenu] = useState(null)
   const location = useLocation()
@@ -332,6 +322,17 @@ export default function Layout() {
               )}
             </h1>
             <div className="flex items-center space-x-4">
+              {auth.mode !== 'off' && (
+                <button
+                  onClick={auth.signOut}
+                  className="flex items-center rounded-lg border bg-white px-2.5 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  title="Forget this browser's login; the sign-in page comes back"
+                  data-testid="sign-out"
+                >
+                  <ArrowRightOnRectangleIcon className="h-4 w-4 mr-1.5" />
+                  Sign out
+                </button>
+              )}
               {/* Port is read from the browser's own URL instead of being
                   hardcoded, so this stays correct on any host/port */}
               <span className="text-sm text-gray-500">

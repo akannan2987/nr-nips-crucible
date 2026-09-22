@@ -164,7 +164,7 @@ every step and name the likely mistakes. **Follow the guide the first time.**
 
 ```bash
 cd ~/work/Pandora_toolbox/nr-nips-crucible
-curl --noproxy '*' -sSk https://localhost:49160/api/stats
+curl --noproxy '*' -sSk https://localhost:49160/api/stats     # with the login on: add -H "Authorization: Bearer <the token>"
 ```
 
 **You should see** a line of counts:
@@ -223,13 +223,46 @@ which prints `instance: beta → crucible-py-beta, port 49161` or
 a tester and the pill says **Prod**, close the tab and open the address you
 were given.
 
+## Signing in
+
+Since v2.22.0 an instance can ask for an **access token** before it shows
+anything ([`13-authentication.md`](13-authentication.md)); the beta
+instance does, production does not yet. The page you see first is then the
+login page, with the same *Prod* / *Beta* pill on its bar so you know where
+you are:
+
+1. Get the token from the person who runs the instance — in person or
+   through the organisation's password manager, never by e-mail. It is one
+   long line of letters, digits, `-` and `_`.
+2. Paste it into the box and click **Sign in**. A wrong or incomplete token
+   answers *That token was not accepted*; the words are the same whatever
+   was wrong, on purpose.
+3. That is all. Your browser stays signed in for ten hours, and every
+   page, every download and every tab on that address works as before.
+   **Sign out** in the top bar forgets it; so does a new token issued by
+   the operator, for everyone at once.
+
+*Everyday version:* the building now has a receptionist. One badge for the
+whole team this month; a badge with your own name on it is the next phase.
+
+If you use `curl` or a script instead of the browser, send the same token
+as a header on every call, `-H "Authorization: Bearer <the token>"`; the
+[API cookbook](08-api-cookbook.md#signing-in-from-a-script) shows it. The
+one address that never needs it is `/api/health`, which is how the monitor
+knows the application is alive.
+
+![Three callers meet one guard in front of every module: a browser with a cookie and a script with a bearer header pass, anyone else gets 401; health, instance and the login routes stay open](img/fig_token_gate.svg)
+
 ## The one-command health check
 
 ```bash
 ./verify-deploy.sh https://localhost:49160
 ```
 
-**You should see** sixteen lines of `PASS` and `Everything checks out.`
+**You should see** sixteen lines of `PASS` and `Everything checks out.` —
+eighteen when the instance has the login on and you pass the token
+(`CRUCIBLE_TOKEN='<the token>' ./verify-deploy.sh https://localhost:49161`);
+without it the script says `this instance needs a token` and stops.
 
 **What it means:** every feature has been exercised — the table loads, filters
 work, sorting works, exports work, the query console refuses to write, no
@@ -1069,7 +1102,9 @@ opens fine and is quietly corrupt.
 ## First, three questions
 
 1. **Is it running?** `./container-py.sh status`
-2. **Does it answer?** `curl --noproxy '*' -sSk https://localhost:49160/api/stats`
+2. **Does it answer?** `curl --noproxy '*' -sSk https://localhost:49160/api/health` (open whether or not
+   the login is on; `{"error":"Not authenticated"}` from any other route means the login is on
+   and the call needs the token)
 3. **What does it say?** `./container-py.sh logs` — the real error is usually in
    the last twenty lines. `Ctrl-C` stops watching; it does not stop the app.
 

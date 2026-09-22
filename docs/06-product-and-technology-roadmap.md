@@ -149,12 +149,12 @@ knowing who. *Cost:* SSO means integrating with a corporate identity
 provider (an external dependency and a support relationship); a token scheme
 means issuing and rotating secrets by hand. Either needs a **feature flag**
 so that internal users are not locked out mid-week.
-*Verdict:* **Required now**, as a ladder — *decided in principle on
-2026-09-08, details pending the owner's answers:* a token gate first (SH-3a,
-days, needs nothing from anyone), local accounts only as far as needed
-(SH-3b), and **single sign-on as the destination** (SH-3c, when the identity
-team's application registration arrives — requested now, because it is the
-long pole). The full plan, with every method explained, the ones rejected,
+*Verdict:* **Required now**, as a ladder — *decided 2026-09-08; the first
+rung built 2026-09-22 (v2.22.0, [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)):*
+a token gate first (SH-3a, shipped, on the beta instance first), local
+accounts in full next (SH-3b), and **single sign-on as the destination**
+(SH-3c, on hold: the owner decided on 2026-09-22 that it is not needed for
+the moment, to be revisited). The full plan, with every method explained, the ones rejected,
 and what to ask the organisation for, is
 [`13-authentication.md`](13-authentication.md); the decision is
 [ADR 0001](adr/0001-authentication-ladder.md).

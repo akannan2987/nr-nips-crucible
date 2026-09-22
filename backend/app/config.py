@@ -5,6 +5,8 @@ defaults, so the same code runs unmodified on the development machine and on the
 
 Key settings:
     PORT          — HTTP port (default 49160)
+    AUTH_MODE     — off (default) or token: the login (docs/13-authentication.md)
+    CRUCIBLE_TOKEN — the shared secret of the token mode, from .env.local
     DATABASE_URL  — SQLAlchemy connection string. Defaults to a SQLite file
                     at data/crucible.db.
                     Switching to PostgreSQL later is just:
@@ -59,6 +61,26 @@ AUTO_INIT_DB: bool = os.environ.get("AUTO_INIT_DB", "true").lower() == "true"
 USE_HTTPS: bool = os.environ.get("USE_HTTPS", "false").lower() == "true"
 SSL_CERT_PATH: Path = Path(os.environ.get("SSL_CERT_PATH", "/app/certs/server.crt"))
 SSL_KEY_PATH: Path = Path(os.environ.get("SSL_KEY_PATH", "/app/certs/server.key"))
+
+# ── The login (phase SH-3a; docs/13-authentication.md) ──────────────
+# AUTH_MODE is the feature flag: "off" (the default; every route answers
+# anyone, as every version before v2.22.0 did) or "token" (every /api route
+# except health, instance and the login itself needs the shared secret).
+# Later rungs add "local" and "sso". On a server the mode and the token live
+# in the untracked .env.local, and container-py.sh passes them in.
+AUTH_MODE: str = os.environ.get("AUTH_MODE", "off").strip().lower() or "off"
+AUTH_MODES: tuple[str, ...] = ("off", "token")
+# The shared secret of the token rung. Never logged, never printed, never in
+# git. Generate one with: python3 -c 'import secrets; print(secrets.token_urlsafe(48))'
+CRUCIBLE_TOKEN: str = os.environ.get("CRUCIBLE_TOKEN", "").strip()
+TOKEN_MIN_LENGTH: int = 32
+# How long the browser stays signed in after the login page (decision A6:
+# a working day).
+SESSION_HOURS: int = int(os.environ.get("SESSION_HOURS", "10"))
+# Cross-origin policy (decision A7): closed by default. The page is served
+# by this same process, so a browser never needs another origin allowed. A
+# comma-separated list reopens it for a specific other site.
+CORS_ORIGINS: list[str] = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
 
 # Soft capacity targets used by the dashboard gauge (NOT enforced limits) —
 # same constants as the v1 stats route.

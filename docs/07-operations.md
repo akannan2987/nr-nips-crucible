@@ -145,7 +145,7 @@ sudo firewall-cmd --reload
 sudo firewall-cmd --list-ports                          # verify 49160/tcp
 
 # Verify
-curl --noproxy '*' -sS http://localhost:49160/api/stats   # expect JSON stats
+curl --noproxy '*' -sS http://localhost:49160/api/health  # expect {"status":"ok"}; /api/stats needs the token once the login is on
 ```
 
 Notes:
@@ -196,7 +196,7 @@ and `status` say so ([Two instances on one machine](#two-instances-on-one-machin
 ./container-py.sh build       # Build image (node build stage + python:3.12-slim)
 ./container-py.sh start       # Start (HTTPS when .env.local says so); on the server the service takes the container over; returns when the app answers
 ./container-py.sh start-ssl   # Start with HTTPS (certs/server.crt + server.key)
-./container-py.sh status      # Container row, the service's state, and a /api/stats healthcheck — docs/15-run-stop-status.md
+./container-py.sh status      # Container row, the service's state, the /api/health probe, the login mode and the counts — docs/15-run-stop-status.md
 ./container-py.sh logs        # View logs
 ./container-py.sh stop        # Stop (through the service when the service runs it)
 ./container-py.sh rebuild     # Rebuild image + restart, preserving HTTP/HTTPS mode
@@ -283,7 +283,7 @@ set, once the prerequisites in §1 are done:
 ```bash
 ./container-py.sh build
 ./container-py.sh start                                   # publishes 0.0.0.0:49160 on Linux
-curl --noproxy '*' -sS http://localhost:49160/api/stats    # JSON counts
+curl --noproxy '*' -sS http://localhost:49160/api/stats    # JSON counts (with the login on: -H "Authorization: Bearer <token>")
 curl --noproxy '*' -sS http://localhost:49160/ | grep -o '<title>[^<]*</title>'
 ./container-py.sh logs | status | stop
 git pull && ./container-py.sh rebuild
@@ -398,6 +398,10 @@ When it warns, follow "Rotating / replacing the certificate" above.
 | `CRUCIBLE_PORT` | *(unset)* | Port override for `container-py.sh`, `setup-after-clone-py.sh` and `monitor.sh` (a generic `PORT` in the shell is ignored). The beta instance sets `49161` in its `.env.local` |
 | `CRUCIBLE_INSTANCE_LABEL` | *(unset)* | The word the page's corner shows for this instance (SH-13). Unset: *Prod* for the default instance, the name capitalised for a named one (*Beta*). Set it in `.env.local` to spell it your way (*Production*); `container-py.sh` passes it into the container; a rebuild applies it |
 | `CRUCIBLE_INSTANCE` | *(unset)* | Names a second instance run from another checkout: the image, the container and the optional Postgres container, network and volume become `crucible-py-<name>`, `crucible-db-<name>`…; the monitor log becomes `/tmp/crucible-monitor-<name>.log`; `uninstall.sh` removes only that instance. Lowercase letters, digits and hyphens. Set in the folder's `.env.local`; the environment wins — [Two instances on one machine](#two-instances-on-one-machine) |
+| `AUTH_MODE` | `off` | The login (v2.22.0, [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)): `off` leaves every route open; `token` makes every `/api` route except `/api/health`, `/api/instance` and `/api/auth/*` answer 401 without `CRUCIBLE_TOKEN`. Set it in the instance's `.env.local`; `container-py.sh` validates it and passes it in; a change needs the container recreated (`stop`, `start`) |
+| `CRUCIBLE_TOKEN` | *(unset)* | The shared secret of the token mode, at least 32 characters (`python3 -c 'import secrets; print(secrets.token_urlsafe(48))'`). In `.env.local` only, which the script makes owner-only; never printed, never in git |
+| `SESSION_HOURS` | `10` | How long the login page's cookie lasts (decision A6, a working day) |
+| `CORS_ORIGINS` | *(empty: closed)* | Comma-separated origins allowed to call the API from a browser on another site (decision A7). The page is served by this process, so nothing that ships needs it |
 | `HOST_BIND` | `127.0.0.1` (macOS) / `0.0.0.0` (Linux) | Published-port interface |
 | `USE_HTTPS` | `false` | `true` + cert files present → uvicorn serves TLS. Set it in the VM's `.env.local` so `start`/`rebuild` default to HTTPS |
 | `SSL_CERT_PATH` | `/app/certs/server.crt` | TLS certificate path (in-container) |
@@ -415,6 +419,7 @@ podman run -d --name crucible-py \
   -p 0.0.0.0:49160:49160 \
   -v ./data:/app/data:Z \
   -e PORT=49160 \
+  -e AUTH_MODE=off -e CRUCIBLE_TOKEN= \
   --restart unless-stopped \
   crucible-py:latest
 ```
@@ -609,13 +614,15 @@ is [docs/01-setup-rhel8.md](01-setup-rhel8.md) §4. The canonical crontab
 entry (**one line per instance**; use `https://` after `start-ssl`) is:
 
 ```bash
-*/5 * * * * cd /path/to/crucible && USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u) CONTAINER_NAME=crucible-py API_URL=http://localhost:49160/api/stats ./monitor.sh
+*/5 * * * * cd /path/to/crucible && USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u) CONTAINER_NAME=crucible-py API_URL=http://localhost:49160/api/health ./monitor.sh
 ```
 
 and, on a server with a beta instance, a second line written by the setup
 script run in the beta folder, ending
-`CONTAINER_NAME=crucible-py-beta API_URL=https://localhost:49161/api/stats ./monitor.sh`.
-Re-running the setup in a folder replaces **that folder's** line only.
+`CONTAINER_NAME=crucible-py-beta API_URL=https://localhost:49161/api/health ./monitor.sh`.
+Re-running the setup in a folder replaces **that folder's** line only. A
+line written before v2.22.0 names `/api/stats`; it keeps working, because
+the monitor tries `/api/health` first at the same address (next paragraph).
 
 Manual install / check:
 
@@ -625,11 +632,16 @@ tail -5 /tmp/crucible-monitor.log         # what has production's been doing?
 tail -5 /tmp/crucible-monitor-beta.log    # and beta's (one log per instance)
 ```
 
-`monitor.sh` sends a GET to `/api/stats`; on a non-200 response it restarts
-the named container and logs to `/tmp/crucible-monitor.log`
-(`/tmp/crucible-monitor-<instance>.log` for a named instance). The
-container also has a built-in `HEALTHCHECK` (every 30 s) that probes
-`/api/stats` (see [backend/scripts/healthcheck.py](../backend/scripts/healthcheck.py)).
+`monitor.sh` sends a GET to `/api/health`, the route that needs no login
+and answers `{"status":"ok"}` and nothing else; on a non-200 response it
+restarts the named container and logs to `/tmp/crucible-monitor.log`
+(`/tmp/crucible-monitor-<instance>.log` for a named instance). It always
+tries `/api/health` at the address its cron line names and falls back to
+that address only when the route does not exist (a container older than
+v2.22.0 answers 404), so an old line naming `/api/stats` cannot make it
+restart a healthy application for answering 401. The container also has a
+built-in `HEALTHCHECK` (every 30 s) that probes `/api/health` (see
+[backend/scripts/healthcheck.py](../backend/scripts/healthcheck.py)).
 
 Run it manually any time: `./monitor.sh` — run by hand it reads the
 folder's `.env.local`, so in the beta folder it probes 49161 and would
@@ -751,7 +763,8 @@ stopped):
   file; that can catch it mid-write and corrupt the backup.
 - Restore keeps the current database as `data/crucible.db.pre-restore` (safety
   net) before swapping. Verify afterwards with
-  `curl --noproxy '*' -sS http://localhost:49160/api/stats`.
+  `curl --noproxy '*' -sS http://localhost:49160/api/stats` (with the login
+  on, add `-H "Authorization: Bearer <token>"`).
 - Override the destination with `BACKUP_DIR=/path ./container-py.sh backup`.
 
 ### Refreshing the beta instance from production
@@ -765,7 +778,7 @@ direction from anywhere but production's own folder.
 ```bash
 cd ~/work/Pandora_toolbox/nr-nips-crucible      && ./container-py.sh backup
 cd ~/work/Pandora_toolbox/nr-nips-crucible-beta && ./container-py.sh restore ../nr-nips-crucible/backups
-curl --noproxy '*' -sSk https://localhost:49161/api/stats   # the same counts as production's
+curl --noproxy '*' -sSk -H "Authorization: Bearer <beta's token>" https://localhost:49161/api/stats   # the same counts as production's (the header: beta's login is on)
 ```
 
 ### Moving data between machines
@@ -883,6 +896,9 @@ purge as belt-and-suspenders.
 | TLS handshake fails after `start-ssl` | cert and key are from different pairs — compare the modulus hashes ([SSL/TLS](#ssltls-certificate-setup)), then `./setup-after-clone-py.sh` |
 | Reachable on the VM but not from a workstation | host firewall — open port 49160 for the case that applies (firewalld / plain iptables / none) |
 | Database looks wrong and you want a clean slate | [Reset the database](#reset-the-database) below — it is re-created empty on the next start |
+| `curl` answers `{"error":"Not authenticated"}` | the login is on for that instance: add `-H "Authorization: Bearer <token>"` (the token is in its `.env.local`), or ask `/api/health`, which is open — [The login](#the-login-turn-it-on-rotate-the-token-turn-it-off) |
+| The login page refuses a token you are sure of | the container was not recreated after `.env.local` changed: `./container-py.sh stop` then `start`; compare with `grep CRUCIBLE_TOKEN .env.local` |
+| The monitor log shows a restart every five minutes | the container runs an image older than v2.22.0 with the login on somewhere else, or the application really is down: `./container-py.sh logs` |
 
 Beginner-oriented walkthroughs of the actual error messages, with a named fix
 for each: [docs/01-setup-macos.md → Troubleshooting](01-setup-macos.md#troubleshooting) ·
@@ -926,6 +942,8 @@ rm -f data/crucible.db        # re-created empty on next start
 - **Error handling**: API returns `{"error": ...}` JSON — no sensitive data in responses
 - **Container isolation**: runs rootless (podman) on the VM
 - **Health monitoring**: automated recovery from crashes
+- **The login (v2.22.0)**: a token gate behind one flag, `AUTH_MODE`; one guard declared per router; a login page; a cookie that is a keyed hash of the token; every comparison constant-time; the token in `.env.local` only — [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md), runbook below
+- **Cross-origin policy**: closed (v2.22.0, decision A7); `CORS_ORIGINS` reopens it for a named site
 - **Pre-push gate**: `./check-public-safe.sh` must print `✓ SAFE TO PUSH` before
   every public push — it verifies no secret paths are tracked, only sanitised
   templates ship, and no internal identifiers appear in tracked content. Where
@@ -935,13 +953,61 @@ Keep a backup of real certificates **outside** the repository (for example
 `~/.crucible/certs/`, directory `700`, key `600`) — every uninstall mode
 deletes `certs/`, and no clone can restore them.
 
+### The login: turn it on, rotate the token, turn it off
+
+Since v2.22.0 ([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)).
+The login is a **setting**, not code: two lines in the instance's
+`.env.local`, and the container recreated so they reach it. A promotion
+changes nothing here by itself.
+
+![The token goes from the owner-only settings file through the container script into the container and the guard; a browser gets a cookie that is a keyed hash, a script sends a bearer header; the token is never in git, logs, errors or the page](img/fig_token_travels.svg)
+
+```bash
+# ▶ VM — the instance's folder (beta first; production after the testers agree)
+printf 'AUTH_MODE=token\nCRUCIBLE_TOKEN=%s\n' "$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" >> .env.local
+chmod 600 .env.local
+./container-py.sh backup
+./container-py.sh stop          # through the service: the container is removed
+./container-py.sh start         # a new container with the two lines; the unit rewritten, owner-only; handed over
+curl --noproxy '*' -sSk https://localhost:49161/api/stats; echo      # {"error":"Not authenticated"}
+CRUCIBLE_TOKEN="$(grep '^CRUCIBLE_TOKEN=' .env.local | cut -d= -f2-)" ./verify-deploy.sh https://localhost:49161   # 18 passed
+```
+
+Hand the token to each person out of band (in person, or the
+organisation's password manager), never in an e-mail body or a chat. Read
+it back with `grep '^CRUCIBLE_TOKEN=' .env.local`.
+
+**Rotate** (a leaver, a leak, once a quarter): every browser is signed out
+at once and every script needs the new value.
+
+```bash
+new="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" && sed -i "s|^CRUCIBLE_TOKEN=.*|CRUCIBLE_TOKEN=${new}|" .env.local && unset new
+./container-py.sh stop && ./container-py.sh start
+```
+
+**Turn it off:** `sed -i 's|^AUTH_MODE=.*|AUTH_MODE=off|' .env.local`, then
+the same `stop` and `start`. The token line can stay; it is ignored.
+
+**Why `stop` and `start`, not `restart`.** The service's unit records the
+run command the container was created with, environment included;
+`restart` brings that container back unchanged. `stop` through the service
+removes it; `start` creates a new one from the current file. On a
+development machine, which has no service, use `rebuild`.
+
+**What still works without the token:** `/api/health` (the probes),
+`/api/instance` (the label), `/api/auth/*` (the door), the page's own
+files. What needs it: everything else, sent as
+`-H "Authorization: Bearer <token>"` by scripts and `curl`, or pasted once
+into the login page by a person. The maintenance scripts inside the
+container are unaffected: they read the database, not the API.
+
 ### Protected files (`.gitignore`)
 
 ```
 /certs/            # SSL certificates (plus *.key/*.crt/*.pem/... globs)
 /data/             # SQLite database and runtime data
 /backups/          # local database backups
-.env, .env.*, *.env  # environment files / secrets; the VM keeps CERT_SOURCE, CERT_HOSTNAME and USE_HTTPS in an untracked .env.local (docs/01-setup-rhel8.md §3.2)
+.env, .env.*, *.env  # environment files / secrets; the VM keeps CERT_SOURCE, CERT_HOSTNAME, USE_HTTPS and, with the login on, AUTH_MODE and CRUCIBLE_TOKEN in an untracked .env.local (docs/01-setup-rhel8.md §3.2)
 node_modules/      # dependencies (installed per machine)
 client/dist/       # build output
 .venv/             # Python virtualenv
@@ -951,7 +1017,7 @@ client/dist/       # build output
 
 ### Known gaps / future enhancements
 
-- [ ] **Authentication** — none yet (HTTPS is transport encryption only). Planned as three rungs behind one flag, `AUTH_MODE`: a token gate (days), local accounts, then single sign-on through the organisation's identity provider. What each rung needs, how the operator turns it on, and what to ask the identity team for now: [`13-authentication.md`](13-authentication.md). When SH-3a ships, this section gains the runbook and the environment-variable table gains `AUTH_MODE` and `CRUCIBLE_TOKEN`.
+- [x] **Authentication, rung 1** — the token gate (v2.22.0): the runbook above, `AUTH_MODE` and `CRUCIBLE_TOKEN` in the environment table. Still to come on the same ladder: local accounts with roles (SH-3b, next) and single sign-on (SH-3c, on hold at the owner's request) — [`13-authentication.md`](13-authentication.md)
 - [ ] Role-based access control (RBAC)
 - [ ] Rate limiting and audit logging
 - [x] Certificate-expiry monitoring — done: `./cert-expiry-check.sh` (see [Certificate-expiry monitoring](#certificate-expiry-monitoring))

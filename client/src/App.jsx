@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import Layout from './components/Layout'
+import AuthGate from './components/AuthGate'
 import Dashboard from './pages/Dashboard'
 import ChemicalsView from './pages/ChemicalsView'
 import ChemicalsUpload from './pages/ChemicalsUpload'
@@ -17,6 +18,8 @@ function App() {
   return (
     <>
       <Toaster position="top-right" />
+      {/* SH-3a: nothing below renders until the server says no login is needed, or this browser is signed in */}
+      <AuthGate>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
@@ -36,6 +39,7 @@ function App() {
           <Route path="toxicology/upload" element={<ToxicologyUpload />} />
         </Route>
       </Routes>
+      </AuthGate>
     </>
   )
 }

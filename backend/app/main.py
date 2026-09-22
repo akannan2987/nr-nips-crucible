@@ -8,6 +8,8 @@ Run in production:
 
 This app:
   * answers all /api/* routes (chemicals, samples, screening, toxicology, stats),
+    every one of them behind the login guard when AUTH_MODE is not off; only
+    /api/health, /api/instance and /api/auth/* stay open (docs/13-authentication.md),
   * serves the built React client (client/dist) as static files,
   * serves /architecture (interactive architecture doc),
   * returns index.html for any other path so React Router can take over,
@@ -17,15 +19,17 @@ This app:
 import os
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from .auth import check_settings, require_user
 from .config import (
     AUTO_INIT_DB,
     CLIENT_DIST,
+    CORS_ORIGINS,
     DOCS_DIR,
     PORT,
     SSL_CERT_PATH,
@@ -33,7 +37,7 @@ from .config import (
     USE_HTTPS,
 )
 from .database import init_db
-from .routers import chemicals, instance, query, samples, screening, stats, toxicology
+from .routers import auth, chemicals, health, instance, query, samples, screening, stats, toxicology
 
 
 def create_app() -> FastAPI:
@@ -44,10 +48,18 @@ def create_app() -> FastAPI:
         version="2.0",
     )
 
-    # Open CORS policy (same permissive default the v1 backend used).
+    # A login that cannot work (a mode this version does not know, the token
+    # rung without a usable token) stops the process here, with the reason,
+    # rather than serving an open port that looks closed.
+    check_settings()
+
+    # Cross-origin policy: closed unless CORS_ORIGINS names another site
+    # (decision A7 in docs/13-authentication.md). The page is served by this
+    # process, so a browser on the same origin never needs it; with a login
+    # cookie in play the old wildcard would have been a real hole.
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=CORS_ORIGINS,
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -59,13 +71,21 @@ def create_app() -> FastAPI:
         init_db()
 
     # ── API routers (must be registered before the SPA catch-all) ──
-    application.include_router(chemicals.router)
-    application.include_router(samples.router)
-    application.include_router(screening.router)
-    application.include_router(toxicology.router)
-    application.include_router(stats.router)
-    application.include_router(query.router)
+    # The guard is declared once per router, not once per route: every route
+    # in a guarded router runs only after require_user has returned an
+    # identity, or the caller got 401 (docs/13-authentication.md). With
+    # AUTH_MODE=off the guard lets everyone through, so nothing changes.
+    guard = [Depends(require_user)]
+    application.include_router(chemicals.router, dependencies=guard)
+    application.include_router(samples.router, dependencies=guard)
+    application.include_router(screening.router, dependencies=guard)
+    application.include_router(toxicology.router, dependencies=guard)
+    application.include_router(stats.router, dependencies=guard)
+    application.include_router(query.router, dependencies=guard)
+    # Open on every rung: the health probe, the instance label, and the door itself.
+    application.include_router(health.router)
     application.include_router(instance.router)
+    application.include_router(auth.router)
 
     # ── Error shape parity ──────────────────────────────────────────
     # The v1 API returned {"error": message}; FastAPI's default is
@@ -73,7 +93,13 @@ def create_app() -> FastAPI:
 
     @application.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
-        return JSONResponse(status_code=exc.status_code, content={"error": str(exc.detail)})
+        # Keep the exception's own headers: the guard's 401 carries
+        # WWW-Authenticate: Bearer, which tells a client how to log in.
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"error": str(exc.detail)},
+            headers=getattr(exc, "headers", None),
+        )
 
     @application.exception_handler(RequestValidationError)
     async def validation_exception_handler(

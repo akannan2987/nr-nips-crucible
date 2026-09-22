@@ -296,7 +296,7 @@ start http://localhost:49160/architecture
 ```bash
 # V5. Health monitor runs — by hand, since Windows has no cron
 ./monitor.sh                                                  # HTTP
-API_URL=https://localhost:49160/api/stats ./monitor.sh        # HTTPS
+API_URL=https://localhost:49160/api/health ./monitor.sh       # HTTPS
 ```
 
 **You should see (expected):** two timestamped lines ending
@@ -372,6 +372,23 @@ touched — the exact commands, and a test for every route, are in
 [phase SH-12 → Step 6](04-phase-tutorials/phase-sh-12-beta-instance.md#step-6--rehearse-it-on-a-laptop-first).
 The scripts read a file and append a word to a name; nothing in them is
 Linux-specific — but this walk, like the rest of this guide, has not yet been done on a real Windows machine.
+
+### Trying the login on your own machine
+
+Since v2.22.0 an instance can be closed with an access token
+([`13-authentication.md`](13-authentication.md)); nothing is closed on a PC
+unless you say so. A PC publishes on `0.0.0.0` (every interface), so the
+script refuses the token mode over plain HTTP there: enable HTTPS first
+(`./setup-ssl.sh`, then `USE_HTTPS=true` in `.env.local`), or, on a machine
+only you can reach, prefix the command with `CRUCIBLE_ALLOW_HTTP_LOGIN=true`:
+
+```bash
+CRUCIBLE_ALLOW_HTTP_LOGIN=true AUTH_MODE=token CRUCIBLE_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" ./container-py.sh rebuild
+```
+
+The page then asks for the token; every route, with its expected output,
+is in [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md#how-to-test-it-by-every-route).
+Untested on a real PC, like the rest of this guide.
 
 ---
 

@@ -38,7 +38,7 @@ def _serve_200() -> http.server.HTTPServer:
 
 def test_alive_false_for_closed_port():
     """A closed port returns False quickly (no hang, no exception)."""
-    assert healthcheck.alive("http://127.0.0.1:9/api/stats") is False
+    assert healthcheck.alive("http://127.0.0.1:9/api/health") is False
 
 
 def test_probe_bypasses_proxy(monkeypatch):
@@ -53,7 +53,7 @@ def test_probe_bypasses_proxy(monkeypatch):
     server = _serve_200()
     try:
         port = server.server_address[1]
-        assert healthcheck.alive(f"http://127.0.0.1:{port}/api/stats") is True
+        assert healthcheck.alive(f"http://127.0.0.1:{port}/api/health") is True
     finally:
         server.shutdown()
 
@@ -62,3 +62,16 @@ def test_main_returns_one_when_app_down(monkeypatch):
     """main() returns 1 when neither the HTTP nor HTTPS probe succeeds."""
     monkeypatch.setattr(healthcheck, "alive", lambda *args, **kwargs: False)
     assert healthcheck.main() == 1
+
+
+def test_main_probes_the_open_health_route(monkeypatch):
+    """Since SH-3a the probe must use /api/health: /api/stats answers 401 once the login is on."""
+    seen = []
+
+    def record(url, *args, **kwargs):
+        seen.append(url)
+        return False
+
+    monkeypatch.setattr(healthcheck, "alive", record)
+    healthcheck.main()
+    assert seen and all(url.endswith("/api/health") for url in seen)

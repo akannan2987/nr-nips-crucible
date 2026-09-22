@@ -10,6 +10,86 @@ change you are getting.
 
 ---
 
+## v2.22.0 — 2026-09-22 — "The token gate"
+
+The first rung of the authentication ladder ([`13-authentication.md`](docs/13-authentication.md)),
+built as phase SH-3a and delivered to the beta instance first. Two lines in
+an instance's `.env.local`, `AUTH_MODE=token` and `CRUCIBLE_TOKEN=<a long
+random secret>`, close its port: every `/api` route of every module answers
+`401 {"error":"Not authenticated"}` without the token and exactly what it
+answered before with it. Nothing changes with the flag at its default,
+`off`, which is what every installation has until its operator writes the
+two lines: the contract tests run unchanged.
+
+**Added**
+- **The guard**, `require_user` in `backend/app/auth.py`, declared once per
+  router in `main.py`; the token is accepted as a bearer header
+  (`Authorization: Bearer <token>`, for scripts and `curl`) or as the
+  session cookie the login page sets; comparisons are constant-time; a
+  wrong token gets the same words as a missing one, after a fixed pause.
+- **The login page** (`client/src/pages/Login.jsx`), shown by a gate in
+  front of the whole application (`AuthGate.jsx`) whenever the server says
+  a login is needed; it shows the instance pill first. A person pastes the
+  token once; the browser is remembered for ten hours by a cookie,
+  `crucible_session`, whose value is a keyed hash of the token, not the
+  token (a leaked cookie cannot be replayed as a header; a new token signs
+  every browser out at once); `HttpOnly`, `SameSite=Lax`, `Secure` on
+  HTTPS. A *Sign out* button in the top bar. Any 401 from any call brings
+  the login page back, and the interrupted page asks again afterwards.
+- **`GET /api/health`**, open on every rung: `{"status":"ok"}` after a
+  `SELECT 1`, or 503. The container's own probe, the monitor,
+  `container-py.sh`'s wait-for-ready and status, and the setup script's
+  cron line moved to it.
+- **`GET /api/auth/me`** (open; which mode, signed in or not),
+  **`POST /api/auth/login`**, **`POST /api/auth/logout`**.
+- `verify-deploy.sh --token <t>` (or `CRUCIBLE_TOKEN` in the shell): the
+  sixteen checks against a gated instance, plus two that prove the gate; a
+  gated instance without a token is reported as such (exit 2).
+- Nineteen tests (169); the tutorial with a test for every route
+  ([phase SH-3a](docs/04-phase-tutorials/phase-sh-3a-token-gate.md)); two
+  figures, the gate with its open doors and where the token travels; the
+  runbook in [`07-operations.md` → Security](docs/07-operations.md#security);
+  glossary entries; the playbook's *Signing in*.
+
+**Changed**
+- `container-py.sh` reads `AUTH_MODE` and `CRUCIBLE_TOKEN` from
+  `.env.local`, validates them (a short token or an unknown mode stops
+  every command), passes them into the container, prints `login: token`
+  or `login: off` in `help` and `status` and never the token, makes the
+  file and the rewritten unit owner-only, and refuses the token mode over
+  plain HTTP on any interface but `127.0.0.1`.
+- `monitor.sh` always tries `/api/health` first at the address its cron
+  line names and falls back to that address only when the route does not
+  exist (a container older than this version), so an old cron line keeps
+  working and a healthy application is never restarted for saying 401.
+- **The cross-origin policy is closed** (decision A7): no other web site
+  may call the API from a browser unless `CORS_ORIGINS` names it. The
+  page is served by the same process, so nothing that ships needs it.
+- The API's error handler keeps an exception's headers: the 401 carries
+  `WWW-Authenticate: Bearer`.
+
+**Limitations, on purpose**
+- Rung 1 says "someone with the token", never *who*: no accounts, no
+  roles, every holder can do everything. Rung 2, local accounts, is the
+  next phase.
+- The cookie lasts ten hours from the login, not from the last click;
+  the sliding session arrives with rung 2's signed cookie.
+- The token mode is **off on production** until production's own
+  `.env.local` gets the two lines, after the testers have used it on beta.
+- A changed `.env.local` reaches a container only when the container is
+  recreated: `./container-py.sh stop` then `start` on the server (the
+  service's unit records the old command), `rebuild` on a development
+  machine.
+
+**Deploy**
+- Code under `backend/` and `client/`: blocks 3 and 6 rebuild. On beta,
+  then the two lines and a `stop` and `start`
+  ([tutorial, Step 7](docs/04-phase-tutorials/phase-sh-3a-token-gate.md#step-7--turn-it-on-beta-first)).
+  Production: the promotion alone changes nothing there; the port stays
+  open until its own lines are written.
+
+---
+
 ## v2.21.4 — 2026-09-22 — "The development machine, by its role"
 
 Documents, figures and comments, plus one script message. The documents

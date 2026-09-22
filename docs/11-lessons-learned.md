@@ -370,6 +370,20 @@ relate", change the two, not the paragraph.* *The shape:* a status that
 reported one thing (`inactive`) while the application did another
 (answered).
 
+**38. A monitor that cannot tell "refused" from "dead" restarts a healthy
+application forever.** Every probe — the container's own, the cron
+monitor, the script's wait-for-ready — asked `/api/stats`. The moment a
+login is on, that route answers 401 to a probe with no token, which every
+probe would have read as "dead": `unhealthy` in `podman ps`, a restart
+every five minutes, and a log saying `✓ Container restarted successfully`
+each time. Caught in the design of SH-3a, before the gate was built: one
+open route that says only *ok* (`/api/health`), every probe moved to it,
+and the monitor trying it first at whatever address its old cron line
+names. *The lesson: write the open door before the lock, and make the
+watchman check the door that will still open.* *The shape:* a check that
+would have reported one thing (dead) while another was true (answering,
+and correctly asking for a badge).
+
 ---
 
 ## The one rule they add up to

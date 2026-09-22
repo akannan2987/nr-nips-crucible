@@ -339,7 +339,7 @@ Replace `podman` with `docker` where that is the runtime.
 | **Python directly, the rule** | `cd backend && .venv/bin/python -c "from app.instance import instance_label as L; print(L('', ''), L('beta', ''), L('beta', 'Staging'))"` | — | `Prod Beta Staging` |
 | **Python directly, the app** | `cd backend && CRUCIBLE_INSTANCE=beta PORT=8765 .venv/bin/python -m uvicorn app.main:app --port 8765` in one terminal, `curl -sS http://localhost:8765/api/instance` in another | — | `{"name":"beta","label":"Beta","port":8765,"https":false}` (Ctrl-C the server afterwards) |
 | **Database** | Query page: `SELECT name FROM sqlite_master WHERE name LIKE '%instance%'` | no rows: the label is derived, never stored | the same |
-| **Monitor** | `./monitor.sh` in the beta folder | `✓ crucible-py-beta is healthy` (unchanged: the monitor probes `/api/stats`, which did not change) | the same |
+| **Monitor** | `./monitor.sh` in the beta folder | `✓ crucible-py-beta is healthy` (unchanged; since v2.22.0 the monitor probes `/api/health`) | the same |
 | **Deploy check** | `./verify-deploy.sh https://localhost:49161` | `16 passed, 0 failed` (unchanged checks; the new endpoint is not among them by design, so an old container still passes and the pill is the person's check) | `./verify-deploy.sh http://localhost:49161` |
 | **Automated tests** | `cd backend && .venv/bin/pytest -q` | — | `150 passed` |
 

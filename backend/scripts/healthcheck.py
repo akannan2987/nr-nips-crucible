@@ -1,4 +1,7 @@
-"""Container healthcheck — probes /api/stats over HTTP, then HTTPS.
+"""Container healthcheck — probes /api/health over HTTP, then HTTPS.
+
+/api/health is the one route that stays open when the login is on
+(docs/13-authentication.md); /api/stats, the old probe, answers 401 then.
 
 Used by the Dockerfile HEALTHCHECK. Targets 127.0.0.1 on purpose:
 in-container `localhost` resolves to ::1 while uvicorn binds IPv4.
@@ -43,8 +46,8 @@ def alive(url: str, ctx: ssl.SSLContext | None = None) -> bool:
 
 def main() -> int:
     """Exit 0 if the app answers on HTTP or HTTPS, else 1."""
-    if alive(f"http://127.0.0.1:{PORT}/api/stats") or alive(
-        f"https://127.0.0.1:{PORT}/api/stats", ssl._create_unverified_context()
+    if alive(f"http://127.0.0.1:{PORT}/api/health") or alive(
+        f"https://127.0.0.1:{PORT}/api/health", ssl._create_unverified_context()
     ):
         return 0
     return 1

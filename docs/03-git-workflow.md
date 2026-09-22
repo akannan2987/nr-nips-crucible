@@ -19,6 +19,7 @@ Start at section 2 if you are setting up a machine for the first time.
   - [2.4 VM - the beta folder](#24-vm---the-beta-folder)
 - [3. Golden rules](#3-golden-rules)
 - [4. Flow A - a change from start to finish](#4-flow-a---a-change-from-start-to-finish)
+  - [The six blocks, at a glance](#the-six-blocks-at-a-glance)
   - [Publish: Steps 1–10 reach the beta instance](#step-1---make-and-test-the-change)
   - [Promote: Step 11 reaches production](#step-11---promote-to-production-when-the-testers-agree)
 - [5. Flow B - a fix discovered on the VM](#5-flow-b---a-fix-discovered-on-the-vm)
@@ -237,6 +238,37 @@ are satisfied, `beta` is pushed to `master` by hand and **production** is
 redeployed. A change that fails on beta is simply never promoted.
 
 ![Three branch stations on one rail: develop, beta, master. Publish pushes develop to beta and the beta instance pulls it; promotion pushes beta to master and production pulls it, by hand](img/fig_publish_promote.svg)
+
+### The six blocks, at a glance
+
+Every change since v2.20.0 travels the same six blocks, three places in
+each moment, always in this order. This is the shape a release is handed
+over in; the detailed steps below, with expected output, are the same
+route cut finer.
+
+![Six blocks in two rows: publish (Mac, mirror, beta folder) then, after the testers agree, promote (Mac, mirror, production folder)](img/fig_six_blocks.svg)
+
+| Block | Where | What you do | Why this place | Detailed steps |
+|---|---|---|---|---|
+| **1** | Mac, your folder | commit; `git push origin develop develop:beta`; tag the version | The change is written and tested here; the push puts it in the **public** repository on `develop` and `beta`; the tag names the version | Steps 1–5 |
+| **2** | VM, mirror folder | `git fetch public`; `git checkout public/develop -- .`; commit; tag; `git push origin develop develop:beta` | Production and beta pull from the **private** repository, and the two repositories cannot push to each other ([§7](#7-why-the-histories-differ-and-why-that-is-fine)); the mirror is the one folder that sees both, so it copies the content across | Steps 6–9 |
+| **3** | VM, beta folder | `git pull --ff-only origin beta`; `./container-py.sh rebuild` if code changed | Beta runs the `beta` branch; the testers see the change; production has not moved | Step 10 |
+| *pause* | | The testers use it: minutes for a label, days for a login. A change that fails here is never promoted | | |
+| **4** | Mac | `git fetch origin`; `git push origin origin/beta:master` | Moves the public `master` to what beta has been running: the decision "this is good for the laboratory" | Step 11, Mac part |
+| **5** | VM, mirror folder | `git fetch origin`; `git push origin origin/beta:master`; `git diff --stat public/develop develop` | The same decision on the private repository, then the check that the two repositories still agree (only the six workbooks differ) | Step 11, mirror part; Step 12 |
+| **6** | VM, production folder | backup; `git pull --ff-only origin master`; `./container-py.sh rebuild` if code changed | Production runs `master`; only now does the laboratory get the change | Step 11, production part |
+
+Two things change between releases and nothing else: whether blocks 3
+and 6 **rebuild** (the pull touched `backend/`, `client/`, the
+requirements or the Dockerfile; `git log --stat -1` shows it) or only
+**pull** (documents and helper scripts), and how long the pause lasts.
+Several changes can be published before one promotion; block 4 then
+moves `master` to all of them at once.
+
+*Everyday version:* a recipe is written at home, copied into the
+restaurant's own recipe book, and cooked in the practice kitchen. When the
+trainees approve, it is marked "approved" at home and in the book, and the
+restaurant kitchen starts cooking it.
 
 ### Step 1 - Make and test the change
 
@@ -641,4 +673,4 @@ the authoring folder.
 [macOS install](01-setup-macos.md) · [RHEL8 install](01-setup-rhel8.md) ·
 [Deployment reference](07-operations.md)
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 22, 2026

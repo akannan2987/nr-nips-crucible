@@ -297,6 +297,45 @@ def fig_two_doors() -> None:
     write("fig_two_doors.svg", svg(W, H, "One running application per instance, with the systemd service inside it; two doors lead in, the script and systemctl, and the boot key underneath: lingering plus an enabled service switches it on when the server restarts", b))
 
 
+def fig_six_blocks() -> None:
+    """The route of every change since the beta instance: six blocks in two moments."""
+    W, H = 940, 470
+    mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
+    b = text(W/2, 34, "Every change travels the same six blocks: three to reach the testers, three to reach the laboratory", 15, INK, "middle", "bold")
+    cols = [(40, "Mac, your folder"), (350, "VM, mirror folder"), (660, "VM, instance folder")]
+    for x, title in cols:
+        b += text(x + 120, 66, title, 11.5, MUTED, "middle", "bold")
+    def block(x, y, n, title, rows, col, fill):
+        out = box(x, y, 240, 104, fill, col, 10)
+        out += f"<circle cx='{x+22}' cy='{y+22}' r='13' fill='{col}'/>\n"
+        out += text(x + 22, y + 27, str(n), 13, PAPER, "middle", "bold")
+        out += text(x + 128, y + 27, title, 12, col, "middle", "bold")
+        out += lines(x + 120, y + 50, rows, 9.5, INK, "middle", 15, "normal")
+        return out
+    amber, indigo = COLOURS["screening"], COLOURS["chemical"]
+    # moment 1
+    b += text(40, 92, "moment 1: publish, every change", 11, amber, "start", "bold")
+    b += block(40, 100, 1, "commit, push, tag", ["git commit", "git push origin develop develop:beta", "git tag -a vX.Y.Z", "the public repository has it"], amber, "#fff7ed")
+    b += block(350, 100, 2, "copy into the private repo", ["git fetch public", "git checkout public/develop -- .", "commit · tag · push develop develop:beta", "the private repository has it"], amber, "#fff7ed")
+    b += block(660, 100, 3, "beta runs it", ["cd nr-nips-crucible-beta", "git pull --ff-only origin beta", "./container-py.sh rebuild  (if code changed)", "the testers see it"], amber, "#fff7ed")
+    b += arrow(282, 152, 348, 152, amber)
+    b += arrow(592, 152, 658, 152, amber)
+    # pause
+    b += f"<line x1='40' y1='236' x2='900' y2='236' stroke='{LINE}' stroke-width='1.2' stroke-dasharray='6 4'/>\n"
+    b += text(W/2, 231, "the testers use it: minutes for a label, days for a login; a change that fails here is never promoted", 10, MUTED)
+    # moment 2
+    b += text(40, 262, "moment 2: promote, when the testers agree", 11, indigo, "start", "bold")
+    b += block(40, 270, 4, "declare it good", ["git fetch origin", "git push origin origin/beta:master", "", "public master moves"], indigo, "#eef2ff")
+    b += block(350, 270, 5, "the same, private side", ["git push origin origin/beta:master", "git diff --stat public/develop develop", "(only the six workbooks)", "private master moves"], indigo, "#eef2ff")
+    b += block(660, 270, 6, "production runs it", ["cd nr-nips-crucible · backup", "git pull --ff-only origin master", "./container-py.sh rebuild  (if code changed)", "the laboratory sees it"], indigo, "#eef2ff")
+    b += arrow(282, 322, 348, 322, indigo)
+    b += arrow(592, 322, 658, 322, indigo)
+    b += text(W/2, 408, "what changes between releases: whether blocks 3 and 6 rebuild (code) or only pull (documents), and how long the pause lasts", 10, MUTED)
+    b += text(W/2, 428, "the detailed steps with expected output: 03-git-workflow.md, Flow A · everyday version: a recipe is written at home, copied into the", 10, MUTED)
+    b += text(W/2, 446, "restaurant's book, cooked in the practice kitchen; when the trainees approve, it is marked approved in both places and the restaurant cooks it", 10, MUTED)
+    write("fig_six_blocks.svg", svg(W, H, "Six blocks in two rows: publish (Mac commit and push, mirror copy and push, beta folder pull and rebuild) then, after the testers agree, promote (Mac push beta to master, mirror the same and the sync check, production folder backup, pull and rebuild)", b))
+
+
 # ---------------------------------------------------------------- palette --
 INK = "#1f2937"        # text
 MUTED = "#6b7280"      # secondary text
@@ -899,5 +938,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, cover, logo):
         f()

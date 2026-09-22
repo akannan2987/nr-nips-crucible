@@ -146,7 +146,10 @@ A fix found on beta is made on the Mac and published again; nothing is
 edited on the server. A change that turns out to be wrong simply never
 gets promoted. Beta is promoted as a whole — everything published since
 the last promotion, together — so a change that is not ready for
-production is not published to beta either.
+production is not published to beta either. In practice every change is
+handed over as **six blocks**, three per moment (Mac, mirror folder,
+instance folder), written out with why each exists in
+[`03-git-workflow.md` → The six blocks](03-git-workflow.md#the-six-blocks-at-a-glance).
 
 ![Three branch stations on one rail: develop, beta, master; publish pushes develop to beta, promotion pushes beta to master by hand](img/fig_publish_promote.svg)
 

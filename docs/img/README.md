@@ -37,6 +37,7 @@ is defined once and means the same thing in every document.
 | `fig_timeline.svg` | The milestones on one line | handbook §1 |
 | `fig_requirements_lock.svg` | The wish list, the receipt, and who installs from it | phase 05b tutorial, `backend/README.md` |
 | `fig_two_instances.svg` | Production and beta on one server: two folders, two containers, two ports; publish, promote, and the one-way data copy | `14-beta-instance.md`, phase SH-12 tutorial, `01-setup-rhel8.md` §8, handbook §10 |
+| `fig_six_blocks.svg` | The route of every change since the beta instance: six blocks in two rows, publish (Mac, mirror, beta folder) and, after the testers agree, promote (Mac, mirror, production folder) | `03-git-workflow.md`, handbook §6 |
 | `fig_publish_promote.svg` | Three branch stations on one rail — develop, beta, master; publish pushes develop to beta, promotion pushes beta to master by hand; which instance pulls what | phase SH-12 tutorial, `03-git-workflow.md`, `14-beta-instance.md`, handbook §6 |
 | `fig_two_doors.svg` | One running application per instance with the service inside; two doors into it, the script and `systemctl`; the boot key underneath (lingering plus an enabled service) | `15-run-stop-status.md`, handbook §8 |
 | `fig_instance_label.svg` | One name in the settings file becomes a word and a colour in the page's corner: the chain from `.env.local` to the pill, and the two headers side by side, indigo *Prod* and amber *Beta* | phase SH-13 tutorial, `14-beta-instance.md`, playbook |

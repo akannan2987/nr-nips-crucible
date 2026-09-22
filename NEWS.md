@@ -10,6 +10,26 @@ change you are getting.
 
 ---
 
+## v2.21.3 — 2026-09-22 — "The six blocks"
+
+Documents only. Since the beta instance every change has been handed over
+as six blocks in two moments, and the workflow page numbered the same
+route as twelve detailed steps. The owner asked what the blocks are, why
+they exist, and whether it stays like this. It does.
+
+**Added**
+- [`03-git-workflow.md` → The six blocks, at a glance](docs/03-git-workflow.md#the-six-blocks-at-a-glance):
+  one table with where, what, why and which detailed steps each block
+  covers; the two things that change between releases (rebuild or pull;
+  how long the pause lasts); a figure, `fig_six_blocks.svg`. The handbook's
+  §6 and cheat sheet and the beta-instance page point to it.
+
+**Deploy**
+- Documents only: blocks 3 and 6 are a `git pull` each, which is the
+  shorter variant the table describes.
+
+---
+
 ## v2.21.2 — 2026-09-22 — "One supervisor, two doors, one page"
 
 v2.21.1 stopped the script and the service from fighting, and left the

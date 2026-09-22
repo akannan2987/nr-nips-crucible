@@ -1971,6 +1971,20 @@ and sixteen checks passing on each. The bare `49160/tcp` in beta's `PORTS`
 column is the port the image *declares*; beta does not publish it
 (`podman port crucible-py-beta` prints only `49161/tcp -> 0.0.0.0:49161`).
 
+**If instead** `list-units` shows only the beta unit: that command hides
+*inactive* units, and production's unit goes inactive every time
+`./container-py.sh rebuild` recreates its container outside systemd. It is
+still enabled, and at boot it starts the container itself
+(`systemctl --user list-units --all 'container-crucible-py*'` should show
+production's as `loaded inactive dead`, and `is-enabled` should say
+`enabled` for both). Only `failed`, or a unit missing from `--all`, needs
+action: `reset-failed`, or section 4.2 again.
+
+**If instead** the restore's final lines said `http://localhost:49161`: the
+container it restarted still serves HTTPS — `curl -k https://…` proves it —
+and the message was wrong before v2.20.2, which reads the scheme from the
+container.
+
 ### 8.7 Day 2 for the beta instance
 
 | I want to… | Command (beta folder) |
@@ -1985,7 +1999,7 @@ The weekly certificate check (section 3.4) and the nightly backup (6.3)
 stay in production's folder: the certificate is the same file, and beta's
 data is a copy that 8.4 recreates in two commands.
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 22, 2026
 
 ---
 

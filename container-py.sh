@@ -272,12 +272,19 @@ start_container() {
 
     if [ $? -eq 0 ]; then
         local shown_port="${running_port:-${PORT}}"
+        # An existing container keeps the mode it was created with: say
+        # https:// when that is what it serves, or the line is a lie.
+        local scheme="http"
+        if $RUNTIME inspect ${CONTAINER_NAME} --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null \
+            | grep -q '^USE_HTTPS=true$'; then
+            scheme="https"
+        fi
         echo -e "${GREEN}✓ Container started successfully${NC}"
         echo "  instance: ${CRUCIBLE_INSTANCE:-default} · container: ${CONTAINER_NAME} · image: ${IMAGE_NAME}:latest"
         echo ""
         echo "Access the application at:"
-        echo "  http://localhost:${shown_port}"
-        echo "  http://$(hostname):${shown_port}   (from another machine)"
+        echo "  ${scheme}://localhost:${shown_port}"
+        echo "  ${scheme}://$(hostname):${shown_port}   (from another machine)"
     else
         echo -e "${RED}✗ Failed to start container${NC}"
         exit 1
@@ -493,7 +500,14 @@ restore_data() {
     cp "$src" "${DATA_DIR}/crucible.db"
     echo -e "${GREEN}✓ Restored $(basename "$src") → data/crucible.db  (instance: ${CRUCIBLE_INSTANCE:-default})${NC}"
 
-    start_container
+    # An existing container is simply started again and keeps its mode. If
+    # there is none (after `clean`), honour USE_HTTPS as plain `start` does.
+    if [ "${USE_HTTPS:-false}" = "true" ] \
+        && ! $RUNTIME ps -a --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
+        start_container_ssl
+    else
+        start_container
+    fi
     echo ""
     echo "Verify with: curl --noproxy '*' -sk $(api_url)"
 }

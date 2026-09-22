@@ -2,7 +2,7 @@
 
 # Phase SH-12 — A beta instance for user testing: two copies of the application on one server
 
-**Version shipped:** 2.20.0 · **Date:** 2026-09-21 · **Status:** complete (rehearsed end to end on a Mac; the server steps are written for the operator to run)
+**Version shipped:** 2.20.0 (2.20.2 on the server) · **Date:** 2026-09-21, on the server 2026-09-22 · **Status:** complete (rehearsed end to end on a Mac; set up on the server by the operator the next morning, two containers side by side)
 **Track:** SH, the shared spine ([roadmap](../05-roadmap.md#sh--shared-spine)); the owner's request of 2026-09-21, first of everything else so that end users can test without touching production.
 **Prerequisites:** a setup guide completed for your platform ([macOS](../01-setup-macos.md), [RHEL 8](../01-setup-rhel8.md) or [Windows](../01-setup-windows.md)); the two-repository workflow read once ([`03-git-workflow.md`](../03-git-workflow.md)); the specification and its decisions ([`14-beta-instance.md`](../14-beta-instance.md), [ADR 0002](../adr/0002-beta-instance.md)).
 **Learning goal:** you understand what an *instance* of an application is and why two of them on one machine must share nothing at run time; how one untracked file names every resource of an instance; why the `beta` branch now means something; and how a change reaches the testers the same day and the laboratory only when someone decides.
@@ -332,6 +332,13 @@ folder's `.env.local` was missing when the setup ran. Fix the file and
 re-run `SETUP_MONITOR=y ./setup-after-clone-py.sh` in the beta folder; it
 replaces its own line only.
 
+**If instead** `systemctl --user list-units 'container-crucible-py*'` lists
+only beta: production's unit is *inactive*, not gone. Every
+`./container-py.sh rebuild` recreates the container outside systemd, and the
+unit stays enabled for the next boot. `list-units --all` shows it as
+`loaded inactive dead`; that is the expected state between a rebuild and a
+reboot (seen on the server on 2026-09-22).
+
 ---
 
 ## Step 5 — Two moments in the workflow
@@ -552,4 +559,4 @@ macOS and Windows guides, the operations runbook, the uninstall guides,
 the architecture page, the playbook, the glossary, the figure index,
 lesson 35 and the release note are in the same commit.
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 22, 2026

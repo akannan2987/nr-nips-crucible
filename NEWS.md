@@ -10,6 +10,34 @@ change you are getting.
 
 ---
 
+## v2.20.2 — 2026-09-22 — "Beta is live, and the restart message tells the truth"
+
+The beta instance was set up on the server this morning from the RHEL 8
+guide's §8, exactly as written: a second folder on `beta`, the same
+certificate pair, `crucible-py-beta` on 49161 with the morning's copy of
+production's data, its own service unit and monitor line, sixteen deploy
+checks passing, production's container not restarted. Two small things
+came out of watching the real output.
+
+**Fixed**
+- `./container-py.sh restore` (and plain `start`) restarting an *existing*
+  HTTPS container printed `Access the application at: http://…`. The
+  container was serving HTTPS all along; the message never looked. It now
+  reads the scheme from the container, as `status` always did.
+- `restore` with no container to restart (after `clean`) started plain
+  HTTP even in a folder whose `.env.local` says `USE_HTTPS=true`; it now
+  honours the file as `start` does.
+
+**Recorded**
+- After a `rebuild`, production's service unit shows *inactive* until the
+  next boot, because the rebuild recreates the container outside systemd.
+  Enabled and inactive is the expected state; the RHEL 8 guide and the
+  phase tutorial now say so.
+- The handbook, the specification and the build log record the beta
+  instance as live on the server.
+
+---
+
 ## v2.20.1 — 2026-09-21 — "The promotion command, corrected"
 
 Documents only. The first promotion after v2.20.0 failed on the Mac with

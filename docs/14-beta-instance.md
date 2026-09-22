@@ -2,7 +2,7 @@
 
 # A beta instance for user testing — two copies of the application on one server
 
-**Status:** built ✅ as phase **SH-12**, v2.20.0, 2026-09-21 — the same day
+**Status:** built ✅ as phase **SH-12**, v2.20.0, 2026-09-21, and **live on the server since 2026-09-22** — built the same day
 the owner asked for the application to be rolled out to end users for
 testing without touching production. Decisions B1–B6 below were taken as
 recommended (the owner's go, 2026-09-21). The scripts and the workflow are
@@ -244,12 +244,13 @@ build ("build on what you have planned").
   terminal, the container, Python, the database, the monitor, the unit,
   the uninstaller, the deploy check — with the exact output for each
   instance.
-- ⏳ **On the server, for the operator:** the second folder on branch
-  `beta`, with its own `.env.local`, certificates, service unit and monitor
-  line — [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta),
-  fifteen minutes; then `https://<vm-hostname>:49161` answers with a copy of
-  production's data and `./verify-deploy.sh https://localhost:49161` passes,
-  while `https://<vm-hostname>:49160` is untouched.
+- ✅ **On the server, 2026-09-22:** the second folder on branch `beta`,
+  with its own `.env.local`, certificates, service unit and monitor line,
+  set up from [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta)
+  in about twenty minutes; `https://<vm-hostname>:49161` answers with the
+  morning's copy of production's data (12,539 compounds on both ports),
+  `./verify-deploy.sh https://localhost:49161` passes 16 of 16, and
+  production's container was not restarted.
 
 ---
 
@@ -263,4 +264,4 @@ build ("build on what you have planned").
 - [`07-operations.md`](07-operations.md) — the runbook pieces the beta instance reuses: environment variables, mounted folders, backup and restore, the monitor, systemd.
 - [ADR 0002](adr/0002-beta-instance.md) — the decision, in one page.
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 22, 2026

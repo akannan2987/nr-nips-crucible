@@ -35,6 +35,13 @@ SAMPLE_TEMPLATE_PATH: Path = Path(
 # HTTP port (default 49160)
 PORT: int = int(os.environ.get("PORT", "49160"))
 
+# Which instance this process is (phases SH-12 and SH-13). container-py.sh
+# passes the folder's CRUCIBLE_INSTANCE into the container; unset means the
+# default instance, production. The page shows the label in its corner and
+# in the tab title; an override spells it differently ("Production").
+CRUCIBLE_INSTANCE: str = os.environ.get("CRUCIBLE_INSTANCE", "").strip()
+CRUCIBLE_INSTANCE_LABEL: str = os.environ.get("CRUCIBLE_INSTANCE_LABEL", "").strip()
+
 # SQLAlchemy database URL. SQLite by default; for PostgreSQL set this env var to
 # postgresql+psycopg://user:pass@host:5432/dbname
 _default_sqlite = f"sqlite:///{REPO_ROOT / 'data' / 'crucible.db'}"

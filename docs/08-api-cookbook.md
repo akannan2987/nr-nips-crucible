@@ -81,6 +81,33 @@ Yes. Open <http://localhost:49160/docs> in a browser. FastAPI, the framework beh
 
 ---
 
+## Which instance am I talking to?
+
+Since the beta instance exists ([`14-beta-instance.md`](14-beta-instance.md)),
+the first thing a script should check is where it is pointed. One call,
+no login needed, no data read:
+
+```bash
+curl --noproxy '*' -sSk https://localhost:49161/api/instance
+```
+
+```json
+{"name":"beta","label":"Beta","port":49161,"https":true}
+```
+
+Production answers with `"name":""` and `"label":"Prod"`. A script that
+must never touch production can refuse to continue unless `name` is
+non-empty:
+
+```bash
+name=$(curl --noproxy '*' -sSk "$BASE/api/instance" | python3 -c 'import json,sys; print(json.load(sys.stdin)["name"])')
+[ -n "$name" ] || { echo "refusing: $BASE is the default instance (production)"; exit 1; }
+```
+
+The same word is the pill in the page's corner and the `instance:` in
+`./container-py.sh help`, because all three come from one setting
+([phase SH-13](04-phase-tutorials/phase-sh-13-instance-label.md)).
+
 ## Loading data in
 
 All four uploads work the same way: `-F "file=@<path>"` attaches a file to the request, exactly as if you had picked it in a browser's file-chooser. Run these from the project root so the template paths resolve.

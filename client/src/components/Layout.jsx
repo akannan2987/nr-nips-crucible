@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { getChemicalNotices } from '../services/api'
+import { getChemicalNotices, getInstance } from '../services/api'
 import {
   BeakerIcon,
   HomeIcon,
@@ -14,6 +14,25 @@ import {
   CommandLineIcon,
   FlagIcon,
 } from '@heroicons/react/24/outline'
+
+// SH-13: the page says which instance it is, in words and in colour, so
+// that a tester with two tabs open never confuses beta with production.
+// The colours are the ones the documents use: indigo for production, amber
+// for beta (docs/14-beta-instance.md). Class names are written out in full
+// so the style build can find them.
+const INSTANCE_STYLE = {
+  default: {
+    bar: 'bg-white border-b',
+    pill: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+    title: 'the default instance: the real registry',
+  },
+  named: {
+    bar: 'bg-amber-50 border-b-2 border-amber-300',
+    pill: 'bg-amber-100 text-amber-900 border-amber-400',
+    title: 'a named instance: a copy for testing, separate from production',
+  },
+}
+const BASE_TITLE = document.title
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
@@ -60,6 +79,18 @@ function classNames(...classes) {
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [instance, setInstance] = useState(null)
+  useEffect(() => {
+    // Once per page load: the instance never changes while the tab is open.
+    getInstance()
+      .then((r) => {
+        setInstance(r.data)
+        document.title = `[${r.data.label}] ${BASE_TITLE}`
+      })
+      .catch(() => setInstance(null))
+  }, [])
+  const instanceStyle = instance && instance.name ? INSTANCE_STYLE.named : INSTANCE_STYLE.default
+
   const [expandedMenu, setExpandedMenu] = useState(null)
   const location = useLocation()
   // CR-10: the count on the "Needs attention" item, refreshed on every page change
@@ -280,7 +311,7 @@ export default function Layout() {
       {/* Main content */}
       <div className="lg:pl-72">
         {/* Top bar */}
-        <div className="sticky top-0 z-30 flex h-16 items-center bg-white border-b shadow-sm px-4 lg:px-8">
+        <div className={`sticky top-0 z-30 flex h-16 items-center shadow-sm px-4 lg:px-8 ${instanceStyle.bar}`}>
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden -ml-2 p-2 text-gray-500 hover:text-gray-700"
@@ -288,8 +319,17 @@ export default function Layout() {
             <Bars3Icon className="h-6 w-6" />
           </button>
           <div className="flex-1 flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-gray-800 lg:text-xl">
+            <h1 className="flex items-center text-lg font-semibold text-gray-800 lg:text-xl">
               Chemical & Sample Management
+              {instance && (
+                <span
+                  className={`ml-3 rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide ${instanceStyle.pill}`}
+                  title={instanceStyle.title}
+                  data-testid="instance-label"
+                >
+                  {instance.label}
+                </span>
+              )}
             </h1>
             <div className="flex items-center space-x-4">
               {/* Port is read from the browser's own URL instead of being

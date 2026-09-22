@@ -11,6 +11,8 @@ const api = axios.create({
 
 // Statistics
 export const getStats = () => api.get('/stats');
+// SH-13: which instance is answering (name, label, port, https); open, no data
+export const getInstance = () => api.get('/instance');
 
 // Chemicals
 // `config` may carry an AbortController signal so a superseded list request is cancelled (v2.18.2).

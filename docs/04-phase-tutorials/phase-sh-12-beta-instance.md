@@ -518,11 +518,11 @@ table. Production's image ID, uptime and counts do not move.
 
 ## What this phase deliberately did not do
 
-- **A visible "BETA" ribbon in the page.** The header already says
-  *Running on port 49161*, and the specification's rule was that no code
-  knows the word *beta*. If the testers confuse the two tabs, an instance
-  label passed through `/api/stats` and shown in the header is a small
-  later item; it is on the roadmap as a note, not a phase.
+- **A visible label in the page.** Left out here on the rule that no code
+  knows the word *beta*; the owner asked for it the morning beta went live,
+  and it was built the same day as [phase SH-13](phase-sh-13-instance-label.md):
+  a *Prod* or *Beta* pill, derived from the same instance name, through one
+  open endpoint.
 - **A second machine.** Decision B1: the same server, as a second
   container; the design moves to another machine unchanged when IT offers
   one. Nothing here assumes the two folders share a disk except the

@@ -28,6 +28,8 @@ the [glossary](00-glossary.md).
 - [How a change travels once there are two](#how-a-change-travels-once-there-are-two)
 - [What the scripts gained](#what-the-scripts-gained)
 - [The data the testers see](#the-data-the-testers-see)
+- [Which instance am I looking at? The label](#which-instance-am-i-looking-at-the-label)
+- [Many testers, one beta](#many-testers-one-beta)
 - [Who can log in, and where](#who-can-log-in-and-where)
 - [Decisions B1–B6](#decisions-b1b6)
 - [Done means — and what was done](#done-means--and-what-was-done)
@@ -101,6 +103,7 @@ repository and needs a small extension.
 | Service unit | `container-crucible-py.service` | `container-crucible-py-beta.service` |
 | Monitor | a cron line every five minutes probing port 49160 | a second cron line probing 49161 |
 | Who uses it | the laboratory | the testers |
+| What the page says (SH-13) | **Prod**, an indigo pill on a white bar; `[Prod]` on the tab | **Beta**, an amber pill on an amber bar; `[Beta]` on the tab |
 
 Everything in the *Beta* column is decided by three lines in that folder's
 `.env.local` and by which branch the folder has checked out. There is no
@@ -194,6 +197,72 @@ tab shows.
 Whatever the testers change on beta stays on beta. When you want them back
 on a clean copy, run the two commands again. The restore never runs the
 other way: production's database is only ever written by production.
+
+---
+
+## Which instance am I looking at? The label
+
+Since v2.21.0 (phase SH-13) every page says which instance it belongs to,
+in a word and in colour. Production shows a **Prod** pill in indigo next to
+the page title on a white bar; the beta instance shows a **Beta** pill in
+amber on a pale amber bar. The browser tab's title starts with the same
+word in square brackets, so ten open tabs are told apart without clicking
+any of them. "Running on port 49161" stays in the corner for the person
+who prefers the number.
+
+![One name in the settings file travels through the container script and the app to become a word and a colour in the page's corner](img/fig_instance_label.svg)
+
+The word is not stored anywhere and not chosen separately: it is derived
+from the same `CRUCIBLE_INSTANCE` the scripts use to name the container,
+passed into the container by `container-py.sh` and answered by one open
+endpoint, `GET /api/instance`. The corner of the page and the `Usage` line
+of the terminal therefore cannot disagree. To spell it differently, set
+`CRUCIBLE_INSTANCE_LABEL=Production` (or any word) in the folder's
+`.env.local` and rebuild. How it was built and how to test it by every
+route: [phase SH-13](04-phase-tutorials/phase-sh-13-instance-label.md).
+
+---
+
+## Many testers, one beta
+
+Several people will test at once, and the question comes up whether each
+should have an instance of their own. The answer is no, on purpose.
+
+Crucible is a **system of record**: one registry, one identity per
+compound, one database everyone reads and writes. Production will be
+shared by the whole laboratory. Testers sharing one beta is therefore not
+a limitation of the test; it is the thing most worth testing. An upload
+deduplicates against what is already there, a merge by one person is seen
+by the next, a deletion is a deletion for everyone. Those behaviours only
+show themselves with more than one person in the room.
+
+What keeps testers from tripping over each other:
+
+| Measure | What it gives | When |
+|---|---|---|
+| **The login and roles** ([`13-authentication.md`](13-authentication.md)) | one account per tester; viewers change nothing, editors upload and link, only admins delete or merge | SH-3a and SH-3b, the next phase |
+| **A test plan with named scenarios** | each tester works a distinct corner: the structure file, the limited list, the attention page, the screening table | written with the login, from the every-route tables of the phase tutorials |
+| **A reset between rounds** | two commands put beta back to a fresh copy of production ([above](#the-data-the-testers-see)); announce it, run it, start the next round | any time, in under a minute |
+| **An audit trail** | who changed what and when, on the entry itself; answers "who did this?" rather than preventing it | SH-4, after the login |
+
+*Everyday version:* one practice kitchen, several trainees, each with a
+station and a name badge, and a fresh delivery of ingredients between
+sessions. Not one kitchen per trainee.
+
+**A private sandbox, when someone needs one.** For destructive exploration
+(delete everything, import junk, see what breaks) SH-12 makes a personal
+instance cheap: one more folder with `CRUCIBLE_INSTANCE=alice` and
+`CRUCIBLE_PORT=49162`, set up with [`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta)
+in fifteen minutes, its page saying **Alice** in amber, removed afterwards
+with `./uninstall.sh --full` in that folder, which touches nothing else.
+Each costs one container and a copy of the database. Keep it for one or
+two people and one afternoon: sandboxes are pulled and rebuilt one by one,
+and teach nothing about shared use.
+
+**What is not planned:** per-user project folders inside one instance, a
+form of multi-tenancy. A registry with several parallel truths is no
+longer a registry; the verdict in [`06-product-and-technology-roadmap.md`](06-product-and-technology-roadmap.md)
+on multi-user hosting covers the case where it ever changes.
 
 ---
 

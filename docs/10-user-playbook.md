@@ -197,17 +197,24 @@ Since v2.20.0 the server runs **two** copies of the application: production
 on port **49160**, which the laboratory uses, and the **beta instance** on
 port **49161**, which testers use and which holds a *copy* of the data
 ([`14-beta-instance.md`](14-beta-instance.md)). Nothing you do on beta
-reaches production. Two ways to tell which one a browser tab shows:
+reaches production. The page tells you which one you are on, three ways:
 
-- the **address bar** ends in `:49161` (beta) or `:49160` (production);
-- the header's right-hand corner says **Running on port 49161** or
-  **Running on port 49160**.
+- **the pill next to the title:** an indigo **Prod** on a white bar, or an
+  amber **Beta** on a pale amber bar (since v2.21.0; hover it for a
+  sentence);
+- **the browser tab:** its title starts with `[Prod]` or `[Beta]`;
+- **the corner and the address bar:** "Running on port 49161" and an
+  address ending in `:49161` mean beta; `49160` means production.
+
+![Production shows an indigo Prod pill on a white bar, beta an amber Beta pill on an amber bar](img/fig_instance_label.svg)
 
 From the terminal, the same question is answered by the folder you are in
 (`pwd` ends in `-beta` or not) and by `./container-py.sh help | grep Usage`,
 which prints `instance: beta → crucible-py-beta, port 49161` or
-`instance: default → crucible-py, port 49160`. If you are a tester and the
-corner says 49160, close the tab and open the address you were given.
+`instance: default → crucible-py, port 49160`; and by one call,
+`curl --noproxy '*' -sSk https://localhost:49161/api/instance`. If you are
+a tester and the pill says **Prod**, close the tab and open the address you
+were given.
 
 ## The one-command health check
 
@@ -1113,4 +1120,4 @@ exactly like success. `cd ~` first.
 
 ---
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 22, 2026

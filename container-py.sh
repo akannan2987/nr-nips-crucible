@@ -35,12 +35,14 @@ if [ -f "$(pwd)/.env.local" ]; then
     _env_use_https="${USE_HTTPS:-}"
     _env_use_postgres="${USE_POSTGRES:-}"
     _env_instance="${CRUCIBLE_INSTANCE:-}"
+    _env_label="${CRUCIBLE_INSTANCE_LABEL:-}"
     _env_port="${CRUCIBLE_PORT:-}"
     # shellcheck disable=SC1091
     . "$(pwd)/.env.local"
     USE_HTTPS="${_env_use_https:-${USE_HTTPS:-}}"
     USE_POSTGRES="${_env_use_postgres:-${USE_POSTGRES:-}}"
     CRUCIBLE_INSTANCE="${_env_instance:-${CRUCIBLE_INSTANCE:-}}"
+    CRUCIBLE_INSTANCE_LABEL="${_env_label:-${CRUCIBLE_INSTANCE_LABEL:-}}"
     CRUCIBLE_PORT="${_env_port:-${CRUCIBLE_PORT:-}}"
 fi
 
@@ -66,6 +68,10 @@ if [ -n "$CRUCIBLE_INSTANCE" ]; then
 fi
 IMAGE_NAME="crucible-py${INSTANCE_SUFFIX}"
 CONTAINER_NAME="crucible-py${INSTANCE_SUFFIX}"
+# The page shows which instance it is (SH-13): the name goes into the
+# container as an environment variable, and an optional label spells it
+# the way you want ("Production" instead of "Prod").
+CRUCIBLE_INSTANCE_LABEL="${CRUCIBLE_INSTANCE_LABEL:-}"
 
 # ── PostgreSQL (optional) ───────────────────────────────────────────
 # SQLite (data/crucible.db) is the DEFAULT and needs nothing extra. Set
@@ -199,6 +205,7 @@ show_help() {
     echo "  CRUCIBLE_PORT=<n>                 port (default 49160; generic PORT is ignored)"
     echo "  CRUCIBLE_INSTANCE=<name>          a second instance from another checkout: image, container"
     echo "                                    and db resources named crucible-py-<name> (docs/14-beta-instance.md)"
+    echo "  CRUCIBLE_INSTANCE_LABEL=<word>    what the page's corner says (default: Prod, or the name capitalised)"
     echo "  HOST_BIND=<ip>                    published-port interface"
     echo "  PLATFORM=linux/amd64              cross-build target platform"
     echo "  USE_POSTGRES=true                 run the app against PostgreSQL (default: SQLite)"
@@ -265,6 +272,8 @@ start_container() {
             -p ${HOST_BIND}:${PORT}:${PORT} \
             -v "${DATA_DIR}:/app/data:Z" \
             -e PORT=${PORT} \
+            -e CRUCIBLE_INSTANCE="${CRUCIBLE_INSTANCE}" \
+            -e CRUCIBLE_INSTANCE_LABEL="${CRUCIBLE_INSTANCE_LABEL}" \
             "${pg_args[@]}" \
             --restart unless-stopped \
             ${IMAGE_NAME}:latest
@@ -362,6 +371,8 @@ start_container_ssl() {
         -v "${DATA_DIR}:/app/data:Z" \
         -v "${CERTS_DIR}:/app/certs:Z,ro" \
         -e PORT=${PORT} \
+        -e CRUCIBLE_INSTANCE="${CRUCIBLE_INSTANCE}" \
+        -e CRUCIBLE_INSTANCE_LABEL="${CRUCIBLE_INSTANCE_LABEL}" \
         -e USE_HTTPS=true \
         -e SSL_CERT_PATH=/app/certs/server.crt \
         -e SSL_KEY_PATH=/app/certs/server.key \

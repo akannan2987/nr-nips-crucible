@@ -33,7 +33,7 @@ from .config import (
     USE_HTTPS,
 )
 from .database import init_db
-from .routers import chemicals, query, samples, screening, stats, toxicology
+from .routers import chemicals, instance, query, samples, screening, stats, toxicology
 
 
 def create_app() -> FastAPI:
@@ -65,6 +65,7 @@ def create_app() -> FastAPI:
     application.include_router(toxicology.router)
     application.include_router(stats.router)
     application.include_router(query.router)
+    application.include_router(instance.router)
 
     # ── Error shape parity ──────────────────────────────────────────
     # The v1 API returned {"error": message}; FastAPI's default is

@@ -38,6 +38,7 @@ is defined once and means the same thing in every document.
 | `fig_requirements_lock.svg` | The wish list, the receipt, and who installs from it | phase 05b tutorial, `backend/README.md` |
 | `fig_two_instances.svg` | Production and beta on one server: two folders, two containers, two ports; publish, promote, and the one-way data copy | `14-beta-instance.md`, phase SH-12 tutorial, `01-setup-rhel8.md` §8, handbook §10 |
 | `fig_publish_promote.svg` | Three branch stations on one rail — develop, beta, master; publish pushes develop to beta, promotion pushes beta to master by hand; which instance pulls what | phase SH-12 tutorial, `03-git-workflow.md`, `14-beta-instance.md`, handbook §6 |
+| `fig_instance_label.svg` | One name in the settings file becomes a word and a colour in the page's corner: the chain from `.env.local` to the pill, and the two headers side by side, indigo *Prod* and amber *Beta* | phase SH-13 tutorial, `14-beta-instance.md`, playbook |
 | `fig_instance_name.svg` | The three lines of the beta folder's `.env.local` fanning out to the image, container, service unit, monitor log, cron line and address; production's file beside it for contrast | phase SH-12 tutorial, `14-beta-instance.md`, `07-operations.md`, `01-setup-rhel8.md` §8 |
 | `fig_source_tags.svg` | Four entries with their source tags, the two readings of a multi-tag filter, the strip of batch counts | phase CR-11 tutorial, `09-registry-sources.md`, registry tasks page |
 | `fig_attention_page.svg` | One audit module behind the browser's attention page, the API and the script; the review mark lives on the entry | phase CR-10 tutorial, `09-registry-sources.md`, registry tasks page |
@@ -56,4 +57,4 @@ The interactive figure — the animated architecture page served at
 [`../architecture-interactive.html`](../architecture-interactive.html),
 described in [`02-architecture.md`](../02-architecture.md#interactive-architecture-page).
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 22, 2026

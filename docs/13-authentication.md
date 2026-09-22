@@ -18,7 +18,9 @@
 > — **built the same day as phase SH-12, v2.20.0**), then rungs 1 **and 2 in
 > full** (SH-3a + SH-3b) delivered to it, tested by the testers, then
 > promoted to production. Decision A3 is revisited below; A3, A9 and A10
-> were agreed with the go for SH-12.
+> were agreed with the go for SH-12. **Open routes:** `/api/health` and,
+> since v2.21.0, `/api/instance` (the page's *Prod* / *Beta* label, which
+> the login page itself must be able to show) stay outside the guard.
 
 ## Contents
 
@@ -489,4 +491,4 @@ updated in the same commit.
 - [`02-architecture.md` → Security](02-architecture.md#security-architecture) and [`07-operations.md` → Security](07-operations.md#security) — what exists today.
 - [`00-glossary.md`](00-glossary.md) — every term above, in one place.
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 22, 2026

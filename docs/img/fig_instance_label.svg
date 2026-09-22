@@ -1,0 +1,45 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 430' width='940' height='430' role='img' aria-label='One name in the settings file travels through the container script and the app to become a word and a colour in the page&apos;s corner; production shows an indigo Prod pill on a white bar, beta an amber Beta pill on an amber bar' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='429' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='16' fill='#1f2937' text-anchor='middle' font-weight='bold'>The page says which instance it is: one name in, a word and a colour out</text>
+<rect x='30' y='66' width='184' height='76' rx='8' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='122' y='88' font-size='12' fill='#1f2937' text-anchor='middle' font-weight='bold'>.env.local</text>
+<text x='122' y='108' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>CRUCIBLE_INSTANCE=beta</text>
+<text x='122' y='123' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>CRUCIBLE_PORT=49161</text>
+<rect x='262' y='66' width='184' height='76' rx='8' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='354' y='88' font-size='12' fill='#1f2937' text-anchor='middle' font-weight='bold'>container-py.sh</text>
+<text x='354' y='108' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>podman run …</text>
+<text x='354' y='123' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>-e CRUCIBLE_INSTANCE=beta</text>
+<rect x='494' y='66' width='184' height='76' rx='8' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='586' y='88' font-size='12' fill='#1f2937' text-anchor='middle' font-weight='bold'>the app</text>
+<text x='586' y='108' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>GET /api/instance</text>
+<text x='586' y='123' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>{"name":"beta","label":"Beta"}</text>
+<rect x='726' y='66' width='184' height='76' rx='8' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='818' y='88' font-size='12' fill='#1f2937' text-anchor='middle' font-weight='bold'>the page</text>
+<text x='818' y='108' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>an amber pill: Beta</text>
+<text x='818' y='123' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>tab title: [Beta] Crucible…</text>
+<line x1='216' y1='104' x2='260' y2='104' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<line x1='448' y1='104' x2='492' y2='104' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<line x1='680' y1='104' x2='724' y2='104' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<text x='470.0' y='164' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>no name in the file means the default instance: the same chain answers "Prod" and indigo</text>
+<rect x='30' y='200' width='420' height='22' rx='6' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='42' y='215' font-size='10' fill='#6b7280' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>[Prod] Crucible: Pandora Toolbox Enhancement (v2.0)</text>
+<rect x='30' y='226' width='420' height='46' rx='6' fill='#ffffff' stroke='#e5e7eb' stroke-width='1.2'/>
+<text x='44' y='255' font-size='12.5' fill='#1f2937' text-anchor='start' font-weight='bold'>Chemical &amp; Sample Management</text>
+<rect x='260' y='239' width='48' height='20' rx='10' fill='#e0e7ff' stroke='#a5b4fc' stroke-width='1.2'/>
+<text x='284' y='253' font-size='10.5' fill='#3730a3' text-anchor='middle' font-weight='bold'>Prod</text>
+<text x='438' y='255' font-size='9.5' fill='#6b7280' text-anchor='end' font-weight='normal'>Running on port 49160</text>
+<rect x='490' y='200' width='420' height='22' rx='6' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='502' y='215' font-size='10' fill='#6b7280' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>[Beta] Crucible: Pandora Toolbox Enhancement (v2.0)</text>
+<rect x='490' y='226' width='420' height='46' rx='6' fill='#fffbeb' stroke='#fcd34d' stroke-width='1.2'/>
+<text x='504' y='255' font-size='12.5' fill='#1f2937' text-anchor='start' font-weight='bold'>Chemical &amp; Sample Management</text>
+<rect x='720' y='239' width='48' height='20' rx='10' fill='#fef3c7' stroke='#fbbf24' stroke-width='1.2'/>
+<text x='744' y='253' font-size='10.5' fill='#78350f' text-anchor='middle' font-weight='bold'>Beta</text>
+<text x='898' y='255' font-size='9.5' fill='#6b7280' text-anchor='end' font-weight='normal'>Running on port 49161</text>
+<text x='240' y='296' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>production: white bar, indigo pill, the real registry</text>
+<text x='700' y='296' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>beta: amber bar, amber pill, a copy the testers may break</text>
+<rect x='30' y='322' width='880' height='54' rx='6' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='470' y='342' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>the label is derived from the same name the scripts use for the container, so the corner and the terminal cannot disagree;</text>
+<text x='470' y='357' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>nothing is stored, nothing is secret, and the answer stays open when the login arrives, because the login page must say where it is</text>
+<text x='470.0' y='404' font-size='10.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>everyday version: the same uniform in two kitchens, but the practice kitchen has amber walls and a name tag that says so</text>
+</svg>

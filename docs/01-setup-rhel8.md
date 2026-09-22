@@ -1919,9 +1919,11 @@ from a clean copy.
 identical stats lines — `"chemicals":{"total":12539` on both ports.
 
 Open **`https://<vm-hostname>:49161`** in a browser: the same application,
-the same 12,539 compounds, and in the header's right-hand corner
-**Running on port 49161**. That corner is how a tester knows which
-instance a tab shows.
+the same 12,539 compounds, an amber **Beta** pill next to the title on a
+pale amber bar (from v2.21.0), `[Beta]` at the start of the tab's title,
+and in the right-hand corner **Running on port 49161**. Production's tab
+shows an indigo **Prod** on a white bar. That is how a tester knows which
+instance a tab shows ([phase SH-13](04-phase-tutorials/phase-sh-13-instance-label.md)).
 
 ### 8.5 Make it survive a reboot
 
@@ -1989,7 +1991,8 @@ container.
 
 | I want to… | Command (beta folder) |
 |---|---|
-| Update beta to what was just published | `git pull --ff-only origin beta`, then `./container-py.sh rebuild` if code changed — [`03-git-workflow.md` Step 10](03-git-workflow.md#step-10---deploy-to-the-beta-instance) |
+| Update beta to what was just published | `git pull --ff-only origin beta`, then `./container-py.sh rebuild` if code changed — [`03-git-workflow.md` Step 10](03-git-workflow.md#step-10---deploy-to-the-beta-instance); if the release note says the container's command changed, regenerate the unit afterwards (8.5 again, four commands; [why](07-operations.md#auto-start-on-boot-systemd)) |
+| Check it, stop it, start it | `./container-py.sh status` · `stop` · `start` · `logs`, in this folder; the per-instance table is in [`07-operations.md` → Two instances](07-operations.md#two-instances-on-one-machine) |
 | Give the testers a fresh copy of production | the two commands of 8.4 |
 | See what beta has that production does not | `git log --oneline origin/master..origin/beta` (after `git fetch origin`) |
 | Promote it to production | not from here — [`03-git-workflow.md` Step 11](03-git-workflow.md#step-11---promote-to-production-when-the-testers-agree), from the Mac and the mirror folder, then production's own folder |

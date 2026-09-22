@@ -403,6 +403,8 @@ is one; the moving dots follow the same curves as the drawn arrows.
 
 **Instance name (`CRUCIBLE_INSTANCE`)** — the word, set in a folder's `.env.local`, that `container-py.sh`, `setup-after-clone-py.sh`, `monitor.sh` and `uninstall.sh` append to everything that instance owns: image and container `crucible-py-beta`, service unit `container-crucible-py-beta.service`, monitor log `crucible-monitor-beta.log`. Unset, the names are the ones every machine had before v2.20.0. Lowercase letters, digits and hyphens only. *Everyday version:* the name tag pinned on the folder — the uniform is the same, the tag says which kitchen.
 
+**Instance label** — the word the page shows for the instance it belongs to, in a pill next to the title and at the start of the browser tab's title: *Prod* in indigo for the default instance, *Beta* in amber for the beta instance. Derived from the instance name the scripts use (never stored), answered by `GET /api/instance`, spelled differently with `CRUCIBLE_INSTANCE_LABEL`. Built as phase SH-13: [the tutorial](04-phase-tutorials/phase-sh-13-instance-label.md). *Everyday version:* the name tag on the kitchen door, and amber walls in the practice kitchen.
+
 **Publish (to beta)** — pushing a change to `develop` and `beta` (`git push origin develop develop:beta`), after which the beta instance pulls and rebuilds; every change is published, the same day. The first of the two moments of the workflow; *Promotion (beta to production)*, below, is the second. *Everyday version:* handing the trainee the new recipe.
 
 **Promotion (beta to production)** — the deliberate step that moves what the beta instance runs to production: `beta` pushed to `master`, then production pulls and rebuilds after its backup. Publishing reaches beta on its own; promotion is a second, separate command, so a change that fails on beta is never promoted. *Everyday version:* the dress rehearsal is over and the director says "that's the show".
@@ -1002,4 +1004,4 @@ looks in several fields at once.
 that's a gap worth filling — the whole point of this file is that nobody
 should have to already know the vocabulary to follow the documentation.
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 22, 2026

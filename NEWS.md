@@ -10,6 +10,47 @@ change you are getting.
 
 ---
 
+## v2.21.0 — 2026-09-22 — "Prod and Beta, said in the page"
+
+Phase **SH-13**, asked for the morning the beta instance went live: the two
+tabs looked identical apart from a port number in the corner. Now every
+page says which instance it is, in a word and in colour, and the first
+change to rebuild the container since the beta instance exists travels the
+new route: beta first, production by promotion.
+
+**Added**
+- **The label.** An indigo **Prod** pill on a white bar for production, an
+  amber **Beta** pill on a pale amber bar for the beta instance, next to
+  the page title; the same word in square brackets at the start of the
+  browser tab's title; a sentence on hover. "Running on port" stays.
+- **`GET /api/instance`**, answering `{"name":"beta","label":"Beta","port":49161,"https":true}`
+  (production: `"name":""`, `"label":"Prod"`). Open, no data, and it stays
+  open when the login arrives, because the login page has to say where it
+  is. `/api/stats` is unchanged.
+- **The name travels into the container.** `container-py.sh` passes
+  `CRUCIBLE_INSTANCE` and the optional `CRUCIBLE_INSTANCE_LABEL` from
+  `.env.local` into both `podman run` commands; the label is derived from
+  the same name the scripts use, so the page and the terminal cannot
+  disagree. `CRUCIBLE_INSTANCE_LABEL=Production` spells it your way.
+- Five tests (150); the tutorial with a test for every route; a figure.
+
+**Recorded**
+- The per-instance status/stop/start table and the two-supervisors note
+  in [`07-operations.md`](docs/07-operations.md#two-instances-on-one-machine),
+  and the rule that a rebuild which changes how the container is created
+  is followed by regenerating the service unit, with the four commands.
+- "Many testers, one beta" in [`14-beta-instance.md`](docs/14-beta-instance.md#many-testers-one-beta):
+  why testers share one instance on purpose, what keeps them apart, and
+  when a private sandbox instance is worth its cost.
+
+**Deploy**
+- Both instances rebuild, beta first, each after its own backup.
+- **Regenerate each service unit after the rebuild** (the container's
+  command gained two variables): four commands in the phase tutorial's
+  Step 5. Without it, the next boot starts beta without its name.
+
+---
+
 ## v2.20.2 — 2026-09-22 — "Beta is live, and the restart message tells the truth"
 
 The beta instance was set up on the server this morning from the RHEL 8

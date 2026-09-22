@@ -99,7 +99,7 @@ flowchart TB
     end
     subgraph container["Container crucible-py — one Python process (uvicorn)"]
         direction TB
-        RT["Routers  /api/*<br/>chemicals · samples · screening · toxicology · stats · query"]
+        RT["Routers  /api/*<br/>chemicals · samples · screening · toxicology · stats · query · instance"]
         UP["Upload parsers<br/>openpyxl · RDKit · template specs"]
         ST["Static + SPA serving<br/>client/dist · /architecture"]
         ORM["SQLAlchemy 2 ORM<br/>store.py · models.py"]
@@ -311,7 +311,8 @@ backend/app/routers/
 ├── samples.py         # Sample management + SLIMS upload + chemical linking
 ├── screening.py       # Screening data
 ├── toxicology.py      # Toxicology data
-└── stats.py           # Dashboard statistics
+├── stats.py           # Dashboard statistics
+└── instance.py        # Which instance is answering: name, label, port (SH-13)
 ```
 
 ### 3. Business Logic Layer
@@ -938,5 +939,5 @@ of redrawing.
 
 ---
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 22, 2026
 **Version:** 2.0

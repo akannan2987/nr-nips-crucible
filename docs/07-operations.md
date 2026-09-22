@@ -396,6 +396,7 @@ When it warns, follow "Rotating / replacing the certificate" above.
 |----------|---------|-------------|
 | `PORT` | `49160` | HTTP/HTTPS port the app binds (inside the container) |
 | `CRUCIBLE_PORT` | *(unset)* | Port override for `container-py.sh`, `setup-after-clone-py.sh` and `monitor.sh` (a generic `PORT` in the shell is ignored). The beta instance sets `49161` in its `.env.local` |
+| `CRUCIBLE_INSTANCE_LABEL` | *(unset)* | The word the page's corner shows for this instance (SH-13). Unset: *Prod* for the default instance, the name capitalised for a named one (*Beta*). Set it in `.env.local` to spell it your way (*Production*); `container-py.sh` passes it into the container; a rebuild applies it |
 | `CRUCIBLE_INSTANCE` | *(unset)* | Names a second instance run from another checkout: the image, the container and the optional Postgres container, network and volume become `crucible-py-<name>`, `crucible-db-<name>`…; the monitor log becomes `/tmp/crucible-monitor-<name>.log`; `uninstall.sh` removes only that instance. Lowercase letters, digits and hyphens. Set in the folder's `.env.local`; the environment wins — [Two instances on one machine](#two-instances-on-one-machine) |
 | `HOST_BIND` | `127.0.0.1` (macOS) / `0.0.0.0` (Linux) | Published-port interface |
 | `USE_HTTPS` | `false` | `true` + cert files present → uvicorn serves TLS. Set it in the VM's `.env.local` so `start`/`rebuild` default to HTTPS |
@@ -469,7 +470,35 @@ One rule to remember: **every script acts on the folder it runs in.**
 and never restarts `crucible-py`; `./monitor.sh` there probes 49161;
 `./uninstall.sh --dry-run` there opens with `Instance: beta`. Check with
 `./container-py.sh help | grep Usage` when in doubt, and `pwd` before
-anything destructive.
+anything destructive. In a browser, the page's own corner says which
+instance it is: a **Prod** pill in indigo or a **Beta** pill in amber, and
+`[Prod]` or `[Beta]` on the tab (SH-13).
+
+**Status, stop, start, per instance.** The same commands in each folder:
+
+| I want to… | Production, in `~/work/Pandora_toolbox/nr-nips-crucible` | Beta, in `…/nr-nips-crucible-beta` |
+|---|---|---|
+| Is it running, and what does it answer? | `./container-py.sh status` | same |
+| Which instance is this folder? | `./container-py.sh help \| grep Usage` → `instance: default → crucible-py, port 49160` | → `instance: beta → crucible-py-beta, port 49161` |
+| See its log | `./container-py.sh logs` (Ctrl-C to leave) | same |
+| Stop it | `./container-py.sh stop` | same |
+| Start it again | `./container-py.sh start` (HTTPS when `.env.local` says so) | same |
+| Restart it | `./container-py.sh restart` | same |
+| Rebuild after a code change | `./container-py.sh backup && ./container-py.sh rebuild`, then regenerate the unit (below) | same |
+| Full check | `./verify-deploy.sh https://localhost:49160` | `./verify-deploy.sh https://localhost:49161` |
+| Both at once | `podman ps` from anywhere | |
+| What the monitor saw | `tail -3 /tmp/crucible-monitor.log` | `tail -3 /tmp/crucible-monitor-beta.log` |
+| The boot-time unit | `systemctl --user status container-crucible-py.service` | `systemctl --user status container-crucible-py-beta.service` |
+
+**Two supervisors, and how they relate.** The `container-py.sh` commands
+are the day-to-day tools and what the monitor uses. The systemd unit is
+the boot-time starter: it shows `inactive` after any `rebuild`, because
+the rebuild recreates the container outside systemd, and it takes over
+again at the next boot. `systemctl --user stop` and `start` also work and
+recreate the container from the same image. Either is fine; do not mix the
+two within one stop-and-start, and after a rebuild that changes how the
+container is created, regenerate the unit
+([Auto-start on boot](#auto-start-on-boot-systemd)).
 
 **Refreshing beta from production** (one way, on request — never the reverse):
 
@@ -655,8 +684,28 @@ the canonical copy — that guide links back here for it.
 `container-crucible-py-beta.service`; a Quadlet file for it is the block
 above saved as `crucible-py-beta.container` with `Image=localhost/crucible-py-beta:latest`,
 `ContainerName=crucible-py-beta`, `PublishPort=0.0.0.0:49161:49161`,
-`Environment=PORT=49161` and the beta folder's `data/` in `Volume=`
+`Environment=PORT=49161`, `Environment=CRUCIBLE_INSTANCE=beta` (the page's
+label, SH-13) and the beta folder's `data/` in `Volume=`
 ([`01-setup-rhel8.md` §8](01-setup-rhel8.md#8-a-second-instance-for-user-testing-beta)).
+
+**When to regenerate a generated unit.** A unit written by
+`podman generate systemd --new` records the exact `podman run` command of
+the container it was made from: image, port, mounts, environment. Whenever
+a new version changes that command (v2.21.0 added the instance variables;
+a later one may add the login's), the unit must be written again after the
+rebuild, or the next boot starts the container the old way. Four commands,
+in the instance's folder, with its container running:
+
+```bash
+podman generate systemd --new --name crucible-py-beta --files     # crucible-py for production
+mv container-crucible-py-beta.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user is-enabled container-crucible-py-beta.service    # still: enabled
+```
+
+The running container is not touched; only the recipe card is rewritten.
+The release note says when a version needs this; when in doubt, it is
+harmless to do after every rebuild.
 
 **For an HTTPS deployment**, add to the Quadlet `[Container]` section:
 
@@ -993,4 +1042,4 @@ For deployment issues:
 
 ---
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 22, 2026

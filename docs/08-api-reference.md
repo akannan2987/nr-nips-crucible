@@ -18,6 +18,7 @@ Complete REST API reference for the Chemical and Sample Management System.
 - [Overview](#overview)
 - [Response Format](#response-format)
 - [Statistics & Dashboard](#statistics--dashboard)
+- [Which instance is answering](#which-instance-is-answering)
 - [Chemicals](#chemicals)
 - [Samples](#samples)
 - [Screening](#screening)
@@ -261,6 +262,35 @@ curl http://localhost:49160/api/stats
 | `GET /stats/study-types` | Toxicology study distribution — `[{study, count}]` |
 
 ---
+
+## Which instance is answering
+
+### Get the instance
+
+`GET /api/instance` — the name, label, port and scheme of the instance
+that answered. Added in v2.21.0 (phase SH-13) so that the page can say
+**Prod** or **Beta** in its corner; the same name `container-py.sh` uses for
+the container, passed in as `CRUCIBLE_INSTANCE`. Reads nothing from the
+database, holds nothing secret, and stays open when the login arrives
+([`13-authentication.md`](13-authentication.md)).
+
+```bash
+curl --noproxy '*' -sSk https://localhost:49161/api/instance
+```
+
+```json
+{"name": "beta", "label": "Beta", "port": 49161, "https": true}
+```
+
+| Field | Meaning |
+|---|---|
+| `name` | The instance name from `CRUCIBLE_INSTANCE`; empty for the default instance, production |
+| `label` | What the page shows: `CRUCIBLE_INSTANCE_LABEL` if set, else *Prod* for the default instance, else the name capitalised |
+| `port` | The port the application listens on inside the container |
+| `https` | Whether it serves TLS |
+
+Production answers `{"name": "", "label": "Prod", "port": 49160, "https": true}`.
+The `/api/stats` shape is unchanged; this is a separate endpoint on purpose.
 
 ## Chemicals
 
@@ -1823,5 +1853,5 @@ For API support or feature requests:
 
 ---
 
-**Last Updated:** August 7, 2026  
+**Last Updated:** September 22, 2026  
 **API Version:** 2.0

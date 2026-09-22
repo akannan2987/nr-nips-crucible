@@ -218,6 +218,47 @@ def fig_instance_name() -> None:
     write("fig_instance_name.svg", svg(W, H, "The three lines of the beta folder's .env.local fan out to the image, container, service unit, monitor log, cron line and address, all suffixed -beta or numbered 49161; production's file has no instance line and keeps the default names", b))
 
 
+def fig_instance_label() -> None:
+    """The page says which instance it is: name in, label and colour out (SH-13)."""
+    W, H = 940, 430
+    mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
+    b = text(W/2, 34, "The page says which instance it is: one name in, a word and a colour out", 16, INK, "middle", "bold")
+    # the chain, left to right
+    steps = [
+        (30, ".env.local", ["CRUCIBLE_INSTANCE=beta", "CRUCIBLE_PORT=49161"]),
+        (262, "container-py.sh", ["podman run …", "-e CRUCIBLE_INSTANCE=beta"]),
+        (494, "the app", ["GET /api/instance", '{"name":"beta","label":"Beta"}']),
+        (726, "the page", ["an amber pill: Beta", "tab title: [Beta] Crucible…"]),
+    ]
+    for x, title, rows in steps:
+        b += box(x, 66, 184, 76, PANEL, LINE, 8)
+        b += text(x + 92, 88, title, 12, INK, "middle", "bold")
+        b += lines(x + 92, 108, rows, 9.5, INK, "middle", 15, "normal")
+    for x in (216, 448, 680):
+        b += arrow(x, 104, x + 44, 104, LINE)
+    b += text(W/2, 164, "no name in the file means the default instance: the same chain answers \"Prod\" and indigo", 10.5, MUTED)
+    # two header mock-ups
+    def header(x, y, bar_fill, bar_stroke, pill_fill, pill_stroke, pill_text, label, port, tab):
+        out = box(x, y - 26, 420, 22, PANEL, LINE, 6)
+        out += text(x + 12, y - 11, tab, 10, MUTED, "start", "normal", mono)
+        out += box(x, y, 420, 46, bar_fill, bar_stroke, 6)
+        out += text(x + 14, y + 29, "Chemical & Sample Management", 12.5, INK, "start", "bold")
+        out += f"<rect x='{x+230}' y='{y+13}' width='{len(label)*8+16}' height='20' rx='10' fill='{pill_fill}' stroke='{pill_stroke}' stroke-width='1.2'/>\n"
+        out += text(x + 238 + len(label)*4, y + 27, label, 10.5, pill_text, "middle", "bold")
+        out += text(x + 408, y + 29, f"Running on port {port}", 9.5, MUTED, "end")
+        return out
+    b += header(30, 226, PAPER, "#e5e7eb", "#e0e7ff", "#a5b4fc", "#3730a3", "Prod", 49160, "[Prod] Crucible: Pandora Toolbox Enhancement (v2.0)")
+    b += header(490, 226, "#fffbeb", "#fcd34d", "#fef3c7", "#fbbf24", "#78350f", "Beta", 49161, "[Beta] Crucible: Pandora Toolbox Enhancement (v2.0)")
+    b += text(240, 296, "production: white bar, indigo pill, the real registry", 10, MUTED)
+    b += text(700, 296, "beta: amber bar, amber pill, a copy the testers may break", 10, MUTED)
+    # what it is not
+    b += box(30, 322, 880, 54, PANEL, LINE, 6)
+    b += lines(470, 342, ["the label is derived from the same name the scripts use for the container, so the corner and the terminal cannot disagree;",
+                          "nothing is stored, nothing is secret, and the answer stays open when the login arrives, because the login page must say where it is"], 9.5, INK, "middle", 15)
+    b += text(W/2, 404, "everyday version: the same uniform in two kitchens, but the practice kitchen has amber walls and a name tag that says so", 10.5, MUTED)
+    write("fig_instance_label.svg", svg(W, H, "One name in the settings file travels through the container script and the app to become a word and a colour in the page's corner; production shows an indigo Prod pill on a white bar, beta an amber Beta pill on an amber bar", b))
+
+
 # ---------------------------------------------------------------- palette --
 INK = "#1f2937"        # text
 MUTED = "#6b7280"      # secondary text
@@ -820,5 +861,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, cover, logo):
         f()

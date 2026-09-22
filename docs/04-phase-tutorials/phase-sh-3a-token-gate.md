@@ -2,7 +2,7 @@
 
 # Phase SH-3a — The token gate: one guard on every route, a login page, one open health route
 
-**Version shipped:** 2.22.0 · **Date:** 2026-09-22 · **Status:** complete (built and rehearsed on the development machine; delivered to the **beta instance** by [Step 7](#step-7--turn-it-on-beta-first); production stays open until its own promotion and its own two lines of settings)
+**Version shipped:** 2.22.0 · **Date:** 2026-09-22 · **Status:** complete (built and rehearsed on the development machine; on the **beta instance** by [Step 7](#step-7--turn-it-on-beta-first) at 17:31 and on **production** by [Step 8](#step-8--turn-it-on-for-production-its-own-token) at 18:06 the same day, each with its own token)
 **Track:** SH, the shared spine ([roadmap](../05-roadmap.md#sh--shared-spine)); the first rung of the authentication ladder planned in [`13-authentication.md`](../13-authentication.md) and decided in [ADR 0001](../adr/0001-authentication-ladder.md); the owner's priority of 2026-09-21, user testing with a login, and the go of 2026-09-22.
 **Prerequisites:** [Phase SH-12](phase-sh-12-beta-instance.md) (the beta instance, where the login lands first) and [Phase SH-13](phase-sh-13-instance-label.md) (the instance label, which the login page shows); the plan read once; a setup guide completed for your platform; the test virtual environment from its V7 check if you want to run the Python route.
 **Learning goal:** you understand what a login is at its simplest (one secret, presented two ways), where the secret lives and how it travels without ever being written down twice, why one route must stay open and which ones do, why the guard is one function rather than a change on every route, how a browser is remembered without holding the secret, and how to turn the gate on, test it from every direction, rotate the token and turn it off.
@@ -24,7 +24,8 @@
 8. [Step 5 — The scripts learn the new probe, and the token](#step-5--the-scripts-learn-the-new-probe-and-the-token)
 9. [Step 6 — Tests, build, rehearsal](#step-6--tests-build-rehearsal)
 10. [Step 7 — Turn it on, beta first](#step-7--turn-it-on-beta-first)
-11. [Rotate the token, or turn the gate off](#rotate-the-token-or-turn-the-gate-off)
+11. [Step 8 — Turn it on for production, its own token](#step-8--turn-it-on-for-production-its-own-token)
+12. [Rotate the token, or turn the gate off](#rotate-the-token-or-turn-the-gate-off)
 12. [Checkpoint](#checkpoint)
 13. [How to test it, by every route](#how-to-test-it-by-every-route)
 14. [What this phase deliberately did not do](#what-this-phase-deliberately-did-not-do)
@@ -512,13 +513,111 @@ container runs an image older than v2.22.0 (the fallback found no
 `/api/health` and `/api/stats` answered 401): `git log --oneline -1` in
 the folder, then `./container-py.sh rebuild`.
 
-**Production, later.** After the test, the promotion (blocks 4 to 6) puts
-this version on production, which changes nothing there by itself: the
-login is a setting, not code. Then the same three lines (`printf`,
-`chmod`, `stop` and `start`) in production's folder close its port, after a
-backup and at an agreed moment, because from that moment every script and
-every person needs the token. The runbook is
-[`07-operations.md` → Security](../07-operations.md#security).
+**Production, later.** The promotion (blocks 4 to 6) puts this version on
+production, which changes nothing there by itself: the login is a setting,
+not code. Then the same three lines in production's folder close its port,
+which is Step 8.
+
+---
+
+## Step 8 — Turn it on for production, its own token
+
+**What:** the same three lines, in production's folder, after the promotion
+has put this version there. The plan's rule was beta first (decision A9);
+the rehearsal on beta took an afternoon, and leaving the real registry as
+the less protected copy overnight would have been backwards. The owner
+chose the same evening, and chose **a token of its own** for production
+(decision A11).
+
+**Why its own token.** A token is a key. With one key for both doors, a
+leak among the testers opens the laboratory's data, and rotating the key
+after a leaver signs the laboratory out too. With one key per door, a leak
+or a rotation on one side stays on that side, and a tester never holds the
+laboratory's key. The cost is two values to hand out, which is exactly the
+separation wanted. The generation line is therefore run in **each** folder;
+one folder's line is never copied into the other.
+
+![Two instances side by side, each with its own token in its own settings file and its own group of people; one token never opens the other door](../img/fig_two_tokens.svg)
+
+**How (server, production folder), at a chosen moment.** The door closes
+the second the `start` line finishes: everyone using production in the
+browser then sees the login page, and every script against production
+needs the token. So the people who use production get the token first,
+out of band, and the moment is announced.
+
+```bash
+# ▶ VM - production folder
+cd ~/work/Pandora_toolbox/nr-nips-crucible
+printf 'AUTH_MODE=token\nCRUCIBLE_TOKEN=%s\n' "$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" >> .env.local
+chmod 600 .env.local
+grep -c . .env.local
+./container-py.sh help | grep Usage
+./container-py.sh backup
+./container-py.sh stop
+./container-py.sh start
+```
+
+**You should see** (as it ran on 2026-09-22 at 18:06):
+
+```
+5
+Usage: ./container-py.sh [command]        (runtime: podman · instance: default → crucible-py, port 49160 · login: token)
+✓ Backup complete:
+-rw-r--r-- 1 <your-user> <group> 147M Sep 22 18:06 crucible-20260922-180608.db
+Stopping the application through its service container-crucible-py.service...
+✓ container-crucible-py.service stopped; the container is removed (start, or the next boot, recreates it)
+Rewriting container-crucible-py.service from the container just created (the unit records the exact run command)...
+✓ container-crucible-py.service rewritten (enabled: enabled)
+Handing the container to the service container-crucible-py.service, which runs it from now on...
+✓ container-crucible-py.service is active: the service runs the application (systemctl --user status container-crucible-py.service)
+✓ The application answers at https://localhost:49160/api/health
+✓ Container started with HTTPS
+```
+
+Then prove it, and prove the two keys are different:
+
+```bash
+curl --noproxy '*' -sSk https://localhost:49160/api/stats; echo
+curl --noproxy '*' -sSk https://localhost:49160/api/health; echo
+CRUCIBLE_TOKEN="$(grep '^CRUCIBLE_TOKEN=' .env.local | cut -d= -f2-)" ./verify-deploy.sh https://localhost:49160 | tail -4
+ls -l ~/.config/systemd/user/container-crucible-py.service
+diff <(grep '^CRUCIBLE_TOKEN=' .env.local) <(grep '^CRUCIBLE_TOKEN=' ../nr-nips-crucible-beta/.env.local) >/dev/null && echo "SAME token on both" || echo "two different tokens, as intended"
+```
+
+```
+{"error":"Not authenticated"}
+{"status":"ok"}
+   PASS  identification progress reported (1 rows linked)
+
+  18 passed, 0 failed
+  Everything checks out.
+-rw------- 1 <your-user> <group> 1.3K Sep 22 18:06 /home/<your-user>/.config/systemd/user/container-crucible-py.service
+two different tokens, as intended
+```
+
+**What it means:** production is closed to anyone without its token, the
+deploy checks pass through the gate, the unit file that records the token
+is owner-only, and beta's token does not open production. In the browser,
+`https://<vm-hostname>:49160` shows the login page with the indigo **Prod**
+pill on a white bar; the laboratory's token is `grep '^CRUCIBLE_TOKEN='
+.env.local` in this folder, handed out in person or through the password
+manager.
+
+**If instead** `./monitor.sh | tail -1` in this folder printed
+`✗ Container restart failed`, and the log
+(`tail -6 /tmp/crucible-monitor.log`) shows
+`Starting health check of crucible-py at https://localhost:3000/api/health...`:
+this is what happened on 2026-09-22, and it is fixed in v2.22.1. The
+server's shell exports a `PORT` for something else, and until v2.22.1 the
+monitor honoured it when the folder's settings file had no `CRUCIBLE_PORT`
+(beta's has one, production's does not). It probed the wrong port, found
+nothing, and restarted a healthy production through its service. Nothing
+was lost: the restart went through the new unit and the application came
+back with the login on, as `./container-py.sh status` showed. Since v2.22.1
+the monitor ignores a generic `PORT`, as the container script always did,
+and refuses to restart a container whose published port is not the one it
+probed ([lesson 39](../11-lessons-learned.md)). The cron job was never
+affected: its line names the address outright.
 
 ---
 
@@ -604,7 +703,7 @@ environment. Replace `podman` with `docker` where that is the runtime;
 | **Terminal, a short token** | `CRUCIBLE_TOKEN=short ./container-py.sh help` | `✗ AUTH_MODE=token needs CRUCIBLE_TOKEN of at least 32 characters …` and the generator line; exit 1 | the same, with `AUTH_MODE=token` in front too |
 | **Terminal, a wrong mode** | `AUTH_MODE=sso ./container-py.sh help` | `✗ AUTH_MODE='sso' must be off or token (docs/13-authentication.md)` | the same |
 | **Terminal, the deploy check** | `CRUCIBLE_TOKEN="$T" ./verify-deploy.sh https://localhost:49161` · `./verify-deploy.sh https://localhost:49161` | `18 passed, 0 failed` · `this instance needs a token …`, exit 2 | `http://localhost:49160`, the same |
-| **Terminal, the monitor** | `./monitor.sh \| tail -1` · `API_URL=https://localhost:49161/api/stats ./monitor.sh \| tail -1` | `✓ crucible-py-beta is healthy` both times: the second is the old cron line's address, and the monitor tried `/api/health` first | `✓ crucible-py is healthy` |
+| **Terminal, the monitor** | `./monitor.sh \| tail -1` · `API_URL=https://localhost:49161/api/stats ./monitor.sh \| tail -1` | `✓ crucible-py-beta is healthy` both times: the second is the old cron line's address, and the monitor tried `/api/health` first. Since v2.22.1 a generic `PORT` in the shell is ignored (before it, a shell exporting `PORT=3000` made this probe the wrong port in a folder without `CRUCIBLE_PORT`, Step 8) | `PORT=3000 ./monitor.sh \| tail -1` → `✓ crucible-py is healthy`; `API_URL=http://localhost:3000/api/health ./monitor.sh \| tail -1` → `✗ Not restarting crucible-py: the probe asked …:3000…, but the container publishes port 49160 …` |
 | **Terminal, the file is owner-only** | `ls -l .env.local` | `-rw-------`: the script set it the first time it saw the token there | — (no file on the development machine) |
 | **Podman / Docker, the variables inside** | `podman exec crucible-py-beta sh -c 'echo $AUTH_MODE; echo ${#CRUCIBLE_TOKEN}'` | `token` and `64` (the length; the value stays inside) | `crucible-py`, the same |
 | **Podman / Docker, the whole environment** | `podman inspect crucible-py-beta --format '{{range .Config.Env}}{{println .}}{{end}}' \| grep -c CRUCIBLE_TOKEN` | `1`: the container has it, and only you can run `inspect` | the same |
@@ -616,12 +715,13 @@ environment. Replace `podman` with `docker` where that is the runtime;
 | **Database** | Query page (signed in): `SELECT name FROM sqlite_master WHERE name LIKE '%token%' OR name LIKE '%session%' OR name LIKE '%user%'` | no rows: nothing about the login is stored; the cookie is recomputed from the token on every request | the same |
 | **Automated tests** | `cd backend && .venv/bin/pytest -p no:warnings 2>&1 \| grep -E '[0-9]+ (passed\|failed)'` | — | `169 passed` |
 
-**Production untouched between the moments:** after block 3 and before the
-promotion, `curl …:49160/api/stats` still answers the counts without a
-token, `curl …:49160/api/health` answers the HTML page (no such route yet),
-and the production tab opens without asking. After the promotion,
-`/api/health` answers `ok` on production too, and the port stays open
-until production's own `.env.local` gets the two lines.
+**Production between the moments:** after block 3 and before the promotion,
+`curl …:49160/api/stats` still answered the counts without a token and
+`curl …:49160/api/health` answered the HTML page (no such route yet). After
+the promotion, `/api/health` answered `ok` on production and the port was
+still open, until Step 8 closed it the same evening. Since then the left
+column above holds for production too, with its own token and the indigo
+**Prod** pill on the login page.
 
 ---
 
@@ -647,11 +747,9 @@ until production's own `.env.local` gets the two lines.
 - **Guard the page's own files.** `/`, the built client, `/architecture`
   and `/docs` contain no data, and the login page has to load before
   anyone can sign in.
-- **Turn the login on in production.** By decision A9 it goes to beta
-  first; the promotion of this version changes nothing on production by
-  itself, because the login is a setting. When the testers agree, the two
-  lines and a `stop` and `start` close production's port, at an agreed
-  moment, after a backup.
+- **Share one token between the instances.** Each has its own (decision
+  A11, Step 8): a leak or a rotation on one side never touches the other,
+  and a tester never holds the laboratory's key.
 - **Rewrite old cron lines.** The monitor tries `/api/health` first, so a
   line naming `/api/stats` keeps working; the setup script writes the new
   address the next time it runs in the folder.

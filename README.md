@@ -308,9 +308,10 @@ full list and why each is excluded: [Operations → Security](docs/07-operations
   instance can be closed with `AUTH_MODE=token`: every route then needs the
   token, as a header from a script or pasted once into the login page. It
   says "someone with the token", never who: accounts and roles are the next
-  rung ([`docs/13-authentication.md`](docs/13-authentication.md)). An
-  instance whose operator has not written the two lines is open to anyone
-  who can reach its port, as before.
+  rung ([`docs/13-authentication.md`](docs/13-authentication.md)). Both
+  instances on the laboratory's server have it on since 2026-09-22, each
+  with its own token; a fresh installation is open until its operator
+  writes the two lines.
 - **There is no audit trail.** Records can be edited and deleted, and nothing
   records who did it or what it was before. Do not use this as evidence of what
   a value was on a given date.

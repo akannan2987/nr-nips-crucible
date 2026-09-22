@@ -151,7 +151,7 @@ means issuing and rotating secrets by hand. Either needs a **feature flag**
 so that internal users are not locked out mid-week.
 *Verdict:* **Required now**, as a ladder — *decided 2026-09-08; the first
 rung built 2026-09-22 (v2.22.0, [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md)):*
-a token gate first (SH-3a, shipped, on the beta instance first), local
+a token gate first (SH-3a, shipped, on both instances), local
 accounts in full next (SH-3b), and **single sign-on as the destination**
 (SH-3c, on hold: the owner decided on 2026-09-22 that it is not needed for
 the moment, to be revisited). The full plan, with every method explained, the ones rejected,

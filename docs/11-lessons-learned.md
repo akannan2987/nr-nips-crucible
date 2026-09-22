@@ -384,6 +384,23 @@ watchman check the door that will still open.* *The shape:* a check that
 would have reported one thing (dead) while another was true (answering,
 and correctly asking for a badge).
 
+**39. A probe at the wrong port restarted a healthy production.** The
+evening the login went on for production, `./monitor.sh` was run by hand
+in production's folder as a check. The server's shell exports `PORT=3000`
+for something else; the container script has ignored a generic `PORT`
+since the port clashes of 2026-08, but the monitor still honoured it when
+the folder had no `CRUCIBLE_PORT` (beta's has one, production's does not).
+It probed port 3000, found nothing, declared the application dead, and
+restarted it through its service; the second probe at port 3000 failed
+too, so it logged `✗ Container restart failed` about an application that
+was up and answering. Two fixes: the monitor derives its port the way the
+container script does, and it refuses to restart a container whose
+published port is not the one it probed, naming both. *The lesson: every
+script that reads a setting must read it the same way, and a watchman must
+check that it is looking at the right door before kicking it in.* *The
+shape:* a status that reported one thing (dead, restart failed) while
+another was true (answering; restarted for nothing).
+
 ---
 
 ## The one rule they add up to

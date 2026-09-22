@@ -10,6 +10,42 @@ change you are getting.
 
 ---
 
+## v2.22.1 — 2026-09-22 — "The login on production, and the monitor's port"
+
+Closes the chapter that v2.22.0 opened. The same day the token gate went to
+beta, the owner decided production should not stay the less protected copy,
+and it was closed at 18:06 with **its own token** (decision A11: a token
+opens one instance only). Turning it on there found a fault in the monitor,
+fixed here.
+
+**Changed**
+- **Both instances on the laboratory's server run the token gate** since
+  2026-09-22: beta at 17:31 (the testers' token), production at 18:06 (the
+  laboratory's token). Every document that said production's port was open
+  now says what is true; the tutorial gained
+  [Step 8, production](docs/04-phase-tutorials/phase-sh-3a-token-gate.md#step-8--turn-it-on-for-production-its-own-token)
+  with the real outputs.
+- **Decision A11, one token per instance**: generated in each folder
+  separately, never copied across; a leak or a rotation on one side never
+  touches the other; a tester never holds the laboratory's key. A figure,
+  `fig_two_tokens.svg`.
+
+**Fixed**
+- **`monitor.sh` honoured a generic `PORT` from the shell.** Run by hand in
+  production's folder on a server whose shell exports `PORT=3000`, it
+  probed port 3000, found nothing, and restarted a healthy production
+  application through its service (the cron job was never affected: its
+  line names the address outright). It now ignores a generic `PORT` exactly
+  as `container-py.sh` does, taking `CRUCIBLE_PORT` or 49160, and says so;
+  and it refuses to restart a container whose published port is not the
+  one it probed, naming both ports instead (lesson 39).
+
+**Deploy**
+- A helper script and documents: blocks 3 and 6 are a `git pull` each, no
+  rebuild (the monitor runs from the folder, not from the image).
+
+---
+
 ## v2.22.0 — 2026-09-22 — "The token gate"
 
 The first rung of the authentication ladder ([`13-authentication.md`](docs/13-authentication.md)),

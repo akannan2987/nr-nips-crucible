@@ -363,7 +363,8 @@ been waiting on a maintenance window since 2026-08-25.
 A scheduled command (a **cron** job, one line per instance in `crontab -l`)
 runs `monitor.sh` every five minutes. It asks the application's open
 health route, `/api/health` (no login needed, so the gate cannot fool it);
-if the answer is not a `200`, it restarts the instance, through
+if the answer is not a `200`, and the port it asked is the one the
+instance publishes (v2.22.1, lesson 39), it restarts the instance, through
 the service when the service runs it, and writes what it did to a log:
 
 ```bash

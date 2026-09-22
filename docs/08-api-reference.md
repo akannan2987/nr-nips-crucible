@@ -145,8 +145,9 @@ curl --noproxy '*' -sSk -H "Authorization: Bearer <the token>" https://<vm-hostn
 ```
 
 A browser presents the same token once on the login page and is then
-remembered by a cookie. With `AUTH_MODE=off`, the default and production's
-state until its operator turns the gate on, nothing is required. Accounts,
+remembered by a cookie. With `AUTH_MODE=off`, the default on a fresh
+installation, nothing is required; both instances on the laboratory's
+server have the gate on since 2026-09-22, each with its own token. Accounts,
 roles and single sign-on are later rungs of the same ladder.
 
 ### Rate Limiting

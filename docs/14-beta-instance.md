@@ -93,7 +93,7 @@ repository and needs a small extension.
 |---|---|---|
 | Folder on the server | `~/work/Pandora_toolbox/nr-nips-crucible` | `~/work/Pandora_toolbox/nr-nips-crucible-beta` |
 | Branch it runs | `master` | `beta` |
-| `.env.local` | `USE_HTTPS=true` (+ `AUTH_MODE` and `CRUCIBLE_TOKEN` once the login is turned on there) | the same, plus `CRUCIBLE_INSTANCE=beta` and `CRUCIBLE_PORT=49161`, and since v2.22.0 `AUTH_MODE=token` and `CRUCIBLE_TOKEN=…` |
+| `.env.local` | `USE_HTTPS=true`, and since 2026-09-22 `AUTH_MODE=token` and its own `CRUCIBLE_TOKEN` | the same, plus `CRUCIBLE_INSTANCE=beta` and `CRUCIBLE_PORT=49161`, and since v2.22.0 `AUTH_MODE=token` and `CRUCIBLE_TOKEN=…` |
 | Container name | `crucible-py` | `crucible-py-beta` |
 | Image name | `crucible-py` | `crucible-py-beta` (its own, so a beta rebuild can never replace production's image) |
 | Port | 49160 | 49161 |
@@ -282,11 +282,13 @@ tester out of band, pasted once into the login page
 **Next (SH-3b)** the mode becomes `local`: each tester gets a username and a
 password, created by the operator with `manage_users.py` inside the beta
 container, with the role that fits the test (viewer, editor or admin).
-Production stays as it is today until the testers have used the login for a
-while; then production's `.env.local` gets the same setting, its own
-accounts are created, and the port that has been open since the beginning
-is closed. That order is decision B5 and the revisited decision A3 on the
-authentication page.
+Production followed the same evening with **its own token** (decision A11:
+a token opens one instance only), so the port that had been open since the
+beginning is closed; when rung 2 arrives it is rehearsed on beta first in
+the same way, and production's accounts are created after. That order is
+decision B5 and the revisited decision A3 on the authentication page.
+
+![Two instances side by side, each with its own token in its own settings file and its own group of people; one token never opens the other door](img/fig_two_tokens.svg)
 
 ---
 
@@ -330,11 +332,12 @@ build ("build on what you have planned").
   morning's copy of production's data (12,539 compounds on both ports),
   `./verify-deploy.sh https://localhost:49161` passes 16 of 16, and
   production's container was not restarted.
-- 🔜 **The login's first rung on beta (v2.22.0, SH-3a):** two lines in this
-  folder's `.env.local`, a `stop` and a `start`, and the port is closed to
-  anyone without the token; done by the operator after block 3 of that
-  release; production's port stays open
-  ([phase SH-3a → Step 7](04-phase-tutorials/phase-sh-3a-token-gate.md#step-7--turn-it-on-beta-first)).
+- ✅ **The login's first rung, 2026-09-22 (v2.22.0, SH-3a):** two lines in
+  this folder's `.env.local`, a `stop` and a `start`, and beta's port was
+  closed to anyone without the testers' token at 17:31
+  ([phase SH-3a → Step 7](04-phase-tutorials/phase-sh-3a-token-gate.md#step-7--turn-it-on-beta-first));
+  production followed at 18:06 with its own token
+  ([Step 8](04-phase-tutorials/phase-sh-3a-token-gate.md#step-8--turn-it-on-for-production-its-own-token)).
 
 ---
 

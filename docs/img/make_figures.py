@@ -827,6 +827,46 @@ def fig_token_travels() -> None:
     write("fig_token_travels.svg", svg(W, H, "The token goes from the owner-only settings file through the container script into the container and the guard; a browser gets a cookie that is a keyed hash, a script sends a bearer header; the token is never in git, logs, errors or the page", b))
 
 
+def _key(cx: float, cy: float, s: float, col: str) -> str:
+    """A key glyph: a ring and a toothed shaft."""
+    return (f"<circle cx='{cx-s*0.6}' cy='{cy}' r='{s*0.38}' fill='{col}' fill-opacity='0.18' stroke='{col}' stroke-width='2'/>\n"
+            f"<path d='M {cx-s*0.22} {cy} H {cx+s*0.9} V {cy+s*0.32} M {cx+s*0.55} {cy} V {cy+s*0.25}' fill='none' stroke='{col}' stroke-width='2.4'/>\n")
+
+
+def fig_two_tokens() -> None:
+    """Decision A11: one token per instance; a token opens one door only."""
+    W, H = 940, 420
+    b = text(W/2, 34, "One token per instance (A11): the testers' key opens beta, the laboratory's key opens production", 15, INK, "middle", "bold")
+    sides = [
+        (40, "beta instance", "port 49161", "the testers", COLOURS["screening"], "#fff7ed", "nr-nips-crucible-beta/.env.local"),
+        (530, "production", "port 49160", "the laboratory", COLOURS["chemical"], "#eef2ff", "nr-nips-crucible/.env.local"),
+    ]
+    for x, title, port, who, col, fill, path in sides:
+        b += box(x, 70, 370, 250, fill, col, 12)
+        b += text(x + 185, 96, f"{title} · {port}", 13, col, "middle", "bold")
+        # the settings file with its own token
+        b += box(x + 25, 116, 320, 60, PAPER, LINE, 8)
+        b += text(x + 185, 136, path, 10, MUTED, "middle", "normal", "ui-monospace,Menlo,Consolas,monospace")
+        b += text(x + 185, 156, "AUTH_MODE=token  CRUCIBLE_TOKEN=<its own>", 10, INK, "middle", "bold", "ui-monospace,Menlo,Consolas,monospace")
+        # the key and the people
+        b += _key(x + 105, 220, 26, col)
+        b += text(x + 105, 262, "its own key, cut in its own folder", 10, MUTED)
+        b += box(x + 200, 196, 145, 52, PAPER, col, 8)
+        b += text(x + 272, 218, who, 12, col, "middle", "bold")
+        b += text(x + 272, 236, "hold this key only", 10, MUTED)
+        b += text(x + 185, 300, "rotate it here, and only this door changes", 10.5, INK)
+    # the crossed arrow between them
+    b += f"<path d='M 418 195 L 522 195' stroke='{COLOURS['toxicology']}' stroke-width='2.4' stroke-dasharray='5 4'/>\n"
+    b += f"<path d='M 459 184 L 481 206 M 481 184 L 459 206' stroke='{COLOURS['toxicology']}' stroke-width='2.6'/>\n"
+    b += text(470, 232, "one key never", 9.5, COLOURS["toxicology"])
+    b += text(470, 245, "opens the other", 9.5, COLOURS["toxicology"])
+    b += box(40, 338, 860, 30, PANEL, ACCENT, 6)
+    b += text(470, 358, "a leak on one side stays on that side · a tester never holds the laboratory's key · the same three lines in each folder, run separately", 10.5, INK, "middle", "bold")
+    b += text(W/2, 392, "everyday version: the practice kitchen and the restaurant kitchen have different locks, and the trainees are given only the first key", 11, INK)
+    b += text(W/2, 410, "docs/13-authentication.md, decision A11 · both doors closed on 2026-09-22 (v2.22.0)", 10.5, MUTED)
+    write("fig_two_tokens.svg", svg(W, H, "Two instances side by side, each with its own token in its own settings file and its own group of people; a crossed arrow between them: one token never opens the other door", b))
+
+
 def fig_delete_gate() -> None:
     W, H = 940, 400
     b = text(W/2, 34, "Deleting a compound after CR-6: the clerk refuses, the archivist empties the folder first", 16, INK, "middle", "bold")
@@ -1039,5 +1079,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, fig_two_tokens, cover, logo):
         f()

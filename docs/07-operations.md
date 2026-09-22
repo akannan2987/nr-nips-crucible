@@ -645,7 +645,12 @@ built-in `HEALTHCHECK` (every 30 s) that probes `/api/health` (see
 
 Run it manually any time: `./monitor.sh` — run by hand it reads the
 folder's `.env.local`, so in the beta folder it probes 49161 and would
-restart `crucible-py-beta`, never production.
+restart `crucible-py-beta`, never production. Since v2.22.1 it ignores a
+generic `PORT` in the shell, as the container script always did (before,
+a shell exporting `PORT=3000` made it probe the wrong port in a folder
+without `CRUCIBLE_PORT` and restart a healthy production), and it refuses
+to restart a container whose published port is not the one it probed,
+naming both ports instead (lesson 39).
 
 > The `USER=$(id -un) XDG_RUNTIME_DIR=/run/user/$(id -u)` prefix is required
 > under cron with rootless podman — see the note in
@@ -898,6 +903,7 @@ purge as belt-and-suspenders.
 | Database looks wrong and you want a clean slate | [Reset the database](#reset-the-database) below — it is re-created empty on the next start |
 | `curl` answers `{"error":"Not authenticated"}` | the login is on for that instance: add `-H "Authorization: Bearer <token>"` (the token is in its `.env.local`), or ask `/api/health`, which is open — [The login](#the-login-turn-it-on-rotate-the-token-turn-it-off) |
 | The login page refuses a token you are sure of | the container was not recreated after `.env.local` changed: `./container-py.sh stop` then `start`; compare with `grep CRUCIBLE_TOKEN .env.local` |
+| `./monitor.sh` by hand says `restart failed`, and its log names a port that is not the instance's | before v2.22.1 a generic `PORT` in the shell was honoured; now ignored, and the monitor refuses to restart a container at a port it does not publish. Set `CRUCIBLE_PORT` in the folder's `.env.local` if the instance is on a non-default port |
 | The monitor log shows a restart every five minutes | the container runs an image older than v2.22.0 with the login on somewhere else, or the application really is down: `./container-py.sh logs` |
 
 Beginner-oriented walkthroughs of the actual error messages, with a named fix
@@ -963,7 +969,7 @@ changes nothing here by itself.
 ![The token goes from the owner-only settings file through the container script into the container and the guard; a browser gets a cookie that is a keyed hash, a script sends a bearer header; the token is never in git, logs, errors or the page](img/fig_token_travels.svg)
 
 ```bash
-# ▶ VM — the instance's folder (beta first; production after the testers agree)
+# ▶ VM - the instance's folder (done on beta and on production 2026-09-22; the same lines after a reinstall)
 printf 'AUTH_MODE=token\nCRUCIBLE_TOKEN=%s\n' "$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" >> .env.local
 chmod 600 .env.local
 ./container-py.sh backup
@@ -975,7 +981,10 @@ CRUCIBLE_TOKEN="$(grep '^CRUCIBLE_TOKEN=' .env.local | cut -d= -f2-)" ./verify-d
 
 Hand the token to each person out of band (in person, or the
 organisation's password manager), never in an e-mail body or a chat. Read
-it back with `grep '^CRUCIBLE_TOKEN=' .env.local`.
+it back with `grep '^CRUCIBLE_TOKEN=' .env.local`. Each instance has **its
+own** token (decision A11): run the generation line in each folder, never
+copy one folder's line into the other; the testers' token opens beta only,
+the laboratory's opens production only.
 
 **Rotate** (a leaver, a leak, once a quarter): every browser is signed out
 at once and every script needs the new value.

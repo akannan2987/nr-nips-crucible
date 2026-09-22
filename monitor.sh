@@ -20,7 +20,17 @@ if [ -f "$_here/.env.local" ]; then
 fi
 CRUCIBLE_INSTANCE="${CRUCIBLE_INSTANCE:-}"
 CONTAINER_NAME="${CONTAINER_NAME:-crucible-py${CRUCIBLE_INSTANCE:+-$CRUCIBLE_INSTANCE}}"
-PORT="${CRUCIBLE_PORT:-${PORT:-49160}}"
+# The port: CRUCIBLE_PORT from .env.local or the environment, else 49160. A
+# generic PORT in the shell is IGNORED, exactly as container-py.sh ignores
+# it. Until v2.22.1 it was honoured, and on a server whose shell exports
+# PORT=3000 for something else this monitor, run by hand in a folder with
+# no CRUCIBLE_PORT, probed port 3000, found nothing, and restarted a healthy
+# production application (2026-09-22, lesson 39). The cron line names
+# API_URL outright and never depended on this.
+if [ -n "${PORT:-}" ] && [ -z "${CRUCIBLE_PORT:-}" ] && [ "${PORT}" != "49160" ]; then
+    echo "ℹ  Ignoring PORT=${PORT} from the environment (use CRUCIBLE_PORT=<n> to override); using 49160."
+fi
+PORT="${CRUCIBLE_PORT:-49160}"
 
 # Runtime detection (same convention as container*.sh)
 if [ -n "$CONTAINER_RUNTIME" ]; then RUNTIME="$CONTAINER_RUNTIME"
@@ -59,7 +69,22 @@ check_health() {
     return 1  # Unhealthy
 }
 
+# A second line of defence against the same mistake: never restart a
+# container for not answering at a port it does not publish. If the probe's
+# port and the container's published port disagree, the probe is wrong, not
+# the application, and the only right move is to say so and stop.
+probe_port_matches_container() {
+    local probe_port published
+    probe_port=$(printf '%s' "$API_URL" | sed -n 's|^[a-z]*://[^:/]*:\([0-9]\{1,\}\).*|\1|p')
+    published=$($RUNTIME port "$CONTAINER_NAME" 2>/dev/null | sed -n 's/.*:\([0-9]\{1,\}\)$/\1/p' | head -1)
+    [ -z "$probe_port" ] || [ -z "$published" ] || [ "$probe_port" = "$published" ]
+}
+
 restart_container() {
+    if ! probe_port_matches_container; then
+        log "✗ Not restarting ${CONTAINER_NAME}: the probe asked ${API_URL}, but the container publishes port $($RUNTIME port "$CONTAINER_NAME" 2>/dev/null | sed -n 's/.*:\([0-9]\{1,\}\)$/\1/p' | head -1). Fix API_URL or CRUCIBLE_PORT; the application was not touched."
+        return 1
+    fi
     log "⚠️  Container ${CONTAINER_NAME} unhealthy, restarting..."
     # On the server the systemd service owns the container (v2.21.2):
     # restart through it, or systemd and podman fight over one container.

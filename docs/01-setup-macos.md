@@ -631,10 +631,9 @@ and unnecessary on a laptop. It exists here for production-parity testing. If yo
 do not know you need it, you do not need it.
 
 Key environment variables (full table in [docs/07-operations.md](07-operations.md)):
-`CRUCIBLE_PORT` (`container-py.sh`'s only port override — it deliberately
-ignores a generic `PORT` shell variable; note `monitor.sh` and `setup-ssl.sh`
-**do** read `PORT`, so on a non-default port set `API_URL=...` for the monitor
-explicitly), `HOST_BIND` (default `127.0.0.1` on macOS),
+`CRUCIBLE_PORT` (the only port override for `container-py.sh` and, since
+v2.22.1, `monitor.sh` — both deliberately ignore a generic `PORT` shell
+variable; `setup-ssl.sh` still reads `PORT`), `HOST_BIND` (default `127.0.0.1` on macOS),
 `CONTAINER_RUNTIME=podman|docker`, `USE_POSTGRES`, `DATABASE_URL`.
 
 An **environment variable** is a setting you hand to a command by writing it in

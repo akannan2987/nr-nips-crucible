@@ -226,8 +226,9 @@ were given.
 ## Signing in
 
 Since v2.22.0 an instance can ask for an **access token** before it shows
-anything ([`13-authentication.md`](13-authentication.md)); the beta
-instance does, production does not yet. The page you see first is then the
+anything ([`13-authentication.md`](13-authentication.md)); both instances
+on the server do since 2026-09-22, each with its own token, so the token
+for beta does not open production, nor the other way round. The page you see first is then the
 login page, with the same *Prod* / *Beta* pill on its bar so you know where
 you are:
 

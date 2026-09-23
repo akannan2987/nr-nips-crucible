@@ -471,6 +471,7 @@ backend/app/
 ├── links.py        # where a link from a row to a chemical lives; unlink, count
 ├── imports.py      # one door for every chemicals file format; the registry specs
 ├── audit.py        # what needs a person's eye; the review mark (browser, API, script)
+├── structures.py   # one derived structure per entry (CR-12): read the source, compute, check; the findings the audit lists
 ├── merge.py        # fold entries into one survivor: carry over, repoint, clean, delete
 ├── tags.py         # where an entry came from, as derived tags; the counts strip; the filters
 ├── accounts.py     # the login's accounts (SH-3b): Argon2 hashing, roles, personal tokens, the lockout; one module behind the route, the guard and the script
@@ -968,5 +969,5 @@ of redrawing.
 
 ---
 
-**Last Updated:** September 22, 2026
+**Last Updated:** September 23, 2026
 **Version:** 2.0

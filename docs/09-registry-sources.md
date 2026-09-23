@@ -267,6 +267,7 @@ the buttons to act ([phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.
 | *N entries share an identifier with another entry* | two or more entries hold one CAS number, DTXSID or PubChem id (the import flagged them with `cas_shared_with` and its siblings; the page finds them from the data) | decide, per group, whether they are one substance — **Merge the others into** the survivor — or two — **Keep both, mark reviewed**; the mark stays on the entries as the record |
 | *N compounds whose batches disagree on a field* | `batch_conflicts` set by the export import | read each batch's value in the table; **Open the entry** and correct the field if the first batch was wrong; **Mark reviewed** |
 | *N entries whose formula does not match their name* | the chemistry check: a chain the formula cannot hold, or an element none of the entry's names explains | read the pair; **It is fine — mark reviewed**, or **Delete** (refused while rows are linked) |
+| *N entries whose derived structure disagrees with their own formula, weight or InChI* (v2.24.0) | the structure checks of [phase CR-12](04-phase-tutorials/phase-cr-12-structures.md): the structure derived from the entry's MOL block, SMILES or InChI has a formula, weight or InChIKey the source's own values do not match, or nothing could be read | read the two values side by side in **Doubtful structures**; **It is fine — mark reviewed**; **Derive structures…** on the same section computes them (report, then **Apply**) |
 
 `GET /api/chemicals/notices/summary` answers the counts for scripts;
 `GET /api/chemicals/audit` answers the list. Reviewed items are not counted.
@@ -356,4 +357,4 @@ long form, Python directly, the database, the deploy check — is in the
 | Every SDF molecule has a *structure warning* | an older image without the split fix | rebuild the image (the parser lives inside it) |
 | Two entries for one compound after loading export then SDF | the DTXSID differs between the two files | they are two registrations to the sources too; merge by hand if you know better |
 
-**Last Updated:** September 14, 2026
+**Last Updated:** September 23, 2026

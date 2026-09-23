@@ -49,6 +49,9 @@ export const reviewAuditItems = (chemical_ids, key, reviewed = true) =>
 export const mergeChemicals = (keep, remove) => api.post('/chemicals/merge', { keep, remove });
 export const setChemicalIdentifier = (chemicalId, nestle_id) =>
   api.post(`/chemicals/${chemicalId}/identifier`, { nestle_id });
+// CR-12: derive one structure per entry and check it; report only unless apply is true
+export const deriveStructures = (chemical_ids = [], apply = false) =>
+  api.post('/chemicals/structures/derive', { chemical_ids, apply });
 export const getChemicalColumns = () => api.get('/chemicals/columns');
 // CR-11: the counts above the registry table — compounds, batches, entries per source tag.
 export const getChemicalSummary = () => api.get('/chemicals/summary');

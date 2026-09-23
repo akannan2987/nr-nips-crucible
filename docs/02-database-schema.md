@@ -155,6 +155,7 @@ Stores chemical compound information.
 | `ms_ready_smiles` | string | No | EPA MS-Ready normalized SMILES | `"CN1C=NC2=C1C(=O)N(C(=O)N2C)C"` |
 | `synonyms` | string[] | No | Alternate names (auto-split on `;,\n`) | `["1,3,7-Trimethylxanthine", "Theine"]` |
 | `structural` | object | No | Derived structural intelligence — see below | `{ "isPolymer": false, ... }` |
+| `structure` | object | No | v2.24.0: the one derived structure and its checks, written only by the derive step, never on upload — [`09-structures.md`](09-structures.md) | `{ "source": "smiles", "formula": "C8H10N4O2", "inchikey": "RYYVLZVUVIJVGH-UHFFFAOYSA-N", "checks": { ... }, "findings": [] }` |
 | `hazard_info` | string | No | Hazard information | `"Toxic if swallowed"` |
 | `storage_conditions` | string | No | Storage requirements | `"Store at 2-8°C"` |
 | `description` | string | No | Additional notes | `"Stimulant compound"` |

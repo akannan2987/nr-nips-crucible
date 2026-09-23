@@ -10,6 +10,59 @@ change you are getting.
 
 ---
 
+## v2.24.0 — 2026-09-23 — "Structures derived and checked"
+
+Step A of phase CR-12, the owner's request of 2026-09-14: the registry
+now derives one structure per compound from whatever the source gave,
+computes what a structure can tell, and says where the source disagrees
+with itself. Steps B (draw) and C (edit) follow.
+
+**Added**
+- **One derived structure per entry.** From the MOL block, the SMILES or
+  the InChI, in that order (decision S5), RDKit derives one structure and
+  stores it under `structure` beside the entry's own fields, never over
+  them: the canonical SMILES, the InChI and InChIKey, the computed
+  formula, the average weight and the exact mass, the counts of atoms,
+  bonds, rings, charge and fragments, which source it came from, what was
+  repaired (135 SMILES the source had wrapped in brackets) and what could
+  not be read ([the module](docs/09-structures.md#step-a--derive-one-structure-per-entry-and-check-it)).
+- **Four checks, and a fifth kind on the attention page.** The
+  laboratory's formula against the whole structure and each fragment (a
+  salt recorded by its parent passes); its weight against the average
+  weight and the exact mass; the InChI it carries against the derived
+  key, skeleton or stereo layer; a source nothing can read. A
+  disagreement is a *structure finding* with the two values side by side
+  and the same *mark reviewed* as every other kind. On the real export:
+  6,553 entries with a source, 6,544 derived, 446 with a finding (formula
+  398, weight 79, InChI 47, unreadable 9).
+- **Three doors, one module:** `POST /api/chemicals/structures/derive`,
+  `derive_structures.py` (`./container-py.sh script derive_structures.py`
+  on the server) and **Derive structures…** on the attention page; report
+  first, *apply* to write; a re-run rewrites only what changed; an unknown
+  identifier writes nothing.
+- The derived structure on every entry's detail view, with each check's
+  verdict; four derived columns in the picker (*derived formula*, *derived
+  weight*, *InChIKey (derived)*, *structure source*); one more sentence on
+  the registry banner; the audit script prints the fifth kind.
+- Eight tests (201), [the tutorial](docs/04-phase-tutorials/phase-cr-12-structures.md) with a test
+  for every route, a figure, glossary entries, lesson 43.
+
+**Limitations, on purpose**
+- Nothing is drawn yet (step B) and nothing can be drawn or corrected
+  (step C). No structure is fetched from PubChem for the 5,986 entries
+  without one (decision S3). An upload does not derive; a person runs it.
+  The laboratory's formula and weight are never rewritten: the finding is
+  the evidence, a correction is a person's edit.
+- About ten seconds per ten thousand entries, synchronous; the counts on
+  the registry page follow a script's write within 30 seconds.
+
+**Deploy**
+- Code under `backend/` and `client/`: blocks 3 and 6 rebuild, each
+  followed by [Step 7](docs/04-phase-tutorials/phase-cr-12-structures.md#step-7--derive-on-the-server-beta-first)
+  on that instance (the report, a backup, then `--apply`).
+
+---
+
 ## v2.23.4 — 2026-09-23 — "Production on accounts"
 
 Documents only. Production moved to accounts at 01:17 server time, by

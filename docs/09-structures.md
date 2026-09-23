@@ -2,10 +2,7 @@
 
 # Chemical structures — derive, draw, edit
 
-**Status:** specification 📝, written 2026-09-14 from the owner's request; the
-decisions S1–S5 below await the owner, then it is built as phase **CR-12**
-in three releases. This page becomes the reference for structures once
-they ship; until then it says what will exist and why.
+**Status:** step A **built** ✅ as v2.24.0 (2026-09-23): one derived structure per entry, checked, its findings on the attention page ([phase CR-12](04-phase-tutorials/phase-cr-12-structures.md), with a test for every route); steps B (draw) and C (edit) follow in their own releases. Written 2026-09-14 from the owner's request; decisions S1–S5 were agreed as recommended with the go of 2026-09-23, and S6–S9 were taken while building (below). This page is the reference for what exists and says plainly what does not yet.
 
 **Who this is for:** anyone who wants to *see* a compound rather than read
 its name — and anyone who has to correct a structure the source got wrong.
@@ -66,6 +63,15 @@ Counted on the development copy of the real export on 2026-09-14 (12,539 entries
 | **Any** of the three | 6,553 | — |
 | **None** | 5,986 | entries the source system itself has no structure for |
 
+**Derived on 2026-09-23 (v2.24.0, step A)** from the same copy, in 10.7 s:
+
+| Result | Entries | Note |
+|---|---|---|
+| Derived | **6,544** | 77 from a MOL block, 6,322 from a SMILES (135 read after removing the outer brackets the source added), 145 from an InChI |
+| Could not be read | 9 | listed as a finding of their own |
+| With a finding | **446** | formula 398, weight 79, InChI 47 (24 skeleton, 3 stereo, 20 unreadable InChIs), unreadable 9; some entries carry two or three |
+| No source | 5,986 | untouched: nothing to derive from |
+
 Today the detail view draws the 77 MOL blocks with a small viewer written
 for this project (`client/src/components/MoleculeViewer.jsx`) and shows a
 SMILES string as text for the rest. Nothing is computed from a SMILES or an
@@ -95,6 +101,17 @@ chemist entered), else the InChI. Whichever is used is recorded.
 | `atoms`, `bonds`, `rings`, `charge` | counts, for the table and the filters |
 | `derived_at` | when |
 
+**As built (v2.24.0):** the fields above, and also `exact_mass` (the
+monoisotopic mass beside the average `weight`), `largest_fragment` (for
+a salt or a mixture: the biggest fragment's formula, weights and atoms),
+`repaired` (present when the SMILES was read after removing the source's
+outer brackets), `unreadable` (the sources tried before the one that
+read), `checks` (a verdict per check: `agrees`, `differs`, `none`, `same
+source`, `unreadable`, `not computable`) and `findings` (each
+`{kind, reason}`). The counts: `atoms` are heavy atoms. A re-run rewrites
+only the entries whose result changed, and never touches `updated_at`:
+a derived fact is not an edit of the record ([Step 2 of the tutorial](04-phase-tutorials/phase-cr-12-structures.md#step-2--compute-the-facts-and-store-them-beside-the-entry)).
+
 The one design rule holds: `structure` is one more fact in the document.
 No column, no migration.
 
@@ -106,10 +123,26 @@ with the two values side by side and the same *mark reviewed* as the
 others. That is how the registry says which of its structures it cannot
 vouch for, instead of drawing them all with equal confidence.
 
+**As built, the four checks** ([Step 3 of the tutorial](04-phase-tutorials/phase-cr-12-structures.md#step-3--check-the-source-against-its-own-structure)):
+the formula is compared with the whole structure's *and each fragment's*,
+spaces and a trailing charge ignored, so a salt recorded by its parent
+passes (S6); the weight with the average weight *and* the exact mass, of
+the whole and of each fragment, within 1 g/mol or 0.5 % (S7); the InChI
+the source carries, when the structure came from a MOL block or a SMILES,
+as an InChIKey against the derived one, a different first block being a
+different skeleton and a different tail a stereo or charge difference,
+an unreadable InChI reported as such; and a source nothing can read. The
+finding's reason says which comparison failed and with what.
+
 **By every route.** `POST /api/chemicals/structures/derive` (all entries,
 or a list of identifiers; report first, `apply` to write) and the script
 `derive_structures.py` with the same options; a button on the attention
 page runs it. Both call one module, as the audit does.
+Built as described: `backend/app/structures.py` behind the endpoint,
+`backend/scripts/derive_structures.py` (`./container-py.sh script derive_structures.py [--apply]`
+on the server) and the derive panel of *Needs attention → Doubtful
+structures*; the derived fields are four columns of the registry views
+([every route, tested](04-phase-tutorials/phase-cr-12-structures.md#how-to-test-it-by-every-route)).
 
 **What it does not do:** ask PubChem for the 5,986 entries with no
 structure. That is enrichment, and enrichment goes through the review
@@ -195,14 +228,20 @@ phase.
 | S3 | Fetch missing structures from PubChem? | **Not in CR-12.** Through CR-4's review table, per compound, name and CAS agreeing | The two-identifier rule; lesson 24 |
 | S4 | A thumbnail column in the registry views? | Yes, off by default in Compact, offered in Complete and Batches | 12,539 images on a page is a lot; a person switches it on |
 | S5 | Which source wins when an entry has several? | MOL block, then `SMILES_ORIGINAL`, then InChI; the InChI is then used to *check* | The drawing is the most explicit; the chemist's SMILES is what was entered; a computed InChIKey that differs from the export's InChI is a finding, not a silent choice |
+| S6 (taken while building, 2026-09-23) | Compare the laboratory's formula with what? | The whole structure's formula **and each fragment's** | A salt is written as several fragments and the laboratory records the parent: comparing with the whole alone flagged 938 entries of the real export, with the fragments 398, every one a genuine disagreement (lesson 43) |
+| S7 (2026-09-23) | Which weight is "the" weight? | Both: the average weight and the exact (monoisotopic) mass, of the whole and of each fragment | 6,179 of 6,382 laboratory weights are exact masses to the fourth decimal, 314 are averages; both are right |
+| S8 (2026-09-23) | A SMILES the source wrapped in square brackets? | Read after removing the outer brackets, and recorded as `repaired`; not a finding | 135 of 147 read that way; nothing is guessed, and the repair is visible on the entry |
+| S9 (2026-09-23) | Does deriving count as an edit? | No: `updated_at` is left alone; an upload does not derive; a re-run rewrites only what changed | A derived fact is not a person's change to the record; a file with a wrong structure must not silently gain a wrong canonical form |
 
 ---
 
 ## Done means
 
-- Step A: every entry with a structure source has a `structure`; the
+- ✅ **Step A, v2.24.0 (2026-09-23):** every entry with a structure source has a `structure`; the
   attention page shows the structure findings with their counts; the
-  script and the endpoint report first and write on `apply`.
+  script and the endpoint report first and write on `apply`. On the real
+  export: 6,553 with a source, 6,544 derived, 446 findings; derived on an
+  instance by [Step 7 of the tutorial](04-phase-tutorials/phase-cr-12-structures.md#step-7--derive-on-the-server-beta-first).
 - Step B: `GET /api/chemicals/{id}/structure.svg` answers for every derived
   structure; the detail view and the chooser dialogs show it.
 - Step C: **Draw structure** and **Edit structure** open the editor; a save
@@ -211,4 +250,4 @@ phase.
 - Each step has its tests, its every-route test table in the phase
   tutorial, and its release note.
 
-**Last Updated:** September 14, 2026
+**Last Updated:** September 23, 2026

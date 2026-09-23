@@ -712,8 +712,9 @@ photo and address. The name looks right in your contacts list. Everything you do
 
 **In the browser, first:** *Chemical Registry → Needs attention*. The same
 list as below, with the buttons to act — merge, keep both, mark reviewed,
-set an identifier, delete — and every count on the registry banner is a
-link into it ([phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.md)).
+set an identifier, delete, and since v2.24.0 derive and check the structures
+([phase CR-12](04-phase-tutorials/phase-cr-12-structures.md)) — and every
+count on the registry banner is a link into it ([phase CR-10](04-phase-tutorials/phase-cr-10-attention-page.md)).
 The terminal form is for people who prefer text, and for scripting; both
 call the same code, and a mark left in one is seen in the other.
 

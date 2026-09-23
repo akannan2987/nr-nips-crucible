@@ -914,11 +914,13 @@ route. The sources, column by column: [`09-registry-sources.md`](09-registry-sou
 
 **Endpoint:** `GET /chemicals/notices/summary`
 
-**Response:** `{"nestle_id_pending": 0, "cas_shared": 419, "batch_conflicts": 3, "formula": 125, "attention": 349}` —
+**Response:** `{"nestle_id_pending": 0, "cas_shared": 419, "batch_conflicts": 3, "formula": 125, "structure": 446, "attention": 795}` —
 entries whose identifier is still to come from the screening data; entries
 sharing a CAS, DTXSID or PubChem identifier with another (kept, for a person
 to decide); compounds whose batches disagree on a field; entries whose
-formula none of their names explains; and the total of open items. Reviewed
+formula none of their names explains; entries whose derived structure
+disagrees with their own formula, weight or InChI (v2.24.0, once the
+structures are derived; 0 before); and the total of open items. Reviewed
 items are not counted. The Chemical Registry page shows them as a banner
 whose counts link to the attention page; the sidebar shows `attention`.
 Cached like the columns: a review mark, a merge or a delete refreshes it at
@@ -935,7 +937,7 @@ entries the formula check passed, ranked.
 ```json
 {
   "counts": {"shared_groups": 221, "shared_entries": 419, "batch_conflicts": 3, "pending": 0,
-             "formula": 125, "reviewed": 0, "attention": 349},
+             "formula": 125, "structure": 446, "reviewed": 0, "attention": 795},
   "checked": 6550, "skipped": 5989,
   "shared": [
     {"key": "shared:cas:121-33-5", "kind": "cas", "value": "121-33-5", "reviewed": false,
@@ -955,9 +957,23 @@ entries the formula check passed, ranked.
     {"chemical_id": "CHEM-000030", "name": "Glycerol, 2-monohexadecanoate", "pubchem_name": null,
      "molecular_formula": "C7H9NO", "reasons": ["name says 'hexadec…' (16 carbons) but the formula has 7",
      "formula has N but nothing in the name accounts for it"], "severity": 9, "key": "formula", "reviewed": false}
-  ]
+  ],
+  "structures": [
+    {"chemical_id": "CHEM-000232", "name": "Aluminium chloride hydroxide", "molecular_formula": "Al2", "molecular_weight": 178.9848, "…": "…",
+     "key": "structure", "reviewed": false,
+     "structure": {"source": "smiles", "formula": "H10Al2ClO5", "weight": 179.492, "exact_mass": 178.9848, "inchikey": "KMZVLRWDRFTSPT-UHFFFAOYSA-M",
+                   "fragments": 8, "largest_fragment": {"formula": "Cl-", "weight": 35.453, "exact_mass": 34.9694, "atoms": 1},
+                   "checks": {"formula": "differs", "weight": "agrees", "inchi": "agrees"}, "derived_at": "…"},
+     "reasons": ["the laboratory's formula Al2 is not the formula of the structure (H10Al2ClO5) or any of its 8 fragments"], "kinds": ["formula"]}
+  ],
+  "structures_summary": {"with_source": 6553, "derived": 6544, "to_derive": 0, "findings": 446}
 }
 ```
+
+`structures` (v2.24.0) lists the entries whose derived structure disagrees
+with what the source recorded, read from the `structure` each entry
+carries after a derive; `structures_summary` says where the registry
+stands. Deriving is [its own endpoint](#derive-structures).
 
 Shared groups are found from the data — every value held by two or more
 entries — sorted open first. `kind` is `cas`, `dtxsid` or `pubchem`. Each
@@ -991,6 +1007,53 @@ deleted, in one transaction. The survivor records them under
 **Response:** `{"kept": "CHEM-000010", "removed": ["CHEM-000011"], "rows_repointed": {"screening": 3, "samples": 1, "total": 4}, "message": "Merged 1 entry into CHEM-000010; 4 rows repointed"}`.
 `400` for an empty list or the survivor named among the removed; `404` for
 an unknown id — nothing written.
+
+### Derive structures
+
+**Endpoint:** `POST /chemicals/structures/derive` (v2.24.0, phase CR-12 step A)
+
+**Request Body:** `{}` for every entry, or `{"chemical_ids": ["CHEM-000232"]}`;
+add `"apply": true` to write. Without it the call is a report and writes
+nothing.
+
+**What happens:** for each entry that carries a MOL block, a SMILES or an
+InChI, RDKit reads the first that reads (in that order), computes the
+canonical SMILES, the InChI and InChIKey, the formula, the average weight
+and the exact mass, the counts, and compares the laboratory's own formula
+(against the whole structure and each fragment), weight (against both
+masses) and InChI (by layer) with them. With `apply`, the result is stored
+under `structure` on the entry, beside its fields, never over them; the
+entry's `updated_at` is not touched; a re-run rewrites only what changed.
+
+**Response:**
+
+```json
+{"entries": 12539, "with_source": 6553, "derived": 6544,
+ "from": {"mol_block": 77, "smiles": 6322, "inchi": 145}, "repaired": 135, "unreadable": 9,
+ "findings": {"entries": 446, "formula": 398, "weight": 79, "inchi": 47, "unreadable": 9},
+ "applied": true, "written": 6553, "unchanged": 0, "seconds": 10.7,
+ "items": [
+   {"chemical_id": "CHEM-000232", "name": "Aluminium chloride hydroxide", "molecular_formula": "Al2", "molecular_weight": 178.9848,
+    "source": "smiles", "repaired": null, "formula": "H10Al2ClO5", "weight": 179.492, "exact_mass": 178.9848,
+    "inchikey": "KMZVLRWDRFTSPT-UHFFFAOYSA-M", "fragments": 8,
+    "findings": ["the laboratory's formula Al2 is not the formula of the structure (H10Al2ClO5) or any of its 8 fragments"], "kinds": ["formula"]}
+ ]}
+```
+
+`items` lists every entry with a finding. `404` for an unknown identifier,
+nothing written. About ten seconds per ten thousand entries; the counts
+the registry page shows refresh at once after this call (it is a write
+through the router) and within 30 seconds after the script's.
+
+**The `structure` on an entry** (`GET /chemicals/:id` after a derive):
+`source` (`mol_block`, `smiles`, `inchi`, or `null` when nothing could be
+read), `smiles`, `inchi`, `inchikey`, `formula`, `weight`, `exact_mass`,
+`atoms`, `bonds`, `rings`, `charge`, `fragments`, `largest_fragment` (for a
+salt or mixture), `repaired`, `unreadable`, `checks`, `findings`,
+`derived_at`; four of them are offered as columns by
+[`/chemicals/columns`](#list-chemicals) under the group `structure`
+(`structure.formula`, `structure.weight`, `structure.inchikey`,
+`structure.source`), sortable and filterable like any column.
 
 ### Set a pending identifier
 

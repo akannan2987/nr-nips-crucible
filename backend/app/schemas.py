@@ -144,6 +144,13 @@ class IdentifierIn(_LenientModel):
     nestle_id: str | None = None
 
 
+class StructuresDeriveIn(_LenientModel):
+    """CR-12: derive one structure per entry; report, or write on `apply`."""
+
+    chemical_ids: Any | None = None
+    apply: bool = False
+
+
 class BulkDeleteSamples(_LenientModel):
     sample_ids: Any | None = None
 

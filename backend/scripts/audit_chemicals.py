@@ -6,7 +6,7 @@ Needs attention) and the API answers at `GET /api/chemicals/audit`: all
 three call `app.audit`, so a mark left in the browser is seen here and the
 terminal never lists something the page does not.
 
-Four kinds of thing, in this order:
+Five kinds of thing, in this order:
 
 * entries sharing a CAS number, DTXSID or PubChem compound id with another;
 * compounds whose batches disagree on a column, each batch's value shown;
@@ -15,7 +15,10 @@ Four kinds of thing, in this order:
   *hexadecanoate* claims sixteen carbons; a formula with seven disagrees,
   and no naming convention explains it. (Comparing the two *names* does not
   work: `Monostearin` and `Glycerol, 1-monooctadecanoate` share no words
-  and are one substance.)
+  and are one substance.);
+* entries whose derived structure disagrees with the formula, weight or
+  InChI the source recorded beside it (CR-12; derived on request by
+  `derive_structures.py`, listed here).
 
 It decides nothing — it sorts, so somebody reviewing hundreds of entries
 meets the doubtful ones first. Items a person has marked reviewed are shown
@@ -62,7 +65,7 @@ def print_report(result: dict, show_all: bool) -> None:
     c = result["counts"]
     print(f"{c['attention']} thing{'' if c['attention'] == 1 else 's'} need attention"
           f" ({c['shared_groups']} shared identifiers, {c['batch_conflicts']} batch conflicts,"
-          f" {c['pending']} pending identifiers, {c['formula']} doubtful formulas); {c['reviewed']} reviewed.\n")
+          f" {c['pending']} pending identifiers, {c['formula']} doubtful formulas, {c.get('structure', 0)} doubtful structures); {c['reviewed']} reviewed.\n")
 
     if result["shared"]:
         print("Shared identifiers — two or more entries with one identifier (kept on purpose; a person decides):")
@@ -104,6 +107,24 @@ def print_report(result: dict, show_all: bool) -> None:
         print(f"        cas={item.get('cas_number')}  formula={item.get('molecular_formula')}  mw={item.get('molecular_weight')}")
         for reason in item.get("reasons") or []:
             print(f"        -> {reason}")
+        print()
+
+    structures = result.get("structures") or []
+    ss = result.get("structures_summary") or {}
+    if ss:
+        print(f"Structures: {ss.get('with_source', 0)} entries carry a structure source, {ss.get('derived', 0)} derived, "
+              f"{ss.get('to_derive', 0)} still to derive (scripts/derive_structures.py --apply), {ss.get('findings', 0)} with a finding.")
+    if structures:
+        print("Doubtful structures — the derived structure disagrees with the formula, weight or InChI the source recorded beside it:")
+        for item in structures:
+            mark = "  reviewed" if item["reviewed"] else ""
+            s = item.get("structure") or {}
+            print(f"  {item['chemical_id']}  {str(item.get('name'))[:44]}{mark}")
+            print(f"        laboratory : formula={item.get('molecular_formula') or '-'}  weight={item.get('molecular_weight') if item.get('molecular_weight') is not None else '-'}")
+            if s.get("source"):
+                print(f"        structure  : from {s.get('source')}  formula={s.get('formula')}  weight={s.get('weight')}  exact={s.get('exact_mass')}  inchikey={s.get('inchikey')}")
+            for reason in item.get("reasons") or []:
+                print(f"        -> {reason}")
         print()
 
     print(

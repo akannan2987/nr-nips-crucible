@@ -506,6 +506,7 @@ export default function ChemicalsView() {
           {notices.cas_shared > 0 && <span><Link to="/chemicals/attention#shared" className="underline font-medium">{notices.cas_shared.toLocaleString()} entr{notices.cas_shared === 1 ? 'y shares' : 'ies share'}</Link> an identifier with another entry (kept on purpose, for a person to decide). </span>}
           {notices.batch_conflicts > 0 && <span><Link to="/chemicals/attention#batches" className="underline font-medium">{notices.batch_conflicts.toLocaleString()} compound{notices.batch_conflicts === 1 ? '' : 's'}</Link> whose batches disagree on a field. </span>}
           {notices.formula > 0 && <span><Link to="/chemicals/attention#formula" className="underline font-medium">{notices.formula.toLocaleString()} entr{notices.formula === 1 ? 'y' : 'ies'}</Link> whose formula does not match {notices.formula === 1 ? 'its' : 'their'} name (a check, not a verdict). </span>}
+          {notices.structure > 0 && <span><Link to="/chemicals/attention#structures" className="underline font-medium">{notices.structure.toLocaleString()} entr{notices.structure === 1 ? 'y' : 'ies'}</Link> whose derived structure disagrees with {notices.structure === 1 ? 'its' : 'their'} own formula, weight or InChI. </span>}
           <Link to="/chemicals/attention" className="inline-flex items-center ml-1 px-2.5 py-1 rounded-md bg-amber-600 text-white font-medium hover:bg-amber-700">
             Review them
           </Link>
@@ -932,6 +933,9 @@ export default function ChemicalsView() {
               </div>
             </div>
 
+            {/* CR-12: the derived structure, beside the laboratory's own values, never over them */}
+            <DerivedStructure structure={selectedChemical.structure} lab={selectedChemical} />
+
             {/* Tabs */}
             <div className="border-b flex-shrink-0">
               <div className="flex overflow-x-auto px-5">
@@ -1093,6 +1097,54 @@ export default function ChemicalsView() {
 }
 
 /** A column's value, dotted keys included: metadata.CAS_NO, batch.BATCH_ID. */
+// CR-12: what the server derived from the entry's own structure (app.structures),
+// shown beside the laboratory's values with the verdict of each check. The
+// browser draws; it never computes chemistry.
+const CHECK_TEXT = { agrees: '✓ agrees', differs: '✗ differs', none: 'nothing to compare', 'same source': 'derived from it', unreadable: 'unreadable', 'not computable': 'not computable' }
+function DerivedStructure({ structure, lab }) {
+  const hasSource = !!(lab.mol_block || lab.smiles || lab.inchi || lab.inchi_string)
+  if (!structure) {
+    return (
+      <div className="px-5 py-2.5 border-b flex-shrink-0 bg-gray-50 text-xs text-gray-600" data-testid="derived-structure">
+        <span className="font-semibold text-gray-700">Derived structure:</span>{' '}
+        {hasSource
+          ? <span>not derived yet — this entry carries a structure source; <Link to="/chemicals/attention#structures" className="underline">Derive structures</Link> on the attention page computes and checks it.</span>
+          : <span>none — this entry carries no MOL block, SMILES or InChI to derive one from (a drawn structure comes with the structure editor, CR-12 step C).</span>}
+      </div>
+    )
+  }
+  const checks = structure.checks || {}
+  const verdict = (k) => <span className={['differs', 'unreadable', 'not computable'].includes(checks[k]) ? 'text-amber-800 font-medium' : 'text-gray-500'}>{CHECK_TEXT[checks[k]] || ''}</span>
+  if (!structure.source) {
+    return (
+      <div className="px-5 py-2.5 border-b flex-shrink-0 bg-amber-50 text-xs text-amber-900" data-testid="derived-structure">
+        <span className="font-semibold">Derived structure:</span> none could be read from the {(structure.unreadable || []).join(' or the ')} the source carries
+        {' '}(derived {String(structure.derived_at || '').slice(0, 19).replace('T', ' ')}); listed on <Link to="/chemicals/attention#structures" className="underline">Needs attention</Link>.
+      </div>
+    )
+  }
+  const findings = structure.findings || []
+  return (
+    <div className={`px-5 py-2.5 border-b flex-shrink-0 text-xs ${findings.length ? 'bg-amber-50' : 'bg-gray-50'}`} data-testid="derived-structure">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        <span className="font-semibold text-gray-700">Derived structure</span>
+        <span className="text-gray-500">from the <span className="font-mono">{structure.source}</span>{structure.repaired ? ` (${structure.repaired})` : ''}{structure.fragments > 1 ? ` · ${structure.fragments} fragments` : ''} · {String(structure.derived_at || '').slice(0, 10)}</span>
+      </div>
+      <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-1">
+        <div><span className="text-gray-400">Formula</span> <span className="font-mono">{structure.formula}</span>{structure.largest_fragment ? <span className="text-gray-500"> (largest fragment {structure.largest_fragment.formula})</span> : null} · lab <span className="font-mono">{lab.molecular_formula || '—'}</span> {verdict('formula')}</div>
+        <div><span className="text-gray-400">Weight</span> <span className="font-mono">{structure.weight}</span> avg · <span className="font-mono">{structure.exact_mass}</span> exact · lab <span className="font-mono">{lab.molecular_weight ?? '—'}</span> {verdict('weight')}</div>
+        <div><span className="text-gray-400">InChIKey</span> <span className="font-mono">{structure.inchikey}</span> {verdict('inchi')}</div>
+        <div className="truncate" title={structure.smiles}><span className="text-gray-400">Canonical SMILES</span> <span className="font-mono">{structure.smiles}</span></div>
+      </div>
+      {findings.length > 0 && (
+        <ul className="mt-1 text-amber-800 list-disc list-inside">
+          {findings.map((f) => <li key={f.reason}>{f.reason}</li>)}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 function cellValue(row, key) {
   if (key.includes('.')) {
     const [head, ...rest] = key.split('.')

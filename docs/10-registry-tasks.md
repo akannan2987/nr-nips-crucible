@@ -43,6 +43,7 @@ flowchart LR
 10. [Fill in missing information from PubChem](#10-fill-in-missing-information-from-pubchem)
 11. [Export the registry](#11-export-the-registry)
 12. [Reset the registry](#12-reset-the-registry)
+13. [Derive and check the structures](#13-derive-and-check-the-structures)
 - [Two rules that apply to every task](#two-rules-that-apply-to-every-task)
 - [What is planned for these tasks](#what-is-planned-for-these-tasks)
 
@@ -165,7 +166,7 @@ Detail: [`09-chemical-identification.md` → Merging entries](09-chemical-identi
 
 | Browser | API | Terminal |
 |---|---|---|
-| **Chemical Registry → Needs attention** (also every count on the registry banner, and the sidebar's amber number): shared identifiers side by side, batch conflicts with each batch's value, pending identifiers, doubtful formulas — with **Merge**, **Keep both — mark reviewed**, **Mark reviewed**, **Set**, **Delete**; *Show reviewed* brings the decided ones back, **Reopen** lifts a mark ([what each means](09-registry-sources.md#what-the-notices-mean-and-what-to-do)) | `curl --noproxy '*' -sSk https://localhost:49160/api/chemicals/audit` for the list, `…/notices/summary` for the counts, `POST …/audit/review` to mark; `./verify-deploy.sh https://localhost:49160` from the repository folder on the server: no dangling links, sequential identifiers, no duplicates by CAS, PubChem id or name (flagged pairs excepted) | `./container-py.sh script audit_chemicals.py` — the same list, printed (`--json` for the endpoint's answer); report only |
+| **Chemical Registry → Needs attention** (also every count on the registry banner, and the sidebar's amber number): shared identifiers side by side, batch conflicts with each batch's value, pending identifiers, doubtful formulas, doubtful structures (since v2.24.0) — with **Merge**, **Keep both — mark reviewed**, **Mark reviewed**, **Set**, **Delete**; *Show reviewed* brings the decided ones back, **Reopen** lifts a mark ([what each means](09-registry-sources.md#what-the-notices-mean-and-what-to-do)) | `curl --noproxy '*' -sSk https://localhost:49160/api/chemicals/audit` for the list, `…/notices/summary` for the counts, `POST …/audit/review` to mark; `./verify-deploy.sh https://localhost:49160` from the repository folder on the server: no dangling links, sequential identifiers, no duplicates by CAS, PubChem id or name (flagged pairs excepted) | `./container-py.sh script audit_chemicals.py` — the same list, printed (`--json` for the endpoint's answer); report only |
 
 Detail: [`09-chemical-identification.md` → Auditing what is registered](09-chemical-identification.md#auditing-what-is-registered).
 
@@ -197,6 +198,24 @@ from every route afterwards: [the phase's test section](04-phase-tutorials/phase
 
 ---
 
+## 13. Derive and check the structures
+
+Since v2.24.0 ([phase CR-12, step A](04-phase-tutorials/phase-cr-12-structures.md)): for every
+compound that carries a MOL block, a SMILES or an InChI, one structure is
+derived by RDKit and stored beside the compound's own fields, with its
+canonical SMILES, InChIKey, computed formula and weights; where the
+source's own formula, weight or InChI disagrees with its structure, the
+compound is listed on the attention page.
+
+| Browser | API | Terminal |
+|---|---|---|
+| **Chemical Registry → Needs attention → Doubtful structures**: the derive panel says how many carry a source, how many are derived and how many still to derive; **Derive structures…** shows the report (nothing written), **Apply** stores it; one card per finding with *the source says* beside *its own structure is* and the verdict of each check; **It is fine — mark reviewed**. On any compound, *View* shows a *Derived structure* strip; the *Complete* view offers four derived columns | `POST …/api/chemicals/structures/derive` with `{}` for the report, `{"apply": true}` to write, `{"chemical_ids": [...]}` for a subset; `GET …/api/chemicals/audit` lists the findings under `structures`; `GET …/api/chemicals/CHEM-…` shows the `structure` ([the cookbook](08-api-cookbook.md#deriving-and-checking-the-structures)) | `./container-py.sh script derive_structures.py` for the report, `--apply` to write, `--ids CHEM-… ` for a subset, `--json` for the endpoint's answer; `./container-py.sh script audit_chemicals.py` prints the findings with the rest |
+
+**Rule:** report first, apply second; the compound's own formula and weight
+are never rewritten, a finding is the evidence and a correction is a
+person's edit. Nothing is fetched from PubChem for a compound without a
+structure ([decision S3](09-structures.md#decisions-s1s5)).
+
 ## Two rules that apply to every task
 
 1. **Unlink before you delete** (task 7). Measurements are never deleted with
@@ -215,4 +234,4 @@ from every route afterwards: [the phase's test section](04-phase-tutorials/phase
 | 6 link | the registry-first rule; unregistered compounds notice and review | SD-1, CR-5 |
 | 11 export | an export button on the registry page | SH-7 |
 
-**Last Updated:** September 8, 2026
+**Last Updated:** September 23, 2026

@@ -599,7 +599,7 @@ so a mark left in one is seen by the others. The terminal form:
 **You should see:**
 
 ```
-0 things need attention (0 shared identifiers, 0 batch conflicts, 0 pending identifiers, 0 doubtful formulas); 0 reviewed.
+0 things need attention (0 shared identifiers, 0 batch conflicts, 0 pending identifiers, 0 doubtful formulas, 0 doubtful structures); 0 reviewed.
 
 664 entries checked for chemistry (0 skipped for having no formula).
 0 look doubtful.
@@ -914,4 +914,4 @@ print('OK cid=%d' % r.cid if r else 'FAILED: %s' % c.last_error)"
 
 ---
 
-**Last Updated:** August 31, 2026
+**Last Updated:** September 23, 2026

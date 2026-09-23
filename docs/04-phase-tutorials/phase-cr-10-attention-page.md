@@ -360,6 +360,10 @@ show.
 - **Record who reviewed.** The mark carries a time and no name, because the
   application does not yet know who is asking. SH-3 gives it a name; the
   mark's shape leaves room for one.
+- **A fifth kind.** *Doubtful structures* joined the page with CR-12 step A
+  (v2.24.0, 2026-09-23): the derived structure against the source's own
+  formula, weight and InChI, with a derive button on the section
+  ([phase CR-12](phase-cr-12-structures.md)).
 
 ---
 
@@ -374,4 +378,4 @@ the cookbook, the playbook, the identification guide, the architecture
 module map, the glossary, the figure index and the release note are in the
 same commit.
 
-**Last Updated:** September 9, 2026
+**Last Updated:** September 23, 2026

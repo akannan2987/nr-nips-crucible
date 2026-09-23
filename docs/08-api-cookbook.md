@@ -838,6 +838,34 @@ document, so they travel with an export. Send `"reviewed": false` to lift a
 mark. Everything here has a button on the attention page and a line in
 `./container-py.sh script audit_chemicals.py`; all three call the same code.
 
+## Deriving and checking the structures
+
+Since v2.24.0 ([phase CR-12, step A](04-phase-tutorials/phase-cr-12-structures.md)). Half the
+registry carries a structure as text (a MOL block, a SMILES, an InChI);
+this derives one checked structure per entry from it and says where the
+source disagrees with itself. Report first, then apply; `$T` is a
+personal token, `$J` the JSON header.
+
+```bash
+# the report: what would be derived, what disagrees; nothing written
+curl --noproxy '*' -sSk -H "Authorization: Bearer $T" $J -d '{}' -X POST https://localhost:49160/api/chemicals/structures/derive | python3 -m json.tool | head -20
+# apply: the structure stored beside each entry's own fields
+curl --noproxy '*' -sSk -H "Authorization: Bearer $T" $J -d '{"apply": true}' -X POST https://localhost:49160/api/chemicals/structures/derive | python3 -c "import json, sys; r = json.load(sys.stdin); print(r['written'], 'written,', r['unchanged'], 'unchanged;', r['findings'])"
+# one entry, and what was derived for it
+curl --noproxy '*' -sSk -H "Authorization: Bearer $T" https://localhost:49160/api/chemicals/CHEM-000232 | python3 -c "import json, sys; s = json.load(sys.stdin)['structure']; print(s['source'], s['formula'], s['weight'], s['exact_mass'], s['inchikey'], s['checks'])"
+# the findings, with the rest of what needs attention
+curl --noproxy '*' -sSk -H "Authorization: Bearer $T" https://localhost:49160/api/chemicals/audit | python3 -c "import json, sys; a = json.load(sys.stdin); print(a['counts']['structure'], a['structures_summary']); [print(s['chemical_id'], s['reasons']) for s in a['structures'][:3]]"
+# decided: it is fine as it stands
+curl --noproxy '*' -sSk -H "Authorization: Bearer $T" $J -d '{"chemical_ids": ["CHEM-000232"], "key": "structure"}' -X POST https://localhost:49160/api/chemicals/audit/review
+```
+
+**You should see:** the report's counts (on the real export `6553` with a
+source, `6544` derived, `446` with a finding), then `6553 written, 0
+unchanged` the first time and `0 written, 6553 unchanged` the next; the
+entry's derived facts with a verdict per check; the findings with a plain
+reason each; `{"updated": 1, "key": "structure", "reviewed": true}`.
+The same from the terminal: `./container-py.sh script derive_structures.py [--apply]`.
+
 ## Why some requests are refused (and that's correct)
 
 A refusal is usually the system doing its job. Three you are likely to meet:

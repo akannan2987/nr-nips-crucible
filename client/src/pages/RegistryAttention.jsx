@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { CheckCircleIcon, ArrowPathIcon, XMarkIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import { CheckCircleIcon, ArrowPathIcon, XMarkIcon, ArrowTopRightOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import {
   getRegistryAudit,
@@ -8,6 +8,7 @@ import {
   mergeChemicals,
   setChemicalIdentifier,
   deleteChemical,
+  deriveStructures,
 } from '../services/api'
 
 /**
@@ -17,9 +18,11 @@ import {
  * buttons to act: shared identifiers side by side with the other holder
  * (merge, or keep both), batch conflicts with each batch's value (mark
  * reviewed), pending identifiers (set it), and the formula findings (mark
- * reviewed, or delete). The list comes from GET /api/chemicals/audit — the
- * same call the terminal audit script makes — so the browser and the
- * terminal never disagree about what is flagged.
+ * reviewed, or delete), and since CR-12 the structure findings (a derived
+ * structure that disagrees with the formula, weight or InChI the source
+ * recorded; mark reviewed) with the button that derives them. The list comes
+ * from GET /api/chemicals/audit — the same call the terminal audit script
+ * makes — so the browser and the terminal never disagree about what is flagged.
  *
  * A "reviewed" item stays listed, greyed, and stops counting on the banner;
  * the mark is data on the entry (`reviewed: {key: timestamp}`), so it is
@@ -36,6 +39,7 @@ export default function RegistryAttention() {
   const [showReviewed, setShowReviewed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [mergePlan, setMergePlan] = useState(null) // { group, keep }
+  const [deriveReport, setDeriveReport] = useState(null) // CR-12: the report shown before "apply"
   const location = useLocation()
 
   const load = useCallback(async () => {
@@ -52,7 +56,7 @@ export default function RegistryAttention() {
 
   useEffect(() => { load() }, [load])
 
-  // The banner's links land on a section: #shared, #batches, #pending, #formula.
+  // The banner's links land on a section: #shared, #batches, #pending, #formula, #structures.
   useEffect(() => {
     if (!audit || !location.hash) return
     const el = document.getElementById(location.hash.slice(1))
@@ -80,6 +84,26 @@ export default function RegistryAttention() {
       () => (reviewed ? 'Marked as reviewed — it no longer counts on the banner' : 'Reopened')
     )
 
+  // CR-12: derive is two clicks on purpose — a report first (nothing written), then apply.
+  const previewDerive = async () => {
+    setBusy(true)
+    try {
+      const { data } = await deriveStructures([], false)
+      setDeriveReport(data)
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err.message || 'The structures could not be derived')
+    } finally {
+      setBusy(false)
+    }
+  }
+  const applyDerive = async () => {
+    const ok = await act(
+      () => deriveStructures([], true),
+      (d) => `${(d?.written || 0).toLocaleString()} structures written, ${(d?.unchanged || 0).toLocaleString()} unchanged; ${(d?.findings?.entries || 0).toLocaleString()} with a finding`
+    )
+    if (ok) setDeriveReport(null)
+  }
+
   const confirmMerge = async () => {
     const { group, keep } = mergePlan
     const remove = group.entries.map((e) => e.chemical_id).filter((id) => id !== keep)
@@ -103,6 +127,8 @@ export default function RegistryAttention() {
   const conflicts = visible(audit.batch_conflicts)
   const pending = audit.pending
   const formula = visible(audit.formula)
+  const structures = visible(audit.structures || [])
+  const ss = audit.structures_summary || { with_source: 0, derived: 0, to_derive: 0, findings: 0 }
   const nothingOpen = c.attention === 0
 
   return (
@@ -129,12 +155,13 @@ export default function RegistryAttention() {
         </div>
       </div>
 
-      {/* the four counts, each a link to its section */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* the five counts, each a link to its section */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Tile href="#shared" n={c.shared_groups} label="shared identifiers" sub={`${c.shared_entries.toLocaleString()} entries`} />
         <Tile href="#batches" n={c.batch_conflicts} label="batch conflicts" sub="batches that disagree" />
         <Tile href="#pending" n={c.pending} label="pending identifiers" sub="waiting for screening data" />
         <Tile href="#formula" n={c.formula} label="doubtful formulas" sub={`${audit.checked.toLocaleString()} checked`} />
+        <Tile href="#structures" n={c.structure || 0} label="doubtful structures" sub={`${ss.derived.toLocaleString()} derived of ${ss.with_source.toLocaleString()} with a source`} />
       </div>
 
       {nothingOpen && (
@@ -143,8 +170,9 @@ export default function RegistryAttention() {
           <div>
             <div className="font-semibold">Nothing needs attention.</div>
             <div className="text-green-800">
-              Every shared identifier, batch conflict and doubtful formula has been reviewed or resolved, and no
-              identifier is pending. {c.reviewed > 0 && 'Tick "Show reviewed" to see what was decided.'}
+              Every shared identifier, batch conflict, doubtful formula and doubtful structure has been reviewed or
+              resolved, and no identifier is pending. {c.reviewed > 0 && 'Tick "Show reviewed" to see what was decided.'}
+              {ss.to_derive > 0 && ` ${ss.to_derive.toLocaleString()} entries carry a structure not yet derived: Derive structures below.`}
             </div>
           </div>
         </div>
@@ -254,6 +282,30 @@ export default function RegistryAttention() {
           <FormulaCard key={item.chemical_id} item={item} busy={busy} onReview={(r) => review([item.chemical_id], item.key, r)} onDelete={() => act(() => deleteChemical(item.chemical_id), () => `${item.chemical_id} deleted`)} />
         ))}
       </Section>
+
+      {/* ---------------------------------------------------- structure findings */}
+      <section id="structures" className="scroll-mt-20 space-y-3">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">
+            Doubtful structures <span className="text-gray-400 font-normal">· {(c.structure || 0).toLocaleString()} open</span>
+          </h2>
+          <p className="text-sm text-gray-600 mt-1 max-w-4xl">
+            A structure is the one fact about a compound that can be checked. From the MOL block, SMILES or InChI a source gave,
+            the server derives one structure with RDKit and computes its formula, weight and InChIKey; where the source's own
+            formula, weight or InChI disagrees with its own structure, the entry is listed here with the two values side by side.
+            A check, not a verdict: a salt recorded by its parent's formula passes (every fragment is tried), a weight passes as an
+            average or an exact mass. Read the pair; <em>It is fine — mark reviewed</em> when the source is right as it stands.
+          </p>
+        </div>
+        <DerivePanel summary={ss} report={deriveReport} busy={busy} onPreview={previewDerive} onApply={applyDerive} onDismiss={() => setDeriveReport(null)} />
+        {structures.length === 0 ? (
+          <p className="text-sm text-gray-500 italic">Nothing open here{(c.structure || 0) === 0 ? '' : ' — tick "Show reviewed" to see the decided ones'}.</p>
+        ) : (
+          structures.map((item) => (
+            <StructureCard key={item.chemical_id} item={item} busy={busy} onReview={(r) => review([item.chemical_id], item.key, r)} />
+          ))
+        )}
+      </section>
 
       {mergePlan && <MergeConfirm plan={mergePlan} busy={busy} onConfirm={confirmMerge} onClose={() => setMergePlan(null)} />}
     </div>
@@ -432,6 +484,107 @@ function FormulaCard({ item, busy, onReview, onDelete }) {
         ) : (
           <button onClick={() => setConfirming(true)} disabled={busy} className="px-3 py-1.5 text-sm border border-red-300 text-red-700 rounded-lg hover:bg-red-50 disabled:opacity-40">Delete…</button>
         )}
+      </Actions>
+    </Card>
+  )
+}
+
+// CR-12: the derive panel — where the registry stands, and the two-click derive
+function DerivePanel({ summary, report, busy, onPreview, onApply, onDismiss }) {
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3" data-testid="derive-panel">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-sm text-gray-700">
+          <span className="font-semibold">{summary.with_source.toLocaleString()}</span> entries carry a structure source ·{' '}
+          <span className="font-semibold">{summary.derived.toLocaleString()}</span> derived ·{' '}
+          <span className={`font-semibold ${summary.to_derive > 0 ? 'text-amber-800' : ''}`}>{summary.to_derive.toLocaleString()}</span> still to derive ·{' '}
+          <span className="font-semibold">{summary.findings.toLocaleString()}</span> with a finding
+        </div>
+        {!report && (
+          <button onClick={onPreview} disabled={busy} className="inline-flex items-center px-3 py-1.5 text-sm bg-pandora-600 text-white rounded-lg hover:bg-pandora-700 disabled:opacity-40" data-testid="derive-preview">
+            <BeakerIcon className="h-4 w-4 mr-1" /> {busy ? 'Deriving…' : 'Derive structures…'}
+          </button>
+        )}
+      </div>
+      {report && (
+        <div className="border border-amber-200 bg-amber-50 rounded-lg p-3 text-sm text-amber-900 space-y-2" data-testid="derive-report">
+          <div className="font-semibold">Report — nothing written yet ({report.seconds} s)</div>
+          <div>
+            {report.with_source.toLocaleString()} of {report.entries.toLocaleString()} entries carry a source. Derived {report.derived.toLocaleString()}:{' '}
+            {report.from.mol_block.toLocaleString()} from a MOL block, {report.from.smiles.toLocaleString()} from a SMILES
+            {report.repaired > 0 && ` (${report.repaired.toLocaleString()} read after removing the outer brackets the source added)`},{' '}
+            {report.from.inchi.toLocaleString()} from an InChI; {report.unreadable.toLocaleString()} could not be read.
+          </div>
+          <div>
+            Findings on {report.findings.entries.toLocaleString()} entries: formula {report.findings.formula.toLocaleString()}, weight{' '}
+            {report.findings.weight.toLocaleString()}, InChI {report.findings.inchi.toLocaleString()}, unreadable {report.findings.unreadable.toLocaleString()}.
+          </div>
+          <div className="text-xs">Applying stores the structure beside each entry's own fields (never over them) and lists the findings here; a later run rewrites only what changed.</div>
+          <div className="flex gap-2">
+            <button onClick={onApply} disabled={busy} className="px-3 py-1.5 text-sm bg-pandora-600 text-white rounded-lg hover:bg-pandora-700 disabled:opacity-40" data-testid="derive-apply">
+              {busy ? 'Writing…' : `Apply: store the result on ${report.with_source.toLocaleString()} entries`}
+            </button>
+            <button onClick={onDismiss} disabled={busy} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white">Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const CHECK_LABEL = { agrees: '✓ agrees', differs: '✗ differs', none: 'no value to compare', 'same source': 'derived from it', unreadable: 'unreadable', 'not computable': 'not computable' }
+
+function StructureCard({ item, busy, onReview }) {
+  const s = item.structure || {}
+  const checks = s.checks || {}
+  const cell = (k) => <span className={['differs', 'unreadable', 'not computable'].includes(checks[k]) ? 'text-amber-800 font-medium' : 'text-gray-500'}>{CHECK_LABEL[checks[k]] || '—'}</span>
+  return (
+    <Card reviewed={item.reviewed}>
+      <EntryHeading item={item} />
+      <div className="overflow-x-auto mt-3">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+            <tr>
+              <th className="px-3 py-2 text-left">Fact</th>
+              <th className="px-3 py-2 text-left">The source says</th>
+              <th className="px-3 py-2 text-left">Its own structure is</th>
+              <th className="px-3 py-2 text-left">Check</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            <tr>
+              <td className="px-3 py-2 text-gray-500">Structure from</td>
+              <td className="px-3 py-2 font-mono text-xs">{s.source ? `${s.source}${s.repaired ? ` (${s.repaired})` : ''}` : `unreadable: ${(s.unreadable || []).join(', ')}`}</td>
+              <td className="px-3 py-2 font-mono text-xs break-all">{s.smiles ? <span title={s.smiles}>{s.smiles.length > 60 ? s.smiles.slice(0, 60) + '…' : s.smiles}</span> : '—'}</td>
+              <td className="px-3 py-2 text-xs text-gray-500">{s.fragments > 1 ? `${s.fragments} fragments` : ''}</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 text-gray-500">Formula</td>
+              <td className="px-3 py-2 font-mono text-xs">{fmt(item.molecular_formula)}</td>
+              <td className="px-3 py-2 font-mono text-xs">{fmt(s.formula)}{s.largest_fragment ? ` (largest fragment ${s.largest_fragment.formula})` : ''}</td>
+              <td className="px-3 py-2 text-xs">{cell('formula')}</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 text-gray-500">Weight</td>
+              <td className="px-3 py-2 font-mono text-xs">{fmt(item.molecular_weight)}</td>
+              <td className="px-3 py-2 font-mono text-xs">{s.weight !== undefined && s.weight !== null ? `${s.weight} average · ${s.exact_mass} exact` : '—'}</td>
+              <td className="px-3 py-2 text-xs">{cell('weight')}</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 text-gray-500">InChIKey</td>
+              <td className="px-3 py-2 text-xs text-gray-500">{checks.inchi === 'none' ? 'no InChI on the entry' : 'the InChI the source carries'}</td>
+              <td className="px-3 py-2 font-mono text-xs">{fmt(s.inchikey)}</td>
+              <td className="px-3 py-2 text-xs">{cell('inchi')}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ul className="mt-2 text-sm text-amber-800 list-disc list-inside">
+        {item.reasons.map((r) => <li key={r}>{r}</li>)}
+      </ul>
+      <Actions>
+        <OpenEntry id={item.chemical_id} />
+        <ReviewButton reviewed={item.reviewed} busy={busy} onClick={() => onReview(!item.reviewed)} label="It is fine — mark reviewed" />
       </Actions>
     </Card>
   )

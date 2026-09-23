@@ -6,7 +6,7 @@ so the browser and the terminal cannot disagree about what is flagged
 (the rule recorded in the roadmap on 2026-09-09: anything a maintenance
 script can do, the browser must be able to do too).
 
-Four kinds of thing are listed:
+Five kinds of thing are listed:
 
 * **shared identifiers** — two or more entries carry the same CAS number,
   DTXSID or PubChem compound id. Derived from the data, not from the flags
@@ -18,11 +18,17 @@ Four kinds of thing are listed:
   for their identifier;
 * **formula findings** — the chemistry checks that have lived in the audit
   script since phase 04: a name claiming a chain the formula cannot hold, an
-  element in the formula nothing in the name accounts for.
+  element in the formula nothing in the name accounts for;
+* **structure findings** (CR-12) — read from what `app.structures` stored on
+  the entry: a derived structure whose formula, weight or InChI disagrees
+  with what the source recorded beside it, or a source no structure could
+  be read from. The audit lists them; deriving is the structures module's
+  job, on request (report first, `apply` to write).
 
 A person **reviews** an item by leaving a mark on the entry:
 ``doc["reviewed"] = {"<key>": "<timestamp>"}``, where the key names what was
-looked at (``shared:cas:58-08-2``, ``batch_conflicts``, ``formula``). A
+looked at (``shared:cas:58-08-2``, ``batch_conflicts``, ``formula``,
+``structure``). A
 reviewed item stays listed, greyed, and no longer counts on the banner. The
 mark is data in the document, like every other fact about an entry.
 
@@ -48,6 +54,7 @@ from .compat import now_iso
 from .links import link_counts
 from .models import Chemical
 from .store import all_rows, find_row, replace_doc
+from .structures import KEY_STRUCTURE, structures_summary
 
 # ------------------------------------------------------------ chemistry --
 
@@ -325,6 +332,22 @@ def audit_registry(db: Session, with_links: bool = True, everything: bool = Fals
             passed.append(item)
     formula.sort(key=lambda f: (f["reviewed"], -f["severity"], f["chemical_id"] or ""))
 
+    # structure findings (CR-12), as derive_structures stored them on the entry
+    structures: list[dict[str, Any]] = []
+    for doc in docs:
+        stored = doc.get(KEY_STRUCTURE)
+        if not stored or not stored.get("findings"):
+            continue
+        structures.append({
+            **_summary(doc, links),
+            "key": KEY_STRUCTURE,
+            "reviewed": is_reviewed(doc, KEY_STRUCTURE),
+            "structure": {k: stored.get(k) for k in ("source", "repaired", "unreadable", "formula", "weight", "exact_mass", "inchikey", "smiles", "fragments", "largest_fragment", "checks", "derived_at")},
+            "reasons": [f["reason"] for f in stored["findings"]],
+            "kinds": sorted({f["kind"] for f in stored["findings"]}),
+        })
+    structures.sort(key=lambda s: (s["reviewed"], s["chemical_id"] or ""))
+
     open_shared = [g for g in shared if not g["reviewed"]]
     counts = {
         "shared_groups": len(open_shared),
@@ -332,9 +355,10 @@ def audit_registry(db: Session, with_links: bool = True, everything: bool = Fals
         "batch_conflicts": sum(1 for c in conflicts if not c["reviewed"]),
         "pending": len(pending),
         "formula": sum(1 for f in formula if not f["reviewed"]),
-        "reviewed": sum(1 for g in shared if g["reviewed"]) + sum(1 for c in conflicts if c["reviewed"]) + sum(1 for f in formula if f["reviewed"]),
+        "structure": sum(1 for s in structures if not s["reviewed"]),
+        "reviewed": sum(1 for g in shared if g["reviewed"]) + sum(1 for c in conflicts if c["reviewed"]) + sum(1 for f in formula if f["reviewed"]) + sum(1 for s in structures if s["reviewed"]),
     }
-    counts["attention"] = counts["shared_groups"] + counts["batch_conflicts"] + counts["pending"] + counts["formula"]
+    counts["attention"] = counts["shared_groups"] + counts["batch_conflicts"] + counts["pending"] + counts["formula"] + counts["structure"]
 
     result = {
         "counts": counts,
@@ -344,6 +368,8 @@ def audit_registry(db: Session, with_links: bool = True, everything: bool = Fals
         "batch_conflicts": conflicts,
         "pending": pending,
         "formula": formula,
+        "structures": structures,
+        "structures_summary": structures_summary(docs),
     }
     if everything:
         result["passed"] = passed
@@ -355,7 +381,7 @@ def registry_notices(db: Session) -> dict[str, int]:
 
     The three original counts keep their names (`cas_shared` counts entries in
     any open shared-identifier group, as it always did); `formula` and
-    `attention` were added with the attention page.
+    `attention` were added with the attention page, `structure` with CR-12.
     """
     counts = audit_registry(db, with_links=False)["counts"]
     return {
@@ -363,6 +389,7 @@ def registry_notices(db: Session) -> dict[str, int]:
         "cas_shared": counts["shared_entries"],
         "batch_conflicts": counts["batch_conflicts"],
         "formula": counts["formula"],
+        "structure": counts["structure"],
         "attention": counts["attention"],
     }
 

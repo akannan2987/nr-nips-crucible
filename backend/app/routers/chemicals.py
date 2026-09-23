@@ -34,7 +34,15 @@ from ..imports import (
 from ..links import count_links, describe_links, unlink_targets
 from ..merge import MergeError, merge_entries
 from ..models import Chemical
-from ..schemas import AuditReviewIn, BulkDeleteChemicals, BulkUpdateChemicals, ChemicalIn, IdentifierIn, MergeIn
+from ..schemas import (
+    AuditReviewIn,
+    BulkDeleteChemicals,
+    BulkUpdateChemicals,
+    ChemicalIn,
+    IdentifierIn,
+    MergeIn,
+    StructuresDeriveIn,
+)
 from ..store import (
     all_docs,
     clear_all,
@@ -43,6 +51,7 @@ from ..store import (
     insert_doc,
     replace_doc,
 )
+from ..structures import derive_registry
 from ..tags import filter_batches, filter_tags, registry_summary, tags_of
 
 # Three answers are computed by reading every entry — the discovered columns
@@ -83,7 +92,12 @@ router = APIRouter(prefix="/api/chemicals", tags=["chemicals"], dependencies=[De
 # Keys never offered as table columns: the row's own id, and the large nested
 # values that have their own presentation (batches as a view, the structure
 # as a drawing, metadata as its own dotted columns).
-_INTERNAL = {"id", "batches", "metadata", "structural", "mol_block", "structure_warnings"}
+_INTERNAL = {"id", "batches", "metadata", "structural", "mol_block", "structure_warnings", "structure"}
+
+# CR-12: the derived structure is nested under `structure`; four of its
+# fields are offered as columns of their own (dotted keys, like metadata's).
+_STRUCTURE_COLUMNS = (("structure.formula", "derived formula"), ("structure.weight", "derived weight"),
+                      ("structure.inchikey", "InChIKey (derived)"), ("structure.source", "structure source"))
 
 
 def _value(doc: dict[str, Any], key: str) -> Any:
@@ -246,11 +260,28 @@ def _discover_columns(db: Session) -> dict[str, Any]:
     if "tags" not in filled:
         order.insert(1 if order else 0, "tags")
         filled["tags"] = len(docs)
+    # CR-12: the derived structure's own columns, once anything has been derived
+    labels = dict(_STRUCTURE_COLUMNS)
+    for key, _label in _STRUCTURE_COLUMNS:
+        count = sum(1 for d in docs if _value(d, key) not in (None, "", [], {}))
+        if count:
+            order.append(key)
+            filled[key] = count
+
+    def _label(k: str) -> str:
+        if k.startswith("metadata."):
+            return k.split(".", 1)[1]
+        return labels.get(k, k)
+
+    def _group(k: str) -> str:
+        if k.startswith("metadata."):
+            return "metadata"
+        return "structure" if k.startswith("structure.") else "field"
 
     payload = {
         "total": len(docs),
         "columns": [
-            {"key": k, "label": k.split(".", 1)[1] if k.startswith("metadata.") else k, "group": "metadata" if k.startswith("metadata.") else "field",
+            {"key": k, "label": _label(k), "group": _group(k),
              "filled": filled[k], "coverage": round(filled[k] / len(docs), 4) if docs else 0}
             for k in order
         ],
@@ -525,6 +556,31 @@ def merge(body: MergeIn, db: Session = Depends(get_db)) -> dict[str, Any]:
         return merge_entries(db, str(body.keep or ""), remove)
     except MergeError as err:
         raise HTTPException(status_code=400, detail=str(err)) from None
+    except KeyError as err:
+        raise HTTPException(status_code=404, detail=f"Chemical not found: {err.args[0]}") from None
+
+
+# ------------------------------------------------------ CR-12: structures --
+# One structure per entry, derived by app.structures and checked against
+# the laboratory's own formula, weight and InChI; the findings land in the
+# audit above. The script derive_structures.py and the attention page's
+# button call the same function.
+
+
+@router.post("/structures/derive")
+def derive_structures(body: StructuresDeriveIn, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """POST /api/chemicals/structures/derive — derive and check; report, or write on `apply`.
+
+    Body: `{"chemical_ids": [...]}` (optional: every entry otherwise) and
+    `{"apply": true}` to store the `structure` on each entry. The report
+    counts where each structure came from, what could not be read and the
+    findings by kind, and lists every entry with a finding. Nothing is
+    written when any identifier is unknown (404). About ten seconds per ten
+    thousand entries.
+    """
+    ids = [str(x) for x in (body.chemical_ids or []) if x] or None
+    try:
+        return derive_registry(db, chemical_ids=ids, apply=bool(body.apply))
     except KeyError as err:
         raise HTTPException(status_code=404, detail=f"Chemical not found: {err.args[0]}") from None
 

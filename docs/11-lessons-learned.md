@@ -443,6 +443,20 @@ command that reports state must name both halves, or two operators will
 describe the same server differently.* *The shape:* a report that was
 true and incomplete.
 
+**43. A check that ignores the source's conventions flags the convention,
+not the data.** The first structure check compared the laboratory's
+formula with the formula of the whole derived structure and flagged 938
+entries of the real export. Reading them showed a convention, not a
+fault: a salt is written as several fragments and the laboratory records
+the parent's formula; and the laboratory's "weight" is the exact mass a
+spectrometer reads, not the average a balance reads. Comparing with each
+fragment and with both masses leaves 398 and 79, every one a genuine
+disagreement of the source with itself. *The lesson: before calling a
+disagreement a finding, ask how the source writes the thing; a check
+that does not know the convention drowns the real findings in the
+conventional ones.* *The shape:* a report that was technically right and
+practically useless.
+
 ---
 
 ## The one rule they add up to

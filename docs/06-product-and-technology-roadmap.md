@@ -300,7 +300,8 @@ verdict above moves closer to its trigger. *Cost:* one client dependency
 (Ketcher, Apache-2.0, bundled), RDKit depiction on the server, three
 releases of work. Not included: 3-D, reactions, name-to-structure.
 *Verdict:* **Required now** — phase CR-12, specified in
-[`09-structures.md`](09-structures.md).
+[`09-structures.md`](09-structures.md); step A (derive and check) built as
+v2.24.0 on 2026-09-23, steps B and C next.
 
 ### Synonym and house-style name normalisation
 
@@ -522,7 +523,7 @@ marketed.
 | Databricks / Snowflake | Optional | Tens of millions of rows |
 | Data versioning beyond Alembic | Not needed | A reconstruct-as-of-date requirement |
 | InChIKey as canonical key | Recommended later | Structures for most compounds |
-| Drawing and editing structures | **Required now** (2026-09-14) | — phase CR-12 |
+| Drawing and editing structures | **Required now** (2026-09-14) — step A built, v2.24.0 | — phase CR-12 🔨 (B, C next) |
 | Name normalisation and synonyms | **Required now** (roadmap) | — |
 | Knowledge graph | Optional | Multi-hop questions become routine |
 | GHS / OECD vocabularies | Recommended later | Toxicology at volume |
@@ -538,4 +539,4 @@ marketed.
 | Regulatory frame (ALCOA+, Part 11, GDPR, ISO 27001) | Recommended later | A regulatory citation or hosting |
 | SEO / AEO / GEO, pricing | Not needed | Offered outside the organisation |
 
-**Last Updated:** September 21, 2026
+**Last Updated:** September 23, 2026

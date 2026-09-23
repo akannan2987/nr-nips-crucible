@@ -1,0 +1,63 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 520' width='940' height='520' role='img' aria-label='Three text forms of a structure go into RDKit in a fixed order; one derived structure with computed facts is stored beside the entry; four checks compare the source&apos;s own formula, weight and InChI with its structure; a disagreement becomes a finding on the attention page' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='519' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='14.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>One derived structure per entry (CR-12, step A): read what the source gave, compute, then check the source against itself</text>
+<rect x='30' y='66' width='250' height='200' rx='10' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='155' y='88' font-size='11.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>what the entry carries (text)</text>
+<rect x='46' y='104' width='218' height='40' rx='6' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='60' y='121' font-size='10.5' fill='#4f46e5' text-anchor='start' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>1  MOL block</text>
+<text x='60' y='136' font-size='9' fill='#6b7280' text-anchor='start' font-weight='normal'>the drawing&apos;s atoms and bonds</text>
+<text x='250' y='128' font-size='9.5' fill='#6b7280' text-anchor='end' font-weight='normal'>77 entries</text>
+<rect x='46' y='154' width='218' height='40' rx='6' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='60' y='171' font-size='10.5' fill='#4f46e5' text-anchor='start' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>2  SMILES</text>
+<text x='60' y='186' font-size='9' fill='#6b7280' text-anchor='start' font-weight='normal'>what the chemist typed</text>
+<text x='250' y='178' font-size='9.5' fill='#6b7280' text-anchor='end' font-weight='normal'>6,411</text>
+<rect x='46' y='204' width='218' height='40' rx='6' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='60' y='221' font-size='10.5' fill='#4f46e5' text-anchor='start' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>3  InChI</text>
+<text x='60' y='236' font-size='9' fill='#6b7280' text-anchor='start' font-weight='normal'>a standard text form</text>
+<text x='250' y='228' font-size='9.5' fill='#6b7280' text-anchor='end' font-weight='normal'>6,447</text>
+<text x='155' y='258' font-size='9' fill='#6b7280' text-anchor='middle' font-weight='normal'>tried in this order; the first that reads, wins (S5)</text>
+<line x1='282' y1='166' x2='328' y2='166' stroke='#374151' stroke-width='2' marker-end='url(#arrow)'/>
+<rect x='330' y='106' width='150' height='120' rx='10' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='405' y='132' font-size='14' fill='#4f46e5' text-anchor='middle' font-weight='bold'>RDKit</text>
+<text x='405' y='154' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>reads the text,</text>
+<text x='405' y='169' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>builds the molecule,</text>
+<text x='405' y='184' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>computes the facts</text>
+<text x='405' y='214' font-size='8.6' fill='#6b7280' text-anchor='middle' font-weight='normal'>[CCO] read as CCO: repaired</text>
+<line x1='482' y1='166' x2='528' y2='166' stroke='#374151' stroke-width='2' marker-end='url(#arrow)'/>
+<rect x='530' y='66' width='380' height='200' rx='10' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='720' y='88' font-size='10.5' fill='#4f46e5' text-anchor='middle' font-weight='bold'>structure: {…}  stored beside the entry, never over it</text>
+<text x='546' y='110' font-size='9.2' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>source: smiles          repaired: -</text>
+<text x='546' y='129' font-size='9.2' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>smiles: Cn1cnc2c1c(=O)n(C)c(=O)n2C   (canonical)</text>
+<text x='546' y='148' font-size='9.2' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>inchikey: RYYVLZVUVIJVGH-UHFFFAOYSA-N</text>
+<text x='546' y='167' font-size='9.2' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>formula: C8H10N4O2      weight: 194.194   exact: 194.0804</text>
+<text x='546' y='186' font-size='9.2' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>atoms 14 · bonds 15 · rings 2 · charge 0 · fragments 1</text>
+<text x='546' y='205' font-size='9.2' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>checks: formula agrees · weight agrees · inchi none</text>
+<text x='546' y='224' font-size='9.2' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>findings: []            derived_at: 2026-09-23T…</text>
+<text x='720' y='252' font-size='8.8' fill='#6b7280' text-anchor='middle' font-weight='normal'>the entry&apos;s own molecular_formula, molecular_weight, smiles, inchi are untouched</text>
+<text x='470.0' y='296' font-size='12' fill='#1f2937' text-anchor='middle' font-weight='bold'>the checks: what the source says against what its own structure is</text>
+<rect x='30' y='312' width='210' height='108' rx='8' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='135' y='334' font-size='11.5' fill='#d97706' text-anchor='middle' font-weight='bold'>formula</text>
+<text x='135' y='354' font-size='8.6' fill='#1f2937' text-anchor='middle' font-weight='normal'>the laboratory&apos;s formula against the whole structure</text>
+<text x='135' y='367' font-size='8.6' fill='#1f2937' text-anchor='middle' font-weight='normal'>and each fragment: a salt recorded by its parent passes</text>
+<text x='135' y='400' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='bold'>938 flagged naively, 398 with the fragments</text>
+<rect x='252' y='312' width='210' height='108' rx='8' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='357' y='334' font-size='11.5' fill='#d97706' text-anchor='middle' font-weight='bold'>weight</text>
+<text x='357' y='354' font-size='8.6' fill='#1f2937' text-anchor='middle' font-weight='normal'>the laboratory&apos;s weight against the average weight</text>
+<text x='357' y='367' font-size='8.6' fill='#1f2937' text-anchor='middle' font-weight='normal'>and the exact mass, of the whole and each fragment</text>
+<text x='357' y='400' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='bold'>6,179 of 6,382 are exact masses</text>
+<rect x='474' y='312' width='210' height='108' rx='8' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='579' y='334' font-size='11.5' fill='#d97706' text-anchor='middle' font-weight='bold'>InChI</text>
+<text x='579' y='354' font-size='8.6' fill='#1f2937' text-anchor='middle' font-weight='normal'>the InChI the source carries, as a key, against</text>
+<text x='579' y='367' font-size='8.6' fill='#1f2937' text-anchor='middle' font-weight='normal'>the derived key: skeleton or stereo layer</text>
+<text x='579' y='400' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='bold'>27 disagree; 20 cannot be read</text>
+<rect x='696' y='312' width='210' height='108' rx='8' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='801' y='334' font-size='11.5' fill='#d97706' text-anchor='middle' font-weight='bold'>unreadable</text>
+<text x='801' y='354' font-size='8.6' fill='#1f2937' text-anchor='middle' font-weight='normal'>no text form the source carries can be read</text>
+<text x='801' y='367' font-size='8.6' fill='#1f2937' text-anchor='middle' font-weight='normal'>at all: nothing to check, one finding</text>
+<text x='801' y='400' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='bold'>9 entries</text>
+<rect x='30' y='436' width='880' height='30' rx='6' fill='#f9fafb' stroke='#374151' stroke-width='1.2'/>
+<text x='470' y='456' font-size='9.8' fill='#1f2937' text-anchor='middle' font-weight='bold'>a disagreement is a structure finding: the fifth kind on the attention page, the two values side by side, the same mark reviewed; the source&apos;s fields are never changed</text>
+<text x='470.0' y='490' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>everyday version: the parcel says what is inside; the X-ray shows what is inside; where the two disagree, a person looks, and the label is not rewritten by the machine</text>
+<text x='470.0' y='510' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>POST /api/chemicals/structures/derive · derive_structures.py · the Derive structures button: one module, three doors; report first, apply to write</text>
+</svg>

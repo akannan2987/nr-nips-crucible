@@ -1102,6 +1102,58 @@ def fig_switch_minute() -> None:
     write("fig_switch_minute.svg", svg(W, H, "The minute of the switch: the settings file before and after, the five steps in between (backup, stop, start, unit rewritten, answers), and what changes for a browser, a script, the monitor, the data and the accounts", b))
 
 
+def fig_structure_derive() -> None:
+    """CR-12 step A: three text forms in, one derived structure out, checked against the source's own facts."""
+    W, H = 940, 520
+    mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
+    chem, warn = COLOURS["chemical"], COLOURS["screening"]
+    b = text(W/2, 34, "One derived structure per entry (CR-12, step A): read what the source gave, compute, then check the source against itself", 14.5, INK, "middle", "bold")
+    # the three sources, tried in order (S5)
+    b += box(30, 66, 250, 200, PANEL, LINE, 10)
+    b += text(155, 88, "what the entry carries (text)", 11.5, INK, "middle", "bold")
+    sources = [("1  MOL block", "the drawing's atoms and bonds", "77 entries"), ("2  SMILES", "what the chemist typed", "6,411"), ("3  InChI", "a standard text form", "6,447")]
+    for i, (name, what, n) in enumerate(sources):
+        y = 104 + i * 50
+        b += box(46, y, 218, 40, PAPER, chem, 6)
+        b += text(60, y + 17, name, 10.5, chem, "start", "bold", mono)
+        b += text(60, y + 32, what, 9, MUTED, "start")
+        b += text(250, y + 24, n, 9.5, MUTED, "end")
+    b += text(155, 258, "tried in this order; the first that reads, wins (S5)", 9, MUTED)
+    # RDKit
+    b += arrow(282, 166, 328, 166, ACCENT, sw=2)
+    b += box(330, 106, 150, 120, "#eef2ff", chem, 10)
+    b += text(405, 132, "RDKit", 14, chem, "middle", "bold")
+    b += lines(405, 154, ["reads the text,", "builds the molecule,", "computes the facts"], 10, INK, "middle", 15)
+    b += text(405, 214, "[CCO] read as CCO: repaired", 8.6, MUTED)
+    # the derived structure
+    b += arrow(482, 166, 528, 166, ACCENT, sw=2)
+    b += box(530, 66, 380, 200, PAPER, chem, 10)
+    b += text(720, 88, "structure: {…}  stored beside the entry, never over it", 10.5, chem, "middle", "bold")
+    rows = ["source: smiles          repaired: -", "smiles: Cn1cnc2c1c(=O)n(C)c(=O)n2C   (canonical)", "inchikey: RYYVLZVUVIJVGH-UHFFFAOYSA-N", "formula: C8H10N4O2      weight: 194.194   exact: 194.0804", "atoms 14 · bonds 15 · rings 2 · charge 0 · fragments 1", "checks: formula agrees · weight agrees · inchi none", "findings: []            derived_at: 2026-09-23T…"]
+    for i, r in enumerate(rows):
+        b += text(546, 110 + i * 19, r, 9.2, INK, "start", "normal", mono)
+    b += text(720, 252, "the entry's own molecular_formula, molecular_weight, smiles, inchi are untouched", 8.8, MUTED)
+    # the checks
+    b += text(W/2, 296, "the checks: what the source says against what its own structure is", 12, INK, "middle", "bold")
+    checks = [
+        ("formula", "the laboratory's formula against the whole structure", "and each fragment: a salt recorded by its parent passes", "938 flagged naively, 398 with the fragments"),
+        ("weight", "the laboratory's weight against the average weight", "and the exact mass, of the whole and each fragment", "6,179 of 6,382 are exact masses"),
+        ("InChI", "the InChI the source carries, as a key, against", "the derived key: skeleton or stereo layer", "27 disagree; 20 cannot be read"),
+        ("unreadable", "no text form the source carries can be read", "at all: nothing to check, one finding", "9 entries"),
+    ]
+    for i, (title, l1, l2, n) in enumerate(checks):
+        x = 30 + i * 222
+        b += box(x, 312, 210, 108, "#fff7ed", warn, 8)
+        b += text(x + 105, 334, title, 11.5, warn, "middle", "bold")
+        b += lines(x + 105, 354, [l1, l2], 8.6, INK, "middle", 13)
+        b += text(x + 105, 400, n, 9.2, MUTED, "middle", "bold")
+    b += box(30, 436, 880, 30, PANEL, ACCENT, 6)
+    b += text(470, 456, "a disagreement is a structure finding: the fifth kind on the attention page, the two values side by side, the same mark reviewed; the source's fields are never changed", 9.8, INK, "middle", "bold")
+    b += text(W/2, 490, "everyday version: the parcel says what is inside; the X-ray shows what is inside; where the two disagree, a person looks, and the label is not rewritten by the machine", 10.5, INK)
+    b += text(W/2, 510, "POST /api/chemicals/structures/derive · derive_structures.py · the Derive structures button: one module, three doors; report first, apply to write", 9.5, MUTED)
+    write("fig_structure_derive.svg", svg(W, H, "Three text forms of a structure go into RDKit in a fixed order; one derived structure with computed facts is stored beside the entry; four checks compare the source's own formula, weight and InChI with its structure; a disagreement becomes a finding on the attention page", b))
+
+
 def fig_delete_gate() -> None:
     W, H = 940, 400
     b = text(W/2, 34, "Deleting a compound after CR-6: the clerk refuses, the archivist empties the folder first", 16, INK, "middle", "bold")
@@ -1314,5 +1366,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, fig_two_tokens, fig_local_login, fig_roles, fig_account_lifecycle, fig_two_moments, fig_switch_minute, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, fig_two_tokens, fig_local_login, fig_roles, fig_account_lifecycle, fig_two_moments, fig_switch_minute, fig_structure_derive, cover, logo):
         f()

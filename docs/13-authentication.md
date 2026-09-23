@@ -5,7 +5,7 @@
 **Prerequisites:** none. Every term is explained here with an everyday comparison. [`02-architecture.md`](02-architecture.md) helps for *where* the pieces go; [`07-operations.md`](07-operations.md) for how the server is run today.
 **Learning goal:** you understand what a login actually is (three separate ideas people run together), why Crucible has none yet and what that exposes, the three secure ways to add one, why they are built in that order, what each one needs from the organisation, and how a person and a script log in at each step.
 **Deliverable of this page:** the plan for phases **SH-3a**, **SH-3b** and **SH-3c** of the shared spine ([roadmap](05-roadmap.md#sh--shared-spine)): three rungs of one ladder, each secure on its own, the last one **single sign-on**, which is the destination. The decision itself is recorded in [ADR 0001](adr/0001-authentication-ladder.md).
-**Status:** ✅ agreed 2026-09-08 (decision log at the end). **Rung 1 built and shipped as v2.22.0 ([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md), 2026-09-22): on the beta instance at 17:31 and on production at 18:06 the same day, each with its own token (A11). Rung 2 built and shipped as v2.23.0 ([phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md), 2026-09-22): usernames, passwords, roles and personal tokens, on the beta instance since 19:58 the same day with one account per tester; production's own accounts were created on 2026-09-23 (Step 10a) and it keeps the token until the switch, at a moment the owner announces (Step 10b).** Rung 3 waits: no single sign-on for the moment, the owner's decision of 2026-09-22.
+**Status:** ✅ agreed 2026-09-08 (decision log at the end). **Rung 1 built and shipped as v2.22.0 ([phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md), 2026-09-22): on the beta instance at 17:31 and on production at 18:06 the same day, each with its own token (A11). Rung 2 built and shipped as v2.23.0 ([phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md), 2026-09-22): usernames, passwords, roles and personal tokens, on the beta instance since 19:58 the same day with one account per tester; production followed on 2026-09-23 at 01:17 server time (Step 10, in two moments: the accounts first, then the switch), with its own three accounts and its own secret. Both instances use accounts; the shared token is retired on both.** Rung 3 waits: no single sign-on for the moment, the owner's decision of 2026-09-22.
 
 ![Three rungs: a shared token gate, local accounts with passwords, and single sign-on through the corporate identity provider; each rung keeps what the one below gave](img/fig_auth_ladder.svg)
 
@@ -49,6 +49,15 @@
 > sit in the table, ignored by the door until the mode is `local`;
 > `./container-py.sh status` says so (v2.23.3), and the state between
 > the two moments is tested by every route in the tutorial.
+>
+> **2026-09-23, 01:17 server time — production on accounts.** Step 10b
+> done: the mode switched with production's own secret, a backup, a
+> `stop` and a `start`; `/api/auth/me` answers `local`, the gate `401`,
+> the deploy checks pass 19 with the operator's personal token, the
+> monitor is green, the two secrets differ, beta untouched; the login page
+> and the dashboard confirmed in the browser. The shared token has retired
+> on both instances. The state after the switch is tested by every route
+> [in the tutorial](04-phase-tutorials/phase-sh-3b-local-accounts.md#after-the-switch-production-on-accounts-step-10b) (v2.23.4).
 
 ## Contents
 
@@ -548,14 +557,14 @@ details, which this public page does not carry.
 | Single sign-on | **not needed for the moment**; the owner will revisit. SH-3c on hold; SH-3b, local accounts, goes ahead | 2026-09-22 |
 | A11, production | **one token per instance**, agreed; production's login turned on at 18:06 the same day with its own token, after beta's at 17:31 (v2.22.1) | 2026-09-22 |
 | SH-3b, A12–A14 | **built and shipped, v2.23.0** with the go for rung 2 ("build on what you have planned"): `SESSION_SECRET` its own line; one personal token per account, named; roles by one rule from the verb and the path; a change-password dialog added; on beta since 19:58 the same day (three accounts), production when its accounts exist | 2026-09-22 |
-| A15, production's accounts | **the same three accounts as beta, created ahead of the switch** ([Step 10a](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10a--the-accounts-while-the-login-is-still-the-token), done 2026-09-23 with the login still the token); the switch ([Step 10b](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10b--the-switch-at-an-announced-moment)) at a moment the owner announces; the roles as on beta, changed later with `users role` | 2026-09-23 |
+| A15, production's accounts | **the same three accounts as beta, created ahead of the switch** ([Step 10a](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10a--the-accounts-while-the-login-is-still-the-token), done 2026-09-23 with the login still the token); the switch ([Step 10b](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10b--the-switch-at-an-announced-moment)) done the same night at 01:17 server time, every proof passing; the roles as on beta, changed later with `users role` | 2026-09-23 |
 
 ## The phases
 
 | Phase | What ships | Waits on | "Done" means |
 |---|---|---|---|
 | **SH-3a · Token gate** ✅ v2.22.0 — [phase SH-3a](04-phase-tutorials/phase-sh-3a-token-gate.md) | The shared pieces (`AUTH_MODE`, `require_user`, `/api/health`, the login page, the 401 handler, `verify-deploy.sh --token`), the token mode, tests, runbook in [`07-operations.md`](07-operations.md), the setup guides' `.env.local` step updated | ~~SH-12~~ ✅ v2.20.0 (the beta instance to deliver it to — [phase SH-12](04-phase-tutorials/phase-sh-12-beta-instance.md)); decisions A2, A4, A7 — agreed | on **beta**, `AUTH_MODE=token`: an unauthenticated call answers 401, an authenticated one answers as before, the monitor is green, 18 deploy checks pass with `--token` (the sixteen plus two that prove the gate); production untouched until its own step — **built and rehearsed 2026-09-22; on beta (Step 7, 17:31) and on production (Step 8, 18:06) the same day, each with its own token** |
-| **SH-3b · Local accounts** ✅ v2.23.0 — [phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md) | The `users` table and migration, Argon2 hashing, the signed sliding session, `manage_users.py` behind `./container-py.sh users`, the login form and a change-password dialog, roles by one rule, per-person tokens, the lockout — **in full** (A3 revisited) | ~~SH-3a~~ ✅ v2.22.0 | each tester logs in with a username and password on beta, a disabled account is refused, a viewer cannot delete, the monitor is green, 19 deploy checks pass with a personal token; after the test, the same on production — **built and rehearsed 2026-09-22; on beta by Step 9; production's accounts created 2026-09-23 by Step 10a, its switch by Step 10b at an announced moment** |
+| **SH-3b · Local accounts** ✅ v2.23.0 — [phase SH-3b](04-phase-tutorials/phase-sh-3b-local-accounts.md) | The `users` table and migration, Argon2 hashing, the signed sliding session, `manage_users.py` behind `./container-py.sh users`, the login form and a change-password dialog, roles by one rule, per-person tokens, the lockout — **in full** (A3 revisited) | ~~SH-3a~~ ✅ v2.22.0 | each tester logs in with a username and password on beta, a disabled account is refused, a viewer cannot delete, the monitor is green, 19 deploy checks pass with a personal token; after the test, the same on production — **built and rehearsed 2026-09-22; on beta by Step 9; production's accounts created 2026-09-23 by Step 10a and its switch done by Step 10b at 01:17 server time: both instances on accounts** |
 | **SH-3c · Single sign-on** | The OpenID Connect flow, group-to-role mapping, the sign-in button, a fake provider for the tests, the runbook; rung 2's unused pieces removed | SH-3a; the registration from the organisation; decisions A1, A5, A6, A8; **on hold: no single sign-on for the moment (the owner, 2026-09-22), to be revisited** | a person signs in with the corporate login and lands with the right role; the break-glass admin still works with the provider unreachable; a service token still works |
 | SH-4 · Roles everywhere, audit trail, rate limiting | What identity makes possible ([`06-product-and-technology-roadmap.md`](06-product-and-technology-roadmap.md#4-identity-and-access)): buttons greyed out per role in the page, *who* on every record, an accounts page for the admin | ~~SH-3b~~ ✅ v2.23.0 | — |
 
@@ -575,4 +584,4 @@ box and build log updated in the same commit.
 - [`02-architecture.md` → Security](02-architecture.md#security-architecture) and [`07-operations.md` → Security](07-operations.md#security) — what exists today.
 - [`00-glossary.md`](00-glossary.md) — every term above, in one place.
 
-**Last Updated:** September 23, 2026 (v2.23.3, production's accounts ahead of its switch)
+**Last Updated:** September 23, 2026 (v2.23.4, production on accounts)

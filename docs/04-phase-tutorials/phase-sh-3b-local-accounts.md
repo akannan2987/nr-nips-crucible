@@ -2,7 +2,7 @@
 
 # Phase SH-3b — Local accounts: one login per person, three roles, a signed session, personal tokens
 
-**Version shipped:** 2.23.0 · **Date:** 2026-09-22 · **Status:** complete (built and rehearsed on the development machine; on the **beta instance** since 19:58 the same day by [Step 9](#step-9--turn-it-on-beta-first), three accounts, confirmed in the browser; on **production** in two moments by [Step 10](#step-10--production-in-two-moments-the-accounts-then-the-switch): its three accounts created on 2026-09-23 ([Step 10a](#step-10a--the-accounts-while-the-login-is-still-the-token), the login still the token), the switch ([Step 10b](#step-10b--the-switch-at-an-announced-moment)) at a moment the owner announces)
+**Version shipped:** 2.23.0 · **Date:** 2026-09-22 · **Status:** complete (built and rehearsed on the development machine; on the **beta instance** since 19:58 the same day by [Step 9](#step-9--turn-it-on-beta-first), three accounts, confirmed in the browser; on **production** in two moments by [Step 10](#step-10--production-in-two-moments-the-accounts-then-the-switch): its three accounts created on 2026-09-23 ([Step 10a](#step-10a--the-accounts-while-the-login-is-still-the-token), the login still the token), the switch done by [Step 10b](#step-10b--the-switch-at-an-announced-moment) the same night at 01:17 server time, every proof passing, confirmed in the browser; **on both instances since then, the shared token retired on both**)
 **Track:** SH, the shared spine ([roadmap](../05-roadmap.md#sh--shared-spine)); the second rung of the authentication ladder planned in [`13-authentication.md`](../13-authentication.md) and decided in [ADR 0001](../adr/0001-authentication-ladder.md); the owner's go of 2026-09-22, "build on what you have planned".
 **Prerequisites:** [Phase SH-3a](phase-sh-3a-token-gate.md) (the guard, the login page, the open health route: this rung drops into all three), [Phase SH-12](phase-sh-12-beta-instance.md) (the beta instance, where the accounts land first); the plan read once; a setup guide completed for your platform; the test virtual environment from its V7 check if you want to run the Python route.
 **Learning goal:** you understand what an account is made of and why a password is never stored, how a browser is remembered by a note it can read but cannot forge, why the ten hours now count from your last click, how three roles are decided by one rule rather than a hundred, how a script gets in without a password, how the operator creates, resets, disables and lists accounts from the terminal without ever seeing a password twice, and how to test every one of those claims from the browser, the API, the terminal, the container, Python and the database.
@@ -99,7 +99,7 @@ it replaces the passwords and keeps the accounts and the roles.
 | The deploy check | A nineteenth check with a token: the server says who the token belongs to | `verify-deploy.sh` |
 | Two dependencies | `argon2-cffi` (the hashing) and `itsdangerous` (the signed cookie), through the lock | `backend/requirements.txt`, `backend/requirements.lock` |
 | Tests | Twenty-three: the settings, the primitives, the rule, every wrong login, the cookie, the slide, disabling, resetting, the lockout, the three roles, the token, the password change, the hashes never leaving, the script, the migration | `backend/tests/test_auth_local.py` |
-| Figures | The login with accounts; the three roles and the rule; the life of an account; the two moments of production's switch (v2.23.3) | `docs/img/fig_local_login.svg`, `fig_roles.svg`, `fig_account_lifecycle.svg`, `fig_two_moments.svg` |
+| Figures | The login with accounts; the three roles and the rule; the life of an account; the two moments of production's switch (v2.23.3); the minute of the switch (v2.23.4) | `docs/img/fig_local_login.svg`, `fig_roles.svg`, `fig_account_lifecycle.svg`, `fig_two_moments.svg`, `fig_switch_minute.svg` |
 
 ---
 
@@ -814,6 +814,8 @@ token is out (the token cookie fails the new signature) and the page asks
 for a username from then on; a script that still sends the shared token
 answers 401 until it is given a personal token.
 
+![The minute of the switch: the settings file before and after, the five steps in between (backup, stop, start, unit rewritten, answers), and what changes for a browser, a script, the monitor, the data and the accounts](../img/fig_switch_minute.svg)
+
 **How (server, production folder, at the announced moment):**
 
 ```bash
@@ -867,6 +869,28 @@ empty or another account's. Someone cannot sign in → `users list` shows
 `LOCKED` (`users unlock`) or `DISABLED` (`users enable`); otherwise `users
 reset <name>` and hand the new one over. The way back, at any time, is
 one line and a restart: the next section.
+
+**Done on production, 2026-09-23, server time.** Part 1 at 01:16 to 01:17:
+`users list` showed the three accounts of Step 10a; the file gained its
+secret line (`grep -c` printed `1`) and became owner-only; `help` said
+`login: local`; the backup `crucible-20260923-011620.db` (147 MB) was
+taken; `stop` went through `container-crucible-py.service` and removed the
+container; `start` created a new one, rewrote the unit (`enabled`), handed
+it to the service and got `{"status":"ok"}` at the health route over HTTPS.
+Part 2 at 01:19, every line as expected: `{"mode":"local","authenticated":false,"user":null}`;
+`{"error":"Not authenticated"}` at `/api/stats`; `{"status":"ok"}`; a
+personal token of 59 characters for the operator's account, kept in the
+terminal only; `PASS the server says who this token belongs to: <the operator> (admin) via token`
+and `19 passed, 0 failed`; `✓ crucible-py is healthy`; `status` with
+`login: local`, the counts `{'chemicals': 12539, 'samples': 0, 'screening': 49065, 'toxicology': 0}`
+and `accounts: 3`; `.env.local` (333 bytes) and the unit (1.3 KB) both
+`-rw-------`; `two different secrets, as intended`; beta's door unchanged.
+The browser, confirmed by three screenshots: the login page with the indigo
+**Prod** pill and the two boxes, a wrong password refused with the standard
+words, the dashboard with the operator's name and the **ADMIN** pill,
+*Change password* and *Sign out*, and the change-password dialog in use.
+**SH-3b is live on both instances**; the state after the switch is tested
+route by route [below](#after-the-switch-production-on-accounts-step-10b).
 
 ---
 
@@ -1062,7 +1086,79 @@ except urllib.error.HTTPError as e:
 
 After Step 10b the first table above holds for production too, with the
 indigo **Prod** pill and the laboratory's own accounts, and the personal
-token issued in the row above opens the door.
+token issued in the row above opens the door. What the switch itself
+changes is the next section.
+
+### After the switch: production on accounts (Step 10b)
+
+Production on 49160, from the minute of the switch on. The rows marked
+*server* are the lines the server printed on 2026-09-23 at 01:19; the rows
+marked *rehearsal* were replayed on the development machine the same
+night (the switch done there in the local mode over HTTP, the three
+rehearsal accounts, a token cookie captured before the switch) because they
+need something only the minute itself produces: a browser that was signed
+in with the token, the retired token, a personal token that now works.
+`$J` stands for `-H 'Content-Type: application/json'`; `$T` is your personal
+token from `./container-py.sh users token <your-username>`, kept in the
+terminal ([the cookbook's walk](../08-api-cookbook.md#a-script-with-a-personal-token-start-to-finish)).
+
+| Route | How | You should see |
+|---|---|---|
+| **Browser, the tab that was open during the minute** | click anything in a tab that was signed in with the token | the login page: the old cookie was a keyed hash of the token and fails the new signature; there is nothing to fix, sign in with your username (*rehearsal*: the same cookie answered `401` at `/api/stats` and `authenticated: false` at `/api/auth/me`) |
+| **Browser, the login page** | open `https://<vm-hostname>:49160` | the indigo **Prod** pill, *Sign in with your account*, **two** boxes, the footer about a personal token for scripts; the tab titled `[Prod] Sign in …` (*server*, screenshot) |
+| **Browser, the old token in the boxes** | any username, the shared token as the password, *Sign in* | *That username and password were not accepted. Check both and try again.*: the token has retired on this instance (*server*, screenshot: the same words for a wrong password) |
+| **Browser, signed in** | your username and the temporary password from Step 10a | the page you asked for; in the top bar your display name, the **ADMIN** pill, *Change password*, *Sign out*, `Running on port 49160` (*server*, screenshot) |
+| **Browser, Change password first** | *Change password*: a wrong current password, then the right one | *The current password is not right*; then the green confirmation, and the temporary password is dead from then on (*server*, the dialog in the screenshot; *rehearsal* for the wrong-current line) |
+| **Browser, the other two people** | each signs in on their first visit and changes the password | the same; the viewer's *Delete* answers the red toast *Forbidden: this needs the admin role (yours: viewer)* (*rehearsal*) |
+| **Browser, beta beside it** | open `https://<vm-hostname>:49161` | still the amber **Beta** pill and two boxes; a beta login does not carry over: the two instances sign their cookies with different secrets |
+| **API, which rung** | `curl --noproxy '*' -sSk https://localhost:49160/api/auth/me; echo` | `{"mode":"local","authenticated":false,"user":null}` (*server*) |
+| **API, the gate and the open routes** | `curl --noproxy '*' -sSk https://localhost:49160/api/stats; echo` · `…/api/health` · `…/api/instance` | `{"error":"Not authenticated"}` · `{"status":"ok"}` · `{"name":"","label":"Prod","port":49160,"https":true}` (*server* for the first two) |
+| **API, the old token cookie** | `curl --noproxy '*' -sSk -D- -o /dev/null -b jar-from-before.txt https://localhost:49160/api/stats \| grep -iE 'HTTP\|www-auth'` | `HTTP/1.1 401 Unauthorized` · `www-authenticate: Bearer` (*rehearsal*) |
+| **API, the retired shared token** | `curl … -D- -o /dev/null -H "Authorization: Bearer <the old shared token>" …/api/stats \| grep HTTP` · `curl … -D- $J -d '{"token":"<the old shared token>"}' …/api/auth/login \| grep -iE 'HTTP\|error'` | `401` both ways, `{"error":"Not authenticated"}`, no cookie: the local rung reads a username and a password, nothing else (*rehearsal*) |
+| **API, a personal token** | `curl --noproxy '*' -sSk -H "Authorization: Bearer $T" https://localhost:49160/api/auth/me; echo` · the same at `/api/stats` | `{"mode":"local","authenticated":true,"user":{"subject":"<your-username>","display_name":"<Your Name>","roles":["admin"],"via":"token"}}` · `200` with the counts (*rehearsal*; the server's deploy check below proves the same token) |
+| **API, a password login** | `curl --noproxy '*' -sSk -D- -c jar.txt $J -d '{"username":"<editor>","password":"…"}' https://localhost:49160/api/auth/login` | `HTTP/1.1 200 OK` · `set-cookie: crucible_session=<payload>.<time>.<signature>; HttpOnly; Max-Age=36000; Path=/; SameSite=lax; Secure` · `{"mode":"local","authenticated":true,"user":{"subject":"<editor>",…,"roles":["editor"],"via":"local"}}` (*rehearsal*, without `Secure` over HTTP) |
+| **API, the cookie is readable, signed** | the payload before the first dot, `base64 -d` | `{"u":"<editor>","v":2}`: the name and the password version, and a signature only this instance's secret can make |
+| **API, the roles** | as the viewer: `curl … -b jar.txt -X DELETE …/api/chemicals/CHEM-000001` · as the editor, the same | `{"error":"Forbidden: this needs the admin role (yours: viewer)"}` · `{"error":"Forbidden: this needs the admin role (yours: editor)"}` (*rehearsal*) |
+| **API, Change password, wrong current** | `curl … -b jar.txt $J -d '{"current":"wrong","new":"a longer passphrase"}' …/api/auth/password` | `{"error":"The current password is not right"}` (400) (*rehearsal*) |
+| **Terminal, the deploy check with your token** | `CRUCIBLE_TOKEN="$T" ./verify-deploy.sh https://localhost:49160 \| grep -E 'belongs\|passed'` | `PASS the server says who this token belongs to: <your-username> (admin) via token` · `19 passed, 0 failed` (*server*) |
+| **Terminal, the deploy check with the retired token** | `CRUCIBLE_TOKEN="<the old shared token>" ./verify-deploy.sh https://localhost:49160 \| tail -3` | `9 passed, 13 failed` and *See the failures above.*: a retired key still opens the open routes and nothing behind the door (*rehearsal*) |
+| **Terminal, the monitor** | `./monitor.sh \| tail -1` | `✓ crucible-py is healthy` (*server*, 01:19:07): the probe never needed a credential |
+| **Terminal, status** | `./container-py.sh status \| tail -5` | `{"status":"ok"}` · `login: local — usernames and passwords; …` · `counts, from the database: {'chemicals': 12539, 'samples': 0, 'screening': 49065, 'toxicology': 0}` · `accounts: 3 (…)` (*server*) |
+| **Terminal, the script knows** | `./container-py.sh help \| grep Usage` | `… port 49160 · login: local)` (*server*) |
+| **Terminal, the accounts after the first logins** | `./container-py.sh users list` | your account `token issued <time>`, and each person's `last login` moving from `never` to the time of their first sign-in |
+| **Terminal, the files** | `ls -l .env.local ~/.config/systemd/user/container-crucible-py.service` · `grep -c '^SESSION_SECRET=' .env.local` · `grep -c '^CRUCIBLE_TOKEN=' .env.local` | `-rw-------` both (*server*: 333 bytes and 1.3 KB, 01:16) · `1` · `1`: the token line is still there, ignored, the way back |
+| **Terminal, two secrets** | `diff <(grep '^SESSION_SECRET=' .env.local) <(grep '^SESSION_SECRET=' ../nr-nips-crucible-beta/.env.local) >/dev/null && echo "SAME secret on both" \|\| echo "two different secrets, as intended"` | `two different secrets, as intended` (*server*) |
+| **Terminal, the backup from the minute before** | `ls -t backups/crucible-*.db \| head -1` | `backups/crucible-20260923-011620.db` (*server*): the last picture of production on the token, accounts included |
+| **Podman / Docker, a new container** | `podman ps --format '{{.Names}} {{.CreatedAt}} {{.Status}}'` | `crucible-py`, created at the minute of the switch, `Up … (healthy)`: `stop` removed the old one, `start` made this one |
+| **Podman / Docker, the variables inside** | `podman exec crucible-py sh -c 'echo $AUTH_MODE; echo ${#SESSION_SECRET}; echo ${#CRUCIBLE_TOKEN}'` | `local` · `64` · the third is the shared token's length: `64` on the server, where the line is still in the file and is passed in and ignored; `0` on the rehearsal, which had no token line (*rehearsal*) |
+| **Podman / Docker, the whole environment** | `podman inspect crucible-py --format '{{range .Config.Env}}{{println .}}{{end}}' \| grep -c SESSION_SECRET` | `1`: the secret is in the container's environment, readable by whoever can run `podman` as this user, that is, the operator; the unit file records it too, which is why both files are owner-only (*rehearsal*) |
+| **Podman / Docker, the unit records the switch** | `grep -c 'AUTH_MODE=local' ~/.config/systemd/user/container-crucible-py.service` | `1`: the unit was rewritten from the new container, so the next boot starts production with accounts |
+| **Podman / Docker, the log and the probe** | `podman logs crucible-py 2>&1 \| grep db_bootstrap` · `podman exec crucible-py python /app/backend/scripts/healthcheck.py; echo $?` | `[db_bootstrap] Alembic-managed database -> upgrade head` · `[db_bootstrap] schema is at head.` (the new container ran the migration check again, nothing to do) · `0` (*rehearsal*) |
+| **Python, a script at the door after the switch** | the script below as `door_after.py`; `python3 door_after.py` (on the server, add the `context` line of `door_check.py` above and `https`) | `me: {'mode': 'local', 'authenticated': False, 'user': None}` · `the shared token at the door: (401, '{"error":"Not authenticated"}')` · `<editor> with a password: 200 {'subject': '<editor>', …, 'roles': ['editor'], 'via': 'local'} cookie: crucible_session=eyJ1Ijo` (*rehearsal*) |
+| **Python, the table after the first logins** | `podman exec -i crucible-py python - < accounts_report.py` (the script above) | `3 accounts in the users table`, each `hash starts $argon2id$`, `no key holds a password: True`: a login changes `last_login`, never what is stored about the password (*rehearsal*) |
+| **Python directly, why beta's cookie is refused here** | `cd backend && AUTH_MODE=local SESSION_SECRET=<production's> .venv/bin/python -c "from app import auth; v = auth.issue_session({'username': 'ada', 'password_version': 1}); print(auth.read_session(v)[0])"`, then the same `read_session(v)` with another secret in the environment | `{'u': 'ada', 'v': 1}`, then `None`: a cookie is only ever read by the secret that signed it (development machine) |
+| **Database, from the host, read-only** | development machine: `sqlite3 -readonly data/crucible.db "SELECT username, json_extract(doc,'$.role'), substr(json_extract(doc,'$.last_login'),1,19) FROM users ORDER BY username;"` · server: the `python3 -c` line of the table above | three rows, `last_login` set for whoever has signed in (*rehearsal*) |
+| **Database, the Query page** | signed in as yourself, Query: `SELECT username FROM users` · `SELECT count(*) FROM chemicals` | *The 'users' table holds the login's accounts and cannot be queried here.* · `12539` |
+| **Database, the backup holds accounts, not the mode** | the read-only line above against `backups/crucible-20260923-011620.db` | the same three rows: the accounts travel with the database; the mode lives in `.env.local`, so a `restore` never switches an instance's rung |
+| **Automated tests** | `cd backend && .venv/bin/pytest -p no:warnings 2>&1 \| grep -E '[0-9]+ (passed\|failed)'` | `193 passed`: the token rung, the local rung, and the two moments in one test |
+
+```python
+# door_after.py: asks the door which rung is on, offers the retired shared token, then signs in with a password
+import json, urllib.error, urllib.request
+base = "http://localhost:49160"                      # on the server: https, plus the context line of door_check.py
+with urllib.request.urlopen(base + "/api/auth/me") as r:
+    print("me:", json.load(r))
+def post(path, body):
+    req = urllib.request.Request(base + path, data=json.dumps(body).encode(), headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(req) as r:
+            return r.status, json.load(r), r.headers.get("set-cookie", "")[:24]
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode(), ""
+print("the shared token at the door:", post("/api/auth/login", {"token": "the-retired-shared-token"})[:2])
+status, body, cookie = post("/api/auth/login", {"username": "<editor>", "password": "<their password>"})
+print("<editor> with a password:", status, body["user"], "cookie:", cookie)
+```
 
 ---
 
@@ -1132,6 +1228,8 @@ longer swallows the lines pasted after it, lesson 41), v2.23.2 (the
 cookbook's start-to-finish token walk; beta recorded on accounts), v2.23.3
 (Step 10 in two moments, `status` listing the accounts that wait, the
 between-moments table above, one test; production's accounts created
-2026-09-23 by Step 10a).
+2026-09-23 by Step 10a), v2.23.4 (Step 10b done on production at 01:17
+server time and recorded with every proof; the after-the-switch table
+above; the minute of the switch drawn; documents only).
 
 **Last Updated:** September 23, 2026

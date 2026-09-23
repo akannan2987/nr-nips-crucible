@@ -1,0 +1,66 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 540' width='940' height='540' role='img' aria-label='The minute of the switch: the settings file before and after, the five steps in between (backup, stop, start, unit rewritten, answers), and what changes for a browser, a script, the monitor, the data and the accounts' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='539' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='15' fill='#1f2937' text-anchor='middle' font-weight='bold'>The minute of the switch (Step 10b): stop, start, and what changes for whom</text>
+<rect x='30' y='60' width='270' height='330' rx='12' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='165' y='84' font-size='12.5' fill='#d97706' text-anchor='middle' font-weight='bold'>before: the token rung</text>
+<rect x='330' y='60' width='280' height='330' rx='12' fill='#f9fafb' stroke='#374151' stroke-width='1.2'/>
+<text x='470' y='84' font-size='12.5' fill='#374151' text-anchor='middle' font-weight='bold'>the minute</text>
+<rect x='640' y='60' width='270' height='330' rx='12' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='775' y='84' font-size='12.5' fill='#4f46e5' text-anchor='middle' font-weight='bold'>after: accounts</text>
+<rect x='48' y='98' width='234' height='40' rx='8' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='165' y='114' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>AUTH_MODE=token</text>
+<text x='165' y='129' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>CRUCIBLE_TOKEN=&lt;its own&gt;</text>
+<rect x='658' y='98' width='234' height='40' rx='8' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='775' y='114' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>AUTH_MODE=local</text>
+<text x='775' y='129' font-size='8.6' fill='#6b7280' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>SESSION_SECRET=&lt;its own&gt;  (token line kept)</text>
+<text x='48' y='164' font-size='10.5' fill='#1f2937' text-anchor='start' font-weight='bold'>a browser</text>
+<text x='165' y='178' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>signed in by a cookie that is</text>
+<text x='165' y='190' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>a keyed hash of the token</text>
+<text x='775' y='164' font-size='9.2' fill='#be123c' text-anchor='middle' font-weight='bold'>signed out: the old cookie fails</text>
+<text x='775' y='176' font-size='9.2' fill='#be123c' text-anchor='middle' font-weight='normal'>the new signature; the login page,</text>
+<text x='775' y='188' font-size='9.2' fill='#be123c' text-anchor='middle' font-weight='normal'>two boxes; then Change password</text>
+<text x='48' y='211' font-size='10.5' fill='#1f2937' text-anchor='start' font-weight='bold'>a script</text>
+<text x='165' y='225' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>sends the shared token</text>
+<text x='165' y='237' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>as Authorization: Bearer</text>
+<text x='775' y='211' font-size='9.2' fill='#be123c' text-anchor='middle' font-weight='bold'>401 until it is given a personal</text>
+<text x='775' y='223' font-size='9.2' fill='#be123c' text-anchor='middle' font-weight='normal'>token: users token &lt;name&gt;,</text>
+<text x='775' y='235' font-size='9.2' fill='#be123c' text-anchor='middle' font-weight='normal'>with that person&apos;s role</text>
+<text x='48' y='258' font-size='10.5' fill='#1f2937' text-anchor='start' font-weight='bold'>the monitor</text>
+<text x='165' y='272' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>probes /api/health, open</text>
+<text x='775' y='258' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>unchanged: the health route</text>
+<text x='775' y='270' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>is open on every rung</text>
+<text x='48' y='305' font-size='10.5' fill='#1f2937' text-anchor='start' font-weight='bold'>the data</text>
+<text x='165' y='319' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>12,539 compounds, 49,065 rows</text>
+<text x='775' y='305' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>unchanged: the mode lives in</text>
+<text x='775' y='317' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>the file, not in the database</text>
+<text x='48' y='352' font-size='10.5' fill='#1f2937' text-anchor='start' font-weight='bold'>the accounts</text>
+<text x='165' y='366' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>three rows, stored and ignored</text>
+<text x='775' y='352' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>the same three rows, now used</text>
+<text x='775' y='364' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>on every login</text>
+<rect x='348' y='104' width='244' height='46' rx='8' fill='#ffffff' stroke='#374151' stroke-width='1.2'/>
+<text x='470' y='121' font-size='10.5' fill='#374151' text-anchor='middle' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>backup</text>
+<text x='470' y='138' font-size='8.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>a copy of the database, accounts included</text>
+<line x1='470' y1='151' x2='470' y2='160' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='348' y='162' width='244' height='46' rx='8' fill='#ffffff' stroke='#be123c' stroke-width='1.2'/>
+<text x='470' y='179' font-size='10.5' fill='#be123c' text-anchor='middle' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>stop</text>
+<text x='470' y='196' font-size='8.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>through the service: the container is removed; production is down</text>
+<line x1='470' y1='209' x2='470' y2='218' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='348' y='220' width='244' height='46' rx='8' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='470' y='237' font-size='10.5' fill='#4f46e5' text-anchor='middle' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>start</text>
+<text x='470' y='254' font-size='8.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>a new container from the current file: the secret reaches it now</text>
+<line x1='470' y1='267' x2='470' y2='276' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='348' y='278' width='244' height='46' rx='8' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='470' y='295' font-size='10.5' fill='#4f46e5' text-anchor='middle' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>unit rewritten</text>
+<text x='470' y='312' font-size='8.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>the service records the new run command; the next boot keeps accounts</text>
+<line x1='470' y1='325' x2='470' y2='334' stroke='#9ca3af' stroke-width='1.6' marker-end='url(#arrow)'/>
+<rect x='348' y='336' width='244' height='46' rx='8' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='470' y='353' font-size='10.5' fill='#4f46e5' text-anchor='middle' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>answers</text>
+<text x='470' y='370' font-size='8.2' fill='#6b7280' text-anchor='middle' font-weight='normal'>the health route replies; about a minute has passed</text>
+<rect x='30' y='406' width='880' height='30' rx='6' fill='#f9fafb' stroke='#374151' stroke-width='1.2'/>
+<text x='470' y='426' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='bold'>the way back is the same minute in reverse: AUTH_MODE=token in the file, stop, start; the accounts stay in the database, ignored until the mode is local again</text>
+<rect x='30' y='446' width='880' height='30' rx='6' fill='#fef2f2' stroke='#be123c' stroke-width='1.2'/>
+<text x='470' y='466' font-size='10' fill='#991b1b' text-anchor='middle' font-weight='bold'>announce the minute: whoever is on production lands on the login page, and a script with the shared token stops until it has a personal token</text>
+<text x='470.0' y='500' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>everyday version: at the announced hour the turnstile is switched to badges; whoever is inside badges in again, the old shared key no longer turns, and the fire alarm keeps working regardless</text>
+<text x='470.0' y='522' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>phase SH-3b, Step 10b · production switched on 2026-09-23, beta the evening before</text>
+</svg>

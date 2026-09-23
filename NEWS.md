@@ -10,6 +10,39 @@ change you are getting.
 
 ---
 
+## v2.23.4 — 2026-09-23 — "Production on accounts"
+
+Documents only. Production moved to accounts at 01:17 server time, by
+[Step 10b](docs/04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10b--the-switch-at-an-announced-moment) of the local-accounts tutorial, a
+minute after the announced moment: the mode switched with production's
+own secret, a backup, a `stop` and a `start`; every proof passed and the
+browser confirmed it. Both instances now ask each person who they are;
+the shared token has retired on both.
+
+**Added**
+- The switch and every proof recorded in the tutorial with the server's
+  own outputs, and an every-route section for
+  [the state after the switch](docs/04-phase-tutorials/phase-sh-3b-local-accounts.md#after-the-switch-production-on-accounts-step-10b): what a tab that
+  was open during the minute sees, what the retired shared token gets, a
+  personal token that now works, a password login and its signed cookie,
+  the roles, the deploy check, the monitor, the files, the new container
+  and its rewritten unit, two Python scripts, the database and the backup
+  from the minute before. The lines that only the minute itself can
+  produce were replayed on the development machine.
+- A figure for the minute of the switch: the file before and after, the
+  five steps between, and what changes for a browser, a script, the
+  monitor, the data and the accounts.
+
+**Changed**
+- The handbook, the authentication page, the beta-instance page, the
+  roadmap, the operations runbook, the playbook, the README, the RHEL 8
+  guide and the glossary say that both instances use accounts.
+
+**Deploy**
+- Documents: blocks 3 and 6 are a `git pull` each, no rebuild.
+
+---
+
 ## v2.23.3 — 2026-09-23 — "Production's accounts, before the switch"
 
 A helper script, one test and documents. The owner decided that

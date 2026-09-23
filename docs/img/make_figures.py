@@ -1044,6 +1044,64 @@ def fig_two_moments() -> None:
     write("fig_two_moments.svg", svg(W, H, "Production's login in two moments: first the accounts are created while the door still takes the token and the page still shows the token box; later, at an announced moment, the mode switches to local and the same rows are used; between the two, hours or days", b))
 
 
+def fig_switch_minute() -> None:
+    """SH-3b Step 10b: what the minute of the switch changes for each actor, and what it leaves alone."""
+    W, H = 940, 540
+    mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
+    tok, acc, red = COLOURS["screening"], COLOURS["chemical"], COLOURS["toxicology"]
+    b = text(W/2, 34, "The minute of the switch (Step 10b): stop, start, and what changes for whom", 15, INK, "middle", "bold")
+    # three columns
+    b += box(30, 60, 270, 330, "#fff7ed", tok, 12)
+    b += text(165, 84, "before: the token rung", 12.5, tok, "middle", "bold")
+    b += box(330, 60, 280, 330, PANEL, ACCENT, 12)
+    b += text(470, 84, "the minute", 12.5, ACCENT, "middle", "bold")
+    b += box(640, 60, 270, 330, "#eef2ff", acc, 12)
+    b += text(775, 84, "after: accounts", 12.5, acc, "middle", "bold")
+    # the file, top of the left and right columns
+    b += box(48, 98, 234, 40, PAPER, LINE, 8)
+    b += text(165, 114, "AUTH_MODE=token", 10, INK, "middle", "bold", mono)
+    b += text(165, 129, "CRUCIBLE_TOKEN=<its own>", 9.5, MUTED, "middle", "normal", mono)
+    b += box(658, 98, 234, 40, PAPER, LINE, 8)
+    b += text(775, 114, "AUTH_MODE=local", 10, INK, "middle", "bold", mono)
+    b += text(775, 129, "SESSION_SECRET=<its own>  (token line kept)", 8.6, MUTED, "middle", "normal", mono)
+    # the actors, one row each, left = before, right = after
+    rows = [
+        ("a browser", ["signed in by a cookie that is", "a keyed hash of the token"], ["signed out: the old cookie fails", "the new signature; the login page,", "two boxes; then Change password"], red),
+        ("a script", ["sends the shared token", "as Authorization: Bearer"], ["401 until it is given a personal", "token: users token <name>,", "with that person's role"], red),
+        ("the monitor", ["probes /api/health, open"], ["unchanged: the health route", "is open on every rung"], acc),
+        ("the data", ["12,539 compounds, 49,065 rows"], ["unchanged: the mode lives in", "the file, not in the database"], acc),
+        ("the accounts", ["three rows, stored and ignored"], ["the same three rows, now used", "on every login"], acc),
+    ]
+    y = 152
+    for name, before, after, col in rows:
+        b += text(48, y + 12, name, 10.5, INK, "start", "bold")
+        b += lines(165, y + 26, before, 9.2, MUTED, "middle", 12)
+        b += lines(775, y + 12, after, 9.2, col if col == red else INK, "middle", 12, "bold" if col == red else "normal")
+        y += 47
+    # the minute itself, a vertical sequence
+    steps = [("backup", "a copy of the database, accounts included", ACCENT),
+             ("stop", "through the service: the container is removed; production is down", red),
+             ("start", "a new container from the current file: the secret reaches it now", acc),
+             ("unit rewritten", "the service records the new run command; the next boot keeps accounts", acc),
+             ("answers", "the health route replies; about a minute has passed", acc)]
+    y = 104
+    for title, why, col in steps:
+        b += box(348, y, 244, 46, PAPER, col, 8)
+        b += text(470, y + 17, title, 10.5, col, "middle", "bold", mono)
+        b += text(470, y + 34, why, 8.2, MUTED)
+        if title != "answers":
+            b += arrow(470, y + 47, 470, y + 56, LINE)
+        y += 58
+    # the way back and the everyday version
+    b += box(30, 406, 880, 30, PANEL, ACCENT, 6)
+    b += text(470, 426, "the way back is the same minute in reverse: AUTH_MODE=token in the file, stop, start; the accounts stay in the database, ignored until the mode is local again", 10, INK, "middle", "bold")
+    b += box(30, 446, 880, 30, "#fef2f2", red, 6)
+    b += text(470, 466, "announce the minute: whoever is on production lands on the login page, and a script with the shared token stops until it has a personal token", 10, "#991b1b", "middle", "bold")
+    b += text(W/2, 500, "everyday version: at the announced hour the turnstile is switched to badges; whoever is inside badges in again, the old shared key no longer turns, and the fire alarm keeps working regardless", 10, INK)
+    b += text(W/2, 522, "phase SH-3b, Step 10b · production switched on 2026-09-23, beta the evening before", 10, MUTED)
+    write("fig_switch_minute.svg", svg(W, H, "The minute of the switch: the settings file before and after, the five steps in between (backup, stop, start, unit rewritten, answers), and what changes for a browser, a script, the monitor, the data and the accounts", b))
+
+
 def fig_delete_gate() -> None:
     W, H = 940, 400
     b = text(W/2, 34, "Deleting a compound after CR-6: the clerk refuses, the archivist empties the folder first", 16, INK, "middle", "bold")
@@ -1256,5 +1314,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, fig_two_tokens, fig_local_login, fig_roles, fig_account_lifecycle, fig_two_moments, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, fig_two_tokens, fig_local_login, fig_roles, fig_account_lifecycle, fig_two_moments, fig_switch_minute, cover, logo):
         f()

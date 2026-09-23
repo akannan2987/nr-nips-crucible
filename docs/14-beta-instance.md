@@ -290,8 +290,9 @@ signed in and with which role; a viewer's delete is refused by the server
 Production followed the token the same evening with **its own token**
 (decision A11: a token opens one instance only), so the port that had been
 open since the beginning is closed; its own accounts were created in
-production's folder on 2026-09-23, and it moves to accounts at a moment
-the owner announces ([Step 10, in two moments](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch)).
+production's folder on 2026-09-23 and it moved to accounts the same night
+at 01:17 server time ([Step 10, in two moments](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch)); both
+instances use accounts, each with its own secret.
 That order is decision B5 and the revisited decision A3 on the
 authentication page. **The accounts are part of the database:** after a
 `restore` of production's backup into beta, beta's accounts are
@@ -353,8 +354,9 @@ build ("build on what you have planned").
   `SESSION_SECRET` at 19:58, the deploy checks passing with the operator's
   personal token, the login page and the top bar confirmed in the browser
   ([phase SH-3b → Step 9](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first));
-  production's accounts created 2026-09-23, its switch at an announced
-  moment ([Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch)).
+  production's accounts created 2026-09-23 and its switch done at 01:17
+  server time the same night ([Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch)): both instances
+  on accounts.
 
 ---
 

@@ -231,9 +231,9 @@ server do since 2026-09-22. The page you see first is then the login page,
 with the same *Prod* / *Beta* pill on its bar so you know where you are.
 There are two kinds of login, and the page tells you which one it wants.
 
-**With an access token** (`AUTH_MODE=token`, the first rung; production
-until the switch to accounts, which the operator announces; its accounts
-exist since 2026-09-23 and wait for that moment):
+**With an access token** (`AUTH_MODE=token`, the first rung; neither
+instance on the server uses it since 2026-09-23, but a fresh installation
+may):
 
 1. Get the token from the person who runs the instance — in person or
    through the organisation's password manager, never by e-mail. It is one
@@ -247,8 +247,8 @@ exist since 2026-09-23 and wait for that moment):
    **Sign out** in the top bar forgets it; so does a new token issued by
    the operator, for everyone at once.
 
-**With your own account** (`AUTH_MODE=local`, since v2.23.0; the beta
-instance first):
+**With your own account** (`AUTH_MODE=local`, since v2.23.0; beta since
+2026-09-22, production since 2026-09-23):
 
 1. The person who runs the instance gives you a **username** and a first,
    temporary **password**, out of band as above. Type both and click

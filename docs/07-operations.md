@@ -1029,8 +1029,8 @@ printed **once**, when made; what the table keeps is a hash.
 
 ![The life of an account: add, hand over out of band, first login and change password, a personal token for a script, a reset, a disable; each step one command or one click; secrets shown once and stored as hashes](img/fig_account_lifecycle.svg)
 
-**Turn it on** (done on beta first; on production in two moments, the
-accounts created 2026-09-23 and the switch at a moment the owner announces — [Step 9](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first) and [Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch) of the tutorial):
+**Turn it on** (done on beta 2026-09-22 and on production 2026-09-23,
+there in two moments, the accounts first and the switch at an announced minute — [Step 9](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first) and [Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch) of the tutorial):
 
 ```bash
 # ▶ VM - the instance's folder; the container is running this version (block 3 or 6 rebuilt it)
@@ -1065,6 +1065,13 @@ wait, `./container-py.sh status` lists them with the word *waiting*
 route, is [in the tutorial](04-phase-tutorials/phase-sh-3b-local-accounts.md#between-the-two-moments-production-after-step-10a-before-step-10b).
 
 ![Production's login in two moments: first the accounts are created while the door still takes the token and the page still shows the token box; later, at an announced moment, the mode switches to local and the same rows are used; between the two, hours or days](img/fig_two_moments.svg)
+
+What the minute of the switch changes, and for whom: a browser signed in
+with the token lands on the login page, a script with the shared token
+answers 401 until it has a personal token, and the monitor, the data and
+the accounts do not notice ([tested route by route](04-phase-tutorials/phase-sh-3b-local-accounts.md#after-the-switch-production-on-accounts-step-10b)).
+
+![The minute of the switch: the settings file before and after, the five steps in between (backup, stop, start, unit rewritten, answers), and what changes for a browser, a script, the monitor, the data and the accounts](img/fig_switch_minute.svg)
 
 | I want to… | Command | Effective |
 |---|---|---|

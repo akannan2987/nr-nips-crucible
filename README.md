@@ -312,9 +312,9 @@ full list and why each is excluded: [Operations → Security](docs/07-operations
   password stored only as an Argon2 hash, and a personal token for scripts;
   the accounts are managed from the terminal, not yet from a page
   ([`docs/13-authentication.md`](docs/13-authentication.md)). Both
-  instances on the laboratory's server have a login since 2026-09-22, the
-  beta instance with accounts first; a fresh installation is open until its
-  operator turns one on. Single sign-on is planned and on hold.
+  instances on the laboratory's server use accounts, beta since 2026-09-22
+  and production since 2026-09-23; a fresh installation is open until its
+  operator turns a login on. Single sign-on is planned and on hold.
 - **There is no audit trail.** Records can be edited and deleted, and nothing
   records who did it or what it was before. Do not use this as evidence of what
   a value was on a given date.
@@ -361,4 +361,4 @@ For support, contact: `<maintainer-email>`
 
 ---
 
-**Last Updated:** September 22, 2026
+**Last Updated:** September 23, 2026

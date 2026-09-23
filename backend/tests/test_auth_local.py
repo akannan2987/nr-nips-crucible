@@ -457,6 +457,44 @@ def test_the_hashes_never_leave_the_database(users):
     assert "users" not in tables
 
 
+# ── the two moments of the switch (tutorial Step 10a and 10b) ────────
+
+
+def test_accounts_created_on_the_token_rung_wait_for_the_switch(client, monkeypatch, capsys):
+    """Step 10 in two moments: the accounts are created while the door still
+    takes the shared token (10a) and are ignored by it; at the switch (10b)
+    the same rows are used and the shared token retires. Nothing is lost
+    between the two, however long the wait."""
+    shared = "t" * 64
+    monkeypatch.setattr(config, "AUTH_MODE", "token")
+    monkeypatch.setattr(config, "CRUCIBLE_TOKEN", shared)
+    monkeypatch.setattr(auth_router, "FAILED_LOGIN_PAUSE_SECONDS", 0)
+    monkeypatch.setattr(accounts, "_hasher", PasswordHasher(time_cost=1, memory_cost=8 * 1024, parallelism=1))
+    # moment 1: the script writes to the table whatever the mode says
+    monkeypatch.setattr("sys.stdin", io.StringIO("alice's long password\n"))
+    assert with_db(lambda db: manage_users.main(["add", "alice", "--role", "admin", "--password-stdin"], db)) == 0
+    assert with_db(lambda db: manage_users.main(["token", "alice"], db)) == 0
+    assert with_db(lambda db: manage_users.main(["list"], db)) == 0
+    out = capsys.readouterr().out
+    personal = [w for w in out.split() if w.startswith("alice:")][0]
+    assert "1 account" in out and "$argon2" not in out
+    # the door has not changed: only the shared token opens it
+    assert client.get("/api/auth/me").json() == {"mode": "token", "authenticated": False, "user": None}
+    assert sign_in(client, "alice", "alice's long password").status_code == 401
+    assert fresh().get("/api/stats", headers={"Authorization": f"Bearer {personal}"}).status_code == 401
+    assert fresh().get("/api/stats", headers={"Authorization": f"Bearer {shared}"}).status_code == 200
+    r = client.post("/api/auth/password", json={"current": "x", "new": "y" * 9}, headers={"Authorization": f"Bearer {shared}"})
+    assert r.status_code == 400 and "no passwords to change" in r.json()["error"]
+    # moment 2: the switch; the same rows are used and the shared token retires
+    monkeypatch.setattr(config, "AUTH_MODE", "local")
+    monkeypatch.setattr(config, "SESSION_SECRET", SECRET)
+    assert fresh().get("/api/stats", headers={"Authorization": f"Bearer {shared}"}).status_code == 401
+    assert fresh().get("/api/stats", headers={"Authorization": f"Bearer {personal}"}).status_code == 200
+    r = sign_in(fresh(), "alice", "alice's long password")
+    assert r.status_code == 200
+    assert (r.json()["user"]["subject"], r.json()["user"]["roles"], r.json()["user"]["via"]) == ("alice", ["admin"], "local")
+
+
 # ── the management script ────────────────────────────────────────────
 
 

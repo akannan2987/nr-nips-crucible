@@ -1,0 +1,59 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 500' width='940' height='500' role='img' aria-label='Production&apos;s login in two moments: first the accounts are created while the door still takes the token and the page still shows the token box; later, at an announced moment, the mode switches to local and the same rows are used; between the two, hours or days' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='499' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='15' fill='#1f2937' text-anchor='middle' font-weight='bold'>Production&apos;s login in two moments (Step 10): the accounts first, the switch at an announced moment</text>
+<rect x='30' y='62' width='420' height='340' rx='12' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='240' y='86' font-size='12.5' fill='#d97706' text-anchor='middle' font-weight='bold'>moment 1 · Step 10a · the accounts</text>
+<rect x='50' y='100' width='380' height='44' rx='8' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='240' y='118' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>AUTH_MODE=token  CRUCIBLE_TOKEN=&lt;its own&gt;</text>
+<text x='240' y='134' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>the file is not touched</text>
+<rect x='78.8' y='177.8' width='26.4' height='19.8' rx='3.3' fill='#d97706' fill-opacity='0.18' stroke='#d97706' stroke-width='2'/>
+<path d='M 84.3 177.8 V 170.1 A 7.699999999999999 7.699999999999999 0 0 1 99.7 170.1 V 177.8' fill='none' stroke='#d97706' stroke-width='2.4'/>
+<text x='92' y='214' font-size='9.2' fill='#d97706' text-anchor='middle' font-weight='bold'>the door:</text>
+<text x='92' y='226' font-size='9.2' fill='#d97706' text-anchor='middle' font-weight='normal'>still the token</text>
+<rect x='154' y='156' width='276' height='92' rx='8' fill='#ffffff' stroke='#d97706' stroke-width='1.2'/>
+<text x='292' y='172' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>users table (the same rows, both moments)</text>
+<text x='166' y='190' font-size='9.5' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>alice   admin    $argon2id$…</text>
+<text x='166' y='205' font-size='9.5' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>bob     editor   $argon2id$…</text>
+<text x='166' y='220' font-size='9.5' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>carol   viewer   $argon2id$…</text>
+<text x='292' y='242' font-size='9.5' fill='#d97706' text-anchor='middle' font-weight='bold'>waiting: the door ignores them</text>
+<rect x='50' y='262' width='380' height='84' rx='8' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='240' y='278' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>in production&apos;s folder:</text>
+<text x='240' y='294' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>users add alice --role admin</text>
+<text x='240' y='309' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>users add bob --role editor</text>
+<text x='240' y='324' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>users add carol --role viewer</text>
+<text x='240' y='339' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>users list · status</text>
+<text x='240' y='366' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>the page: the token box, as before; a username typed anywhere is refused</text>
+<text x='240' y='384' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>verify-deploy: 19 passed with the shared token</text>
+<rect x='490' y='62' width='420' height='340' rx='12' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='700' y='86' font-size='12.5' fill='#4f46e5' text-anchor='middle' font-weight='bold'>moment 2 · Step 10b · the switch</text>
+<rect x='510' y='100' width='380' height='44' rx='8' fill='#ffffff' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='700' y='118' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='bold' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>AUTH_MODE=local  SESSION_SECRET=&lt;its own&gt;</text>
+<text x='700' y='134' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>one sed, one printf, chmod 600</text>
+<rect x='538.8' y='177.8' width='26.4' height='19.8' rx='3.3' fill='#4f46e5' fill-opacity='0.18' stroke='#4f46e5' stroke-width='2'/>
+<path d='M 544.3 177.8 V 170.1 A 7.699999999999999 7.699999999999999 0 0 1 559.7 170.1 V 177.8' fill='none' stroke='#4f46e5' stroke-width='2.4'/>
+<text x='552' y='214' font-size='9.2' fill='#4f46e5' text-anchor='middle' font-weight='bold'>the door:</text>
+<text x='552' y='226' font-size='9.2' fill='#4f46e5' text-anchor='middle' font-weight='normal'>username +</text>
+<text x='552' y='238' font-size='9.2' fill='#4f46e5' text-anchor='middle' font-weight='normal'>password</text>
+<rect x='614' y='156' width='276' height='92' rx='8' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='752' y='172' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>users table (the same rows, both moments)</text>
+<text x='626' y='190' font-size='9.5' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>alice   admin    $argon2id$…</text>
+<text x='626' y='205' font-size='9.5' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>bob     editor   $argon2id$…</text>
+<text x='626' y='220' font-size='9.5' fill='#1f2937' text-anchor='start' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>carol   viewer   $argon2id$…</text>
+<text x='752' y='242' font-size='9.5' fill='#4f46e5' text-anchor='middle' font-weight='bold'>in use: each login is checked here</text>
+<rect x='510' y='262' width='380' height='84' rx='8' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='700' y='278' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>in production&apos;s folder:</text>
+<text x='700' y='294' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>backup · stop · start</text>
+<text x='700' y='309' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>curl /api/auth/me  -&gt;  mode local</text>
+<text x='700' y='324' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>users token alice  -&gt;  verify-deploy 19</text>
+<text x='700' y='339' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>monitor healthy · browser: two boxes</text>
+<text x='700' y='366' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>the page: two boxes and the Prod pill; Change password first</text>
+<text x='700' y='384' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>verify-deploy: 19 passed with a personal token</text>
+<line x1='452' y1='232' x2='488' y2='232' stroke='#374151' stroke-width='2' marker-end='url(#arrow)'/>
+<text x='470' y='256' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>hours</text>
+<text x='470' y='268' font-size='9.5' fill='#6b7280' text-anchor='middle' font-weight='normal'>or days</text>
+<rect x='30' y='416' width='880' height='30' rx='6' fill='#f9fafb' stroke='#374151' stroke-width='1.2'/>
+<text x='470' y='436' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>why two: passwords are handed over out of band, one person at a time; the switch is one announced minute; the way back is one line and a restart</text>
+<text x='470.0' y='468' font-size='10.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>everyday version: the new badges are printed and handed out during the week; at the announced hour the turnstile is switched to badges, and until then the old key still opens it</text>
+<text x='470.0' y='488' font-size='10' fill='#6b7280' text-anchor='middle' font-weight='normal'>phase SH-3b, Step 10a and Step 10b · production&apos;s accounts exist before its door asks for them</text>
+</svg>

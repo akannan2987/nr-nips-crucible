@@ -387,6 +387,13 @@ missing one, after a quarter of a second, and no cookie. With the login off: 400
   wrong passwords in a row lock the account for fifteen minutes (still 401,
   the same words).
 
+The rung decides which body is read. On the token rung a
+`{"username", "password"}` body is refused with 401 exactly like a wrong
+token, even when the account exists: accounts created ahead of the switch
+are stored and ignored until `AUTH_MODE=local`
+([the two moments](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch)); there, `POST /api/auth/password`
+answers `400 {"error": "AUTH_MODE='token' has no passwords to change"}`.
+
 ```bash
 curl --noproxy '*' -sSk -c jar.txt -H 'Content-Type: application/json' -d '{"token":"<the token>"}' https://localhost:49161/api/auth/login
 curl --noproxy '*' -sSk -c jar.txt -H 'Content-Type: application/json' -d '{"username":"alice","password":"…"}' https://localhost:49161/api/auth/login
@@ -1981,5 +1988,5 @@ For API support or feature requests:
 
 ---
 
-**Last Updated:** September 22, 2026  
+**Last Updated:** September 23, 2026  
 **API Version:** 2.0

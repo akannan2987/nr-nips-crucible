@@ -232,7 +232,8 @@ with the same *Prod* / *Beta* pill on its bar so you know where you are.
 There are two kinds of login, and the page tells you which one it wants.
 
 **With an access token** (`AUTH_MODE=token`, the first rung; production
-until its accounts exist):
+until the switch to accounts, which the operator announces; its accounts
+exist since 2026-09-23 and wait for that moment):
 
 1. Get the token from the person who runs the instance — in person or
    through the organisation's password manager, never by e-mail. It is one
@@ -1201,4 +1202,4 @@ exactly like success. `cd ~` first.
 
 ---
 
-**Last Updated:** September 22, 2026
+**Last Updated:** September 23, 2026

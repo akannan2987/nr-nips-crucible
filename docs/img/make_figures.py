@@ -993,6 +993,57 @@ def fig_account_lifecycle() -> None:
     write("fig_account_lifecycle.svg", svg(W, H, "The life of an account: add, hand over out of band, first login and change password, a personal token for a script, a reset, a disable; each step one command or one click; secrets shown once and stored as hashes", b))
 
 
+def fig_two_moments() -> None:
+    """SH-3b Step 10: production moves to accounts in two moments: the accounts first, the switch later."""
+    W, H = 940, 500
+    mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
+    tok, acc = COLOURS["screening"], COLOURS["chemical"]
+    b = text(W/2, 34, "Production's login in two moments (Step 10): the accounts first, the switch at an announced moment", 15, INK, "middle", "bold")
+    panels = [
+        (30, "moment 1 · Step 10a · the accounts", tok, "#fff7ed",
+         "AUTH_MODE=token  CRUCIBLE_TOKEN=<its own>", "the file is not touched",
+         ["the door:", "still the token"], True,
+         ["users add alice --role admin", "users add bob --role editor", "users add carol --role viewer", "users list · status"],
+         "waiting: the door ignores them", "the page: the token box, as before; a username typed anywhere is refused"),
+        (490, "moment 2 · Step 10b · the switch", acc, "#eef2ff",
+         "AUTH_MODE=local  SESSION_SECRET=<its own>", "one sed, one printf, chmod 600",
+         ["the door:", "username +", "password"], False,
+         ["backup · stop · start", "curl /api/auth/me  ->  mode local", "users token alice  ->  verify-deploy 19", "monitor healthy · browser: two boxes"],
+         "in use: each login is checked here", "the page: two boxes and the Prod pill; Change password first"),
+    ]
+    for x, title, col, fill, env, envnote, door, closed_tok, cmds, tablenote, page in panels:
+        b += box(x, 62, 420, 340, fill, col, 12)
+        b += text(x + 210, 86, title, 12.5, col, "middle", "bold")
+        # the settings file
+        b += box(x + 20, 100, 380, 44, PAPER, LINE, 8)
+        b += text(x + 210, 118, env, 10, INK, "middle", "bold", mono)
+        b += text(x + 210, 134, envnote, 9.5, MUTED)
+        # the door
+        b += _lock(x + 62, 180, 22, col)
+        b += lines(x + 62, 214, door, 9.2, col, "middle", 12, "bold")
+        # the users table
+        b += box(x + 124, 156, 276, 92, PAPER, col, 8)
+        b += text(x + 262, 172, "users table (the same rows, both moments)", 9.5, MUTED)
+        for i, row in enumerate(("alice   admin    $argon2id$…", "bob     editor   $argon2id$…", "carol   viewer   $argon2id$…")):
+            b += text(x + 136, 190 + i * 15, row, 9.5, INK, "start", "normal", mono)
+        b += text(x + 262, 242, tablenote, 9.5, col, "middle", "bold")
+        # the commands
+        b += box(x + 20, 262, 380, 84, PANEL, LINE, 8)
+        b += text(x + 210, 278, "in production's folder:", 9.5, MUTED)
+        for i, c in enumerate(cmds):
+            b += text(x + 210, 294 + i * 15, c, 9.5, INK, "middle", "normal", mono)
+        b += text(x + 210, 366, page, 9.5, INK)
+        b += text(x + 210, 384, "verify-deploy: 19 passed with the shared token" if closed_tok else "verify-deploy: 19 passed with a personal token", 9.5, MUTED)
+    # between the two moments
+    b += arrow(452, 232, 488, 232, ACCENT, sw=2)
+    b += lines(470, 256, ["hours", "or days"], 9.5, MUTED, "middle", 12)
+    b += box(30, 416, 880, 30, PANEL, ACCENT, 6)
+    b += text(470, 436, "why two: passwords are handed over out of band, one person at a time; the switch is one announced minute; the way back is one line and a restart", 10.5, INK, "middle", "bold")
+    b += text(W/2, 468, "everyday version: the new badges are printed and handed out during the week; at the announced hour the turnstile is switched to badges, and until then the old key still opens it", 10.5, INK)
+    b += text(W/2, 488, "phase SH-3b, Step 10a and Step 10b · production's accounts exist before its door asks for them", 10, MUTED)
+    write("fig_two_moments.svg", svg(W, H, "Production's login in two moments: first the accounts are created while the door still takes the token and the page still shows the token box; later, at an announced moment, the mode switches to local and the same rows are used; between the two, hours or days", b))
+
+
 def fig_delete_gate() -> None:
     W, H = 940, 400
     b = text(W/2, 34, "Deleting a compound after CR-6: the clerk refuses, the archivist empties the folder first", 16, INK, "middle", "bold")
@@ -1205,5 +1256,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, fig_two_tokens, fig_local_login, fig_roles, fig_account_lifecycle, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, fig_two_tokens, fig_local_login, fig_roles, fig_account_lifecycle, fig_two_moments, cover, logo):
         f()

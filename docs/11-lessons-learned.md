@@ -431,6 +431,18 @@ read; the operator pastes blocks, and a block must run as one.* *The
 shape:* two commands that reported nothing because a third had swallowed
 them.
 
+**42. A status that hides what waits.** Production's accounts were
+created ahead of the switch, on purpose, so that every person could be
+handed a password before the door changed. In that state `status` said
+`login: token` and nothing about the three people who already had a
+username in the table; only an operator who knew to run `users list`
+could tell whether production "had accounts". Now `status` lists the
+accounts that exist on the token rung and with the login off, marked
+*waiting*. *The lesson: when a state is deliberately in between, the
+command that reports state must name both halves, or two operators will
+describe the same server differently.* *The shape:* a report that was
+true and incomplete.
+
 ---
 
 ## The one rule they add up to
@@ -447,4 +459,4 @@ and the setup guides; the identification rules and the audit are in
 [`09-chemical-identification.md`](09-chemical-identification.md); the remaining
 open behaviour (the delete endpoint) is on the [roadmap](05-roadmap.md).
 
-**Last Updated:** September 22, 2026
+**Last Updated:** September 23, 2026

@@ -44,6 +44,7 @@ is defined once and means the same thing in every document.
 | `fig_local_login.svg` | Local accounts (SH-3b): a person with a password and a script with a personal token meet the guard, which checks one users table holding hashes; the signed, sliding cookie; the three roles | `04-phase-tutorials/phase-sh-3b-local-accounts.md`, `13-authentication.md`, `02-database-schema.md` |
 | `fig_roles.svg` | Three roles as three badges, each including the one below, and the one rule from the verb and the path that decides which badge a request needs; 403 names the missing role | `04-phase-tutorials/phase-sh-3b-local-accounts.md`, `10-user-playbook.md`, `02-architecture.md` |
 | `fig_account_lifecycle.svg` | The life of an account: add, hand over out of band, first login and change password, a personal token for a script, a reset, a disable; each step one command or one click; secrets shown once, stored as hashes | `04-phase-tutorials/phase-sh-3b-local-accounts.md`, `07-operations.md` |
+| `fig_two_moments.svg` | Production's login in two moments: the accounts created while the door still takes the token (the same rows, stored and ignored), then the switch at an announced moment; hours or days between; the commands of each moment | `04-phase-tutorials/phase-sh-3b-local-accounts.md`, `07-operations.md` |
 | `fig_publish_promote.svg` | Three branch stations on one rail — develop, beta, master; publish pushes develop to beta, promotion pushes beta to master by hand; which instance pulls what | phase SH-12 tutorial, `03-git-workflow.md`, `14-beta-instance.md`, handbook §6 |
 | `fig_two_doors.svg` | One running application per instance with the service inside; two doors into it, the script and `systemctl`; the boot key underneath (lingering plus an enabled service) | `15-run-stop-status.md`, handbook §8 |
 | `fig_instance_label.svg` | One name in the settings file becomes a word and a colour in the page's corner: the chain from `.env.local` to the pill, and the two headers side by side, indigo *Prod* and amber *Beta* | phase SH-13 tutorial, `14-beta-instance.md`, playbook |
@@ -65,4 +66,4 @@ The interactive figure — the animated architecture page served at
 [`../architecture-interactive.html`](../architecture-interactive.html),
 described in [`02-architecture.md`](../02-architecture.md#interactive-architecture-page).
 
-**Last Updated:** September 22, 2026
+**Last Updated:** September 23, 2026

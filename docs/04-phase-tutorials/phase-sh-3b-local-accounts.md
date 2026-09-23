@@ -2,7 +2,7 @@
 
 # Phase SH-3b — Local accounts: one login per person, three roles, a signed session, personal tokens
 
-**Version shipped:** 2.23.0 · **Date:** 2026-09-22 · **Status:** complete (built and rehearsed on the development machine; on the **beta instance** since 19:58 the same day by [Step 9](#step-9--turn-it-on-beta-first), three accounts, confirmed in the browser; on **production** by [Step 10](#step-10--production-when-its-accounts-exist), at a moment of the owner's choosing, once its accounts exist)
+**Version shipped:** 2.23.0 · **Date:** 2026-09-22 · **Status:** complete (built and rehearsed on the development machine; on the **beta instance** since 19:58 the same day by [Step 9](#step-9--turn-it-on-beta-first), three accounts, confirmed in the browser; on **production** in two moments by [Step 10](#step-10--production-in-two-moments-the-accounts-then-the-switch): its three accounts created on 2026-09-23 ([Step 10a](#step-10a--the-accounts-while-the-login-is-still-the-token), the login still the token), the switch ([Step 10b](#step-10b--the-switch-at-an-announced-moment)) at a moment the owner announces)
 **Track:** SH, the shared spine ([roadmap](../05-roadmap.md#sh--shared-spine)); the second rung of the authentication ladder planned in [`13-authentication.md`](../13-authentication.md) and decided in [ADR 0001](../adr/0001-authentication-ladder.md); the owner's go of 2026-09-22, "build on what you have planned".
 **Prerequisites:** [Phase SH-3a](phase-sh-3a-token-gate.md) (the guard, the login page, the open health route: this rung drops into all three), [Phase SH-12](phase-sh-12-beta-instance.md) (the beta instance, where the accounts land first); the plan read once; a setup guide completed for your platform; the test virtual environment from its V7 check if you want to run the Python route.
 **Learning goal:** you understand what an account is made of and why a password is never stored, how a browser is remembered by a note it can read but cannot forge, why the ten hours now count from your last click, how three roles are decided by one rule rather than a hundred, how a script gets in without a password, how the operator creates, resets, disables and lists accounts from the terminal without ever seeing a password twice, and how to test every one of those claims from the browser, the API, the terminal, the container, Python and the database.
@@ -26,7 +26,7 @@
 10. [Step 7 — Personal tokens for scripts](#step-7--personal-tokens-for-scripts)
 11. [Step 8 — Tests, build, rehearsal](#step-8--tests-build-rehearsal)
 12. [Step 9 — Turn it on, beta first](#step-9--turn-it-on-beta-first)
-13. [Step 10 — Production, when its accounts exist](#step-10--production-when-its-accounts-exist)
+13. [Step 10 — Production, in two moments: the accounts, then the switch](#step-10--production-in-two-moments-the-accounts-then-the-switch) · [10a the accounts](#step-10a--the-accounts-while-the-login-is-still-the-token) · [10b the switch](#step-10b--the-switch-at-an-announced-moment)
 14. [Rotate the secret, reset a password, go back to the token](#rotate-the-secret-reset-a-password-go-back-to-the-token)
 15. [Checkpoint](#checkpoint)
 16. [How to test it, by every route](#how-to-test-it-by-every-route)
@@ -77,6 +77,7 @@ it replaces the passwords and keeps the accounts and the roles.
 | **Lockout** | After ten wrong passwords in a row, the account is refused for fifteen minutes, right password or not | The card reader that goes quiet after too many wrong PINs |
 | **Temporary password** | The password the operator's command generates and prints once; the person replaces it on the first visit | The PIN in the sealed envelope, changed at the first cash machine |
 | **Migration** | A recorded, repeatable change to the database's shape, applied by Alembic when the container starts; this phase adds one, the `users` table | An amendment to the building plans, filed with a number |
+| **The switch, in two moments** | How production moves to accounts: the accounts are created first, while the door still takes the token (they are stored and ignored); the mode is switched later, at an announced time. Any length of time may pass between the two | The new badges are printed and handed out during the week; the turnstile is switched to badges at the announced hour, and until then the old key still opens it |
 
 ---
 
@@ -91,14 +92,14 @@ it replaces the passwords and keeps the accounts and the roles.
 | The door, extended | `POST /api/auth/login` takes `{username, password}`; `POST /api/auth/password` (new) lets a signed-in person change theirs | `backend/app/routers/auth.py` |
 | The query console | Refuses the `users` table by name and leaves it out of the schema listing | `backend/app/routers/query.py` |
 | The script | `manage_users.py add · reset · role · enable · disable · unlock · token · remove · list`, inside the container | `backend/scripts/manage_users.py` |
-| The shortcut | `./container-py.sh users <verb> …`; the script reads and validates the two settings, passes them in, keeps the file owner-only, and in the local mode counts the records from the database in `status` | `container-py.sh` |
+| The shortcut | `./container-py.sh users <verb> …`; the script reads and validates the two settings, passes them in, keeps the file owner-only, and in the local mode counts the records from the database in `status`; on the token rung `status` lists the accounts that wait for the switch (v2.23.3) | `container-py.sh` |
 | The login page | A username and password form when the mode is `local`; the token box as before when it is `token` | `client/src/pages/Login.jsx` |
 | The top bar | Who is signed in, with their role and a hint on what it allows; *Change password*; *Sign out* | `client/src/components/Layout.jsx`, `client/src/components/ChangePassword.jsx` (new) |
 | The 403 handler | One toast, the server's own words, from the API layer | `client/src/services/api.js` |
 | The deploy check | A nineteenth check with a token: the server says who the token belongs to | `verify-deploy.sh` |
 | Two dependencies | `argon2-cffi` (the hashing) and `itsdangerous` (the signed cookie), through the lock | `backend/requirements.txt`, `backend/requirements.lock` |
 | Tests | Twenty-three: the settings, the primitives, the rule, every wrong login, the cookie, the slide, disabling, resetting, the lockout, the three roles, the token, the password change, the hashes never leaving, the script, the migration | `backend/tests/test_auth_local.py` |
-| Figures | The login with accounts; the three roles and the rule; the life of an account | `docs/img/fig_local_login.svg`, `fig_roles.svg`, `fig_account_lifecycle.svg` |
+| Figures | The login with accounts; the three roles and the rule; the life of an account; the two moments of production's switch (v2.23.3) | `docs/img/fig_local_login.svg`, `fig_roles.svg`, `fig_account_lifecycle.svg`, `fig_two_moments.svg` |
 
 ---
 
@@ -595,7 +596,8 @@ is off.
 
 **What:** accounts on the **beta instance**, and only there (decisions A9
 and B5). Production keeps its token until the testers have used their
-accounts for a while and its own accounts exist; that is Step 10.
+accounts for a while and its own accounts exist; that is Step 10, in
+two moments.
 
 **How (server, beta folder), after block 3 of the six has pulled and
 rebuilt this version.** The rebuild started the new image, whose entrypoint
@@ -691,50 +693,180 @@ any, now exist on beta too.
 
 ---
 
-## Step 10 — Production, when its accounts exist
+## Step 10 — Production, in two moments: the accounts, then the switch
 
-**What:** the same four moves in production's folder, at a moment of the
-owner's choosing, after the testers have used their accounts on beta.
-Until then production keeps `AUTH_MODE=token` with its own token, exactly
-as since v2.22.1: the promotion of this version changes nothing there by
-itself (the migration adds an empty table, the login stays the token).
+**What:** the same four moves as Step 9 in production's folder, split into
+**two moments**, the owner's decision of 2026-09-23: the accounts first
+(Step 10a, at any quiet moment), the switch later (Step 10b, at a moment
+the owner announces, once every person holds their password). Until 10b
+production keeps `AUTH_MODE=token` with its own token, exactly as since
+v2.22.1: the promotion of v2.23.0 added an empty `users` table and changed
+nothing else.
+
+![Production's login in two moments: first the accounts are created while the door still takes the token and the page still shows the token box; later, at an announced moment, the mode switches to local and the same rows are used; between the two, hours or days](../img/fig_two_moments.svg)
+
+**Why two moments and not one.** A temporary password is handed over out
+of band, one person at a time, and people are not all at their desks at
+once. If the accounts and the switch were one block, the door would ask
+for a username the moment `start` finished, and whoever had not yet
+received their password would be locked out of the real registry. Created
+ahead, an account costs nothing: the management script writes to the
+table whatever the mode says, and the door on the token rung never reads
+that table (it compares the shared token, nothing else). So the operator
+creates the accounts on a quiet morning, hands the passwords over during
+the week, and flips the door at the announced hour, with a `stop` and a
+`start` that take a minute. *Everyday version:* the new badges are printed
+and handed out during the week; the turnstile is switched to badges at
+the announced hour, and until then the old key still opens it.
 
 **Why its own accounts and its own secret.** Decision A11 for the secret,
 as for the token: generated in production's folder, never copied from
-beta's. The accounts are per instance too: they live in each database.
-Production's people are the laboratory's, not the testers'; create them by
-name in production's folder, with the roles the laboratory agrees
-(most people viewers, the people who load files editors, the operator
-admin).
+beta's. The accounts are per instance too: they live in each database, so
+a beta password does not open production and a production one does not
+open beta, even for the same username. The owner decided that production
+gets **the same three accounts as beta** (the operator as admin, one
+editor, one viewer), under the same usernames so that nobody has a second
+name to remember; the roles are the ones agreed for the laboratory and
+change later with one `users role <name> <role>`, and more people are one
+`users add` each.
+
+### Step 10a — The accounts, while the login is still the token
+
+**What:** three `users add` lines and a `users list`, in production's
+folder, nothing else. The settings file is not touched, the container is
+not restarted, and nobody using production notices.
 
 **How (server, production folder):**
 
 ```bash
-# ▶ VM - production folder, after blocks 4 to 6 have promoted and rebuilt this version
+# VM - production folder; the container runs v2.23.0 or later (block 6 rebuilt it)
 cd ~/work/Pandora_toolbox/nr-nips-crucible
+git log --oneline -1                                                        # the tip of master, v2.23.x
 ./container-py.sh users add <your-username> --role admin --name "<Your Name>"
-./container-py.sh users add <person> --role viewer --name "<Their Name>"     # one line per person, with their role
+./container-py.sh users add <editor> --role editor --name "<Their Name>"
+./container-py.sh users add <viewer> --role viewer --name "<Their Name>"
 ./container-py.sh users list
+curl --noproxy '*' -sSk https://localhost:49160/api/auth/me; echo           # still the token
+./container-py.sh status | tail -3
+```
+
+**Why `users add` works before the switch.** The shortcut runs
+`manage_users.py` inside the container, against the database directly
+([Step 5](#step-5--the-accounts-from-the-terminal)); it reads the mode for
+nothing. The door reads the mode and, on the token rung, only the shared
+token. Three rows appear in the table; the door does not look at them yet.
+
+**You should see** (the rehearsal on the development machine, 2026-09-23,
+on the token rung; the server prints the same with the real names, and an
+`Ignoring PORT=3000` line first, which is harmless: the server's shell
+exports a generic `PORT` that the script ignores):
+
+```
+✓ Added <your-username> (admin), enabled
+  temporary password: …
+  Shown once. Hand it over out of band; the person changes it in the page (Change password).
+✓ Added <editor> (editor), enabled
+  temporary password: …
+  Shown once. Hand it over out of band; the person changes it in the page (Change password).
+✓ Added <viewer> (viewer), enabled
+  temporary password: …
+  Shown once. Hand it over out of band; the person changes it in the page (Change password).
+3 accounts:
+  <your-username>      admin   enabled            no token                     last login never   <Your Name>
+  <editor>             editor  enabled            no token                     last login never   <Their Name>
+  <viewer>             viewer  enabled            no token                     last login never   <Their Name>
+
+Roles: viewer reads, exports and queries; editor also uploads, links and edits; admin also deletes, merges and clears.
+{"mode":"token","authenticated":false,"user":null}
+login: token — the page asks for it once; scripts send it as Authorization: Bearer (docs/13-authentication.md)
+{"chemicals":{"total":12539,"max":15000},"samples":{"total":0,"max":1000},"screening":{"total":49065},...
+accounts: 3 (<editor> editor, <viewer> viewer, <your-username> admin), waiting: the login uses them once AUTH_MODE=local (docs/13-authentication.md)
+```
+
+**What it means:** three rows in production's `users` table, each holding
+a hash and never the password; the door has not changed (`"mode":"token"`);
+and the last line, new with v2.23.3, is `status` telling the whole truth:
+the accounts exist and are waiting for the switch (before v2.23.3 `status`
+said `login: token` and nothing about them). Write each temporary password
+down **as it is printed** and hand it over out of band; nothing else
+happens until Step 10b. The beta passwords do not carry over: beta and
+production are two databases, so the same three usernames have new hashes
+here, and each person receives a new temporary password for production.
+
+**If instead:** `✗ crucible-py is not running: the accounts live in its
+database` → `./container-py.sh start` (or `status` to see why it is
+down: [`15-run-stop-status.md`](../15-run-stop-status.md)).
+`✗ a user named '<name>' already exists` → the block was run twice, or the
+name was created earlier: `users list` shows it, and `users reset <name>`
+issues a fresh temporary password if the first was lost. A temporary
+password pasted into a chat or an e-mail by mistake → `users reset <name>`
+at once; the old one is dead (what happened on beta on 2026-09-22, three
+resets, no harm). A person tries their new username on production's login
+page before Step 10b → refused, by design: the page still wants the token,
+and tells them so in its title, *Sign in with the access token*.
+
+### Step 10b — The switch, at an announced moment
+
+**What:** the mode flips to `local` with production's own
+`SESSION_SECRET`; a backup, a `stop` and a `start`; then the proofs.
+**Announce the minute.** At the `stop`, every browser signed in with the
+token is out (the token cookie fails the new signature) and the page asks
+for a username from then on; a script that still sends the shared token
+answers 401 until it is given a personal token.
+
+**How (server, production folder, at the announced moment):**
+
+```bash
+# VM - production folder, at the announced moment; every person holds their password
+cd ~/work/Pandora_toolbox/nr-nips-crucible
+./container-py.sh users list                                                # the accounts from Step 10a
 sed -i 's|^AUTH_MODE=.*|AUTH_MODE=local|' .env.local
 printf 'SESSION_SECRET=%s\n' "$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" >> .env.local
 chmod 600 .env.local
+grep -c '^SESSION_SECRET=' .env.local                                       # 1
+./container-py.sh help | grep Usage                                         # ... login: local)
 ./container-py.sh backup
 ./container-py.sh stop
 ./container-py.sh start
-curl --noproxy '*' -sSk https://localhost:49160/api/auth/me; echo          # {"mode":"local","authenticated":false,"user":null}
-./container-py.sh users token <your-username>
-CRUCIBLE_TOKEN='<your-username>:…' ./verify-deploy.sh https://localhost:49160   # 19 passed
-diff <(grep '^SESSION_SECRET=' .env.local) <(grep '^SESSION_SECRET=' ../nr-nips-crucible-beta/.env.local) >/dev/null && echo "SAME secret on both" || echo "two different secrets, as intended"
 ```
 
-**You should see:** the same lines as Step 9 with `container-crucible-py.service`
-and port 49160, `19 passed`, and `two different secrets, as intended`. In
-the browser, `https://<vm-hostname>:49160` shows the login page with the
-indigo **Prod** pill and the two boxes.
+Then the proofs, from the same folder:
 
-**What it means:** the laboratory's people each have a login of their own on
-the real registry, the shared token has retired there too, and a leaver is
-one `users disable` away from being out.
+```bash
+curl --noproxy '*' -sSk https://localhost:49160/api/auth/me; echo           # {"mode":"local","authenticated":false,"user":null}
+curl --noproxy '*' -sSk https://localhost:49160/api/stats; echo             # {"error":"Not authenticated"}
+curl --noproxy '*' -sSk https://localhost:49160/api/health; echo            # {"status":"ok"}
+T="$(./container-py.sh users token <your-username> | awk '/^  <your-username>:/{print $1}')"
+CRUCIBLE_TOKEN="$T" ./verify-deploy.sh https://localhost:49160 | grep -E 'belongs|passed'   # <your-username> (admin) via token · 19 passed, 0 failed
+./monitor.sh | tail -1                                                      # ✓ crucible-py is healthy
+./container-py.sh status | tail -4                                          # login: local · the counts from the database · accounts: 3 (...)
+ls -l .env.local ~/.config/systemd/user/container-crucible-py.service      # -rw------- both
+diff <(grep '^SESSION_SECRET=' .env.local) <(grep '^SESSION_SECRET=' ../nr-nips-crucible-beta/.env.local) >/dev/null && echo "SAME secret on both" || echo "two different secrets, as intended"
+curl --noproxy '*' -sSk https://localhost:49161/api/auth/me; echo           # beta: {"mode":"local",...}, unchanged
+```
+
+**You should see:** the same lines as Step 9 with
+`container-crucible-py.service` and port 49160 (`Stopping the application
+through its service` … `rewritten` … `is active` … `answers at
+https://localhost:49160/api/health`); `19 passed, 0 failed` with your
+username; `two different secrets, as intended`. In the browser,
+`https://<vm-hostname>:49160` shows the login page with the indigo
+**Prod** pill and the two boxes; sign in with your username and the
+temporary password from Step 10a, then *Change password* in the top bar,
+first thing. The `$T` line keeps your personal token in that terminal
+only ([the cookbook walks a script through it](../08-api-cookbook.md#a-script-with-a-personal-token-start-to-finish)).
+
+**What it means:** the laboratory's people each have a login of their own
+on the real registry, the shared token has retired there too, a leaver is
+one `users disable` away from being out, and beta was not touched.
+
+**If instead:** the `$T` line prints nothing → the `awk` pattern must
+carry your exact username (the token is the second line of the command's
+output, indented two spaces); `19 passed` missing → the token in `$T` is
+empty or another account's. Someone cannot sign in → `users list` shows
+`LOCKED` (`users unlock`) or `DISABLED` (`users enable`); otherwise `users
+reset <name>` and hand the new one over. The way back, at any time, is
+one line and a restart: the next section.
 
 ---
 
@@ -850,13 +982,87 @@ stands for a personal token; `$J` for `-H 'Content-Type: application/json'`.
 | **Python directly, the app** | `cd backend && AUTH_MODE=local SESSION_SECRET=… PORT=8765 .venv/bin/python -m uvicorn app.main:app --port 8765` in one terminal; `.venv/bin/python scripts/manage_users.py add me --role admin` in another, then `curl -sS $J -d '{"username":"me","password":"<it>"}' http://localhost:8765/api/auth/login` | — | `200` and the identity (against `data/crucible.db`; Ctrl-C the server afterwards) |
 | **Database, inside the container** | `podman exec crucible-py-beta python -c "import sqlite3, json; db=sqlite3.connect('/app/data/crucible.db'); print([r[1] for r in db.execute('PRAGMA table_info(users)')]); d=json.loads(db.execute(\"SELECT doc FROM users LIMIT 1\").fetchone()[0]); print(sorted(d), d['password_hash'][:12])"` | `['id', 'username', 'created_at', 'seq', 'doc']` · the document's keys · `$argon2id$v=`: a hash, not a password | the same |
 | **Database, the Query page** | signed in, Query: `SELECT username FROM users` · `SELECT name FROM sqlite_master WHERE type='table'` | *The 'users' table holds the login's accounts and cannot be queried here.* · the five tables including `users`, which is fine: its name is not its contents | the same |
-| **Automated tests** | `cd backend && .venv/bin/pytest -p no:warnings 2>&1 \| grep -E '[0-9]+ (passed\|failed)'` | — | `192 passed` (the 150 contract tests with the login off, the 19 of the token rung, the 23 of this one) |
+| **Automated tests** | `cd backend && .venv/bin/pytest -p no:warnings 2>&1 \| grep -E '[0-9]+ (passed\|failed)'` | — | `193 passed` (the 150 contract tests with the login off, the 19 of the token rung, the 23 of this one, and the one of v2.23.3 for the two moments) |
 
-**Production between the moments:** after the promotion and before Step 10,
-production answers `{"mode":"token",…}` at `/api/auth/me` and behaves as
-since v2.22.1; its `users` table exists and is empty. After Step 10 the
-left column above holds for production too, with the indigo **Prod** pill
-and the laboratory's own accounts.
+### Between the two moments: production after Step 10a, before Step 10b
+
+After the promotion and Step 10a, production is in a state of its own:
+three accounts in its table, the door still on the token. This is the
+state to test after 10a, so that the switch holds no surprise. Every
+route, with what it proves; `$J` stands for
+`-H 'Content-Type: application/json'`, the shared token comes from
+`grep '^CRUCIBLE_TOKEN=' .env.local | cut -d= -f2-` in production's
+folder. The rehearsal on the development machine (the default instance on
+49160 over HTTP, the two settings passed from the environment, the three
+rehearsal accounts) printed the same lines.
+
+| Route | How | You should see |
+|---|---|---|
+| **Browser, the login page** | open `https://<vm-hostname>:49160` | the login page with the indigo **Prod** pill, the title *Sign in with the access token*, **one** box, and a footer about `Authorization: Bearer`; no username box anywhere. The page asked the server which rung is on (`/api/auth/me` said `token`) and shows that form |
+| **Browser, a username in the box** | type a username, or a temporary password, into the token box, *Sign in* | *That token was not accepted. Check for missing or extra characters and try again.* The account exists in the table; the door on this rung compares the shared token only |
+| **Browser, the shared token** | paste production's token, *Sign in* | the registry as before; the top bar says **Token holder · ADMIN** and *Sign out*; **no *Change password* button** (nothing to change on this rung); everyone with the token is the same *Token holder* |
+| **Browser, the label** | hover the pill | *the default instance: the real registry* |
+| **Browser, beta beside it** | open `https://<vm-hostname>:49161` | the amber **Beta** pill and **two** boxes: the two instances are on different rungs, and each door reads its own file |
+| **API, which rung** | `curl --noproxy '*' -sSk https://localhost:49160/api/auth/me; echo` | `{"mode":"token","authenticated":false,"user":null}` |
+| **API, a username and password at the door** | `curl --noproxy '*' -sSk -D- $J -d '{"username":"<name>","password":"<the temporary one>"}' https://localhost:49160/api/auth/login` | `HTTP/1.1 401 Unauthorized` · `www-authenticate: Bearer` · `{"error":"Not authenticated"}`, after a quarter of a second, no `set-cookie`: the right password, refused, because this rung does not read passwords |
+| **API, the shared token still opens** | `curl --noproxy '*' -sSk -H "Authorization: Bearer <production's token>" https://localhost:49160/api/auth/me; echo` | `{"mode":"token","authenticated":true,"user":{"subject":"token","display_name":"Token holder","roles":["admin"],"via":"token"}}` |
+| **API, a personal token issued now** | `./container-py.sh users token <name>`, then `curl --noproxy '*' -sSk -D- -o /dev/null -H "Authorization: Bearer <name>:…" https://localhost:49160/api/stats \| grep HTTP` | `HTTP/1.1 401 Unauthorized`: the token is real and stored (`users list` says `token issued …`), and honoured from Step 10b; the door on this rung compares the shared token only. `/api/auth/me` with it: `"authenticated":false` |
+| **API, Change password** | `curl --noproxy '*' -sSk -H "Authorization: Bearer <production's token>" $J -d '{"current":"x","new":"yyyyyyyyy"}' https://localhost:49160/api/auth/password; echo` | `{"error":"AUTH_MODE='token' has no passwords to change"}` (400) |
+| **API, the query console** | with the shared token: `POST …/api/query {"sql":"SELECT username FROM users"}` · `GET …/api/query/schema` | `400 {"error":"The 'users' table holds the login's accounts and cannot be queried here."}` · the four data tables, no `users`: the refusal does not depend on the rung |
+| **API, the gate** | `curl --noproxy '*' -sSk -D- -o /dev/null https://localhost:49160/api/stats \| grep -iE 'HTTP\|www-auth'` | `HTTP/1.1 401 Unauthorized` · `www-authenticate: Bearer`, as since v2.22.1 |
+| **Terminal, the accounts** | `./container-py.sh users list` | `3 accounts:` and the three rows, `no token`, `last login never`; never a hash |
+| **Terminal, a count for a script** | `./container-py.sh users list --json \| python3 -c 'import json, sys; a = json.load(sys.stdin); print(len(a), sorted(u["username"] for u in a))'` | `3 ['<editor>', '<viewer>', '<your-username>']` |
+| **Terminal, the script knows the rung** | `./container-py.sh help \| grep Usage` | `… port 49160 · login: token)` |
+| **Terminal, status tells the whole truth** | `./container-py.sh status \| tail -3` | `login: token — …` · the counts through the token · `accounts: 3 (…), waiting: the login uses them once AUTH_MODE=local (docs/13-authentication.md)` (v2.23.3; before it, the last line was missing) |
+| **Terminal, a name twice** | `./container-py.sh users add <name> --role viewer` again | `✗ a user named '<name>' already exists`, exit 1; nothing changed |
+| **Terminal, the deploy check** | `CRUCIBLE_TOKEN="$(grep '^CRUCIBLE_TOKEN=' .env.local \| cut -d= -f2-)" ./verify-deploy.sh https://localhost:49160 \| grep -E 'belongs\|passed'` | `PASS the server says who this token belongs to: token (admin) via token` · `19 passed, 0 failed` |
+| **Terminal, the monitor** | `./monitor.sh \| tail -1` (safe by hand in this folder since v2.22.1) | `✓ crucible-py is healthy` |
+| **Terminal, the file is unchanged** | `grep -c '^SESSION_SECRET=' .env.local; ls -l .env.local` | `0` · `-rw-------`: no secret yet; the file was last changed by Step 8 of SH-3a |
+| **Podman / Docker, the variables inside** | `podman exec crucible-py sh -c 'echo $AUTH_MODE; echo ${#SESSION_SECRET}'` | `token` · `0`: the container was created before the switch and holds no secret |
+| **Podman / Docker, the script by its long name** | `podman exec crucible-py python /app/backend/scripts/manage_users.py list` | the same three rows: the shortcut is this line |
+| **Podman / Docker, the migration** | `podman logs crucible-py 2>&1 \| grep db_bootstrap` | `[db_bootstrap] Alembic-managed database -> upgrade head` · `[db_bootstrap] schema is at head.` |
+| **Podman / Docker, the migration stamp** | `podman exec crucible-py python -c "import sqlite3; print(sqlite3.connect('/app/data/crucible.db').execute('SELECT version_num FROM alembic_version').fetchone())"` | `('0002_users',)` |
+| **Podman / Docker, the table inside** | `podman exec crucible-py python -c "import sqlite3, json; db = sqlite3.connect('/app/data/crucible.db'); print(db.execute('SELECT count(*) FROM users').fetchone()[0]); [print(u, json.loads(d)['role'], json.loads(d)['password_hash'][:10]) for u, d in db.execute('SELECT username, doc FROM users ORDER BY username')]"` | `3`, then three lines ending `$argon2id$`: a hash each, no password |
+| **Podman / Docker, the container's own probe** | `podman exec crucible-py python /app/backend/scripts/healthcheck.py; echo $?` | `0` |
+| **Python, a script piped into the container** | save the script below as `accounts_report.py`, then `podman exec -i crucible-py python - < accounts_report.py` | `3 accounts in the users table`, one line per account ending `hash starts $argon2id$`, and `no key holds a password: True` |
+| **Python, a script at the door** | the second script below, run from anywhere with Python 3: `python3 door_check.py` (on the server, `-k` is the `context` line) | `me: {'mode': 'token', 'authenticated': False, 'user': None}` · `username/password login on the token rung: 401 {"error":"Not authenticated"}` |
+| **Python directly, the rule of this rung** | `cd backend && AUTH_MODE=token CRUCIBLE_TOKEN=<64 characters> .venv/bin/python -c "from app import auth, config; print(config.AUTH_MODE, auth.token_matches('nope'), auth.token_matches(config.CRUCIBLE_TOKEN))"` (development machine) | `token False True`: on this rung `identify()` calls `token_matches` and never `accounts.authenticate_token` |
+| **Database, from the host, read-only** | development machine: `sqlite3 -readonly data/crucible.db "SELECT username, json_extract(doc,'$.role'), substr(json_extract(doc,'$.password_hash'),1,10) FROM users ORDER BY username;"` · server (no `sqlite3` command needed): `python3 -c "import sqlite3, json; db = sqlite3.connect('file:data/crucible.db?mode=ro', uri=True); print([(u, json.loads(d)['role']) for u, d in db.execute('SELECT username, doc FROM users ORDER BY username')])"` | three rows, `$argon2id$` · `[('<editor>', 'editor'), ('<viewer>', 'viewer'), ('<your-username>', 'admin')]` |
+| **Database, the Query page** | signed in with the token, Query: `SELECT username FROM users` · `SELECT count(*) FROM chemicals` | *The 'users' table holds the login's accounts and cannot be queried here.* · `12539` |
+| **Database, a backup carries the accounts** | `./container-py.sh backup`, then the read-only line above against `backups/<the newest>.db` | the same three rows: the accounts travel with the database, which is why a `restore` of production's backup into beta replaces beta's accounts |
+| **Automated tests** | `cd backend && .venv/bin/pytest -p no:warnings 2>&1 \| grep -E '[0-9]+ (passed\|failed)'` | `193 passed`: the one added with v2.23.3 creates an account on the token rung, proves the door ignores it and the shared token still opens, then switches the mode and proves the same rows sign in and the shared token is out |
+
+The two scripts of the Python rows, kept short on purpose:
+
+```python
+# accounts_report.py: reads the users table inside the container; prints roles and the start of each hash, never a password
+import json, sqlite3
+db = sqlite3.connect("file:/app/data/crucible.db?mode=ro", uri=True)
+rows = [(u, json.loads(d)) for u, d in db.execute("SELECT username, doc FROM users ORDER BY username")]
+print(f"{len(rows)} accounts in the users table")
+for u, d in rows:
+    print(f"  {u:<12} {d['role']:<7} {'enabled' if d['enabled'] else 'DISABLED':<9} hash starts {d['password_hash'][:10]}")
+print("no key holds a password:", not any(k == "password" for _, d in rows for k in d))
+```
+
+```python
+# door_check.py: asks the door which rung is on, then tries a username and password on it
+import json, ssl, urllib.error, urllib.request
+base = "https://localhost:49160"                     # on the development machine: http://localhost:49160
+context = ssl._create_unverified_context()          # the server's certificate names the host, not localhost (curl's -k)
+with urllib.request.urlopen(base + "/api/auth/me", context=context) as r:
+    print("me:", json.load(r))
+req = urllib.request.Request(base + "/api/auth/login", data=json.dumps({"username": "<name>", "password": "<the temporary one>"}).encode(),
+                             headers={"Content-Type": "application/json"}, method="POST")
+try:
+    urllib.request.urlopen(req, context=context)
+except urllib.error.HTTPError as e:
+    print("username/password login on the token rung:", e.code, e.read().decode())
+```
+
+After Step 10b the first table above holds for production too, with the
+indigo **Prod** pill and the laboratory's own accounts, and the personal
+token issued in the row above opens the door.
 
 ---
 
@@ -920,4 +1126,12 @@ git push origin v2.23.0
 Blocks 2 to 6 as the page says; block 3 is followed by Step 9 above, and
 block 6, at a later moment of the owner's choosing, by Step 10.
 
-**Last Updated:** September 22, 2026
+**Later releases of this phase**, each a helper script and documents, so
+blocks 3 and 6 are a `git pull` each: v2.23.1 (the `users` shortcut no
+longer swallows the lines pasted after it, lesson 41), v2.23.2 (the
+cookbook's start-to-finish token walk; beta recorded on accounts), v2.23.3
+(Step 10 in two moments, `status` listing the accounts that wait, the
+between-moments table above, one test; production's accounts created
+2026-09-23 by Step 10a).
+
+**Last Updated:** September 23, 2026

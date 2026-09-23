@@ -640,6 +640,10 @@ the login's accounts, in the same hybrid pattern as every table: `id`,
 `username` (unique, indexed, lowercase), `created_at`, `seq`, and the
 document. Migration `0002_users` creates it; an existing database gains an
 empty table on the first start after the upgrade and nothing else changes.
+Rows may be added while the login is still on the token rung (the
+management script writes whatever the mode says); the door ignores them
+until `AUTH_MODE=local`, and `./container-py.sh status` lists them as
+waiting ([the two moments](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch)).
 
 | In `doc` | What it is |
 |---|---|
@@ -690,5 +694,5 @@ single source of truth, so API responses are unaffected.
 
 ---
 
-**Last Updated:** September 22, 2026 (the users table, v2.23.0)  
+**Last Updated:** September 23, 2026 (the users table; accounts ahead of the switch, v2.23.3)  
 **Schema Version:** 2.0 · Alembic head `0002_users`

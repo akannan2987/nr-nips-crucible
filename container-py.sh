@@ -744,6 +744,24 @@ api_answers() {
     return 1
 }
 
+report_waiting_accounts() {
+    # Accounts can be created before the switch to AUTH_MODE=local (the
+    # tutorial's Step 10a): they sit in the users table, ignored by the
+    # door until the mode changes. Say so, so that status never reports
+    # "login: token" while three people already have a username here.
+    # Silent when the table is empty (the output before any account is
+    # created is unchanged) or when the container cannot report.
+    $RUNTIME exec ${CONTAINER_NAME} python -c '
+from sqlalchemy import select
+from app.database import SessionLocal
+from app.models import User
+db = SessionLocal()
+users = db.scalars(select(User)).all()
+if users:
+    print("accounts:", len(users), "(" + ", ".join(sorted(f"{u.username} {u.doc.get(chr(114)+chr(111)+chr(108)+chr(101))}" for u in users)) + "), waiting: the login uses them once AUTH_MODE=local (docs/13-authentication.md)")
+' 2>/dev/null || true
+}
+
 show_status() {
     check_podman_machine
     echo -e "${YELLOW}Container status (runtime: ${RUNTIME} · instance: ${CRUCIBLE_INSTANCE:-default} · folder: $(pwd)):${NC}"
@@ -771,6 +789,7 @@ show_status() {
         if [ "$AUTH_MODE" = "token" ]; then
             echo "login: token — the page asks for it once; scripts send it as Authorization: Bearer (docs/13-authentication.md)"
             curl --noproxy '*' -sk -H "Authorization: Bearer ${CRUCIBLE_TOKEN}" "$(api_base)/api/stats" | head -c 300; echo ""
+            report_waiting_accounts
         elif [ "$AUTH_MODE" = "local" ]; then
             echo "login: local — usernames and passwords; scripts send a personal token as Authorization: Bearer (docs/13-authentication.md)"
             $RUNTIME exec ${CONTAINER_NAME} python -c '
@@ -786,6 +805,7 @@ print("accounts:", len(users), "(" + ", ".join(sorted(f"{u.username} {u.doc.get(
         else
             echo "login: off — every route answers anyone"
             curl --noproxy '*' -sk "$(api_base)/api/stats" | head -c 300; echo ""
+            report_waiting_accounts
         fi
         echo ""
     else

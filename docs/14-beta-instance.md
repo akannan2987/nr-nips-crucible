@@ -289,9 +289,9 @@ signed in and with which role; a viewer's delete is refused by the server
 ([how the operator turns it on](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first)).
 Production followed the token the same evening with **its own token**
 (decision A11: a token opens one instance only), so the port that had been
-open since the beginning is closed; it moves to accounts when the operator
-has created the laboratory's own, in production's folder, at a moment of
-the owner's choosing ([Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-when-its-accounts-exist)).
+open since the beginning is closed; its own accounts were created in
+production's folder on 2026-09-23, and it moves to accounts at a moment
+the owner announces ([Step 10, in two moments](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch)).
 That order is decision B5 and the revisited decision A3 on the
 authentication page. **The accounts are part of the database:** after a
 `restore` of production's backup into beta, beta's accounts are
@@ -353,7 +353,8 @@ build ("build on what you have planned").
   `SESSION_SECRET` at 19:58, the deploy checks passing with the operator's
   personal token, the login page and the top bar confirmed in the browser
   ([phase SH-3b → Step 9](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first));
-  production when its accounts exist ([Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-when-its-accounts-exist)).
+  production's accounts created 2026-09-23, its switch at an announced
+  moment ([Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch)).
 
 ---
 
@@ -367,4 +368,4 @@ build ("build on what you have planned").
 - [`07-operations.md`](07-operations.md) — the runbook pieces the beta instance reuses: environment variables, mounted folders, backup and restore, the monitor, systemd.
 - [ADR 0002](adr/0002-beta-instance.md) — the decision, in one page.
 
-**Last Updated:** September 22, 2026
+**Last Updated:** September 23, 2026

@@ -10,6 +10,47 @@ change you are getting.
 
 ---
 
+## v2.23.3 — 2026-09-23 — "Production's accounts, before the switch"
+
+A helper script, one test and documents. The owner decided that
+production's accounts are created ahead of the switch: the same three
+accounts as beta, made in production's folder while its login is still
+the token, and the switch to `AUTH_MODE=local` at a moment the owner
+announces, once every person holds their password. Any length of time may
+pass between the two, and nothing changes for anyone until the second.
+
+**Added**
+- **Step 10 of the local-accounts tutorial is two moments.**
+  [Step 10a](docs/04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10a--the-accounts-while-the-login-is-still-the-token) creates the accounts (done on
+  production 2026-09-23, the login still the token);
+  [Step 10b](docs/04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10b--the-switch-at-an-announced-moment) switches the mode, with every proof;
+  a figure for the two moments; and the state between them tested by every
+  route, browser, API, terminal, container, Python and database, in
+  [its own table](docs/04-phase-tutorials/phase-sh-3b-local-accounts.md#between-the-two-moments-production-after-step-10a-before-step-10b).
+- **`./container-py.sh status` tells the whole truth on the token rung**
+  (and with the login off): it lists the accounts that exist and says they
+  are waiting for `AUTH_MODE=local`. Before, it said `login: token` and
+  nothing about the three people who already had a username in the table
+  (lesson 42). Silent while the table is empty, so nothing changes for an
+  instance without accounts.
+- One test (193): an account created on the token rung is ignored by the
+  door and the shared token still opens; after the switch the same row
+  signs in and the shared token is out.
+- A glossary entry, *Switch (to accounts)*.
+
+**Changed**
+- The handbook, the authentication page, the beta-instance page, the
+  roadmap, the operations runbook, the playbook, the RHEL 8 guide, the
+  run-stop-status page, the API reference and the schema page say that
+  production's accounts exist and wait for the announced switch.
+
+**Deploy**
+- A helper script, a test and documents: blocks 3 and 6 are a `git pull`
+  each, no rebuild. Step 10a does not depend on this version (the accounts
+  are made by the script inside the container); the `status` line does.
+
+---
+
 ## v2.23.2 — 2026-09-22 — "A script with a personal token, start to finish"
 
 Documents only. The beta instance moved to accounts at 19:58 and the
@@ -143,7 +184,7 @@ unchanged, and production keeps its token until its own accounts exist.
   mail service to send a link through).
 - **Production stays on the token** until its accounts are created in its
   own folder and the mode switched there, at a moment of the owner's
-  choosing ([Step 10](docs/04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-when-its-accounts-exist)).
+  choosing ([Step 10](docs/04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch)).
 - After a `restore` of production's backup into beta, beta's accounts are
   production's: the testers are created again.
 

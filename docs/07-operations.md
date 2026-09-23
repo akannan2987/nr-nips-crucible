@@ -1029,8 +1029,8 @@ printed **once**, when made; what the table keeps is a hash.
 
 ![The life of an account: add, hand over out of band, first login and change password, a personal token for a script, a reset, a disable; each step one command or one click; secrets shown once and stored as hashes](img/fig_account_lifecycle.svg)
 
-**Turn it on** (done on beta first; production at a moment of the owner's
-choosing, after its own accounts exist — [Step 9](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first) and [Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-when-its-accounts-exist) of the tutorial):
+**Turn it on** (done on beta first; on production in two moments, the
+accounts created 2026-09-23 and the switch at a moment the owner announces — [Step 9](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-9--turn-it-on-beta-first) and [Step 10](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch) of the tutorial):
 
 ```bash
 # ▶ VM - the instance's folder; the container is running this version (block 3 or 6 rebuilt it)
@@ -1052,6 +1052,19 @@ organisation's password manager), never in an e-mail body or a chat; the
 person replaces it on their first visit with *Change password* in the top
 bar. Each instance has its own accounts and its own `SESSION_SECRET`
 (decision A11 again): generated in each folder, never copied across.
+
+**The accounts may come first, the switch later.** The `users` lines and
+the `sed`, `printf`, `stop`, `start` lines above need not be one block: an
+account created while the login is still the token is stored and ignored
+by the door until the mode is `local`, so the operator can create the
+accounts on a quiet morning, hand the passwords over during the week, and
+flip the door at an announced minute. That is how production moved
+([Step 10 of the tutorial, in two moments](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch)). While accounts
+wait, `./container-py.sh status` lists them with the word *waiting*
+(v2.23.3); the state between the two moments, and how to test it by every
+route, is [in the tutorial](04-phase-tutorials/phase-sh-3b-local-accounts.md#between-the-two-moments-production-after-step-10a-before-step-10b).
+
+![Production's login in two moments: first the accounts are created while the door still takes the token and the page still shows the token box; later, at an announced moment, the mode switches to local and the same rows are used; between the two, hours or days](img/fig_two_moments.svg)
 
 | I want to… | Command | Effective |
 |---|---|---|
@@ -1218,4 +1231,4 @@ For deployment issues:
 
 ---
 
-**Last Updated:** September 22, 2026
+**Last Updated:** September 23, 2026

@@ -144,6 +144,7 @@ Testing API endpoint (https://localhost:49161/api/health)...
 {"status":"ok"}
 login: token — the page asks for it once; scripts send it as Authorization: Bearer (docs/13-authentication.md)
 {"chemicals":{"total":12539,"max":15000},...
+accounts: 3 (alice admin, bob editor, carol viewer), waiting: the login uses them once AUTH_MODE=local (docs/13-authentication.md)
 ```
 
 or, with accounts (`AUTH_MODE=local`, v2.23.0):
@@ -161,7 +162,11 @@ application answered the open health route; since v2.22.0 the next line
 says whether the login is on (`login: off` until it is), and the counts
 follow, fetched with the token when there is one; with accounts the script
 holds no token of its own, so it reads the counts from the database inside
-the container and lists the accounts instead.
+the container and lists the accounts instead. On the token rung, or with
+the login off, a last line lists the accounts that exist and marks them
+*waiting* (v2.23.3): they were created ahead of the switch and are used
+once the mode is `local` ([the two moments](04-phase-tutorials/phase-sh-3b-local-accounts.md#step-10--production-in-two-moments-the-accounts-then-the-switch)); the line is
+absent while the table is empty.
 
 **You should see**, when it is stopped:
 
@@ -444,4 +449,4 @@ runbook (certificates, backups, monitoring, troubleshooting),
 [`01-setup-rhel8.md`](01-setup-rhel8.md) for how the service and lingering
 were set up.
 
-**Last Updated:** September 22, 2026
+**Last Updated:** September 23, 2026

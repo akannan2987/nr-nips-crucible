@@ -1055,6 +1055,36 @@ salt or mixture), `repaired`, `unreadable`, `checks`, `findings`,
 (`structure.formula`, `structure.weight`, `structure.inchikey`,
 `structure.source`), sortable and filterable like any column.
 
+### Draw a structure
+
+**Endpoint:** `GET /chemicals/:id/structure.svg` (v2.25.0, phase CR-12 step B)
+
+**Query:** `w` and `h`, the size in pixels (48 to 1600; out of range is
+clamped; default 320 by 240).
+
+**Response:** the derived structure as an SVG image, `Content-Type:
+image/svg+xml`, with `ETag: "<derived_at>-<w>x<h>"` and `Cache-Control:
+private, max-age=86400`; `304 Not Modified` when the request carries that
+tag in `If-None-Match`. A MOL block is drawn with the chemist's own
+coordinates (a 3-D block gets a flat layout); a SMILES is laid out by
+CoordGen. Nothing is stored: the picture is drawn on request and follows
+the structure, so a re-derived entry is redrawn at once.
+
+`404 {"error": "Chemical not found"}` for an unknown entry;
+`404 {"error": "No derived structure for CHEM-…: derive it first (…)"}` for
+one without a derived structure ([derive it](#derive-structures));
+`503` with the reason if the image lacks the drawing libraries.
+
+```bash
+curl --noproxy '*' -sSk -H "Authorization: Bearer $T" https://localhost:49160/api/chemicals/CHEM-000001/structure.svg -o caffeine.svg
+curl --noproxy '*' -sSk -D- -o /dev/null -H "Authorization: Bearer $T" 'https://localhost:49160/api/chemicals/CHEM-000001/structure.svg?w=96&h=72' | grep -iE 'HTTP|etag'
+```
+
+The picture is a column of its own, `structure.picture`, offered by
+[`/chemicals/columns`](#list-chemicals) once anything is derived (it is
+not a stored value: it cannot be sorted or filtered by). The same picture
+from the terminal: `draw_structure.py <id> -o file.svg`.
+
 ### Set a pending identifier
 
 **Endpoint:** `POST /chemicals/:id/identifier`

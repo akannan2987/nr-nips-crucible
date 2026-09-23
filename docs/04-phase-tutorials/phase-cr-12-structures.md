@@ -1,12 +1,12 @@
 [← README](../../README.md) · [Handbook](../HANDBOOK.md) · [Glossary](../00-glossary.md) · [← Phase SH-3b](phase-sh-3b-local-accounts.md)
 
-# Phase CR-12 — Structures: derive, draw, edit. Step A: one derived structure per entry, checked
+# Phase CR-12 — Structures: derive, draw, edit
 
-**Version shipped:** 2.24.0 (step A) · **Date:** 2026-09-23 · **Status:** step A complete; step B (draw) and step C (edit) follow in their own releases and are added to this page as they ship
+**Version shipped:** 2.24.0 (step A, derive and check) · 2.25.0 (step B, draw) · **Date:** 2026-09-23 · **Status:** steps A and B complete; step C (edit) follows in its own release and is added to this page when it ships
 **Track:** CR, the Chemical Registry ([roadmap](../05-roadmap.md#cr--chemical-registry)); the owner's request of 2026-09-14, specified in [`09-structures.md`](../09-structures.md) with decisions S1–S5, built on the go of 2026-09-23 ("build on what you have planned").
 **Prerequisites:** [Phase CR-9](phase-cr-9-real-registry-sources.md) (the three real sources, which put the MOL blocks, SMILES and InChIs into the registry), [Phase CR-10](phase-cr-10-attention-page.md) (the attention page, which gains a fifth kind here), [Phase CR-2](phase-cr-2-views-sort-filter.md) (the column picker, which gains a group); the specification read once; a setup guide completed for your platform; the test virtual environment from its V7 check for the Python route.
 **Learning goal:** you understand what a chemical structure is and the three text forms it travels in, why a structure is the one fact about a compound that can be *checked* rather than merely copied, how one structure is derived from whatever the source gave and stored beside the laboratory's values without touching them, what the four checks compare and why a salt or an exact mass is not a disagreement, and how to derive, list and review the findings from the browser, the API, the terminal, the container, Python and the database.
-**Deliverable:** for every registry entry that carries a MOL block, a SMILES or an InChI, one **derived structure** under a new key `structure`: the canonical SMILES, the InChI and InChIKey, the computed formula, average weight and exact mass, the counts of atoms, bonds, rings, charge and fragments, which source it came from, and the verdict of four checks against the source's own formula, weight and InChI. A disagreement is a **structure finding**, the fifth kind on the attention page, with the two values side by side and the same *mark reviewed* as the others. `POST /api/chemicals/structures/derive`, `derive_structures.py` and a **Derive structures** button call one module, report first and write on *apply*. On the real export: 6,553 entries with a source, 6,544 derived, 446 with a finding. Eight tests; the suite at 201.
+**Deliverable:** for every registry entry that carries a MOL block, a SMILES or an InChI, one **derived structure** under a new key `structure`: the canonical SMILES, the InChI and InChIKey, the computed formula, average weight and exact mass, the counts of atoms, bonds, rings, charge and fragments, which source it came from, and the verdict of four checks against the source's own formula, weight and InChI. A disagreement is a **structure finding**, the fifth kind on the attention page, with the two values side by side and the same *mark reviewed* as the others. `POST /api/chemicals/structures/derive`, `derive_structures.py` and a **Derive structures** button call one module, report first and write on *apply*. On the real export: 6,553 entries with a source, 6,544 derived, 446 with a finding on the development copy and 447 on the server. Eight tests; the suite at 201. **Step B** (v2.25.0) then draws every derived structure on the server, `GET /api/chemicals/{id}/structure.svg`, and shows the picture in the detail view, as a thumbnail column, in the dialogs where a person confirms a compound and on the finding cards; five more tests, the suite at 206 ([Part B](#part-b--draw-it)).
 
 ![Three text forms of a structure go into RDKit in a fixed order; one derived structure with computed facts is stored beside the entry; four checks compare the source's own formula, weight and InChI with its structure; a disagreement becomes a finding on the attention page](../img/fig_structure_derive.svg)
 
@@ -26,8 +26,9 @@
 10. [Step 7 — Derive on the server, beta first](#step-7--derive-on-the-server-beta-first)
 11. [Checkpoint](#checkpoint)
 12. [How to test it, by every route](#how-to-test-it-by-every-route)
-13. [What this step deliberately did not do](#what-this-step-deliberately-did-not-do)
-14. [Publish](#publish)
+13. [What step A deliberately did not do](#what-step-a-deliberately-did-not-do)
+14. [Part B — Draw it](#part-b--draw-it): [why](#why-step-b-exists) · [words](#the-words-you-need-for-step-b) · [what we built](#what-step-b-built) · [B1 the engine](#step-b1--one-drawing-engine-on-the-server) · [B2 the route](#step-b2--the-route-and-a-picture-that-follows-the-structure) · [B3 the page](#step-b3--the-picture-in-the-page-four-places) · [B4 script, tests, rehearsal](#step-b4--the-script-the-tests-the-rehearsal) · [B5 the server](#step-b5--on-the-server) · [checkpoint](#checkpoint-for-step-b) · [every route](#how-to-test-step-b-by-every-route) · [not done](#what-step-b-deliberately-did-not-do)
+15. [Publish](#publish)
 
 ---
 
@@ -392,17 +393,23 @@ covers the write; the report comes first regardless.
 ```bash
 # VM - beta folder, after block 3 (rebuild); then the production folder after block 6
 cd ~/work/Pandora_toolbox/nr-nips-crucible-beta
-./container-py.sh script derive_structures.py | head -3            # the report: 6,553 / 6,544 / 446, as on the development machine
+./container-py.sh script derive_structures.py | grep -v 'entries read' | head -3   # the report: 6,553 / 6,544 / 447 on the server (446 on the development copy)
 ./container-py.sh backup
 ./container-py.sh script derive_structures.py --apply | tail -2    # Applied: 6,553 entries written, 0 unchanged, in N s.
-./container-py.sh script audit_chemicals.py | head -1              # 795 things need attention (…, 446 doubtful structures)
+./container-py.sh script audit_chemicals.py | grep 'need attention'   # 795 things need attention (…, 124 doubtful formulas, 447 doubtful structures)
 curl --noproxy '*' -sSk -H "Authorization: Bearer $T" https://localhost:49161/api/chemicals/notices/summary; echo   # "structure":446
 ```
 
-**You should see:** the same three report lines as on the development
-machine (the data is the same export), *Applied: 6,553 entries written*,
-and the attention page showing the fifth tile. The sidebar's number goes
-from 349 to 795.
+**You should see:** nearly the same three report lines as on the
+development machine: on the server *Findings on 447 entries: formula 400,
+weight 78, InChI 50, unreadable 9* and *124 doubtful formulas*, against
+446 and 125 on the development copy, because the server re-imported the
+export after the SDF merge and the export's InChI and formula won on the
+77 merged entries; the total is 795 on both. Then *Applied: 6,553 entries
+written* (8.7 s on beta, 9.7 s on production, 2026-09-23), and the
+attention page showing the fifth tile. The sidebar's number goes from 349
+to 795. **Done on both instances on 2026-09-23** (beta 02:20, production
+02:26 server time), each after its rebuild and a backup.
 
 **What it means:** 446 entries the registry cannot vouch for are listed
 for a person, none was changed, and every other entry with a structure
@@ -445,7 +452,9 @@ and load it the same way (*Chemical Registry → Upload → JSON*, or
 recorded by its parent's formula, an entry whose formula and weight are
 wrong for its structure, and an entry nothing can read. Eight entries with
 a source, seven derived, two with a finding. The last column is the
-development copy of the real export, which is what the server shows.
+development copy of the real export; the server shows the same shape with
+its own counts (447 findings, formula 400, weight 78, InChI 50; 124
+doubtful formulas; 795 in all), a few apart because of the import order.
 `$T` is your personal token; `$J` stands for `-H 'Content-Type: application/json'`.
 
 ```json
@@ -516,7 +525,7 @@ print(f"{total} entries with a structure: by source {dict(by_source)}; findings 
 
 ---
 
-## What this step deliberately did not do
+## What step A deliberately did not do
 
 - **Draw the structure.** Step B: `GET /api/chemicals/{id}/structure.svg`
   from the server, in the detail view, the chooser dialogs and a thumbnail
@@ -544,6 +553,320 @@ print(f"{total} entries with a structure: by source {dict(by_source)}; findings 
 
 ---
 
+## Part B — Draw it
+
+**Version shipped:** 2.25.0 · **Date:** 2026-09-23 · **Status:** complete
+(built and rehearsed on the development machine; on both instances with
+the rebuild of blocks 3 and 6, nothing to run afterwards: the structures
+were derived in Step 7).
+
+![One drawing engine on the server turns an entry's derived structure into an SVG picture that the detail view, the table, the dialogs and the findings all show, and that a script can save; the picture carries the structure's version so a re-derived entry is redrawn everywhere](../img/fig_structure_draw.svg)
+
+### Why step B exists
+
+Step A gave every entry with a source one checked structure, as text: a
+canonical SMILES, `Cn1cnc2c1c(=O)n(C)c(=O)n2C`. A chemist does not think
+in that line; a chemist thinks in the drawing it stands for. Until this
+step the registry drew only the 77 MOL blocks, with a small viewer written
+for this project, and showed everything else as text. Now the server draws
+every derived structure, and the browser shows the picture wherever the
+compound appears: on its detail view, in the table when you ask, in the
+dialog where you confirm which compound to link rows to, in the dialog
+where you confirm a merge, beside each doubtful-structure finding.
+
+**Why the server draws, and not the browser.** One drawing engine means
+one picture: the same from the page, from a script, in a report. The
+browser needs no chemistry library, so the page stays small and the
+picture can be saved with one `curl`. And the engine already sits beside
+the structure it draws, so the picture can carry the structure's version:
+re-derive an entry and every place shows the new picture at once.
+
+*Everyday version:* one photocopier in the archive; every desk gets a
+print of the same X-ray, stamped with the date it was taken, so a retaken
+X-ray replaces every print at once.
+
+### The words you need for step B
+
+| Term | Plain words | Everyday version |
+|---|---|---|
+| **Depiction** | A 2-D picture of a structure drawn by a program from its atoms and bonds; the same structure always gives the same picture | The flat-pack diagram, generated from the parts list |
+| **SVG** | Scalable Vector Graphics: a picture written as lines and curves in text, sharp at any size; a browser shows it, a script can save it, a program can read it | A drawing as instructions, not as pixels |
+| **Layout (2-D coordinates)** | Where each atom sits on the page. A MOL block carries the positions the chemist gave; a SMILES has none, so a layout is computed by **CoordGen**, the engine chemists' drawing programs use | The seating plan for the parts |
+| **ETag, 304** | A tag on the answer that changes only when the picture would; a browser sends it back with its next request and is told *304 Not Modified* instead of getting the picture again | The version stamp on the print |
+| **Thumbnail** | A small picture in a table cell, 96 by 72 pixels here | The passport photo |
+
+### What step B built
+
+| Piece | What it is | Where |
+|---|---|---|
+| The engine | Which coordinates to use, the molecule, the SVG at the size asked, a small cache; the tag that follows `derived_at` | `backend/app/depict.py` |
+| The route | `GET /api/chemicals/{id}/structure.svg?w=&h=`: the image, `ETag`, `Cache-Control`, `304`; `404` for an unknown entry or one not yet derived | `backend/app/routers/chemicals.py` |
+| The column | `structure.picture` offered in the picker once anything is derived, counted by derived structures | `backend/app/routers/chemicals.py` |
+| The audit | Each entry in a shared-identifier group and each finding says whether it can be drawn, and which version | `backend/app/audit.py` |
+| The picture component | One `<img>` with the entry's identifier, size and version; a quiet dash if the server refuses | `client/src/components/StructurePicture.jsx` |
+| The page | The detail view; the *Pictures* toggle in Compact (off by default) and the column in Complete and Batches; the link chooser's confirmation; the merge confirmation and the shared groups; the finding cards | `client/src/pages/ChemicalsView.jsx`, `client/src/pages/ScreeningView.jsx`, `client/src/pages/RegistryAttention.jsx` |
+| The script | `draw_structure.py <id> [-o file.svg] [--width --height]`: the same picture to a file | `backend/scripts/draw_structure.py` |
+| The image | Four system libraries RDKit's drawing module links against (`libxrender1`, `libx11-6`, `libxext6`, `libexpat1`), missing from the slim base image; the module imported only when a picture is asked for | `backend/Dockerfile`, `backend/app/depict.py` |
+| Tests | Five: the engine and its sizes, the coordinates rule, the route with its tag and refusals, a missing drawing library costing the picture only, the script | `backend/tests/test_depict.py` |
+| Figure | The engine, the four places, the cache rule, the coordinates rule | `docs/img/fig_structure_draw.svg` |
+
+### Step B1 — One drawing engine, on the server
+
+**What:** turn an entry's derived structure into an SVG picture at the
+size asked for, with the coordinates a chemist would expect.
+
+**How:** three functions in `backend/app/depict.py`. `drawable(doc)` says
+what to draw: the MOL block itself when the structure came from it, the
+canonical SMILES otherwise, nothing when the entry has no derived
+structure. `molecule(kind, text)` builds the molecule and gives it 2-D
+coordinates: a MOL block keeps its own (a 3-D block, or one without
+positions, gets a computed layout); a SMILES gets a layout from CoordGen.
+`render(mol, width, height)` draws it with RDKit's `MolDraw2DSVG` on a
+transparent background, so it sits on any card. `svg_for(doc, w, h)` ties
+them together behind a small in-process cache keyed on what is drawn and
+at what size; `clamp` keeps a requested size between 48 and 1600 pixels.
+
+**Why the MOL block keeps its coordinates.** A MOL block is a drawing: the
+chemist placed every atom. Redrawing it from scratch would show a correct
+molecule in an unfamiliar pose. A SMILES carries no positions, so a
+layout has to be computed, and CoordGen computes the one drawing programs
+would.
+
+**You should see** (the development machine):
+
+```bash
+cd backend && .venv/bin/python -c "
+from app import depict, structures
+caffeine = {'chemical_id': 'X', 'smiles': 'Cn1cnc2c1c(=O)n(C)c(=O)n2C'}
+caffeine['structure'] = structures.derive_one(caffeine)
+svg = depict.svg_for(caffeine)
+print(len(svg), 'bytes;', svg[:38], '...', 'width=\'320px\' height=\'240px\'' in svg)
+print(depict.svg_for(caffeine, 10, 10)[-200:].count('48px'), 'clamped to 48;', depict.svg_for({'chemical_id': 'Y'}))
+"
+```
+
+`10004 bytes; <?xml version='1.0' encoding='iso-8859-1' ... True`, then a
+count of `48px` and `None` for an entry with nothing to draw. About a
+millisecond a picture: fifty thumbnails in 47 ms on the development
+machine.
+
+**If instead:** `ModuleNotFoundError: rdkit` — the test virtual
+environment (V7 of the setup guide); the container has it.
+
+### Step B2 — The route, and a picture that follows the structure
+
+**What:** `GET /api/chemicals/{id}/structure.svg`, with `w` and `h` in
+pixels (default 320 by 240), answering the image and two headers.
+
+**How:** the route reads the entry, refuses one that does not exist or
+has no derived structure (`404` with a reason that says what to do),
+computes an `ETag` from the structure's `derived_at` and the size, answers
+`304 Not Modified` when the browser sends that tag back, and otherwise
+the SVG with `Content-Type: image/svg+xml`, the tag, and
+`Cache-Control: private, max-age=86400`.
+
+**Why a tag from `derived_at`.** The picture depends on nothing but the
+derived structure. When step A runs again and changes an entry, its
+`derived_at` moves, the tag changes, and every browser fetches the new
+picture; when nothing changed, a day of caching costs nothing. The page
+adds `?v=<derived_at>` to the address for the same reason, so that a
+browser never shows a stale copy even before it asks.
+
+**You should see** (the server, with your personal token in `$T`; the
+development machine over `http://localhost:49160` without `-k`):
+
+```bash
+curl --noproxy '*' -sSk -D- -o caffeine.svg -H "Authorization: Bearer $T" https://localhost:49160/api/chemicals/CHEM-000001/structure.svg | grep -iE 'HTTP|content-type|etag|cache-control'
+head -c 120 caffeine.svg; echo
+E="$(curl --noproxy '*' -sSk -D- -o /dev/null -H "Authorization: Bearer $T" https://localhost:49160/api/chemicals/CHEM-000001/structure.svg | awk -F': ' 'tolower($1)=="etag"{print $2}' | tr -d '\r')"
+curl --noproxy '*' -sSk -D- -o /dev/null -H "Authorization: Bearer $T" -H "If-None-Match: $E" https://localhost:49160/api/chemicals/CHEM-000001/structure.svg | grep HTTP
+curl --noproxy '*' -sSk -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $T" 'https://localhost:49160/api/chemicals/CHEM-000001/structure.svg?w=96&h=72'
+curl --noproxy '*' -sSk -H "Authorization: Bearer $T" https://localhost:49160/api/chemicals/CHEM-999999/structure.svg; echo
+```
+
+```
+HTTP/1.1 200 OK
+content-type: image/svg+xml
+etag: "2026-09-23T…Z-320x240"
+cache-control: private, max-age=86400
+<?xml version='1.0' encoding='iso-8859-1'?>
+<svg version='1.1' baseProfile='full' …
+HTTP/1.1 304 Not Modified
+200
+{"error":"Chemical not found"}
+```
+
+An entry with a source but not yet derived answers
+`404 {"error": "No derived structure for CHEM-…: derive it first (Needs attention, Derive structures, or derive_structures.py --apply)"}`.
+`caffeine.svg` opens in any browser and in any drawing program.
+
+**What it means:** the picture is an ordinary image on an ordinary
+address behind the login, so anything that can fetch a URL with a header
+can have it: a report, a notebook, a slide.
+
+**If instead:** `401` — the token; the route is behind the guard like every
+`/api/chemicals` route, and the browser sends its cookie for the `<img>`
+the same way it does for the page. `404 … derive it first` — Step 7.
+
+### Step B3 — The picture in the page, four places
+
+**What:** one small component, `StructurePicture`, shown wherever the
+entry is.
+
+**How:** `client/src/components/StructurePicture.jsx` renders an `<img>`
+whose address is the route above with the size and `?v=<derived_at>`;
+if the server refuses, it shows a quiet dashed box, *no picture*. The
+parent decides whether to show it at all, from the row's
+`structure.source`, so the 5,986 entries without a structure show a dash
+and never ask the server. Then, place by place:
+
+| Place | What you see | Size |
+|---|---|---|
+| The detail view (*View*) | the picture where the project's viewer was; the viewer stays for an entry with a MOL block never derived; hover the picture for the address to save it | 240 × 180 |
+| The Compact view | a **Pictures** box in the toolbar, off by default (decision S4: twenty pictures a page is fine, but a person switches it on); remembered per browser; a *Structure* column after *Name* | 96 × 72 |
+| The Complete and Batches views | a column *structure (picture)* in the picker, group *structure*, offered once anything is derived; no filter box on it | 96 × 72 |
+| The link chooser (Screening Data → *Link to a chemical…*) | the picture above the name, CAS, formula and identifier the person confirms | 200 × 150 |
+| The merge confirmation (*Needs attention → Shared identifiers*) | a small picture beside the survivor and beside each entry to be removed; and a *Structure* column in the group's table, so two entries for one substance can be told apart by eye | 72 × 54, 96 × 72 |
+| The doubtful-structure cards | the picture beside the table of values | 180 × 135 |
+
+**Why the dialogs.** They are the moments a person decides between two
+compounds, "is this the one?", "are these one substance?"; a picture is
+the fastest way a chemist answers that, faster than a name and a CAS
+number.
+
+**You should see:** on *Needs attention*, the first doubtful-structure
+card shows aluminium chloride hydroxide as eight loose fragments beside
+`Al2`; tick **Pictures** on the Compact view and the table gains a column
+of small drawings, a dash on the entries without one.
+
+### Step B4 — The script, the tests, the rehearsal
+
+**What:** `draw_structure.py` for the terminal, five tests, the image
+rebuilt and the page driven in a browser.
+
+```bash
+cd backend && .venv/bin/ruff check . && .venv/bin/pytest -p no:warnings 2>&1 | grep -E '[0-9]+ (passed|failed)' && cd ..    # All checks passed! · 206 passed
+cd client && npm run build 2>&1 | tail -1 && cd ..
+./container-py.sh rebuild
+./container-py.sh script draw_structure.py CHEM-000001 -o /app/data/caffeine.svg   # CHEM-000001: 10,004 bytes of SVG written to /app/data/caffeine.svg
+ls -l data/caffeine.svg                                                              # the same file on the host: data/ is the shared folder
+```
+
+**Why `/app/data`.** The container sees the host's `data/` folder and
+nothing else of the host, so a file written there is the one place the
+script can hand something back.
+
+**What the rehearsal taught** (lesson 44). Every test passed, and the
+rebuilt container refused to start: RDKit's drawing module links against
+four system libraries (`libXrender`, `libX11`, `libXext`, `expat`) that
+the test environment has and the slim image does not, and the module was
+imported when the application loaded, so one route's missing library
+closed every route. Two fixes, both kept: the Dockerfile installs the
+four packages, and the drawing module is imported only inside the
+function that draws, so a missing library now answers `503` on the
+picture route with the reason and touches nothing else (a test holds
+that). The lesson is the container, not the test environment, is what
+the users run: rehearse there before every release.
+
+### Step B5 — On the server
+
+**What:** nothing to run. The rebuild of blocks 3 and 6 ships the route and
+the page; the structures were derived in Step 7, so the pictures appear
+the moment the page reloads. One line proves it, from the instance's
+folder:
+
+```bash
+# VM - the instance's folder, after the rebuild
+curl --noproxy '*' -sSk -o /dev/null -w '%{http_code} %{content_type}\n' -H "Authorization: Bearer $T" https://localhost:49160/api/chemicals/CHEM-000001/structure.svg
+```
+
+**You should see:** `200 image/svg+xml`. Then the browser: any entry's
+*View* shows the drawing.
+
+### Checkpoint for step B
+
+```bash
+curl --noproxy '*' -sSk -H "Authorization: Bearer $T" https://localhost:49160/api/chemicals/CHEM-000232/structure.svg -o al.svg && head -c 60 al.svg; echo
+./container-py.sh script draw_structure.py CHEM-000232 -o /app/data/al.svg && diff <(cat al.svg) data/al.svg && echo "the same picture from the API and the script"
+```
+
+**You should see** `<?xml version='1.0' encoding='iso-8859-1'?>` and
+`the same picture from the API and the script`. That is "done" as the
+specification defined step B: the route answers for every derived
+structure; the detail view and the chooser dialogs show it.
+
+### How to test step B, by every route
+
+The same synthetic set as step A (the JSON template plus the three
+rehearsal entries, derived), and the real export. `$T` is your personal
+token; on the development machine the address is `http://localhost:49160`
+and `-k` is not needed.
+
+| Route | How | You should see (synthetic) | Real export |
+|---|---|---|---|
+| **Browser, the detail view** | *View* on Caffeine | the drawing of caffeine (two fused rings, three methyls) where the old viewer was; hover it: *the derived structure, drawn by the server* | *Aluminium chloride hydroxide*: eight loose fragments; any of the 6,544 |
+| **Browser, the old viewer stays** | *View* on an entry that has a MOL block but was never derived (upload `chemicals_registry_template.sdf` without deriving) | the project's own viewer draws the block, as before this step | the same for a MOL block uploaded after the last derive |
+| **Browser, nothing to draw** | *View* on *Unreadable structure* | the dashed box of the old viewer (a SMILES the viewer cannot read either) and, below, the amber *none could be read* strip | 9 such entries |
+| **Browser, the Pictures toggle** | Compact view, tick **Pictures** | a *Structure* column after *Name*, a small drawing per entry, a dash for the entry with nothing; untick, it goes; reload, it is remembered | the same, 20 pictures a page, no visible delay |
+| **Browser, the column** | Complete view → *Columns* → *structure (picture)* | the column with the pictures; no filter box on it; sorting by it does nothing | the same |
+| **Browser, the link chooser** | Screening Data, tick a row, *Link to a chemical…*, choose Caffeine | the drawing above the name, CAS, formula and identifier; *Yes, link* as before | the same |
+| **Browser, the merge confirmation** | *Needs attention → Shared identifiers*, a group, choose the survivor, *Merge the others into…* | the survivor's and the removed entries' pictures in the confirmation; a *Structure* column in the group's table | 221 groups, most with a picture per entry |
+| **Browser, the finding card** | *Needs attention → Doubtful structures* | the picture beside the values on each card that has a derived structure; none on an *unreadable* card | the same |
+| **Browser, a re-derived entry** | edit Caffeine's SMILES to vanillin's `COc1cc(C=O)ccc1O`, save, **Derive structures…**, **Apply**, *View* | the picture is vanillin's at once (the address carries the new `derived_at`) | the same |
+| **API, the picture** | `curl … -D- -o caffeine.svg …/api/chemicals/CHEM-000001/structure.svg \| grep -iE 'HTTP\|content-type\|etag'` | `200`, `image/svg+xml`, `etag: "<derived_at>-320x240"`; `caffeine.svg` opens in a browser | the same |
+| **API, told 304** | the `If-None-Match` call of Step B2 | `HTTP/1.1 304 Not Modified` | the same |
+| **API, a size** | `…/structure.svg?w=96&h=72` · `?w=3&h=3` · `?w=9999&h=9999` | `width='96px' height='72px'` in the SVG · clamped to 48 · clamped to 1600 | the same |
+| **API, refused** | `…/CHEM-999999/structure.svg` · an entry with a source before deriving | `404 {"error":"Chemical not found"}` · `404 {"error":"No derived structure for …: derive it first …"}` | the same |
+| **API, the column** | `curl … …/api/chemicals/columns \| python3 -c "import json, sys; print([c for c in json.load(sys.stdin)['columns'] if c['key'] == 'structure.picture'])"` | `[{'key': 'structure.picture', 'label': 'structure (picture)', 'group': 'structure', 'filled': 7, …}]` | `'filled': 6544` |
+| **API, the audit knows** | `curl … …/api/chemicals/audit \| python3 -c "import json, sys; a = json.load(sys.stdin); print(a['shared'][0]['entries'][0]['structure_source'] if a['shared'] else 'no groups')"` | `smiles` or `None` per entry | `smiles` |
+| **API, the explorer** | `https://<vm-hostname>:49160/docs`, *chemicals* | `GET /api/chemicals/{chemical_id}/structure.svg` with `w` and `h` | the same |
+| **Terminal, the script** | `./container-py.sh script draw_structure.py CHEM-000001 -o /app/data/caffeine.svg` · `ls -l data/caffeine.svg` | `CHEM-000001: 10,004 bytes of SVG written to /app/data/caffeine.svg` · the file on the host | the same |
+| **Terminal, to the screen, and refused** | `./container-py.sh script draw_structure.py CHEM-000001 \| head -c 80` · `… CHEM-000008` · `… CHEM-404` | `<?xml version=…` · `CHEM-000008 has no derived structure to draw: run derive_structures.py --apply first …`, exit 1 · `No entry CHEM-404.`, exit 1 | the same |
+| **Terminal, the same picture from both doors** | the checkpoint's `diff` | *the same picture from the API and the script* | the same |
+| **Terminal, the deploy check** | `CRUCIBLE_TOKEN="$T" ./verify-deploy.sh https://localhost:49160 \| tail -2` | `19 passed, 0 failed` | the same |
+| **Podman / Docker, the engine inside** | `podman exec crucible-py python -c "from app import depict; print(depict.DEFAULT_WIDTH, depict.MAX_SIZE)"` | `320 1600` | the same |
+| **Podman / Docker, a picture without the API** | `podman exec crucible-py python /app/backend/scripts/draw_structure.py CHEM-000001 \| wc -c` | about `10000` | the same |
+| **Podman / Docker, the shared folder** | `podman exec crucible-py ls -l /app/data/caffeine.svg` and `ls -l data/caffeine.svg` | the same file, two views of one folder | the same |
+| **Python directly, the engine** | the one-liner of Step B1 | `10004 bytes …` | — |
+| **Python, a script that saves pictures** | the script below, `python3 save_pictures.py` on the development machine (the server needs `https` and the token) | `CHEM-000001 caffeine.svg 10004 bytes` … for the five compounds of the template | the same for any list of identifiers |
+| **Database, nothing is stored** | Query page: `SELECT count(*) FROM chemicals WHERE json_extract(doc,'$.structure.picture') IS NOT NULL` · `SELECT chemical_id, json_extract(doc,'$.structure.derived_at') FROM chemicals WHERE chemical_id='CHEM-000001'` | `0`: the picture is computed, never written · the timestamp the ETag is made from | `0` · the same |
+| **Automated tests** | `cd backend && .venv/bin/pytest -p no:warnings 2>&1 \| grep -E '[0-9]+ (passed\|failed)'` | `206 passed` (the five of step B among them) | — |
+
+The script of the Python row:
+
+```python
+# save_pictures.py: the drawing of each compound, saved as a file, through the API (one engine, the same picture as the page)
+import urllib.request
+base, token = "http://localhost:49160", ""                 # on the server: https://localhost:49160 and your personal token, plus an SSL context as in door_check.py
+for chemical_id in ("CHEM-000001", "CHEM-000002", "CHEM-000003", "CHEM-000004", "CHEM-000005"):
+    req = urllib.request.Request(f"{base}/api/chemicals/{chemical_id}/structure.svg?w=400&h=300", headers={"Authorization": f"Bearer {token}"} if token else {})
+    try:
+        with urllib.request.urlopen(req) as r:
+            data = r.read()
+        open(f"{chemical_id}.svg", "wb").write(data)
+        print(chemical_id, f"{chemical_id}.svg", len(data), "bytes")
+    except urllib.error.HTTPError as e:
+        print(chemical_id, "refused:", e.code, e.read().decode()[:80])
+```
+
+### What step B deliberately did not do
+
+- **Store the picture.** It is computed from the derived structure on
+  request and cached briefly; storing it would be a second copy of a fact
+  that can drift. The one design rule holds.
+- **Draw an entry that has no derived structure.** No guessing from a
+  name or a CAS number; step C lets a person draw one.
+- **Other formats.** SVG only: a browser saves and prints it, a program
+  reads it; a PNG for a slide is one `rsvg-convert` away, and step C's
+  editor exports MOL, SMILES and InChI.
+- **Show the pictures by default in the table.** Decision S4: off in
+  Compact, one tick away; offered in Complete and Batches.
+- **Highlight anything** (a substructure, a stereocentre, the difference
+  between two entries of a shared group). Worth its own request.
+- **3-D.** Not in this phase, as the specification says.
+
+---
+
 ## Publish
 
 The six blocks of [`03-git-workflow.md`](../03-git-workflow.md#the-six-blocks-at-a-glance).
@@ -559,6 +882,19 @@ git commit -F ~/.crucible/commit-v2.24.0.txt
 git push origin develop develop:beta
 git tag -a v2.24.0 -m "v2.24.0: Structures derived and checked"
 git push origin v2.24.0
+```
+
+**Step B (v2.25.0)**, the same route: code under `backend/` and `client/`,
+so blocks 3 and 6 rebuild; nothing to run afterwards.
+
+```bash
+# DEVELOPMENT MACHINE - block 1 (step B)
+cd ~/Documents/Work/pandora_toolbox/nr-nips-crucible
+git add -A && ./check-public-safe.sh && python3 check-links.py
+git commit -F ~/.crucible/commit-v2.25.0.txt
+git push origin develop develop:beta
+git tag -a v2.25.0 -m "v2.25.0: Structures drawn"
+git push origin v2.25.0
 ```
 
 **Last Updated:** September 23, 2026

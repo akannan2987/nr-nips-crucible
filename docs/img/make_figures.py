@@ -1154,6 +1154,55 @@ def fig_structure_derive() -> None:
     write("fig_structure_derive.svg", svg(W, H, "Three text forms of a structure go into RDKit in a fixed order; one derived structure with computed facts is stored beside the entry; four checks compare the source's own formula, weight and InChI with its structure; a disagreement becomes a finding on the attention page", b))
 
 
+def fig_structure_draw() -> None:
+    """CR-12 step B: one drawing engine on the server, one picture shown in four places and saved from the API."""
+    W, H = 940, 520
+    mono = "ui-monospace,SFMono-Regular,Menlo,monospace"
+    chem, acc = COLOURS["chemical"], ACCENT
+    b = text(W/2, 34, "Drawing the structure (CR-12, step B): one engine on the server, the same picture wherever the entry is shown", 14.5, INK, "middle", "bold")
+    # the entry's derived structure
+    b += box(30, 70, 220, 150, PANEL, LINE, 10)
+    b += text(140, 92, "the entry, after step A", 11.5, INK, "middle", "bold")
+    b += lines(140, 114, ["structure.source: smiles", "structure.smiles: Cn1cnc2c1…", "structure.derived_at: 2026-09-23"], 9.5, INK, "middle", 15, "normal")
+    b += text(140, 170, "or a MOL block with its own", 9, MUTED)
+    b += text(140, 183, "coordinates: drawn as drawn", 9, MUTED)
+    b += text(140, 206, "nothing else is stored", 9, MUTED)
+    # the engine
+    b += arrow(252, 145, 300, 145, acc, sw=2)
+    b += box(302, 80, 200, 130, "#eef2ff", chem, 10)
+    b += text(402, 104, "RDKit, on the server", 12.5, chem, "middle", "bold")
+    b += lines(402, 126, ["CoordGen lays the atoms out", "MolDraw2DSVG draws them", "one SVG per entry and size"], 10, INK, "middle", 15)
+    b += text(402, 186, "GET /api/chemicals/{id}/structure.svg?w=&h=", 8.6, MUTED, "middle", "normal", mono)
+    b += text(402, 200, "about a millisecond a picture; a small cache", 8.6, MUTED)
+    # the four places
+    b += arrow(504, 145, 550, 145, acc, sw=2)
+    places = [("the detail view", "240 x 180, in place of the old viewer"),
+              ("the table", "Pictures toggle in Compact (off by default, S4); a column in Complete and Batches"),
+              ("the dialogs", "the link chooser's confirmation; the merge confirmation; the shared-identifier groups"),
+              ("the findings", "each doubtful-structure card, beside the values")]
+    for i, (title, what) in enumerate(places):
+        y = 70 + i * 38
+        b += box(552, y, 358, 32, PAPER, chem, 6)
+        b += text(566, y + 14, title, 10.5, chem, "start", "bold")
+        b += text(566, y + 26, what, 8.6, MUTED, "start")
+    # saved from the API, and the script
+    b += box(30, 246, 880, 44, PANEL, LINE, 8)
+    b += text(470, 264, "the same picture from a script or for a report:  curl -H \"Authorization: Bearer $T\" .../api/chemicals/CHEM-000001/structure.svg -o caffeine.svg", 9.6, INK, "middle", "normal", mono)
+    b += text(470, 281, "./container-py.sh script draw_structure.py CHEM-000001 -o /app/data/caffeine.svg    (the browser holds no chemistry library: it shows an image)", 9.2, MUTED, "middle", "normal", mono)
+    # the cache rule
+    b += box(30, 306, 430, 96, "#fff7ed", COLOURS["screening"], 8)
+    b += text(245, 328, "the picture follows the structure", 11.5, COLOURS["screening"], "middle", "bold")
+    b += lines(245, 348, ["the answer carries an ETag made from derived_at;", "a browser that has the picture asks once and is told 304;", "a re-derived entry gets a fresh picture everywhere at once;", "the page adds ?v=<derived_at> so no stale copy survives"], 9.2, INK, "middle", 13)
+    b += box(480, 306, 430, 96, "#eef2ff", chem, 8)
+    b += text(695, 328, "which coordinates", 11.5, chem, "middle", "bold")
+    b += lines(695, 348, ["a MOL block is a drawing: its atoms keep the positions", "the chemist gave them (a 3-D block gets a flat layout);", "a SMILES has no positions: CoordGen computes a layout,", "the way the chemists' drawing programs do"], 9.2, INK, "middle", 13)
+    b += box(30, 418, 880, 30, PANEL, acc, 6)
+    b += text(470, 438, "no picture is stored and no picture is guessed: an entry without a derived structure shows a dash, and the old viewer still draws a MOL block that was never derived", 9.6, INK, "middle", "bold")
+    b += text(W/2, 476, "everyday version: one photocopier in the archive; every desk gets a print of the same X-ray, stamped with the date it was taken, so a retaken X-ray replaces every print at once", 10.2, INK)
+    b += text(W/2, 500, "phase CR-12, step B (v2.25.0) · the picture is computed from the derived structure of step A; a person draws or corrects one in step C", 9.8, MUTED)
+    write("fig_structure_draw.svg", svg(W, H, "One drawing engine on the server turns an entry's derived structure into an SVG picture that the detail view, the table, the dialogs and the findings all show, and that a script can save; the picture carries the structure's version so a re-derived entry is redrawn everywhere", b))
+
+
 def fig_delete_gate() -> None:
     W, H = 940, 400
     b = text(W/2, 34, "Deleting a compound after CR-6: the clerk refuses, the archivist empties the folder first", 16, INK, "middle", "bold")
@@ -1366,5 +1415,5 @@ def logo() -> None:
 if __name__ == "__main__":
     for f in (fig_record_types, fig_doc_is_truth, fig_machine_layout, fig_change_travels, fig_request_path,
               fig_two_stage, fig_tracks, fig_registry_first, fig_module_names, fig_auth_ladder, fig_delete_gate, fig_every_way_in, fig_registry_sources, fig_container_lunchbox, fig_setup_flow, fig_timeline,
-              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, fig_two_tokens, fig_local_login, fig_roles, fig_account_lifecycle, fig_two_moments, fig_switch_minute, fig_structure_derive, cover, logo):
+              fig_requirements_lock, fig_attention_page, fig_source_tags, fig_two_instances, fig_publish_promote, fig_instance_name, fig_instance_label, fig_two_doors, fig_six_blocks, fig_token_gate, fig_token_travels, fig_two_tokens, fig_local_login, fig_roles, fig_account_lifecycle, fig_two_moments, fig_switch_minute, fig_structure_derive, fig_structure_draw, cover, logo):
         f()

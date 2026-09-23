@@ -2,7 +2,7 @@
 
 # Chemical structures — derive, draw, edit
 
-**Status:** step A **built** ✅ as v2.24.0 (2026-09-23): one derived structure per entry, checked, its findings on the attention page ([phase CR-12](04-phase-tutorials/phase-cr-12-structures.md), with a test for every route); steps B (draw) and C (edit) follow in their own releases. Written 2026-09-14 from the owner's request; decisions S1–S5 were agreed as recommended with the go of 2026-09-23, and S6–S9 were taken while building (below). This page is the reference for what exists and says plainly what does not yet.
+**Status:** step A **built** ✅ as v2.24.0 and step B **built** ✅ as v2.25.0 (both 2026-09-23): one derived structure per entry, checked, its findings on the attention page, and every derived structure drawn on the server and shown wherever the compound appears ([phase CR-12](04-phase-tutorials/phase-cr-12-structures.md), with a test for every route); step C (edit) follows in its own release. Written 2026-09-14 from the owner's request; decisions S1–S5 were agreed as recommended with the go of 2026-09-23, and S6–S9 were taken while building (below). This page is the reference for what exists and says plainly what does not yet.
 
 **Who this is for:** anyone who wants to *see* a compound rather than read
 its name — and anyone who has to correct a structure the source got wrong.
@@ -69,7 +69,7 @@ Counted on the development copy of the real export on 2026-09-14 (12,539 entries
 |---|---|---|
 | Derived | **6,544** | 77 from a MOL block, 6,322 from a SMILES (135 read after removing the outer brackets the source added), 145 from an InChI |
 | Could not be read | 9 | listed as a finding of their own |
-| With a finding | **446** | formula 398, weight 79, InChI 47 (24 skeleton, 3 stereo, 20 unreadable InChIs), unreadable 9; some entries carry two or three |
+| With a finding | **446** on the development copy, **447** on the server | formula 398 / 400, weight 79 / 78, InChI 47 / 50, unreadable 9; some entries carry two or three. The server re-imported the export after the SDF merge, so the export's InChI and formula won on the 77 merged entries; derived on both instances on 2026-09-23 |
 | No source | 5,986 | untouched: nothing to derive from |
 
 Today the detail view draws the 77 MOL blocks with a small viewer written
@@ -168,6 +168,24 @@ browser for viewing; the same image can be saved from the API. The
 existing viewer stays as the fallback for an entry that has a MOL block
 but no derived structure yet.
 
+**As built (v2.25.0, [Part B of the tutorial](04-phase-tutorials/phase-cr-12-structures.md#part-b--draw-it)):** `backend/app/depict.py`
+behind the route; a MOL block is drawn with the chemist's own coordinates
+(a 3-D block gets a flat layout), a SMILES with a layout from CoordGen;
+`w` and `h` between 48 and 1600 pixels; the answer carries an `ETag` made
+from `derived_at` and `Cache-Control: private, max-age=86400`, and the
+page adds `?v=<derived_at>` to the address, so a re-derived entry is
+redrawn everywhere at once and nothing is stored; `404` for an entry not
+yet derived. The picture shows in the detail view (the old viewer stays
+for a MOL block never derived), behind a **Pictures** toggle in the
+Compact view (off by default, S4) and as a column in Complete and
+Batches, in the link chooser's confirmation, the merge confirmation and
+the shared-identifier groups, and beside each doubtful-structure card;
+`draw_structure.py` writes it to a file. The image needs four system
+libraries for RDKit's drawing module (`libxrender1`, `libx11-6`, `libxext6`,
+`libexpat1`); the Dockerfile installs them, and the module is imported only when a picture
+is asked for, so a missing library can never stop the application
+(lesson 44).
+
 ---
 
 ## Step C — Edit it in the browser
@@ -242,8 +260,9 @@ phase.
   script and the endpoint report first and write on `apply`. On the real
   export: 6,553 with a source, 6,544 derived, 446 findings; derived on an
   instance by [Step 7 of the tutorial](04-phase-tutorials/phase-cr-12-structures.md#step-7--derive-on-the-server-beta-first).
-- Step B: `GET /api/chemicals/{id}/structure.svg` answers for every derived
-  structure; the detail view and the chooser dialogs show it.
+- ✅ **Step B, v2.25.0 (2026-09-23):** `GET /api/chemicals/{id}/structure.svg` answers for every derived
+  structure; the detail view and the chooser dialogs show it, and the
+  table, the merge confirmation and the finding cards too.
 - Step C: **Draw structure** and **Edit structure** open the editor; a save
   is validated by RDKit, re-derives the entry, keeps the history, and the
   picture changes at once.

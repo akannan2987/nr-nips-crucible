@@ -245,6 +245,9 @@ def _summary(doc: dict[str, Any], links: dict[str, int] | None) -> dict[str, Any
         "merged_from": doc.get("merged_from") or [],
         "batches": len(doc.get("batches") or []),
         "created_at": doc.get("created_at"),
+        # CR-12 step B: whether a picture can be shown beside the entry, and which version of it
+        "structure_source": (doc.get("structure") or {}).get("source"),
+        "structure_version": (doc.get("structure") or {}).get("derived_at"),
     }
     if links is not None:
         out["linked_rows"] = links.get(doc.get("chemical_id") or "", 0)

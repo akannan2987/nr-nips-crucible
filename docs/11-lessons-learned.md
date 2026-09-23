@@ -457,6 +457,22 @@ that does not know the convention drowns the real findings in the
 conventional ones.* *The shape:* a report that was technically right and
 practically useless.
 
+**44. A library the tests have and the image lacks.** RDKit's drawing
+module links against four system libraries (libXrender, libX11, libXext,
+expat) that the test environment on the development machine has and the
+slim container image does not. Every
+test passed; the container refused to start, because the module was
+imported when the application loaded and one route's dependency took
+every route down. Found by the rehearsal in the container, minutes before
+the release. The fix is two-fold: the Dockerfile installs the libraries,
+and the drawing module is imported only when a picture is asked for, so
+that a missing library can cost the picture and nothing else (`503`, with
+the reason). *The lesson: rehearse in the container the users will run,
+not only in the environment the tests run in; and import what one route
+needs where that route needs it, so that one feature's failure cannot
+close the door on the rest.* *The shape:* a green test suite and a red
+application.
+
 ---
 
 ## The one rule they add up to

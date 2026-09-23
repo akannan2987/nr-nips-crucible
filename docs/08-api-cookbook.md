@@ -866,6 +866,23 @@ entry's derived facts with a verdict per check; the findings with a plain
 reason each; `{"updated": 1, "key": "structure", "reviewed": true}`.
 The same from the terminal: `./container-py.sh script derive_structures.py [--apply]`.
 
+**And the picture** (v2.25.0): every derived structure is drawn on the
+server; save it, at the size you want, and it opens in any browser or
+drawing program.
+
+```bash
+curl --noproxy '*' -sSk -H "Authorization: Bearer $T" 'https://localhost:49160/api/chemicals/CHEM-000001/structure.svg?w=640&h=480' -o caffeine.svg
+head -c 60 caffeine.svg; echo                                   # <?xml version='1.0' encoding='iso-8859-1'?>
+# a page of thumbnails for a report: one request per compound, the same engine as the page
+for id in CHEM-000001 CHEM-000002 CHEM-000003; do curl --noproxy '*' -sSk -H "Authorization: Bearer $T" "https://localhost:49160/api/chemicals/$id/structure.svg?w=160&h=120" -o "$id.svg"; done; ls -l CHEM-*.svg
+```
+
+`404 … derive it first` means the entry has a source but step A was not
+run on it; an entry without any structure source has no picture, by
+design. From the terminal on the server:
+`./container-py.sh script draw_structure.py CHEM-000001 -o /app/data/caffeine.svg`
+(the file lands in the folder's `data/`).
+
 ## Why some requests are refused (and that's correct)
 
 A refusal is usually the system doing its job. Three you are likely to meet:

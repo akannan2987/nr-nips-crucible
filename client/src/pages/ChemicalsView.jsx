@@ -4,6 +4,7 @@ import { MagnifyingGlassIcon, PlusIcon, TrashIcon, EyeIcon, PencilSquareIcon, Ch
 import toast from 'react-hot-toast'
 import { getChemicals, deleteChemical, bulkDeleteChemicals, bulkUpdateChemicals, clearAllChemicals, getChemicalNotices, getChemicalColumns, getChemicalSummary } from '../services/api'
 import MoleculeViewer from '../components/MoleculeViewer'
+import StructurePicture from '../components/StructurePicture'
 
 // CR-11: where an entry came from, as chips. The tags are derived by the
 // server from what the entry records (never stored), so the browser only
@@ -70,6 +71,9 @@ export default function ChemicalsView() {
   const [batchMode, setBatchMode] = useState('all')          // all | one | several
   const [selectedTags, setSelectedTags] = useState([])
   const [tagsMatch, setTagsMatch] = useState('all')          // all | any (T2: all by default, with a switch)
+  // CR-12 step B: the thumbnail column in the Compact view, off by default (decision S4), remembered per browser
+  const [pictures, setPictures] = useState(() => { try { return localStorage.getItem('crucible.registry.pictures') === 'on' } catch { return false } })
+  useEffect(() => { try { localStorage.setItem('crucible.registry.pictures', pictures ? 'on' : 'off') } catch { /* private window */ } }, [pictures])
 
   const explainRefusal = (error, chemicalId, fallback) => {
     if (error?.response?.status === 409) {
@@ -421,6 +425,12 @@ export default function ChemicalsView() {
             {showPicker ? 'Hide' : 'Choose'} columns ({visible.length} of {columns.length})
           </button>
         )}
+        {viewMode === 'compact' && (
+          <label className="inline-flex items-center gap-1.5 text-gray-700" title="A picture of each derived structure, drawn by the server (CR-12); off by default because a page of pictures is a lot">
+            <input type="checkbox" checked={pictures} onChange={(e) => setPictures(e.target.checked)} className="rounded" data-testid="pictures-toggle" />
+            Pictures
+          </label>
+        )}
         <span className="ml-auto text-gray-500">Rows per page:</span>
         <select
           value={pagination.limit}
@@ -670,12 +680,12 @@ export default function ChemicalsView() {
                 <tr className="bg-gray-50">
                   {genericColumns.map((col) => (
                     <th key={col.key} className="p-1">
-                      <input
+                      {col.key === 'structure.picture' ? null : <input
                         value={colFilters[col.key] || ''}
                         onChange={(e) => { const v = e.target.value; setColFilters((f) => ({ ...f, [col.key]: v })); setPagination((p) => ({ ...p, page: 1 })) }}
                         placeholder="filter…"
                         className="w-full min-w-[6rem] text-xs border border-gray-200 rounded px-1 py-0.5 font-normal"
-                      />
+                      />}
                     </th>
                   ))}
                   <th></th>
@@ -686,6 +696,7 @@ export default function ChemicalsView() {
                   <tr key={`${row.chemical_id}-${row.batch_no || 0}-${i}`}>
                     {genericColumns.map((col) => {
                       if (col.key === 'tags') return <td key={col.key}><TagChips tags={row.tags} /></td>
+                      if (col.key === 'structure.picture') return <td key={col.key}>{row.structure?.source ? <StructurePicture id={row.chemical_id} version={row.structure.derived_at} /> : <span className="text-gray-300">—</span>}</td>
                       const text = formatCell(cellValue(row, col.key))
                       return (
                         <td key={col.key} className={`text-xs max-w-[240px] truncate ${col.key === 'chemical_id' ? 'font-mono text-blue-700' : ''}`} title={text}>
@@ -722,6 +733,7 @@ export default function ChemicalsView() {
                   <th><button onClick={() => toggleSort('chemical_id')} className="hover:text-pandora-700">chemical_id{sort.key === 'chemical_id' && (sort.order === 'asc' ? ' ▲' : ' ▼')}</button></th>
                   <th>DTX_ID</th>
                   <th><button onClick={() => toggleSort('name')} className="hover:text-pandora-700">Name{sort.key === 'name' && (sort.order === 'asc' ? ' ▲' : ' ▼')}</button></th>
+                  {pictures && <th title="The derived structure, drawn by the server (CR-12)">Structure</th>}
                   <th title="Where the entry came from (CR-11)">Tags</th>
                   <th><button onClick={() => toggleSort('cas_number')} className="hover:text-pandora-700">CAS Number{sort.key === 'cas_number' && (sort.order === 'asc' ? ' ▲' : ' ▼')}</button></th>
                   <th>Synonyms</th>
@@ -762,6 +774,7 @@ export default function ChemicalsView() {
                       {chemical.dtx_id || <span className="text-gray-300">—</span>}
                     </td>
                     <td className="font-medium max-w-[200px] truncate" title={chemical.name}>{chemical.name}</td>
+                    {pictures && <td>{chemical.structure?.source ? <StructurePicture id={chemical.chemical_id} version={chemical.structure.derived_at} /> : <span className="text-gray-300" title="No derived structure">—</span>}</td>}
                     <td><TagChips tags={chemical.tags} /></td>
                     <td className="whitespace-nowrap">{chemical.cas_number || '-'}</td>
                     <td className="text-xs text-gray-500 max-w-[150px] truncate" title={meta['Synonyms / Composition'] || ''}>{meta['Synonyms / Composition'] || '-'}</td>
@@ -920,7 +933,9 @@ export default function ChemicalsView() {
             {/* Structure + Quick Info row */}
             <div className="flex flex-col md:flex-row gap-4 p-5 border-b flex-shrink-0">
               <div className="flex-shrink-0">
-                <MoleculeViewer molBlock={selectedChemical.mol_block} smiles={selectedChemical.smiles} width={240} height={180} />
+                {selectedChemical.structure?.source
+                  ? <StructurePicture id={selectedChemical.chemical_id} version={selectedChemical.structure.derived_at} width={240} height={180} className="border border-gray-200" title="The derived structure, drawn by the server; open /api/chemicals/<id>/structure.svg to save it" />
+                  : <MoleculeViewer molBlock={selectedChemical.mol_block} smiles={selectedChemical.smiles} width={240} height={180} />}
               </div>
               <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 content-start text-sm">
                 <div className="col-span-2 sm:col-span-3"><span className="text-[11px] text-gray-400 block">Where it came from</span><TagChips tags={selectedChemical.tags} size="sm" /></div>

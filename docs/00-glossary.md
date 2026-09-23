@@ -430,7 +430,13 @@ is one; the moving dots follow the same curves as the drawn arrows.
 
 **Structure (of a compound)** — the drawing chemists think in: which atoms, joined how. Stored as text in three forms the registry meets — a **MOL block** (the drawing's coordinates and bonds), **SMILES** and **InChI** — and, since v2.24.0 (step A of phase CR-12), as one *derived* structure per entry from which the formula, weight and InChIKey are computed and checked against the laboratory's values ([`09-structures.md`](09-structures.md)). *Everyday version:* the name on a parcel is what the sender wrote; the structure is the X-ray of what is inside.
 
-**Depiction** — a 2-D picture of a structure drawn by a program from its atoms and bonds; the same structure always gives the same picture. Drawn by the server after CR-12 (`GET /api/chemicals/{id}/structure.svg`). *Everyday version:* the diagram on the flat-pack instructions, generated from the parts list.
+**Depiction** — a 2-D picture of a structure drawn by a program from its atoms and bonds; the same structure always gives the same picture. Drawn by the server since v2.25.0 (`GET /api/chemicals/{id}/structure.svg`, step B of CR-12): a MOL block with the chemist's own coordinates, a SMILES laid out by CoordGen; never stored, and stamped with the structure's version so a re-derived entry is redrawn everywhere at once. *Everyday version:* the diagram on the flat-pack instructions, generated from the parts list.
+
+**SVG** — Scalable Vector Graphics: a picture written as lines and curves in text rather than as pixels, sharp at any size; a browser shows it, a program reads it, a script saves it. The form every structure picture takes. *Everyday version:* a drawing as instructions, not as a photograph.
+
+**Thumbnail** — a small picture in a table cell, 96 by 72 pixels here; the *Pictures* toggle of the Compact view and the *structure (picture)* column of the other views show one per compound (decision S4: off by default in Compact, because a page of pictures is a lot). *Everyday version:* the passport photo on the file card.
+
+**ETag** — a short tag a web server puts on an answer that changes only when the answer would; a browser sends it back with its next request and is told *304 Not Modified* instead of receiving the same thing again. The structure pictures carry one made from the structure's `derived_at`. *Everyday version:* the version stamp on a print.
 
 **Structure editor** — a drawing canvas for molecules in the browser: atoms, bonds, rings, templates, charges, clean-up, import and export as MOL, SMILES and InChI — what ChemDraw, MolView or Dotmatics' Elemental offer. Planned as **Ketcher** (open source, Apache-2.0) embedded in the client in phase CR-12; a save is checked by RDKit and the previous structure kept. *Everyday version:* the whiteboard, with a camera that files the drawing.
 

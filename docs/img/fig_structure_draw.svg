@@ -1,0 +1,53 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 940 520' width='940' height='520' role='img' aria-label='One drawing engine on the server turns an entry&apos;s derived structure into an SVG picture that the detail view, the table, the dialogs and the findings all show, and that a script can save; the picture carries the structure&apos;s version so a re-derived entry is redrawn everywhere' font-family='-apple-system,Segoe UI,Helvetica,Arial,sans-serif'>
+<rect x='0.5' y='0.5' width='939' height='519' rx='12' fill='#ffffff' stroke='#e5e7eb'/>
+<defs><marker id='arrow' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='8' markerHeight='8' orient='auto-start-reverse'><path d='M 0 0 L 10 5 L 0 10 z' fill='#9ca3af'/></marker></defs>
+<text x='470.0' y='34' font-size='14.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>Drawing the structure (CR-12, step B): one engine on the server, the same picture wherever the entry is shown</text>
+<rect x='30' y='70' width='220' height='150' rx='10' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='140' y='92' font-size='11.5' fill='#1f2937' text-anchor='middle' font-weight='bold'>the entry, after step A</text>
+<text x='140' y='114' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>structure.source: smiles</text>
+<text x='140' y='129' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>structure.smiles: Cn1cnc2c1…</text>
+<text x='140' y='144' font-size='9.5' fill='#1f2937' text-anchor='middle' font-weight='normal'>structure.derived_at: 2026-09-23</text>
+<text x='140' y='170' font-size='9' fill='#6b7280' text-anchor='middle' font-weight='normal'>or a MOL block with its own</text>
+<text x='140' y='183' font-size='9' fill='#6b7280' text-anchor='middle' font-weight='normal'>coordinates: drawn as drawn</text>
+<text x='140' y='206' font-size='9' fill='#6b7280' text-anchor='middle' font-weight='normal'>nothing else is stored</text>
+<line x1='252' y1='145' x2='300' y2='145' stroke='#374151' stroke-width='2' marker-end='url(#arrow)'/>
+<rect x='302' y='80' width='200' height='130' rx='10' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='402' y='104' font-size='12.5' fill='#4f46e5' text-anchor='middle' font-weight='bold'>RDKit, on the server</text>
+<text x='402' y='126' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>CoordGen lays the atoms out</text>
+<text x='402' y='141' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>MolDraw2DSVG draws them</text>
+<text x='402' y='156' font-size='10' fill='#1f2937' text-anchor='middle' font-weight='normal'>one SVG per entry and size</text>
+<text x='402' y='186' font-size='8.6' fill='#6b7280' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>GET /api/chemicals/{id}/structure.svg?w=&amp;h=</text>
+<text x='402' y='200' font-size='8.6' fill='#6b7280' text-anchor='middle' font-weight='normal'>about a millisecond a picture; a small cache</text>
+<line x1='504' y1='145' x2='550' y2='145' stroke='#374151' stroke-width='2' marker-end='url(#arrow)'/>
+<rect x='552' y='70' width='358' height='32' rx='6' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='566' y='84' font-size='10.5' fill='#4f46e5' text-anchor='start' font-weight='bold'>the detail view</text>
+<text x='566' y='96' font-size='8.6' fill='#6b7280' text-anchor='start' font-weight='normal'>240 x 180, in place of the old viewer</text>
+<rect x='552' y='108' width='358' height='32' rx='6' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='566' y='122' font-size='10.5' fill='#4f46e5' text-anchor='start' font-weight='bold'>the table</text>
+<text x='566' y='134' font-size='8.6' fill='#6b7280' text-anchor='start' font-weight='normal'>Pictures toggle in Compact (off by default, S4); a column in Complete and Batches</text>
+<rect x='552' y='146' width='358' height='32' rx='6' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='566' y='160' font-size='10.5' fill='#4f46e5' text-anchor='start' font-weight='bold'>the dialogs</text>
+<text x='566' y='172' font-size='8.6' fill='#6b7280' text-anchor='start' font-weight='normal'>the link chooser&apos;s confirmation; the merge confirmation; the shared-identifier groups</text>
+<rect x='552' y='184' width='358' height='32' rx='6' fill='#ffffff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='566' y='198' font-size='10.5' fill='#4f46e5' text-anchor='start' font-weight='bold'>the findings</text>
+<text x='566' y='210' font-size='8.6' fill='#6b7280' text-anchor='start' font-weight='normal'>each doubtful-structure card, beside the values</text>
+<rect x='30' y='246' width='880' height='44' rx='8' fill='#f9fafb' stroke='#9ca3af' stroke-width='1.2'/>
+<text x='470' y='264' font-size='9.6' fill='#1f2937' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>the same picture from a script or for a report:  curl -H "Authorization: Bearer $T" .../api/chemicals/CHEM-000001/structure.svg -o caffeine.svg</text>
+<text x='470' y='281' font-size='9.2' fill='#6b7280' text-anchor='middle' font-weight='normal' font-family='ui-monospace,SFMono-Regular,Menlo,monospace'>./container-py.sh script draw_structure.py CHEM-000001 -o /app/data/caffeine.svg    (the browser holds no chemistry library: it shows an image)</text>
+<rect x='30' y='306' width='430' height='96' rx='8' fill='#fff7ed' stroke='#d97706' stroke-width='1.2'/>
+<text x='245' y='328' font-size='11.5' fill='#d97706' text-anchor='middle' font-weight='bold'>the picture follows the structure</text>
+<text x='245' y='348' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>the answer carries an ETag made from derived_at;</text>
+<text x='245' y='361' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>a browser that has the picture asks once and is told 304;</text>
+<text x='245' y='374' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>a re-derived entry gets a fresh picture everywhere at once;</text>
+<text x='245' y='387' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>the page adds ?v=&lt;derived_at&gt; so no stale copy survives</text>
+<rect x='480' y='306' width='430' height='96' rx='8' fill='#eef2ff' stroke='#4f46e5' stroke-width='1.2'/>
+<text x='695' y='328' font-size='11.5' fill='#4f46e5' text-anchor='middle' font-weight='bold'>which coordinates</text>
+<text x='695' y='348' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>a MOL block is a drawing: its atoms keep the positions</text>
+<text x='695' y='361' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>the chemist gave them (a 3-D block gets a flat layout);</text>
+<text x='695' y='374' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>a SMILES has no positions: CoordGen computes a layout,</text>
+<text x='695' y='387' font-size='9.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>the way the chemists&apos; drawing programs do</text>
+<rect x='30' y='418' width='880' height='30' rx='6' fill='#f9fafb' stroke='#374151' stroke-width='1.2'/>
+<text x='470' y='438' font-size='9.6' fill='#1f2937' text-anchor='middle' font-weight='bold'>no picture is stored and no picture is guessed: an entry without a derived structure shows a dash, and the old viewer still draws a MOL block that was never derived</text>
+<text x='470.0' y='476' font-size='10.2' fill='#1f2937' text-anchor='middle' font-weight='normal'>everyday version: one photocopier in the archive; every desk gets a print of the same X-ray, stamped with the date it was taken, so a retaken X-ray replaces every print at once</text>
+<text x='470.0' y='500' font-size='9.8' fill='#6b7280' text-anchor='middle' font-weight='normal'>phase CR-12, step B (v2.25.0) · the picture is computed from the derived structure of step A; a person draws or corrects one in step C</text>
+</svg>

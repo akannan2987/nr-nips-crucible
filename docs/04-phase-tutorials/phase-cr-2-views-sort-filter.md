@@ -219,6 +219,10 @@ shapes with six entries and seven batch rows.
   unchanged.
 - **Filters on Compact.** Its columns are a hand-picked layout; sorting is
   on its main columns, filtering is in the two data-driven views.
+- **A picture of the structure in the table.** Came later with CR-12 step B
+  (v2.25.0): a *Pictures* toggle on the Compact view, off by default, and a
+  *structure (picture)* column offered in Complete and Batches
+  ([phase CR-12, Part B](phase-cr-12-structures.md#part-b--draw-it)).
 
 ---
 

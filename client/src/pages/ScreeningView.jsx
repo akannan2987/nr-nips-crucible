@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import StructurePicture from '../components/StructurePicture'
 import {
   MagnifyingGlassIcon,
   PlusIcon,
@@ -983,6 +984,11 @@ function ChemicalChooser({ count, options, onPick, onClose }) {
                 <p className="text-sm text-gray-700">
                   Link <span className="font-semibold">{count.toLocaleString()}</span> row(s) to this registered compound?
                 </p>
+                {candidate.structure?.source && (
+                  <div className="flex justify-center">
+                    <StructurePicture id={candidate.chemical_id} version={candidate.structure.derived_at} width={200} height={150} className="border border-gray-200" />
+                  </div>
+                )}
                 <dl className="text-sm border border-gray-200 rounded-lg divide-y divide-gray-100">
                   <div className="flex gap-3 px-3 py-2"><dt className="w-28 text-gray-500">Name</dt><dd className="font-medium text-gray-900">{candidate.name || '—'}</dd></div>
                   <div className="flex gap-3 px-3 py-2"><dt className="w-28 text-gray-500">CAS number</dt><dd className="font-mono text-gray-900">{candidate.cas_number || '— (none recorded)'}</dd></div>

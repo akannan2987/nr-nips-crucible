@@ -227,7 +227,7 @@ get, and likely mistakes get a named fix.
 | 08 | **[API cookbook](docs/08-api-cookbook.md)** | Copy-paste `curl` and Python recipes — every answer captured from a live instance |
 | 09 | **[Chemical identification](docs/09-chemical-identification.md)** | Why compound names need identifying; the two-stage rule; maintaining the registry |
 | 09 | **[Registry sources](docs/09-registry-sources.md)** | The laboratory's three real registry files — the Dotmatics export, the structure file, the limited list — described column by column as template specs; what every flag and notice means |
-| 09 | **[Chemical structures](docs/09-structures.md)** | Deriving one checked structure per compound, drawing it, and editing it in the browser — the reference for phase CR-12; step A (derive and check) built in v2.24.0, B and C next |
+| 09 | **[Chemical structures](docs/09-structures.md)** | Deriving one checked structure per compound, drawing it, and editing it in the browser — the reference for phase CR-12; steps A (derive and check, v2.24.0) and B (draw, v2.25.0) built, C next |
 | 09 | **[Query cookbook](docs/09-query-cookbook.md)** | Read-only SQL against the hybrid schema — why queries look unusual here, and recipes that work |
 | 10 | **[The user playbook](docs/10-user-playbook.md)** | **Hands-on start.** Load a file, check it, identify compounds, correct mistakes, ask questions, publish a change — every concept explained from scratch |
 | 10 | **[Chemical Registry tasks](docs/10-registry-tasks.md)** | **Routine registry work, one table per task**, in the order tasks come up: look up, add, load, edit, link, remove, merge, audit, PubChem, export, reset — browser, API and terminal side by side |

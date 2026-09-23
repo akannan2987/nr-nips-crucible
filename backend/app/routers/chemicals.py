@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Callable
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, Request, Response, UploadFile
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -24,6 +24,7 @@ from ..compat import (
     total_pages,
 )
 from ..database import get_db
+from ..depict import DEFAULT_HEIGHT, DEFAULT_WIDTH, DepictUnavailable, etag_for, svg_for
 from ..imports import (
     ImportError_,
     import_chemicals_file,
@@ -96,7 +97,7 @@ _INTERNAL = {"id", "batches", "metadata", "structural", "mol_block", "structure_
 
 # CR-12: the derived structure is nested under `structure`; four of its
 # fields are offered as columns of their own (dotted keys, like metadata's).
-_STRUCTURE_COLUMNS = (("structure.formula", "derived formula"), ("structure.weight", "derived weight"),
+_STRUCTURE_COLUMNS = (("structure.picture", "structure (picture)"), ("structure.formula", "derived formula"), ("structure.weight", "derived weight"),
                       ("structure.inchikey", "InChIKey (derived)"), ("structure.source", "structure source"))
 
 
@@ -263,7 +264,11 @@ def _discover_columns(db: Session) -> dict[str, Any]:
     # CR-12: the derived structure's own columns, once anything has been derived
     labels = dict(_STRUCTURE_COLUMNS)
     for key, _label in _STRUCTURE_COLUMNS:
-        count = sum(1 for d in docs if _value(d, key) not in (None, "", [], {}))
+        # the picture is not a stored value: it exists for every entry with a derived structure (CR-12 step B)
+        if key == "structure.picture":
+            count = sum(1 for d in docs if (d.get("structure") or {}).get("source"))
+        else:
+            count = sum(1 for d in docs if _value(d, key) not in (None, "", [], {}))
         if count:
             order.append(key)
             filled[key] = count
@@ -583,6 +588,37 @@ def derive_structures(body: StructuresDeriveIn, db: Session = Depends(get_db)) -
         return derive_registry(db, chemical_ids=ids, apply=bool(body.apply))
     except KeyError as err:
         raise HTTPException(status_code=404, detail=f"Chemical not found: {err.args[0]}") from None
+
+
+@router.get("/{chemical_id}/structure.svg")
+def structure_svg(chemical_id: str, request: Request, w: int | None = Query(default=None), h: int | None = Query(default=None),
+                  db: Session = Depends(get_db)) -> Response:
+    """GET /api/chemicals/:id/structure.svg — the derived structure, drawn (CR-12 step B).
+
+    `w` and `h` in pixels (48 to 1600, default 320 by 240; out of range is
+    clamped). The answer is an SVG image with an ETag made from the
+    structure's `derived_at`: a browser that sends it back in
+    `If-None-Match` gets 304. 404 for an unknown entry or one without a
+    derived structure (derive it first). Nothing is stored: the picture is
+    drawn on request, from the MOL block's own coordinates when the
+    structure came from it, from the canonical SMILES otherwise.
+    """
+    row = find_row(db, Chemical, "chemical_id", chemical_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Chemical not found")
+    doc = row.doc or {}
+    if not (doc.get("structure") or {}).get("source"):
+        raise HTTPException(status_code=404, detail=f"No derived structure for {chemical_id}: derive it first (Needs attention, Derive structures, or derive_structures.py --apply)")
+    etag = etag_for(doc, w, h)
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers={"ETag": etag})
+    try:
+        svg = svg_for(doc, w if w is not None else DEFAULT_WIDTH, h if h is not None else DEFAULT_HEIGHT)
+    except DepictUnavailable as err:
+        raise HTTPException(status_code=503, detail=str(err)) from None
+    if svg is None:
+        raise HTTPException(status_code=404, detail=f"The derived structure of {chemical_id} could not be drawn")
+    return Response(content=svg, media_type="image/svg+xml", headers={"ETag": etag, "Cache-Control": "private, max-age=86400"})
 
 
 @router.post("/{chemical_id}/identifier")

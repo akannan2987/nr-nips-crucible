@@ -10,6 +10,7 @@ import {
   deleteChemical,
   deriveStructures,
 } from '../services/api'
+import StructurePicture from '../components/StructurePicture'
 
 /**
  * CR-10 — the attention page.
@@ -399,6 +400,7 @@ function SharedGroup({ group, busy, onMerge, onReview }) {
             <tr>
               <th className="px-3 py-2 text-left">Keep</th>
               <th className="px-3 py-2 text-left">Identifier</th>
+              <th className="px-3 py-2 text-left" title="The derived structure, drawn by the server (CR-12)">Structure</th>
               <th className="px-3 py-2 text-left">Name</th>
               <th className="px-3 py-2 text-left">CAS</th>
               <th className="px-3 py-2 text-left">DTXSID</th>
@@ -414,6 +416,7 @@ function SharedGroup({ group, busy, onMerge, onReview }) {
               <tr key={e.chemical_id} className={e.chemical_id === keep ? 'bg-pandora-50' : ''}>
                 <td className="px-3 py-2"><input type="radio" name={`keep-${group.key}`} checked={keep === e.chemical_id} onChange={() => setKeep(e.chemical_id)} disabled={group.reviewed} /></td>
                 <td className="px-3 py-2 font-mono text-xs">{e.chemical_id}</td>
+                <td className="px-3 py-2">{e.structure_source ? <StructurePicture id={e.chemical_id} version={e.structure_version} /> : <span className="text-gray-300">—</span>}</td>
                 <td className="px-3 py-2 font-medium text-gray-900">{fmt(e.name)}</td>
                 <td className="px-3 py-2 font-mono text-xs">{fmt(e.cas_number)}</td>
                 <td className="px-3 py-2 font-mono text-xs">{fmt(e.dtx_id)}</td>
@@ -541,7 +544,13 @@ function StructureCard({ item, busy, onReview }) {
   return (
     <Card reviewed={item.reviewed}>
       <EntryHeading item={item} />
-      <div className="overflow-x-auto mt-3">
+      <div className="flex flex-col md:flex-row gap-4 mt-3">
+      {s.source && (
+        <div className="flex-shrink-0">
+          <StructurePicture id={item.chemical_id} version={s.derived_at} width={180} height={135} className="border border-gray-200" title="The derived structure, drawn by the server" />
+        </div>
+      )}
+      <div className="overflow-x-auto flex-1">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-xs uppercase text-gray-500">
             <tr>
@@ -579,6 +588,7 @@ function StructureCard({ item, busy, onReview }) {
           </tbody>
         </table>
       </div>
+      </div>
       <ul className="mt-2 text-sm text-amber-800 list-disc list-inside">
         {item.reasons.map((r) => <li key={r}>{r}</li>)}
       </ul>
@@ -603,9 +613,9 @@ function MergeConfirm({ plan, busy, onConfirm, onClose }) {
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><XMarkIcon className="h-6 w-6" /></button>
         </div>
         <dl className="text-sm border border-gray-200 rounded-lg divide-y divide-gray-100">
-          <div className="flex gap-3 px-3 py-2"><dt className="w-24 text-gray-500">Survivor</dt><dd><span className="font-mono text-xs">{survivor?.chemical_id}</span> <span className="font-medium">{fmt(survivor?.name)}</span></dd></div>
+          <div className="flex gap-3 px-3 py-2 items-center"><dt className="w-24 text-gray-500">Survivor</dt><dd className="flex items-center gap-3">{survivor?.structure_source && <StructurePicture id={survivor.chemical_id} version={survivor.structure_version} width={72} height={54} />}<span><span className="font-mono text-xs">{survivor?.chemical_id}</span> <span className="font-medium">{fmt(survivor?.name)}</span></span></dd></div>
           {removed.map((e) => (
-            <div key={e.chemical_id} className="flex gap-3 px-3 py-2"><dt className="w-24 text-gray-500">Removed</dt><dd><span className="font-mono text-xs">{e.chemical_id}</span> <span className="font-medium">{fmt(e.name)}</span> <span className="text-gray-500">· {(e.linked_rows || 0).toLocaleString()} linked row{e.linked_rows === 1 ? '' : 's'}</span></dd></div>
+            <div key={e.chemical_id} className="flex gap-3 px-3 py-2 items-center"><dt className="w-24 text-gray-500">Removed</dt><dd className="flex items-center gap-3">{e.structure_source && <StructurePicture id={e.chemical_id} version={e.structure_version} width={72} height={54} />}<span><span className="font-mono text-xs">{e.chemical_id}</span> <span className="font-medium">{fmt(e.name)}</span> <span className="text-gray-500">· {(e.linked_rows || 0).toLocaleString()} linked row{e.linked_rows === 1 ? '' : 's'}</span></span></dd></div>
           ))}
         </dl>
         <ol className="text-sm text-gray-700 list-decimal list-inside space-y-1">

@@ -26,6 +26,13 @@ LABEL maintainer="Crucible Team (NIHS)"
 LABEL description="Crucible: Pandora Toolbox Enhancement (v2.0) - Python backend (FastAPI)"
 
 WORKDIR /app
+# RDKit's drawing module (the structure pictures, phase CR-12 step B) links
+# against four system libraries the slim base image does not carry:
+# libXrender, libX11, libXext and expat. Without them the module cannot be
+# imported inside the container (lesson 44). Nothing else here needs apt.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libxrender1 libx11-6 libxext6 libexpat1 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Dependencies first (layer caching): RDKit, pandas etc. install as
 # prebuilt manylinux wheels — no compiler needed on linux/amd64 or arm64.

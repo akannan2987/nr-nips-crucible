@@ -10,6 +10,55 @@ change you are getting.
 
 ---
 
+## v2.25.0 — 2026-09-23 — "Structures drawn"
+
+Step B of phase CR-12: every derived structure of step A is now a
+picture, drawn once on the server and shown wherever the compound
+appears. Step C (edit) follows.
+
+**Added**
+- **`GET /api/chemicals/{id}/structure.svg`** draws the derived structure
+  with RDKit: a MOL block as the chemist drew it, a SMILES laid out by
+  CoordGen; `w` and `h` for the size; an `ETag` made from the structure's
+  `derived_at`, so a browser asks once and a re-derived entry is redrawn
+  at once; nothing stored; `404` for an entry not yet derived
+  ([the route](docs/08-api-reference.md#draw-a-structure)).
+- **The picture in the page:** on the detail view in place of the
+  project's own viewer (which stays for a MOL block never derived); a
+  **Pictures** toggle in the Compact view, off by default (decision S4),
+  and a *structure (picture)* column offered in Complete and Batches; in
+  the link chooser's confirmation, the merge confirmation and the
+  shared-identifier groups; beside each doubtful-structure card
+  ([Part B of the tutorial](docs/04-phase-tutorials/phase-cr-12-structures.md#part-b--draw-it)).
+- `draw_structure.py` writes the same picture to a file from the terminal;
+  the browser holds no chemistry library.
+- Five tests (206), the tutorial's Part B with a test for every route, a
+  figure, glossary entries, lesson 44.
+
+**Fixed**
+- The image now carries the four system libraries RDKit's drawing module
+  links against (`libxrender1`, `libx11-6`, `libxext6`, `libexpat1`);
+  without them the module could not load inside the slim container, and because it was imported at
+  start-up the whole application refused to start on the development
+  machine's rebuild (lesson 44). The drawing module is now imported only
+  when a picture is asked for, so a missing library costs the picture
+  route alone (`503`, with the reason).
+- The server's own counts from step A recorded: 447 findings (formula 400,
+  weight 78, InChI 50), 124 doubtful formulas, 795 items in all; the
+  development copy says 446 and 125 because of the import order.
+
+**Limitations, on purpose**
+- No picture for an entry without a derived structure: nothing is guessed
+  from a name or a CAS number; step C lets a person draw one. SVG only.
+  The thumbnail column is off by default in the Compact view.
+
+**Deploy**
+- Code under `backend/` and `client/` and the Dockerfile: blocks 3 and 6
+  rebuild; nothing to run afterwards (the structures were derived in step
+  A).
+
+---
+
 ## v2.24.0 — 2026-09-23 — "Structures derived and checked"
 
 Step A of phase CR-12, the owner's request of 2026-09-14: the registry
